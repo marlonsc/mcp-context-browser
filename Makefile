@@ -1,6 +1,6 @@
 # MCP Context Browser - Build and Development Makefile
 
-.PHONY: all build test clean docs diagrams help git-status git-add-all git-commit-force git-push-force git-force-all
+.PHONY: all build test clean docs diagrams help git-status git-add-all git-commit-force git-push-force git-force-all force-commit
 
 # Default target
 all: build test
@@ -140,6 +140,11 @@ git-push-force:
 git-force-all: git-add-all git-commit-force git-push-force
 	@echo "Force commit and push completed!"
 
+# Alternative script-based force commit
+force-commit:
+	@echo "Running force commit script..."
+	@bash scripts/force-commit.sh
+
 # Help target
 help:
 	@echo "MCP Context Browser - Development Makefile"
@@ -176,6 +181,7 @@ help:
 	@echo "  git-commit-force - Force commit all changes"
 	@echo "  git-push-force   - Force push to remote repository"
 	@echo "  git-force-all    - Add, commit and push all changes with force"
+	@echo "  force-commit     - Run force commit script (alternative method)"
 	@echo "  help             - Show this help message"
 	@echo ""
 	@echo "Examples:"

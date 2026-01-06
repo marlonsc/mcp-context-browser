@@ -67,8 +67,8 @@ mod tests {
         let response = result.unwrap();
         assert!(!response.is_error);
 
-        if let CallToolResultContent::Text { text } = &response.content[0] {
-            assert!(text.contains("Successfully indexed"));
+        let CallToolResultContent::Text { text } = &response.content[0];
+        assert!(text.contains("Successfully indexed"));
             assert!(text.contains("code chunks"));
         } else {
             panic!("Expected Text content");
@@ -103,8 +103,8 @@ mod tests {
         let response = result.unwrap();
         assert!(!response.is_error);
 
-        if let CallToolResultContent::Text { text } = &response.content[0] {
-            assert!(text.contains("Search Results for"));
+        let CallToolResultContent::Text { text } = &response.content[0];
+        assert!(text.contains("Search Results for"));
             assert!(text.contains("\"test search\""));
         } else {
             panic!("Expected Text content");
@@ -167,8 +167,8 @@ mod tests {
         let response = result.unwrap();
         assert!(!response.is_error);
 
-        if let CallToolResultContent::Text { text } = &response.content[0] {
-            assert!(text.contains("No relevant results found"));
+        let CallToolResultContent::Text { text } = &response.content[0];
+        assert!(text.contains("No relevant results found"));
         } else {
             panic!("Expected Text content");
         }
@@ -233,8 +233,8 @@ mod tests {
         assert_eq!(response.content.len(), 1);
         assert!(!response.is_error);
 
-        if let CallToolResultContent::Text { text } = &response.content[0] {
-            assert_eq!(text, "Test message");
+        let CallToolResultContent::Text { text } = &response.content[0];
+        assert_eq!(text, "Test message");
         } else {
             panic!("Expected Text content");
         }

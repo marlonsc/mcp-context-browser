@@ -3,15 +3,12 @@
 //! This module tests the full application flow including MCP protocol handling.
 
 use serde_json::json;
-use std::process::{Command, Stdio};
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::time::{timeout, Duration};
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    async fn run_mcp_command_test(json_input: &str) -> Result<String, Box<dyn std::error::Error>> {
+    async fn run_mcp_command_test(_json_input: &str) -> Result<String, Box<dyn std::error::Error>> {
         // This is a simplified integration test that would need to be adapted
         // based on how the actual MCP server runs. For now, we'll create a placeholder
         // that demonstrates the testing approach.

@@ -3,7 +3,7 @@
 //! This module tests the business logic services including ContextService,
 //! IndexingService, and SearchService.
 
-use mcp_context_browser::core::types::{CodeChunk, Language, SearchResult, Embedding};
+use mcp_context_browser::core::types::{CodeChunk, Language};
 use mcp_context_browser::factory::ServiceProvider;
 use mcp_context_browser::services::{ContextService, IndexingService, SearchService};
 use std::sync::Arc;
@@ -225,7 +225,7 @@ mod tests {
         let service_provider = create_test_service_provider();
         let service = ContextService::new(&service_provider).unwrap();
 
-        let texts = vec![
+        let _texts = vec![
             "fn main() {}".to_string(),
             "struct Test {}".to_string(),
             "let x = 42;".to_string(),
@@ -257,6 +257,6 @@ mod tests {
         assert!(search_result.is_ok());
 
         let results = search_result.unwrap();
-        assert!(results.len() >= 0); // Should not fail
+        // Results length should be valid (always >= 0)
     }
 }
