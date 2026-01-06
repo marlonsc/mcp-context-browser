@@ -1,12 +1,15 @@
 # ADR 001: Provider Pattern Architecture
 
 ## Status
+
 Accepted
 
 ## Context
+
 The MCP Context Browser needs to support multiple AI providers (OpenAI, Anthropic, Ollama) and vector databases (Milvus, Pinecone, Qdrant) without creating tight coupling between the core business logic and external service implementations. The system must be extensible to add new providers without modifying existing code, and support testing with mock implementations.
 
 Current requirements:
+
 - Support for multiple embedding providers with different APIs
 - Multiple vector storage backends with varying capabilities
 - Ability to switch providers at runtime
@@ -14,9 +17,11 @@ Current requirements:
 - Clean separation between business logic and external dependencies
 
 ## Decision
+
 Implement a provider pattern using Rust traits for abstraction, with a registry system for provider management and dependency injection for service instantiation.
 
 Key architectural elements:
+
 - `EmbeddingProvider` trait for text-to-vector conversion
 - `VectorStoreProvider` trait for vector storage and retrieval
 - `ProviderRegistry` for runtime provider registration and lookup
@@ -24,9 +29,11 @@ Key architectural elements:
 - Trait-based dependency injection in service constructors
 
 ## Consequences
+
 The provider pattern provides excellent separation of concerns and extensibility but introduces some complexity in provider management.
 
 ### Positive Consequences
+
 - **High Extensibility**: New providers can be added without modifying existing code
 - **Clean Architecture**: Clear separation between business logic and external services
 - **Testability**: Easy mocking and testing through dependency injection
@@ -34,6 +41,7 @@ The provider pattern provides excellent separation of concerns and extensibility
 - **Type Safety**: Rust traits ensure compile-time interface compliance
 
 ### Negative Consequences
+
 - **Increased Complexity**: Additional abstraction layers and indirection
 - **Provider Management**: Need for registry and factory patterns
 - **Trait Bounds**: Generic constraints can complicate service implementations
@@ -42,18 +50,21 @@ The provider pattern provides excellent separation of concerns and extensibility
 ## Alternatives Considered
 
 ### Alternative 1: Direct Provider Usage
+
 - **Description**: Services directly instantiate and use specific provider implementations
 - **Pros**: Simpler code, fewer abstractions
 - **Cons**: Tight coupling, difficult to test, hard to add new providers
 - **Rejection Reason**: Violates SOLID principles and makes the system inflexible
 
 ### Alternative 2: Configuration-Based Factory
+
 - **Description**: Simple factory pattern with configuration strings to select providers
 - **Pros**: Less complex than full registry system
 - **Cons**: Limited runtime flexibility, still requires recompilation for new providers
 - **Rejection Reason**: Doesn't provide the same level of testability and runtime flexibility
 
 ### Alternative 3: Plugin Architecture
+
 - **Description**: Dynamic loading of provider implementations as plugins
 - **Pros**: True runtime extensibility without recompilation
 - **Cons**: Significant complexity, stability concerns, platform limitations
@@ -62,6 +73,7 @@ The provider pattern provides excellent separation of concerns and extensibility
 ## Implementation Notes
 
 ### Core Traits
+
 ```rust
 #[async_trait]
 pub trait EmbeddingProvider: Send + Sync {
@@ -81,6 +93,7 @@ pub trait VectorStoreProvider: Send + Sync {
 ```
 
 ### Registry Implementation
+
 ```rust
 pub struct ProviderRegistry {
     embedding_providers: HashMap<String, Arc<dyn EmbeddingProvider>>,
@@ -100,6 +113,7 @@ impl ProviderRegistry {
 ```
 
 ### Service Constructor Injection
+
 ```rust
 pub struct ContextService {
     embedding_provider: Arc<dyn EmbeddingProvider>,
@@ -117,6 +131,7 @@ impl ContextService {
 ```
 
 ### Testing Pattern
+
 ```rust
 #[cfg(test)]
 mod tests {
@@ -138,6 +153,7 @@ mod tests {
 ```
 
 ## References
+
 - [Provider Pattern](https://en.wikipedia.org/wiki/Provider_model)
 - [Dependency Injection in Rust](https://doc.rust-lang.org/book/ch10-02-traits.html)
 - [SOLID Principles](https://en.wikipedia.org/wiki/SOLID)

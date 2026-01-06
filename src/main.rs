@@ -27,6 +27,7 @@
 //! Licensed under the MIT License.
 
 use mcp_context_browser::server::McpToolHandlers;
+use mcp_context_browser::metrics::MetricsApiServer;
 use serde::{Deserialize, Serialize};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader, BufWriter};
 
@@ -62,6 +63,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         env!("CARGO_PKG_VERSION")
     );
 
+    // Start metrics HTTP server in background
+    let metrics_port = std::env::var("CONTEXT_METRICS_PORT")
+        .unwrap_or_else(|_| "3001".to_string())
+        .parse::<u16>()
+        .unwrap_or(3001);
+
+    let metrics_server = MetricsApiServer::new(metrics_port);
+    let metrics_handle = tokio::spawn(async move {
+        if let Err(e) = metrics_server.start().await {
+            eprintln!("❌ Metrics API server error: {}", e);
+        }
+    });
+
+    println!("📊 Metrics API available at http://localhost:{}", metrics_port);
+
     // Create tool handlers
     let tool_handlers = match McpToolHandlers::new() {
         Ok(handlers) => handlers,
@@ -82,63 +98,78 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     println!("✅ MCP Context Browser ready - listening on stdio");
 
+    // Main event loop - handle MCP messages and monitor background tasks
     loop {
-        buffer.clear();
-        match reader.read_line(&mut buffer).await {
-            Ok(0) => {
-                // EOF reached
-                println!("Received EOF, shutting down");
-                break;
-            }
-            Ok(_) => {
-                let message: Result<McpMessage, _> = serde_json::from_str(buffer.trim());
+        tokio::select! {
+            // Handle MCP stdio messages
+            result = reader.read_line(&mut buffer) => {
+                match result {
+                    Ok(0) => {
+                        // EOF reached
+                        println!("Received EOF, shutting down");
+                        break;
+                    }
+                    Ok(_) => {
+                        let message: Result<McpMessage, _> = serde_json::from_str(buffer.trim());
+                        buffer.clear();
 
-                match message {
-                    Ok(msg) => {
-                        let response = handle_message(msg, &tool_handlers).await;
-                        if let Ok(response_json) = serde_json::to_string(&response) {
-                            if let Err(e) = writer
-                                .write_all(format!("{}\n", response_json).as_bytes())
-                                .await
-                            {
-                                eprintln!("Failed to write response: {}", e);
-                                break;
+                        match message {
+                            Ok(msg) => {
+                                let response = handle_message(msg, &tool_handlers).await;
+                                if let Ok(response_json) = serde_json::to_string(&response) {
+                                    if let Err(e) = writer
+                                        .write_all(format!("{}\n", response_json).as_bytes())
+                                        .await
+                                    {
+                                        eprintln!("Failed to write response: {}", e);
+                                        break;
+                                    }
+                                    if let Err(e) = writer.flush().await {
+                                        eprintln!("Failed to flush writer: {}", e);
+                                        break;
+                                    }
+                                }
                             }
-                            if let Err(e) = writer.flush().await {
-                                eprintln!("Failed to flush writer: {}", e);
-                                break;
+                            Err(e) => {
+                                eprintln!("Failed to parse message: {}", e);
+                                let error_response = McpMessage {
+                                    jsonrpc: "2.0".to_string(),
+                                    id: Some(serde_json::Value::Null),
+                                    method: None,
+                                    params: None,
+                                    result: None,
+                                    error: Some(McpError {
+                                        code: -32700,
+                                        message: "Parse error".to_string(),
+                                        data: Some(serde_json::json!({"details": e.to_string()})),
+                                    }),
+                                };
+                                if let Ok(response_json) = serde_json::to_string(&error_response) {
+                                    let _ = writer
+                                        .write_all(format!("{}\n", response_json).as_bytes())
+                                        .await;
+                                    let _ = writer.flush().await;
+                                }
                             }
                         }
                     }
                     Err(e) => {
-                        eprintln!("Failed to parse message: {}", e);
-                        let error_response = McpMessage {
-                            jsonrpc: "2.0".to_string(),
-                            id: Some(serde_json::Value::Null),
-                            method: None,
-                            params: None,
-                            result: None,
-                            error: Some(McpError {
-                                code: -32700,
-                                message: "Parse error".to_string(),
-                                data: Some(serde_json::json!({"details": e.to_string()})),
-                            }),
-                        };
-                        if let Ok(response_json) = serde_json::to_string(&error_response) {
-                            let _ = writer
-                                .write_all(format!("{}\n", response_json).as_bytes())
-                                .await;
-                            let _ = writer.flush().await;
-                        }
+                        eprintln!("Failed to read from stdin: {}", e);
+                        break;
                     }
                 }
             }
-            Err(e) => {
-                eprintln!("Failed to read from stdin: {}", e);
-                break;
+
+            // Monitor metrics server
+            _ = &mut metrics_handle => {
+                println!("Metrics server task completed");
+                // Continue running MCP server even if metrics server stops
             }
         }
     }
+
+    // Wait for metrics server to finish
+    let _ = metrics_handle.await;
 
     println!("👋 MCP Context Browser shutdown complete");
     Ok(())
