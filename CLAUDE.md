@@ -144,18 +144,21 @@
 ### Essential Commands (Use Make!)
 
 ```bash
+# MANDATORY: Always check dependencies first
+make check-deps     # Verify all required tools installed (MANDATORY)
+
 # Core development cycle (VALIDATED ✅)
 make build          # Build project (cargo build)
 make test           # Run all tests (60 tests, 100% pass rate)
 make docs           # Generate documentation + diagrams + index
-make validate       # Validate diagrams, docs, links, ADRs, sync
-make ci             # Full CI pipeline: clean + validate + test + build + docs
+make validate       # Validate diagrams, docs, links, ADRs, sync + lint-md
+make ci             # Full CI pipeline: deps + check + lint-md + validate
 
 # Development (VALIDATED ✅)
 make dev            # Run with auto-reload (cargo watch -x run)
 make fmt            # Format code (cargo fmt)
 make lint           # Lint code (cargo clippy)
-make setup          # Install dev tools (cargo-watch, tarpaulin, audit)
+make setup          # Install ALL dev tools (cargo + npm packages)
 
 # Documentation (VALIDATED ✅)
 make adr-new        # Create new ADR interactively
@@ -211,13 +214,14 @@ make package        # Create distribution package (tar.gz)
 
 ### Context-Aware Development (MANDATORY)
 
-**Before any change:**
+**MANDATORY: Before ANY operation:**
 
-1. **Read Current Code**: Analyze existing implementation in `src/`
-2. **Check Tests**: Review related tests in `tests/`
-3. **Validate Patterns**: Ensure consistency with established architecture
-4. **Run Validation**: Use `make validate` to check current state
-5. **Reference CLAUDE.md**: Follow project-specific rules in this file
+1. **Check Dependencies**: `make check-deps` (MANDATORY - no fallbacks)
+2. **Read Current Code**: Analyze existing implementation in `src/`
+3. **Check Tests**: Review related tests in `tests/`
+4. **Validate Patterns**: Ensure consistency with established architecture
+5. **Run Validation**: Use `make validate` to check current state
+6. **Reference CLAUDE.md**: Follow project-specific rules in this file
 
 **Context Sources Priority:**
 

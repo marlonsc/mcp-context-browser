@@ -26,6 +26,7 @@
 //!
 //! Licensed under the MIT License.
 
+use mcp_context_browser::daemon::ContextDaemon;
 use mcp_context_browser::metrics::MetricsApiServer;
 use mcp_context_browser::server::McpToolHandlers;
 use serde::{Deserialize, Serialize};
@@ -63,23 +64,48 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         env!("CARGO_PKG_VERSION")
     );
 
-    // Start metrics HTTP server in background
-    let metrics_port = std::env::var("CONTEXT_METRICS_PORT")
-        .unwrap_or_else(|_| "3001".to_string())
-        .parse::<u16>()
-        .unwrap_or(3001);
+    // Load configuration from environment
+    let config = match mcp_context_browser::config::Config::from_env() {
+        Ok(cfg) => cfg,
+        Err(e) => {
+            eprintln!("❌ Configuration error: {}", e);
+            std::process::exit(1);
+        }
+    };
 
-    let metrics_server = MetricsApiServer::new(metrics_port);
-    let metrics_handle = tokio::spawn(async move {
-        if let Err(e) = metrics_server.start().await {
-            eprintln!("❌ Metrics API server error: {}", e);
+    if let Err(e) = config.validate() {
+        eprintln!("❌ Configuration validation failed: {}", e);
+        std::process::exit(1);
+    }
+
+    config.print_summary();
+
+    // Start metrics HTTP server in background (if enabled)
+    let metrics_handle = if config.metrics_enabled() {
+        let metrics_server = MetricsApiServer::new(config.metrics_port());
+        let handle = tokio::spawn(async move {
+            if let Err(e) = metrics_server.start().await {
+                eprintln!("❌ Metrics API server error: {}", e);
+            }
+        });
+        println!("📊 Metrics API available at http://localhost:{}", config.metrics_port());
+        Some(handle)
+    } else {
+        println!("📊 Metrics API disabled");
+        None
+    };
+
+    // Start background daemon for lock cleanup and monitoring
+    let daemon = ContextDaemon::with_config(config.daemon.clone());
+    let daemon_handle = tokio::spawn(async move {
+        if let Err(e) = daemon.start().await {
+            eprintln!("❌ Background daemon error: {}", e);
         }
     });
 
-    println!(
-        "📊 Metrics API available at http://localhost:{}",
-        metrics_port
-    );
+    println!("🤖 Background daemon started (cleanup: {}s, monitoring: {}s)",
+             config.daemon.cleanup_interval_secs,
+             config.daemon.monitoring_interval_secs);
 
     // Create tool handlers
     let tool_handlers = match McpToolHandlers::new() {
@@ -161,8 +187,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         }
     }
 
-    // Wait for metrics server to finish
-    let _ = metrics_handle.await;
+    // Wait for background services to finish
+    if let Some(handle) = metrics_handle {
+        let _ = handle.await;
+    }
+    let _ = daemon_handle.await;
 
     println!("👋 MCP Context Browser shutdown complete");
     Ok(())

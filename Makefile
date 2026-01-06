@@ -331,12 +331,3 @@ sync-test: ## Test cross-process synchronization
 
 env-check: ## Validate environment configuration
 	cargo run -- --env-check
-
-health: ## Check application health
-	curl -s http://localhost:3001/health | jq . 2>/dev/null || echo "Health check failed - is metrics server running?"
-
-status: ## Show full application status
-	@echo "🔍 Application Status:"
-	@echo "  📊 Metrics: $(shell curl -s http://localhost:3001/health 2>/dev/null | jq -r '.status' 2>/dev/null || echo 'Not running')"
-	@echo "  🔍 MCP Server: $(shell pgrep -f "mcp-context-browser" | wc -l) instances running"
-	@echo "  💾 Tests: $(shell make test 2>/dev/null | grep -c "test result: ok" || echo "Run 'make test' to check")"
