@@ -35,14 +35,14 @@ cargo run
    git checkout -b feature/your-feature-name
    ```
 
-3.  **Make Changes**: Implement your feature or fix
-4.  **Test Changes**: Ensure tests pass
+1.  **Make Changes**: Implement your feature or fix
+2.  **Test Changes**: Ensure tests pass
 
    ```bash
    cargo test
    ```
 
-5.  **Submit PR**: Create pull request with clear description
+1.  **Submit PR**: Create pull request with clear description
 
 ## 📝 Coding Standards
 

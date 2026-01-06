@@ -66,7 +66,8 @@ impl SnapshotManager {
         let mut total_size = 0u64;
         let root_path_str = root_path.to_string_lossy().to_string();
 
-        self.walk_directory(root_path, root_path, &mut files, &mut total_size).await?;
+        self.walk_directory(root_path, root_path, &mut files, &mut total_size)
+            .await?;
 
         let snapshot = CodebaseSnapshot {
             root_path: root_path_str,
@@ -142,10 +143,7 @@ impl SnapshotManager {
     }
 
     /// Get files that need processing (added or modified)
-    pub async fn get_changed_files(
-        &self,
-        root_path: &Path,
-    ) -> Result<Vec<String>> {
+    pub async fn get_changed_files(&self, root_path: &Path) -> Result<Vec<String>> {
         let current_snapshot = self.create_snapshot(root_path).await?;
         let previous_snapshot = self.load_snapshot(root_path).await?;
 
@@ -190,7 +188,8 @@ impl SnapshotManager {
                 }
             }
 
-            let metadata = entry.metadata()
+            let metadata = entry
+                .metadata()
                 .map_err(|e| Error::internal(format!("Failed to get metadata: {}", e)))?;
 
             if metadata.is_dir() {
@@ -198,7 +197,8 @@ impl SnapshotManager {
                 Box::pin(self.walk_directory(root_path, &path, files, total_size)).await?;
             } else if metadata.is_file() {
                 // Process file
-                let relative_path = path.strip_prefix(root_path)
+                let relative_path = path
+                    .strip_prefix(root_path)
                     .map_err(|e| Error::internal(format!("Failed to make path relative: {}", e)))?
                     .to_string_lossy()
                     .to_string();
@@ -208,7 +208,9 @@ impl SnapshotManager {
                     continue;
                 }
 
-                let snapshot = self.create_file_snapshot(&path, &relative_path, &metadata).await?;
+                let snapshot = self
+                    .create_file_snapshot(&path, &relative_path, &metadata)
+                    .await?;
                 *total_size += snapshot.size;
                 files.insert(relative_path, snapshot);
             }
@@ -224,8 +226,13 @@ impl SnapshotManager {
         relative_path: &str,
         metadata: &fs::Metadata,
     ) -> Result<FileSnapshot> {
-        let content = fs::read(file_path)
-            .map_err(|e| Error::internal(format!("Failed to read file {}: {}", file_path.display(), e)))?;
+        let content = fs::read(file_path).map_err(|e| {
+            Error::internal(format!(
+                "Failed to read file {}: {}",
+                file_path.display(),
+                e
+            ))
+        })?;
 
         let hash = self.calculate_hash(&content);
         let extension = file_path
@@ -262,26 +269,26 @@ impl SnapshotManager {
 
     /// Check if file should be skipped
     fn should_skip_file(&self, path: &Path) -> bool {
-        let file_name = path.file_name()
-            .unwrap_or_default()
-            .to_string_lossy();
+        let file_name = path.file_name().unwrap_or_default().to_string_lossy();
 
         // Skip common non-source files
-        if file_name.ends_with(".log") ||
-           file_name.ends_with(".tmp") ||
-           file_name.ends_with(".cache") ||
-           file_name.ends_with(".lock") ||
-           file_name.starts_with('.') {
+        if file_name.ends_with(".log")
+            || file_name.ends_with(".tmp")
+            || file_name.ends_with(".cache")
+            || file_name.ends_with(".lock")
+            || file_name.starts_with('.')
+        {
             return true;
         }
 
         // Skip build artifacts
         let path_str = path.to_string_lossy();
-        if path_str.contains("/target/") ||
-           path_str.contains("/node_modules/") ||
-           path_str.contains("/.git/") ||
-           path_str.contains("/dist/") ||
-           path_str.contains("/build/") {
+        if path_str.contains("/target/")
+            || path_str.contains("/node_modules/")
+            || path_str.contains("/.git/")
+            || path_str.contains("/dist/")
+            || path_str.contains("/build/")
+        {
             return true;
         }
 
@@ -293,7 +300,8 @@ impl SnapshotManager {
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
 
-        let path_str = root_path.canonicalize()
+        let path_str = root_path
+            .canonicalize()
             .unwrap_or_else(|_| root_path.to_path_buf())
             .to_string_lossy()
             .to_string();

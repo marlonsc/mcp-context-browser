@@ -30,17 +30,65 @@ impl OpenAIEmbeddingProvider {
 
 #[async_trait]
 impl EmbeddingProvider for OpenAIEmbeddingProvider {
+    async fn embed(&self, text: &str) -> Result<Embedding> {
+        let embeddings = self.embed_batch(&[text.to_string()]).await?;
+        embeddings.into_iter().next()
+            .ok_or_else(|| Error::embedding("No embedding returned".to_string()))
+    }
+
     async fn embed_batch(&self, texts: &[String]) -> Result<Vec<Embedding>> {
-        // For MVP, return mock embeddings
-        // TODO: Implement actual OpenAI API calls
-        let embeddings = texts
-            .iter()
-            .map(|_| Embedding {
-                vector: vec![0.1; 1536], // OpenAI text-embedding-3-small dimensions
+        if texts.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        // Prepare request payload
+        let payload = serde_json::json!({
+            "input": texts,
+            "model": self.model,
+            "encoding_format": "float"
+        });
+
+        // Make HTTP request to OpenAI
+        let client = reqwest::Client::new();
+        let response = client
+            .post(&format!("{}/embeddings", self.base_url()))
+            .header("Authorization", format!("Bearer {}", self.api_key))
+            .header("Content-Type", "application/json")
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|e| Error::embedding(format!("HTTP request failed: {}", e)))?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(Error::embedding(format!("OpenAI API error {}: {}", status, error_text)));
+        }
+
+        let response_data: serde_json::Value = response.json().await
+            .map_err(|e| Error::embedding(format!("Failed to parse response: {}", e)))?;
+
+        // Parse embeddings from response
+        let data = response_data["data"].as_array()
+            .ok_or_else(|| Error::embedding("Invalid response format: missing data array".to_string()))?;
+
+        if data.len() != texts.len() {
+            return Err(Error::embedding(format!("Response data count mismatch: expected {}, got {}", texts.len(), data.len())));
+        }
+
+        let embeddings = data.iter().enumerate().map(|(i, item)| {
+            let embedding_vec = item["embedding"].as_array()
+                .ok_or_else(|| Error::embedding(format!("Invalid embedding format for text {}", i)))?
+                .iter()
+                .map(|v| v.as_f64().unwrap_or(0.0) as f32)
+                .collect::<Vec<f32>>();
+
+            Ok(Embedding {
+                vector: embedding_vec,
                 model: self.model.clone(),
-                dimensions: 1536,
+                dimensions: self.dimensions(),
             })
-            .collect();
+        }).collect::<Result<Vec<_>>>()?;
 
         Ok(embeddings)
     }

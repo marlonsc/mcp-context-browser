@@ -61,20 +61,21 @@ See [Contributing Guide](developer/CONTRIBUTING.md) for guidelines.
 ### Creating New Documents
 
 1.  **Choose appropriate category**:
-   -   `user-guide/` - User-facing documentation
-   -   `developer/` - Development guides
-   -   `architecture/` - Technical architecture
-   -   `operations/` - Deployment & operations
 
-2.  **Copy appropriate template**:
+-   `user-guide/` - User-facing documentation
+-   `developer/` - Development guides
+-   `architecture/` - Technical architecture
+-   `operations/` - Deployment & operations
+
+1.  **Copy appropriate template**:
 
    ```bash
    cp docs/templates/adr-template.md docs/architecture/adr/new-adr.md
    ```
 
-3.  **Follow naming conventions**
+1.  **Follow naming conventions**
 
-4.  **Validate before committing**:
+2.  **Validate before committing**:
 
    ```bash
    make validate-docs

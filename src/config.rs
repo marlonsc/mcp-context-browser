@@ -102,12 +102,10 @@ impl Config {
     /// Load configuration from environment variables (v0.0.3)
     pub fn from_env() -> Result<Self> {
         Ok(Self {
-            name: std::env::var("MCP_NAME")
-                .unwrap_or_else(|_| "MCP Context Browser".to_string()),
+            name: std::env::var("MCP_NAME").unwrap_or_else(|_| "MCP Context Browser".to_string()),
             version: env!("CARGO_PKG_VERSION").to_string(),
             server: ServerConfig {
-                host: std::env::var("MCP_HOST")
-                    .unwrap_or_else(|_| "127.0.0.1".to_string()),
+                host: std::env::var("MCP_HOST").unwrap_or_else(|_| "127.0.0.1".to_string()),
                 port: std::env::var("MCP_PORT")
                     .unwrap_or_else(|_| "3000".to_string())
                     .parse()
@@ -182,8 +180,18 @@ impl Config {
     pub fn print_summary(&self) {
         println!("🔧 Configuration Summary:");
         println!("  📡 MCP Server: {}:{}", self.server.host, self.server.port);
-        println!("  📊 Metrics API: {} (enabled: {})", self.metrics_addr(), self.metrics.enabled);
-        println!("  🔄 Sync Interval: {}ms (lockfile: {})", self.sync.interval_ms, self.sync.enable_lockfile);
-        println!("  🤖 Daemon Cleanup: {}s, Monitoring: {}s", self.daemon.cleanup_interval_secs, self.daemon.monitoring_interval_secs);
+        println!(
+            "  📊 Metrics API: {} (enabled: {})",
+            self.metrics_addr(),
+            self.metrics.enabled
+        );
+        println!(
+            "  🔄 Sync Interval: {}ms (lockfile: {})",
+            self.sync.interval_ms, self.sync.enable_lockfile
+        );
+        println!(
+            "  🤖 Daemon Cleanup: {}s, Monitoring: {}s",
+            self.daemon.cleanup_interval_secs, self.daemon.monitoring_interval_secs
+        );
     }
 }

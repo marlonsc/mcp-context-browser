@@ -1,4 +1,4 @@
-# CLAUDE.md - MCP Context Browser Development Guide
+# Claude.md - MCP Context Browser Development Guide
 
 ## 🤖 Claude Code Assistant Configuration
 
@@ -12,10 +12,10 @@
 
 **STRICT RULE**: Never inject, duplicate, or copy content from other sessions, projects, or external sources.
 
-- **❌ FORBIDDEN**: Copying sections from other CLAUDE.md files
-- **❌ FORBIDDEN**: Duplicating content across different projects
-- **❌ FORBIDDEN**: Injecting generic templates or boilerplate
-- **❌ FORBIDDEN**: Reusing content from previous conversations
+-   **❌ FORBIDDEN**: Copying sections from other Claude.md files
+-   **❌ FORBIDDEN**: Duplicating content across different projects
+-   **❌ FORBIDDEN**: Injecting generic templates or boilerplate
+-   **❌ FORBIDDEN**: Reusing content from previous conversations
 
 **✅ REQUIRED**: All content must be specific to **MCP Context Browser project only**
 
@@ -23,18 +23,18 @@
 
 **STRICT RULE**: All modifications must be based on the **current project context** and **existing codebase**.
 
-- **✅ REQUIRED**: Analyze current code structure before making changes
-- **✅ REQUIRED**: Reference existing patterns and implementations
-- **✅ REQUIRED**: Maintain consistency with established architecture
-- **✅ REQUIRED**: Update based on validation results and actual project state
+-   **✅ REQUIRED**: Analyze current code structure before making changes
+-   **✅ REQUIRED**: Reference existing patterns and implementations
+-   **✅ REQUIRED**: Maintain consistency with established architecture
+-   **✅ REQUIRED**: Update based on validation results and actual project state
 
 **Context Sources** (in order of priority):
 
-1. **Existing codebase** (`src/`, `tests/`, `docs/`)
-2. **Current CLAUDE.md** (this file)
-3. **Makefile** (validated commands)
-4. **Validation results** (test outputs, lint results)
-5. **Project documentation** (`docs/architecture/`, `README.md`)
+1.  **Existing codebase** (`src/`, `tests/`, `docs/`)
+2.  **Current Claude.md** (this file)
+3.  **Makefile** (validated commands)
+4.  **Validation results** (test outputs, lint results)
+5.  **Project documentation** (`docs/architecture/`, `README.md`)
 
 ---
 
@@ -44,10 +44,10 @@
 
 ### 🎯 Core Purpose
 
-- **Semantic Code Search**: Natural language to code search using AI embeddings
-- **MCP Protocol Server**: Standardized interface for AI assistants (Claude Desktop, etc.)
-- **Provider Architecture**: Extensible system supporting multiple AI and vector storage providers
-- **Enterprise Ready**: Production-grade async Rust implementation with comprehensive testing
+-   **Semantic Code Search**: Natural language to code search using AI embeddings
+-   **MCP Protocol Server**: Standardized interface for AI assistants (Claude Desktop, etc.)
+-   **Provider Architecture**: Extensible system supporting multiple AI and vector storage providers
+-   **Enterprise Ready**: Production-grade async Rust implementation with comprehensive testing
 
 ### 📊 Current Status: v0.0.3 - Production Monitoring & Coordination Complete
 
@@ -57,24 +57,24 @@
 
 #### v0.0.3 Achievements (Completed)
 
-- **📊 Complete System Monitoring**: CPU, memory, disk, network metrics with sysinfo
-- **⚡ Performance Metrics**: Query latency, cache hit/miss, P99 calculations
-- **🖥️ HTTP Metrics API**: REST endpoints on port 3001 with CORS support
-- **🔒 Cross-Process Coordination**: Lockfile-based sync with atomic operations
-- **⏱️ Smart Debouncing**: Configurable sync intervals with 60s minimum debounce
-- **🌐 Web Dashboard**: Real-time metrics visualization with health indicators
-- **🤖 Background Daemon**: Automatic lock cleanup and sync monitoring
-- **⚙️ Environment Configuration**: Complete env var support for all features
-- **📸 Snapshot Management**: Incremental change tracking with Merkle hashing
-- **🏗️ Enterprise Architecture**: Production-ready with comprehensive error handling
+-   **📊 Complete System Monitoring**: CPU, memory, disk, network metrics with sysinfo
+-   **⚡ Performance Metrics**: Query latency, cache hit/miss, P99 calculations
+-   **🖥️ HTTP Metrics API**: REST endpoints on port 3001 with CORS support
+-   **🔒 Cross-Process Coordination**: Lockfile-based sync with atomic operations
+-   **⏱️ Smart Debouncing**: Configurable sync intervals with 60s minimum debounce
+-   **🌐 Web Dashboard**: Real-time metrics visualization with health indicators
+-   **🤖 Background Daemon**: Automatic lock cleanup and sync monitoring
+-   **⚙️ Environment Configuration**: Complete env var support for all features
+-   **📸 Snapshot Management**: Incremental change tracking with Merkle hashing
+-   **🏗️ Enterprise Architecture**: Production-ready with comprehensive error handling
 
 ### 🏗️ Architecture Highlights
 
-- **Async-First Design**: Tokio runtime throughout for high concurrency
-- **Provider Pattern**: Clean abstraction for embeddings (OpenAI, Ollama) and vector stores (Milvus, Pinecone)
-- **SOLID Principles**: Clean separation of concerns with dependency injection
-- **Comprehensive Testing**: 60+ tests covering all major functionality
-- **Automated Documentation**: PlantUML diagrams, ADR tracking, validation pipelines
+-   **Async-First Design**: Tokio runtime throughout for high concurrency
+-   **Provider Pattern**: Clean abstraction for embeddings (OpenAI, Ollama) and vector stores (Milvus, Pinecone)
+-   **SOLID Principles**: Clean separation of concerns with dependency injection
+-   **Comprehensive Testing**: 60+ tests covering all major functionality
+-   **Automated Documentation**: PlantUML diagrams, ADR tracking, validation pipelines
 
 ---
 
@@ -84,69 +84,73 @@
 
 #### Core Functionality
 
-- [x] **Semantic Code Search**: Natural language to code search using vector embeddings
-- [x] **MCP Protocol Server**: Full Model Context Protocol implementation with stdio transport
-- [x] **Provider Architecture**: Extensible embedding (OpenAI, Ollama, Mock) and vector store (Milvus, InMemory) providers
-- [x] **Async-First Design**: Tokio runtime throughout for high concurrency
-- [x] **SOLID Principles**: Clean architecture with dependency injection and single responsibility
+-   [x] **Semantic Code Search**: Natural language to code search using vector embeddings
+-   [x] **MCP Protocol Server**: Full Model Context Protocol implementation with stdio transport
+-   [x] **Provider Architecture**: Extensible embedding (OpenAI, Ollama, Mock) and vector store (Milvus, InMemory) providers
+-   [x] **Async-First Design**: Tokio runtime throughout for high concurrency
+-   [x] **SOLID Principles**: Clean architecture with dependency injection and single responsibility
 
 #### Quality & Testing
 
-- [x] **Comprehensive Test Suite**: 60 tests (18 core types, 16 services, 15 MCP protocol, 11 integration)
-- [x] **100% Test Pass Rate**: All tests passing consistently
-- [x] **Linting Compliance**: Clean clippy output (minor test warnings allowed)
-- [x] **Code Formatting**: Consistent rustfmt formatting
+-   [x] **Comprehensive Test Suite**: 60 tests (18 core types, 16 services, 15 MCP protocol, 11 integration)
+-   [x] **100% Test Pass Rate**: All tests passing consistently
+-   [x] **Linting Compliance**: Clean clippy output (minor test warnings allowed)
+-   [x] **Code Formatting**: Consistent rustfmt formatting
 
 #### Documentation & Infrastructure
 
-- [x] **Complete Documentation Suite**: User guides, developer guides, architecture docs, operations manuals
-- [x] **Architecture Decision Records**: 4 ADRs documenting key architectural choices
-- [x] **Automated Documentation Pipeline**: PlantUML diagrams, validation scripts, index generation
-- [x] **CI/CD Pipeline**: Automated quality gates, security scanning, release packaging
-- [x] **Professional Git Workflow**: Force commit system for reliable version control
+-   [x] **Complete Documentation Suite**: User guides, developer guides, architecture docs, operations manuals
+-   [x] **Architecture Decision Records**: 4 ADRs documenting key architectural choices
+-   [x] **Automated Documentation Pipeline**: PlantUML diagrams, validation scripts, index generation
+-   [x] **CI/CD Pipeline**: Automated quality gates, security scanning, release packaging
+-   [x] **Professional Git Workflow**: Force commit system for reliable version control
 
 ### 🎯 v0.0.3 Success Criteria (ACHIEVED ✅)
 
-- **Monitoring**: Complete system metrics (CPU/memory/disk/network) collection
-- **Performance**: Query latency tracking, cache metrics, P99 calculations
-- **HTTP API**: REST endpoints on port 3001 with comprehensive health checks
-- **Coordination**: Cross-process lockfile sync preventing conflicts
-- **Optimization**: Smart debouncing with configurable 60s minimum intervals
-- **Visualization**: Real-time web dashboard with health status indicators
-- **Automation**: Background daemon for lock cleanup and monitoring
-- **Configuration**: Full environment variable support for all features
-- **Incremental**: Snapshot-based change detection for efficient sync
-- **Production**: Enterprise-grade monitoring and coordination systems
+-   **Monitoring**: Complete system metrics (CPU/memory/disk/network) collection
+-   **Performance**: Query latency tracking, cache metrics, P99 calculations
+-   **HTTP API**: REST endpoints on port 3001 with comprehensive health checks
+-   **Coordination**: Cross-process lockfile sync preventing conflicts
+-   **Optimization**: Smart debouncing with configurable 60s minimum intervals
+-   **Visualization**: Real-time web dashboard with health status indicators
+-   **Automation**: Background daemon for lock cleanup and monitoring
+-   **Configuration**: Full environment variable support for all features
+-   **Incremental**: Snapshot-based change detection for efficient sync
+-   **Production**: Enterprise-grade monitoring and coordination systems
 
 ### 🚀 Future Roadmap (v0.0.4+)
 
 #### v0.0.4: Advanced Processing & AI Integration
-- **AST-Based Parsing**: Tree-sitter integration for multiple languages
-- **Intelligent Chunking**: Context-aware text splitting algorithms
-- **Advanced Embeddings**: VoyageAI, Anthropic integration
-- **Performance Optimization**: Query result caching with LRU eviction
-- **Multi-Language Support**: Python, JavaScript, TypeScript, Rust, Go
+
+-   **AST-Based Parsing**: Tree-sitter integration for multiple languages
+-   **Intelligent Chunking**: Context-aware text splitting algorithms
+-   **Advanced Embeddings**: VoyageAI, Anthropic integration
+-   **Performance Optimization**: Query Result caching with LRU eviction
+-   **Multi-Language Support**: Python, JavaScript, TypeScript, Rust, Go
 
 #### v0.0.5: Enterprise Scale
-- **Distributed Architecture**: Multi-node coordination with Redis
-- **Authentication**: JWT-based user isolation and authorization
-- **REST API**: Full HTTP API alongside MCP protocol
-- **Advanced Monitoring**: Prometheus metrics and Grafana dashboards
-- **Automated Backups**: Snapshot management with cloud storage
+
+-   **Distributed Architecture**: Multi-node coordination with Redis
+-   **Authentication**: JWT-based user isolation and authorization
+-   **REST API**: Full HTTP API alongside MCP protocol
+-   **Advanced Monitoring**: Prometheus metrics and Grafana dashboards
+-   **Automated Backups**: Snapshot management with cloud storage
 
 #### v1.0.0: Production Enterprise
-- **High Availability**: Load balancing and failover mechanisms
-- **Advanced Security**: Encryption, audit logging, compliance
-- **Multi-Tenant**: User isolation with resource quotas
-- **Advanced Analytics**: Usage patterns and performance insights
-- **Enterprise Integration**: LDAP, SAML, webhooks
+
+-   **High Availability**: Load balancing and failover mechanisms
+-   **Advanced Security**: Encryption, audit logging, compliance
+-   **Multi-Tenant**: User isolation with resource quotas
+-   **Advanced Analytics**: Usage patterns and performance insights
+-   **Enterprise Integration**: LDAP, SAML, webhooks
 
 ### 🎯 v0.0.3 Success Criteria
-- **HTTP API**: `/api/health`, `/api/context/metrics` endpoints functional
-- **System Monitoring**: <5% error margin on CPU/memory metrics
-- **Cross-Process**: Zero sync conflicts with multiple MCP instances
-- **Performance**: CPU usage <25% with 4+ concurrent instances
-- **Configuration**: All features configurable via environment variables
+
+-   **HTTP API**: `/api/health`, `/api/context/metrics` endpoints functional
+-   **System Monitoring**: <5% error margin on CPU/memory metrics
+-   **Cross-Process**: Zero sync conflicts with multiple MCP instances
+-   **Performance**: CPU usage <25% with 4+ concurrent instances
+-   **Configuration**: All features configurable via environment variables
 
 ---
 
@@ -209,17 +213,17 @@ make package        # Create distribution package (tar.gz)
 
 **Cargo Commands (BLOCKED):**
 
-- `cargo test` → Use `make test`
-- `cargo build` → Use `make build`
-- `cargo fmt` → Use `make fmt`
-- `cargo clippy` → Use `make lint`
-- `cargo doc` → Use `make docs`
+-   `cargo test` → Use `make test`
+-   `cargo build` → Use `make build`
+-   `cargo fmt` → Use `make fmt`
+-   `cargo clippy` → Use `make lint`
+-   `cargo doc` → Use `make docs`
 
 **Git Commands (BLOCKED):**
 
-- `git add . && git commit -m "msg" && git push` → Use `make git-force-all`
-- `git status` → Use `make git-status`
-- `git add -A` → Use `make git-add-all`
+-   `git add . && git commit -m "msg" && git push` → Use `make git-force-all`
+-   `git status` → Use `make git-status`
+-   `git add -A` → Use `make git-add-all`
 
 **Reason**: Make commands integrate validation, automation, and prevent direct usage of blocked operations.
 
@@ -227,20 +231,20 @@ make package        # Create distribution package (tar.gz)
 
 **MANDATORY: Before ANY operation:**
 
-1. **Check Dependencies**: `make check-deps` (MANDATORY - no fallbacks)
-2. **Read Current Code**: Analyze existing implementation in `src/`
-3. **Check Tests**: Review related tests in `tests/`
-4. **Validate Patterns**: Ensure consistency with established architecture
-5. **Run Validation**: Use `make validate` to check current state
-6. **Reference CLAUDE.md**: Follow project-specific rules in this file
+1.  **Check Dependencies**: `make check-deps` (MANDATORY - no fallbacks)
+2.  **Read Current Code**: Analyze existing implementation in `src/`
+3.  **Check Tests**: Review related tests in `tests/`
+4.  **Validate Patterns**: Ensure consistency with established architecture
+5.  **Run Validation**: Use `make validate` to check current state
+6.  **Reference Claude.md**: Follow project-specific rules in this file
 
 **Context Sources Priority:**
 
-- `src/` - Current implementation
-- `tests/` - Test patterns and coverage
-- `docs/architecture/` - Architecture decisions
-- This CLAUDE.md - Project rules
-- Makefile - Validated commands
+-   `src/` - Current implementation
+-   `tests/` - Test patterns and coverage
+-   `docs/architecture/` - Architecture decisions
+-   This Claude.md - Project rules
+-   Makefile - Validated commands
 
 ---
 
@@ -304,15 +308,15 @@ make package        # Create distribution package (tar.gz)
 
 ### ✅ ALLOWED: Direct Tool Usage
 
-- **Read/Edit/Write**: For file operations
-- **Grep**: For pattern matching and searching
-- **Run Terminal**: For `make` commands and verified scripts
+-   **Read/Edit/Write**: For file operations
+-   **Grep**: For pattern matching and searching
+-   **Run Terminal**: For `make` commands and verified scripts
 
 ### ⚠️ CAUTION: MCP and External Tools
 
-- **No untrusted MCP servers**: Only use approved, audited MCP servers
-- **Verify before install**: Check source code and security
-- **Local tools only**: Prefer local processing over external APIs
+-   **No untrusted MCP servers**: Only use approved, audited MCP servers
+-   **Verify before install**: Check source code and security
+-   **Local tools only**: Prefer local processing over external APIs
 
 ### 🚫 FORBIDDEN: Direct Cargo Usage
 
@@ -340,20 +344,20 @@ make package        # Create distribution package (tar.gz)
 
 ### Quality Gates (MANDATORY)
 
-- **✅ All tests must pass**: `make test` = 0 failures (60/60 tests passing)
-- **✅ No warnings**: `make lint` = clean clippy output (minor test warnings allowed)
-- **✅ Markdown lint clean**: `make lint-md` = no markdownlint violations
-- **✅ Format compliance**: `make fmt` = no changes
-- **✅ Documentation sync**: `make validate` = all checks pass
-- **⚠️ Security audit**: `make audit` = monitor known vulnerabilities (currently 3 in dependencies)
-- **✅ Git operations**: Use `make git-force-all` for all commits
+-   **✅ All tests must pass**: `make test` = 0 failures (60/60 tests passing)
+-   **✅ No warnings**: `make lint` = clean clippy output (minor test warnings allowed)
+-   **✅ Markdown lint clean**: `make lint-md` = no markdownlint violations
+-   **✅ Format compliance**: `make fmt` = no changes
+-   **✅ Documentation sync**: `make validate` = all checks pass
+-   **⚠️ Security audit**: `make audit` = monitor known vulnerabilities (currently 3 in dependencies)
+-   **✅ Git operations**: Use `make git-force-all` for all commits
 
 ### Test Coverage Status
 
-- **Current**: Comprehensive coverage of all implemented features
-- **Test Count**: 60 tests covering all major functionality
-- **Coverage Areas**: Core types, business logic, protocol compliance, integration
-- **Quality**: All tests pass consistently with proper error handling validation
+-   **Current**: Comprehensive coverage of all implemented features
+-   **Test Count**: 60 tests covering all major functionality
+-   **Coverage Areas**: Core types, business logic, protocol compliance, integration
+-   **Quality**: All tests pass consistently with proper error handling validation
 
 ---
 
@@ -439,10 +443,10 @@ make adr-new
 
 ### Diagram Standards
 
-- **PlantUML C4 Model**: Context → Container → Component → Code
-- **Auto-generated**: Use `make diagrams`
-- **Validation**: `make validate` checks syntax
-- **Location**: `docs/architecture/diagrams/`
+-   **PlantUML C4 Model**: Context → Container → Component → Code
+-   **Auto-generated**: Use `make diagrams`
+-   **Validation**: `make validate` checks syntax
+-   **Location**: `docs/architecture/diagrams/`
 
 ### Markdown Standards (MANDATORY - No Fallbacks)
 
@@ -460,20 +464,22 @@ make fix-md          # Auto-fix + markdownlint --fix
 ```
 
 **Strict Markdown Rules (markdownlint-cli enforced):**
-- ATX-style headers only (# ## ###)
-- Consistent unordered lists (dashes only)
-- NO trailing whitespace (auto-fixed)
-- Maximum 2 consecutive blank lines
-- Language tags REQUIRED for code blocks
-- Consistent link formatting
-- Proper header spacing
-- No duplicate headers
+
+-   ATX-style headers only (# ## ###)
+-   Consistent unordered lists (dashes only)
+-   NO trailing whitespace (auto-fixed)
+-   Maximum 2 consecutive blank lines
+-   Language tags REQUIRED for code blocks
+-   Consistent link formatting
+-   Proper header spacing
+-   No duplicate headers
 
 **Auto-Fixed Issues:**
-- Trailing whitespace removal
-- Multiple blank line reduction
-- Unordered list consistency
-- Basic formatting corrections
+
+-   Trailing whitespace removal
+-   Multiple blank line reduction
+-   Unordered list consistency
+-   Basic formatting corrections
 
 **MANDATORY: Run `make setup` before any markdown operations**
 
@@ -490,11 +496,11 @@ make validate      # Validate structure, links, sync, ADRs (VALIDATED ✅)
 
 ### Code Quality (MANDATORY)
 
-1. **SOLID Principles**: Single responsibility, open/closed, etc.
-2. **Async Throughout**: No blocking operations in async contexts
-3. **Error Propagation**: Use `?` operator and custom error types
-4. **Dependency Injection**: Constructor injection for testability
-5. **Comprehensive Tests**: Every feature must have tests
+1.  **SOLID Principles**: Single responsibility, open/closed, etc.
+2.  **Async Throughout**: No blocking operations in async contexts
+3.  **Error Propagation**: Use `?` operator and custom error types
+4.  **Dependency Injection**: Constructor injection for testability
+5.  **Comprehensive Tests**: Every feature must have tests
 
 ### Git Workflow (MANDATORY - Always Force Commits)
 
@@ -514,10 +520,10 @@ make force-commit      # Use script-based force commit
 
 **Force Commit Policy:**
 
-- Always use `make git-force-all` for commits
-- Commits include automatic timestamp: "Force commit: YYYY-MM-DD HH:MM:SS - Automated update"
-- Push uses `--force-with-lease` first, `--force` as fallback
-- No manual git commands allowed
+-   Always use `make git-force-all` for commits
+-   Commits include automatic timestamp: "Force commit: YYYY-MM-DD HH:MM:SS - Automated update"
+-   Push uses `--force-with-lease` first, `--force` as fallback
+-   No manual git commands allowed
 
 ### CI/CD Integration (MANDATORY)
 
@@ -542,29 +548,29 @@ make package       # Create distribution package (tar.gz in dist/)
 
 ### 🚫 ABSOLUTELY FORBIDDEN
 
-1. **Session Duplications**: Never copy content from other projects or sessions
-2. **Direct Cargo Commands**: Always use `make` equivalents (BLOCKED by hooks)
-3. **Direct Git Commands**: Never use `git add/commit/push` directly (use `make git-force-all`)
-4. **Mock Infrastructure**: Never mock databases, APIs, or external services
-5. **Bypass Permissions**: Never use workarounds for permission issues
-6. **Skip Tests**: All 60 tests must pass before commits
-7. **Manual Documentation**: Always use automated documentation generation
-8. **Bypass Make**: All operations must go through validated make commands
-9. **Context-Free Changes**: All modifications must reference current codebase
+1.  **Session Duplications**: Never copy content from other projects or sessions
+2.  **Direct Cargo Commands**: Always use `make` equivalents (BLOCKED by hooks)
+3.  **Direct Git Commands**: Never use `git add/commit/push` directly (use `make git-force-all`)
+4.  **Mock Infrastructure**: Never mock databases, APIs, or external services
+5.  **Bypass Permissions**: Never use workarounds for permission issues
+6.  **Skip Tests**: All 60 tests must pass before commits
+7.  **Manual Documentation**: Always use automated documentation generation
+8.  **Bypass Make**: All operations must go through validated make commands
+9.  **Context-Free Changes**: All modifications must reference current codebase
 
 ### ⚠️ HIGH RISK (Require Approval)
 
-1. **New Dependencies**: Must be vetted for security and maintenance
-2. **Breaking Changes**: Require ADR and impact analysis
-3. **Configuration Changes**: Must update validation and tests
-4. **External APIs**: Must have proper error handling and retries
+1.  **New Dependencies**: Must be vetted for security and maintenance
+2.  **Breaking Changes**: Require ADR and impact analysis
+3.  **Configuration Changes**: Must update validation and tests
+4.  **External APIs**: Must have proper error handling and retries
 
 ### ✅ SAFE Operations
 
-1. **Test Creation**: Add tests for new functionality
-2. **Documentation Updates**: Use automated tools
-3. **Code Refactoring**: Within existing patterns
-4. **Bug Fixes**: Following existing error handling patterns
+1.  **Test Creation**: Add tests for new functionality
+2.  **Documentation Updates**: Use automated tools
+3.  **Code Refactoring**: Within existing patterns
+4.  **Bug Fixes**: Following existing error handling patterns
 
 ---
 
@@ -572,26 +578,26 @@ make package       # Create distribution package (tar.gz in dist/)
 
 ### For New Features
 
-1. **Plan First**: Create ADR if architectural impact
-2. **Test-Driven**: Write tests before implementation
-3. **Incremental**: Small, testable changes
-4. **Validate**: `make validate` after each change
-5. **Document**: Update docs if user-facing changes
+1.  **Plan First**: Create ADR if architectural impact
+2.  **Test-Driven**: Write tests before implementation
+3.  **Incremental**: Small, testable changes
+4.  **Validate**: `make validate` after each change
+5.  **Document**: Update docs if user-facing changes
 
 ### For Bug Fixes
 
-1. **Reproduce**: Confirm the bug exists
-2. **Test First**: Write test that demonstrates the bug
-3. **Fix**: Implement minimal fix
-4. **Verify**: Ensure fix works and doesn't break existing tests
-5. **Regression**: Add test to prevent future regression
+1.  **Reproduce**: Confirm the bug exists
+2.  **Test First**: Write test that demonstrates the bug
+3.  **Fix**: Implement minimal fix
+4.  **Verify**: Ensure fix works and doesn't break existing tests
+5.  **Regression**: Add test to prevent future regression
 
 ### For Refactoring
 
-1. **Preserve Behavior**: Ensure no functional changes
-2. **Tests Pass**: All existing tests must continue passing
-3. **Incremental**: Small changes with validation at each step
-4. **Performance**: Verify no performance regressions
+1.  **Preserve Behavior**: Ensure no functional changes
+2.  **Tests Pass**: All existing tests must continue passing
+3.  **Incremental**: Small changes with validation at each step
+4.  **Performance**: Verify no performance regressions
 
 ---
 
@@ -599,18 +605,18 @@ make package       # Create distribution package (tar.gz in dist/)
 
 **Before marking any task complete:**
 
-- [ ] **Context Verified**: Changes based on current codebase analysis
-- [ ] **No Duplications**: Content specific to MCP Context Browser only
-- [ ] `make test` passes all 60 tests (100% success rate)
-- [ ] `make lint` has no critical warnings
-- [ ] `make fmt` makes no changes
-- [ ] `make validate` passes all validation checks
-- [ ] `make docs` generates documentation without errors
-- [ ] `make git-force-all` commits all changes successfully
-- [ ] Code follows established patterns (Provider, Async-First, SOLID)
-- [ ] Tests cover new functionality (add to existing test suites)
-- [ ] Documentation is updated and validated
-- [ ] No breaking changes to public APIs
+-   [ ] **Context Verified**: Changes based on current codebase analysis
+-   [ ] **No Duplications**: Content specific to MCP Context Browser only
+-   [ ] `make test` passes all 60 tests (100% success rate)
+-   [ ] `make lint` has no critical warnings
+-   [ ] `make fmt` makes no changes
+-   [ ] `make validate` passes all validation checks
+-   [ ] `make docs` generates documentation without errors
+-   [ ] `make git-force-all` commits all changes successfully
+-   [ ] Code follows established patterns (Provider, Async-First, SOLID)
+-   [ ] Tests cover new functionality (add to existing test suites)
+-   [ ] Documentation is updated and validated
+-   [ ] No breaking changes to public APIs
 
 ---
 
@@ -618,34 +624,34 @@ make package       # Create distribution package (tar.gz in dist/)
 
 ### Documentation Resources
 
-- **Architecture**: `docs/architecture/ARCHITECTURE.md`
-- **Contributing**: `docs/developer/CONTRIBUTING.md`
-- **ADRs**: `docs/architecture/adr/`
-- **Diagrams**: `docs/architecture/diagrams/generated/`
+-   **Architecture**: `docs/architecture/ARCHITECTURE.md`
+-   **Contributing**: `docs/developer/CONTRIBUTING.md`
+-   **ADRs**: `docs/architecture/adr/`
+-   **Diagrams**: `docs/architecture/diagrams/generated/`
 
 ### Emergency Procedures
 
-1. **If tests fail**: Run `make validate` to diagnose
-2. **If build breaks**: Check for missing dependencies
-3. **If docs fail**: Run `make clean-docs && make docs`
-4. **If confused**: Re-read this CLAUDE.md file
-5. **If context lost**: Re-analyze current codebase with `find src/ -name "*.rs" | head -10`
+1.  **If tests fail**: Run `make validate` to diagnose
+2.  **If build breaks**: Check for missing dependencies
+3.  **If docs fail**: Run `make clean-docs && make docs`
+4.  **If confused**: Re-read this Claude.md file
+5.  **If context lost**: Re-analyze current codebase with `find src/ -name "*.rs" | head -10`
 
 ### Context Recovery Protocol
 
 **If you lose track of project context:**
 
-1. **Re-analyze Codebase**: `find src/ -name "*.rs" -exec grep -l "MCP\\|Context\\|Provider" {} \;`
-2. **Check Current Tests**: `make test` and review failure patterns
-3. **Validate Architecture**: `make validate` to see current state
-4. **Review This Guide**: Re-read CLAUDE.md for project rules
-5. **Check Recent Changes**: `git log --oneline -5` for recent modifications
+1.  **Re-analyze Codebase**: `find src/ -name "*.rs" -exec grep -l "MCP\\|Context\\|Provider" {} \;`
+2.  **Check Current Tests**: `make test` and review failure patterns
+3.  **Validate Architecture**: `make validate` to see current state
+4.  **Review This Guide**: Re-read Claude.md for project rules
+5.  **Check Recent Changes**: `git log --oneline -5` for recent modifications
 
 ### Communication
 
-- **Issues**: Document in ADRs or commit messages
-- **Decisions**: Use ADR process for architectural changes
-- **Blockers**: Stop and ask user immediately
+-   **Issues**: Document in ADRs or commit messages
+-   **Decisions**: Use ADR process for architectural changes
+-   **Blockers**: Stop and ask user immediately
 
 ---
 
@@ -669,48 +675,48 @@ make package       # Create distribution package (tar.gz in dist/)
 
 **Make Command Validation (All Commands Verified):**
 
-- **Core Commands:** 5/5 validated (build, test, clean, docs, validate) ✅
-- **Development Commands:** 4/4 validated (dev, fmt, lint, setup) ✅
-- **Documentation Commands:** 3/3 validated (adr-new, adr-list, diagrams) ✅
-- **Git Commands:** 6/6 validated (git-status, git-add-all, git-commit-force, git-push-force, git-force-all, force-commit) ✅
-- **Quality Commands:** 4/4 validated (quality, audit, bench, coverage) ✅
-- **Release Commands:** 3/3 validated (release, build-release, package) ✅
+-   **Core Commands:** 5/5 validated (build, test, clean, docs, validate) ✅
+-   **Development Commands:** 4/4 validated (dev, fmt, lint, setup) ✅
+-   **Documentation Commands:** 3/3 validated (ADR-new, ADR-list, diagrams) ✅
+-   **Git Commands:** 6/6 validated (git-status, git-add-all, git-commit-force, git-push-force, git-force-all, force-commit) ✅
+-   **Quality Commands:** 4/4 validated (quality, audit, bench, coverage) ✅
+-   **Release Commands:** 3/3 validated (release, build-release, package) ✅
 
 **Test Coverage Complete:**
 
-- Core Types: 18 tests ✅ (Data structures, serialization)
-- Services: 16 tests ✅ (Context, Index, Search business logic)
-- MCP Protocol: 15 tests ✅ (Protocol compliance, message handling)
-- Integration: 11 tests ✅ (End-to-end functionality)
-- **Total: 60 tests, 100% pass rate** ✅
+-   Core Types: 18 tests ✅ (Data structures, serialization)
+-   Services: 16 tests ✅ (Context, Index, Search business logic)
+-   MCP Protocol: 15 tests ✅ (Protocol compliance, message handling)
+-   Integration: 11 tests ✅ (End-to-end functionality)
+-   **Total: 60 tests, 100% pass rate** ✅
 
 **Quality Gates Achieved:**
 
-- Code Quality: Clean linting, proper formatting ✅
-- Documentation: Complete, auto-generated, validated ✅
-- CI/CD: Full pipeline working, automated validation ✅
-- Architecture: SOLID principles, provider pattern, async-first ✅
-- Security: Vulnerabilities monitored (3 known, non-blocking) 📋
+-   Code Quality: Clean linting, proper formatting ✅
+-   Documentation: Complete, auto-generated, validated ✅
+-   CI/CD: Full pipeline working, automated validation ✅
+-   Architecture: SOLID principles, provider pattern, async-first ✅
+-   Security: Vulnerabilities monitored (3 known, non-blocking) 📋
 
 ### Validation Results (VERIFIED ✅)
 
 **All Make Commands Validated:**
 
-- ✅ `make build` - Compiles successfully
-- ✅ `make test` - 60/60 tests pass
-- ✅ `make docs` - Generates documentation + diagrams
-- ✅ `make validate` - All validation checks pass
-- ✅ `make ci` - Full pipeline completes
-- ✅ `make git-force-all` - Force commits work
-- ✅ `make audit` - Security scan runs (finds known vulns)
-- ✅ `make release` - Creates distribution packages
+-   ✅ `make build` - Compiles successfully
+-   ✅ `make test` - 60/60 tests pass
+-   ✅ `make docs` - Generates documentation + diagrams
+-   ✅ `make validate` - All validation checks pass
+-   ✅ `make ci` - Full pipeline completes
+-   ✅ `make git-force-all` - Force commits work
+-   ✅ `make audit` - Security scan runs (finds known vulns)
+-   ✅ `make release` - Creates distribution packages
 
 **Makefile Fixes Applied:**
 
-- ✅ Fixed `package` command (was including itself in tar)
-- ✅ Added complete git workflow commands
-- ✅ Updated .PHONY declarations
-- ✅ Verified all command dependencies
+-   ✅ Fixed `package` command (was including itself in tar)
+-   ✅ Added complete git workflow commands
+-   ✅ Updated .PHONY declarations
+-   ✅ Verified all command dependencies
 
 ---
 
@@ -718,14 +724,14 @@ make package       # Create distribution package (tar.gz in dist/)
 
 **Project v0.0.3 is complete when:**
 
-- ✅ **Core Functionality**: Full MCP protocol implementation with semantic search
-- ✅ **System Metrics**: CPU, memory, disk, network monitoring operational
-- ✅ **HTTP API**: REST endpoints on port 3001 with health/metrics endpoints
-- ✅ **Cross-Process Coordination**: Lockfile-based sync with debouncing
-- ✅ **Background Processing**: Automatic lock cleanup and sync monitoring
-- ✅ **Environment Configuration**: Full environment variable support
-- ✅ **Testing Enhanced**: All 60+ tests pass including new metrics tests
-- ✅ **Documentation Updated**: All v0.0.3 features documented
-- ✅ **CI/CD Enhanced**: Automated testing of metrics and coordination features
+-   ✅ **Core Functionality**: Full MCP protocol implementation with semantic search
+-   ✅ **System Metrics**: CPU, memory, disk, network monitoring operational
+-   ✅ **HTTP API**: REST endpoints on port 3001 with health/metrics endpoints
+-   ✅ **Cross-Process Coordination**: Lockfile-based sync with debouncing
+-   ✅ **Background Processing**: Automatic lock cleanup and sync monitoring
+-   ✅ **Environment Configuration**: Full environment variable support
+-   ✅ **Testing Enhanced**: All 60+ tests pass including new metrics tests
+-   ✅ **Documentation Updated**: All v0.0.3 features documented
+-   ✅ **CI/CD Enhanced**: Automated testing of metrics and coordination features
 
 **Current Status**: 🏗️ **IMPLEMENTING** - System metrics collection implemented, HTTP API in development.

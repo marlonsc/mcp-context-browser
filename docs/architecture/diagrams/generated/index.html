@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Context Browser - Architecture Diagrams</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 40px; }
+        .diagram-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
+        .diagram-card { border: 1px solid #ddd; border-radius: 8px; padding: 16px; }
+        .diagram-card img { max-width: 100%; height: auto; }
+        .diagram-title { font-weight: bold; margin-bottom: 8px; }
+        .diagram-desc { color: #666; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <h1>MCP Context Browser - Architecture Diagrams</h1>
+    <p>This page contains all architecture diagrams for the MCP Context Browser project.</p>
+
+    <div class="diagram-grid">
+        <div class="diagram-card">
+            <div class="diagram-title">C4 Template</div>
+            <div class="diagram-desc">Architecture diagram</div>
+            <img src="C4 Template.png" alt="C4 Template" loading="lazy">
+            <a href="C4 Template.svg">Download SVG</a>
+        </div>
+        <div class="diagram-card">
+            <div class="diagram-title">Container - MCP Context Browser</div>
+            <div class="diagram-desc">Architecture diagram</div>
+            <img src="Container - MCP Context Browser.png" alt="Container - MCP Context Browser" loading="lazy">
+            <a href="Container - MCP Context Browser.svg">Download SVG</a>
+        </div>
+        <div class="diagram-card">
+            <div class="diagram-title">System Context - MCP Context Browser</div>
+            <div class="diagram-desc">Architecture diagram</div>
+            <img src="System Context - MCP Context Browser.png" alt="System Context - MCP Context Browser" loading="lazy">
+            <a href="System Context - MCP Context Browser.svg">Download SVG</a>
+        </div>
+    </div>
+
+    <footer style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; color: #666;">
+        <p>Generated on: <span id="timestamp"></span></p>
+        <script>document.getElementById('timestamp').textContent = new Date().toLocaleString();</script>
+    </footer>
+</body>
+</html>

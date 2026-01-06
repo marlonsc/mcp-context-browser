@@ -88,7 +88,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                 eprintln!("❌ Metrics API server error: {}", e);
             }
         });
-        println!("📊 Metrics API available at http://localhost:{}", config.metrics_port());
+        println!(
+            "📊 Metrics API available at http://localhost:{}",
+            config.metrics_port()
+        );
         Some(handle)
     } else {
         println!("📊 Metrics API disabled");
@@ -103,9 +106,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         }
     });
 
-    println!("🤖 Background daemon started (cleanup: {}s, monitoring: {}s)",
-             config.daemon.cleanup_interval_secs,
-             config.daemon.monitoring_interval_secs);
+    println!(
+        "🤖 Background daemon started (cleanup: {}s, monitoring: {}s)",
+        config.daemon.cleanup_interval_secs, config.daemon.monitoring_interval_secs
+    );
 
     // Create tool handlers
     let tool_handlers = match McpToolHandlers::new() {

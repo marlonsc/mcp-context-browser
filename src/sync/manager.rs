@@ -271,7 +271,13 @@ mod tests {
     async fn test_sync_intervals() {
         let manager = SyncManager::new();
 
-        assert_eq!(manager.sync_interval(), Duration::from_millis(15 * 60 * 1000));
-        assert_eq!(manager.debounce_interval(), Duration::from_millis(60 * 1000));
+        assert_eq!(
+            manager.sync_interval(),
+            Duration::from_millis(15 * 60 * 1000)
+        );
+        assert_eq!(
+            manager.debounce_interval(),
+            Duration::from_millis(60 * 1000)
+        );
     }
 }

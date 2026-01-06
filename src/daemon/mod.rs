@@ -109,8 +109,14 @@ impl ContextDaemon {
         drop(running);
 
         println!("[DAEMON] Starting background daemon...");
-        println!("[DAEMON] Cleanup interval: {}s", self.config.cleanup_interval_secs);
-        println!("[DAEMON] Monitoring interval: {}s", self.config.monitoring_interval_secs);
+        println!(
+            "[DAEMON] Cleanup interval: {}s",
+            self.config.cleanup_interval_secs
+        );
+        println!(
+            "[DAEMON] Monitoring interval: {}s",
+            self.config.monitoring_interval_secs
+        );
         println!("[DAEMON] Max lock age: {}s", self.config.max_lock_age_secs);
 
         // Start cleanup task
@@ -120,7 +126,8 @@ impl ContextDaemon {
             let running = Arc::clone(&self.running);
 
             tokio::spawn(async move {
-                let mut interval = time::interval(Duration::from_secs(config.cleanup_interval_secs));
+                let mut interval =
+                    time::interval(Duration::from_secs(config.cleanup_interval_secs));
 
                 loop {
                     interval.tick().await;
@@ -130,7 +137,8 @@ impl ContextDaemon {
                         break;
                     }
 
-                    if let Err(e) = Self::run_cleanup_cycle(&stats, config.max_lock_age_secs).await {
+                    if let Err(e) = Self::run_cleanup_cycle(&stats, config.max_lock_age_secs).await
+                    {
                         eprintln!("[DAEMON] Cleanup cycle failed: {}", e);
                     }
                 }
@@ -143,7 +151,8 @@ impl ContextDaemon {
             let running = Arc::clone(&self.running);
 
             tokio::spawn(async move {
-                let mut interval = time::interval(Duration::from_secs(self.config.monitoring_interval_secs));
+                let mut interval =
+                    time::interval(Duration::from_secs(self.config.monitoring_interval_secs));
 
                 loop {
                     interval.tick().await;
@@ -215,17 +224,19 @@ impl ContextDaemon {
 
         // Warn about high concurrency
         if lock_count > 3 {
-            println!("[DAEMON] Warning: {} concurrent sync operations detected", lock_count);
+            println!(
+                "[DAEMON] Warning: {} concurrent sync operations detected",
+                lock_count
+            );
         }
 
         // Log active locks for debugging
         if lock_count > 0 {
             println!("[DAEMON] Active sync operations: {}", lock_count);
             for lock in &active_locks {
-                println!("[DAEMON]   - {} (PID: {}, Host: {})",
-                    lock.codebase_path,
-                    lock.pid,
-                    lock.hostname
+                println!(
+                    "[DAEMON]   - {} (PID: {}, Host: {})",
+                    lock.codebase_path, lock.pid, lock.hostname
                 );
             }
         }
