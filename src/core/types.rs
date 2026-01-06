@@ -77,7 +77,7 @@ pub struct SearchResult {
 }
 
 /// Indexing statistics
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct IndexingStats {
     pub total_files: u32,
     pub indexed_files: u32,
