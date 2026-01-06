@@ -74,6 +74,7 @@ lint-md: ## Lint markdown files
 
 fix-md: ## Auto-fix markdown linting issues
 	@echo "🔧 Auto-fixing markdown issues..."
+	@bash scripts/docs/fix-markdown.sh
 	@markdownlint docs/ --config .markdownlint.json --fix
 	@echo "✅ Markdown auto-fix completed"
 

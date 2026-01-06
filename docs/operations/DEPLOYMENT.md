@@ -8,8 +8,8 @@ MCP Context Browser currently supports local deployment for development and test
 
 ### Prerequisites
 
-- **Rust 1.70+**: Install from [rustup.rs](https://rustup.rs/)
-- **Git**: For cloning the repository
+-   **Rust 1.70+**: Install from [rustup.rs](https://rustup.rs/)
+-   **Git**: For cloning the repository
 
 ### Build from Source
 
@@ -114,18 +114,18 @@ free -h  # Memory
 
 ### Getting Help
 
-- Check existing [GitHub Issues](https://github.com/marlonsc/mcp-context-browser/issues)
-- Review the [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) for technical details
-- See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup
+-   Check existing [GitHub Issues](https://github.com/marlonsc/mcp-context-browser/issues)
+-   Review the [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) for technical details
+-   See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup
 
 ## 🚀 Future Deployment Options
 
 The following deployment configurations are planned for future releases:
 
-- **Docker containerization**
-- **Kubernetes orchestration**
-- **Multi-user support**
-- **Cloud-native deployments**
+-   **Docker containerization**
+-   **Kubernetes orchestration**
+-   **Multi-user support**
+-   **Cloud-native deployments**
 
 These will be documented as they become available.
 

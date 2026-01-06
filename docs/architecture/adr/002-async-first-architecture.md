@@ -10,11 +10,11 @@ The MCP Context Browser handles AI operations (embedding generation, vector sear
 
 Key performance requirements:
 
-- Handle 1000+ concurrent users
-- Process codebases with 1000+ files efficiently
-- Maintain sub-500ms response times for queries
-- Support streaming and background processing
-- Integrate with external APIs (OpenAI, vector databases)
+-   Handle 1000+ concurrent users
+-   Process codebases with 1000+ files efficiently
+-   Maintain sub-500ms response times for queries
+-   Support streaming and background processing
+-   Integrate with external APIs (OpenAI, vector databases)
 
 Traditional synchronous programming would create bottlenecks and poor resource utilization for these I/O-bound operations.
 
@@ -24,12 +24,12 @@ Adopt an async-first architecture using Tokio as the async runtime throughout th
 
 Key architectural decisions:
 
-- Tokio as the primary async runtime
-- Async traits for all provider interfaces
-- Structured concurrency with tokio::spawn
-- Async channels for inter-task communication
-- Hyper for HTTP client operations
-- Futures and streams for data processing pipelines
+-   Tokio as the primary async runtime
+-   Async traits for all provider interfaces
+-   Structured concurrency with Tokio::spawn
+-   Async channels for inter-task communication
+-   Hyper for HTTP client operations
+-   Futures and streams for data processing pipelines
 
 ## Consequences
 
@@ -37,42 +37,42 @@ Async-first architecture provides excellent performance and concurrency but requ
 
 ### Positive Consequences
 
-- **High Performance**: Efficient handling of concurrent operations and I/O
-- **Scalability**: Support for thousands of concurrent users
-- **Resource Efficiency**: Better CPU and memory utilization
-- **Future-Proof**: Aligns with modern async programming patterns
-- **Integration**: Natural fit with async HTTP clients and databases
+-   **High Performance**: Efficient handling of concurrent operations and I/O
+-   **Scalability**: Support for thousands of concurrent users
+-   **Resource Efficiency**: Better CPU and memory utilization
+-   **Future-Proof**: Aligns with modern async programming patterns
+-   **Integration**: Natural fit with async HTTP clients and databases
 
 ### Negative Consequences
 
-- **Complexity**: Async code is harder to reason about and debug
-- **Error Handling**: Async error propagation is more complex
-- **Testing**: Async tests require special handling
-- **Learning Curve**: Steeper learning curve for team members
-- **Debugging**: Stack traces are less informative in async contexts
+-   **Complexity**: Async code is harder to reason about and debug
+-   **Error Handling**: Async error propagation is more complex
+-   **Testing**: Async tests require special handling
+-   **Learning Curve**: Steeper learning curve for team members
+-   **Debugging**: Stack traces are less informative in async contexts
 
 ## Alternatives Considered
 
 ### Alternative 1: Synchronous Architecture
 
-- **Description**: Traditional blocking I/O with thread pools for concurrency
-- **Pros**: Simpler code, easier debugging, familiar patterns
-- **Cons**: Poor performance for I/O operations, limited concurrency
-- **Rejection Reason**: Cannot meet performance requirements for AI operations and concurrent users
+-   **Description**: Traditional blocking I/O with thread pools for concurrency
+-   **Pros**: Simpler code, easier debugging, familiar patterns
+-   **Cons**: Poor performance for I/O operations, limited concurrency
+-   **Rejection Reason**: Cannot meet performance requirements for AI operations and concurrent users
 
 ### Alternative 2: Mixed Sync/Async
 
-- **Description**: Sync core with async wrappers for external operations
-- **Pros**: Gradual adoption, less complexity
-- **Cons**: Inconsistent patterns, performance bottlenecks at boundaries
-- **Rejection Reason**: Creates architectural inconsistency and performance issues
+-   **Description**: Sync core with async wrappers for external operations
+-   **Pros**: Gradual adoption, less complexity
+-   **Cons**: Inconsistent patterns, performance bottlenecks at boundaries
+-   **Rejection Reason**: Creates architectural inconsistency and performance issues
 
 ### Alternative 3: Actor Model (Actix)
 
-- **Description**: Use Actix for actor-based concurrency instead of Tokio
-- **Pros**: High-level abstractions, built-in supervision
-- **Cons**: Additional complexity, less ecosystem support
-- **Rejection Reason**: Tokio has better ecosystem support and performance for our use case
+-   **Description**: Use Actix for actor-based concurrency instead of Tokio
+-   **Pros**: High-level abstractions, built-in supervision
+-   **Cons**: Additional complexity, less ecosystem support
+-   **Rejection Reason**: Tokio has better ecosystem support and performance for our use case
 
 ## Implementation Notes
 
@@ -214,6 +214,6 @@ mod tests {
 
 ## References
 
-- [Tokio Documentation](https://tokio.rs/)
-- [Async Programming in Rust](https://rust-lang.github.io/async-book/)
-- [Structured Concurrency](https://vorpus.org/blog/notes-on-structured-concurrency-or-go-statement-considered-harmful/)
+-   [Tokio Documentation](https://tokio.rs/)
+-   [Async Programming in Rust](https://rust-lang.github.io/async-book/)
+-   [Structured Concurrency](https://vorpus.org/blog/notes-on-structured-concurrency-or-go-statement-considered-harmful/)

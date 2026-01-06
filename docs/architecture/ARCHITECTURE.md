@@ -10,16 +10,16 @@
 
 ## Table of Contents
 
-1. [Executive Summary](#executive-summary)
-2. [System Context](#system-context)
-3. [Container Architecture](#container-architecture)
-4. [Component Architecture](#component-architecture)
-5. [Data Architecture](#data-architecture)
-6. [Security Architecture](#security-architecture)
-7. [Quality Attributes](#quality-attributes)
-8. [Architecture Decision Records](#architecture-decision-records)
-9. [Deployment & Operations](#deployment--operations)
-10. [Evolution & Roadmap](#evolution--roadmap)
+1.  [Executive Summary](#executive-summary)
+2.  [System Context](#system-context)
+3.  [Container Architecture](#container-architecture)
+4.  [Component Architecture](#component-architecture)
+5.  [Data Architecture](#data-architecture)
+6.  [Security Architecture](#security-architecture)
+7.  [Quality Attributes](#quality-attributes)
+8.  [Architecture Decision Records](#architecture-decision-records)
+9.  [Deployment & Operations](#deployment--operations)
+10.  [Evolution & Roadmap](#evolution--roadmap)
 
 ---
 
@@ -31,21 +31,21 @@ MCP Context Browser is a high-performance, extensible Model Context Protocol (MC
 
 ### Core Capabilities
 
-- **🔍 Semantic Code Search**: Natural language to code search using vector embeddings
-- **📁 Multi-Language Support**: AST-based parsing for Rust, Python, JavaScript, TypeScript, and more
-- **🔌 Provider Architecture**: Pluggable embedding and vector storage providers
-- **⚡ High Performance**: Async processing with Tokio runtime
-- **🛡️ Enterprise Ready**: Comprehensive security, monitoring, and scalability features
-- **📊 Observability**: Full metrics, logging, and distributed tracing
+-   **🔍 Semantic Code Search**: Natural language to code search using vector embeddings
+-   **📁 Multi-Language Support**: AST-based parsing for Rust, Python, JavaScript, TypeScript, and more
+-   **🔌 Provider Architecture**: Pluggable embedding and vector storage providers
+-   **⚡ High Performance**: Async processing with Tokio runtime
+-   **🛡️ Enterprise Ready**: Comprehensive security, monitoring, and scalability features
+-   **📊 Observability**: Full metrics, logging, and distributed tracing
 
 ### Architectural Principles
 
-- **SOLID Design**: Clean separation of concerns with dependency injection
-- **Provider Pattern**: Extensible architecture for AI and storage providers
-- **Async-First**: Built for high concurrency and performance
-- **Security by Design**: Comprehensive security controls and compliance
-- **Observability**: Full monitoring and debugging capabilities
-- **Scalability**: Horizontal scaling with distributed deployment options
+-   **SOLID Design**: Clean separation of concerns with dependency injection
+-   **Provider Pattern**: Extensible architecture for AI and storage providers
+-   **Async-First**: Built for high concurrency and performance
+-   **Security by Design**: Comprehensive security controls and compliance
+-   **Observability**: Full monitoring and debugging capabilities
+-   **Scalability**: Horizontal scaling with distributed deployment options
 
 ### Current Status
 
@@ -100,11 +100,11 @@ graph TB
 
 MCP Context Browser serves as a semantic code intelligence layer between AI assistants and codebases, enabling:
 
-- **Natural Language Code Search**: Find code by describing functionality
-- **Intelligent Code Analysis**: Understand code relationships and patterns
-- **Context-Aware Assistance**: Provide relevant code examples and references
-- **Multi-Repository Support**: Index and search across multiple codebases
-- **Real-time Updates**: Incremental indexing with change detection
+-   **Natural Language Code Search**: Find code by describing functionality
+-   **Intelligent Code Analysis**: Understand code relationships and patterns
+-   **Context-Aware Assistance**: Provide relevant code examples and references
+-   **Multi-Repository Support**: Index and search across multiple codebases
+-   **Real-time Updates**: Incremental indexing with change detection
 
 ### External Interfaces
 
@@ -128,19 +128,19 @@ MCP Context Browser serves as a semantic code intelligence layer between AI assi
 
 #### Functional Requirements
 
-- **Search Accuracy**: >90% relevant results for natural language queries
-- **Indexing Speed**: <5 seconds for 1000 files (<1MB each)
-- **Query Latency**: <500ms average response time
-- **Language Support**: 8+ programming languages with AST parsing
-- **Provider Compatibility**: 4+ embedding providers, 3+ vector stores
+-   **Search Accuracy**: >90% relevant results for natural language queries
+-   **Indexing Speed**: <5 seconds for 1000 files (<1MB each)
+-   **Query Latency**: <500ms average response time
+-   **Language Support**: 8+ programming languages with AST parsing
+-   **Provider Compatibility**: 4+ embedding providers, 3+ vector stores
 
 #### Non-Functional Requirements
 
-- **Performance**: 1000 concurrent users, 10k queries/minute
-- **Availability**: 99.9% uptime with automatic failover
-- **Security**: SOC 2 compliant with end-to-end encryption
-- **Scalability**: Horizontal scaling across 100+ nodes
-- **Maintainability**: <24 hours for hotfixes, <1 week for features
+-   **Performance**: 1000 concurrent users, 10k queries/minute
+-   **Availability**: 99.9% uptime with automatic failover
+-   **Security**: SOC 2 compliant with end-to-end encryption
+-   **Scalability**: Horizontal scaling across 100+ nodes
+-   **Maintainability**: <24 hours for hotfixes, <1 week for features
 
 ---
 
@@ -352,10 +352,11 @@ impl ContextService {
 ```
 
 **Responsibilities**:
-- Coordinate embedding generation
-- Manage vector storage operations
-- Handle batch processing
-- Collect performance metrics
+
+-   Coordinate embedding generation
+-   Manage vector storage operations
+-   Handle batch processing
+-   Collect performance metrics
 
 ##### SearchService
 
@@ -395,10 +396,11 @@ impl SearchService {
 ```
 
 **Responsibilities**:
-- Query processing and embedding generation
-- Vector similarity search execution
-- Result ranking and filtering
-- Response caching and optimization
+
+-   Query processing and embedding generation
+-   Vector similarity search execution
+-   Result ranking and filtering
+-   Response caching and optimization
 
 ##### IndexingService
 
@@ -445,10 +447,11 @@ impl IndexingService {
 ```
 
 **Responsibilities**:
-- Repository scanning and file discovery
-- Language detection and AST parsing
-- Incremental indexing with change detection
-- Chunk generation and metadata extraction
+
+-   Repository scanning and file discovery
+-   Language detection and AST parsing
+-   Incremental indexing with change detection
+-   Chunk generation and metadata extraction
 
 #### Provider Implementations
 
@@ -728,9 +731,9 @@ CREATE INDEX idx_chunks_metadata ON code_chunks USING GIN(metadata);
 
 **Multi-Level Caching**:
 
-1. **Application Cache**: Redis for search results and embeddings
-2. **Provider Cache**: In-memory LRU cache for frequently accessed data
-3. **CDN Cache**: For static assets and documentation
+1.  **Application Cache**: Redis for search results and embeddings
+2.  **Provider Cache**: In-memory LRU cache for frequently accessed data
+3.  **CDN Cache**: For static assets and documentation
 
 ```rust
 #[derive(Clone)]
@@ -775,10 +778,10 @@ impl Default for RetentionPolicy {
 
 #### Data Archival Strategy
 
-- **Hot Data**: Recent embeddings and frequently accessed chunks (SSD storage)
-- **Warm Data**: Older embeddings with occasional access (HDD storage)
-- **Cold Data**: Archived repositories and historical data (Object storage)
-- **Delete**: Expired data according to retention policies
+-   **Hot Data**: Recent embeddings and frequently accessed chunks (SSD storage)
+-   **Warm Data**: Older embeddings with occasional access (HDD storage)
+-   **Cold Data**: Archived repositories and historical data (Object storage)
+-   **Delete**: Expired data according to retention policies
 
 ---
 
@@ -786,11 +789,11 @@ impl Default for RetentionPolicy {
 
 ### Security Principles
 
-- **Defense in Depth**: Multiple security layers and controls
-- **Zero Trust**: Verify all access requests regardless of origin
-- **Least Privilege**: Minimal permissions for all operations
-- **Fail-Safe Defaults**: Secure defaults with explicit opt-in for features
-- **Audit Everything**: Comprehensive logging and monitoring
+-   **Defense in Depth**: Multiple security layers and controls
+-   **Zero Trust**: Verify all access requests regardless of origin
+-   **Least Privilege**: Minimal permissions for all operations
+-   **Fail-Safe Defaults**: Secure defaults with explicit opt-in for features
+-   **Audit Everything**: Comprehensive logging and monitoring
 
 ### Threat Model
 
@@ -800,7 +803,7 @@ impl Default for RetentionPolicy {
 |----------------|-------------|-------------|
 | **Spoofing** | Unauthorized access to MCP server | JWT authentication, API key validation |
 | **Tampering** | Modification of code or data in transit | TLS 1.3, message integrity checks |
-| **Repudiation** | Denial of actions performed | Comprehensive audit logging |
+| **Repudiation** | Denial of Actions performed | Comprehensive audit logging |
 | **Information Disclosure** | Exposure of sensitive code/data | Encryption at rest, access controls |
 | **Denial of Service** | Resource exhaustion attacks | Rate limiting, resource quotas |
 | **Elevation of Privilege** | Unauthorized privilege escalation | RBAC, input validation |
@@ -921,9 +924,9 @@ impl DataEncryptor {
 
 #### Encryption in Transit
 
-- **TLS 1.3**: Mandatory for all external communications
-- **mTLS**: Mutual TLS for service-to-service communication
-- **Protocol Encryption**: MCP protocol over encrypted stdio
+-   **TLS 1.3**: Mandatory for all external communications
+-   **mTLS**: Mutual TLS for service-to-service communication
+-   **Protocol Encryption**: MCP protocol over encrypted stdio
 
 ### Security Monitoring
 
@@ -1380,10 +1383,11 @@ impl QualityGateChecker {
 **Decision**: Implement provider pattern with trait-based abstractions for embedding and vector storage providers.
 
 **Consequences**:
-- ✅ High extensibility for adding new providers
-- ✅ Clean separation of concerns
-- ✅ Testability through dependency injection
-- ⚠️ Additional complexity in provider management
+
+-   ✅ High extensibility for adding new providers
+-   ✅ Clean separation of concerns
+-   ✅ Testability through dependency injection
+-   ⚠️ Additional complexity in provider management
 
 #### ADR-002: Async-First Architecture
 
@@ -1394,10 +1398,11 @@ impl QualityGateChecker {
 **Decision**: Use Tokio async runtime throughout the system with async traits for all provider interfaces.
 
 **Consequences**:
-- ✅ Excellent performance for concurrent operations
-- ✅ Scalability for high-throughput scenarios
-- ⚠️ Higher complexity for error handling
-- ⚠️ Learning curve for async Rust patterns
+
+-   ✅ Excellent performance for concurrent operations
+-   ✅ Scalability for high-throughput scenarios
+-   ⚠️ Higher complexity for error handling
+-   ⚠️ Learning curve for async Rust patterns
 
 #### ADR-003: C4 Model Documentation
 
@@ -1408,10 +1413,11 @@ impl QualityGateChecker {
 **Decision**: Adopt C4 model (Context, Containers, Components, Code) with PlantUML diagrams and structured documentation.
 
 **Consequences**:
-- ✅ Clear, hierarchical documentation structure
-- ✅ Multiple levels of detail for different audiences
-- ✅ Tooling support for diagram generation
-- ⚠️ Learning curve for C4 model concepts
+
+-   ✅ Clear, hierarchical documentation structure
+-   ✅ Multiple levels of detail for different audiences
+-   ✅ Tooling support for diagram generation
+-   ⚠️ Learning curve for C4 model concepts
 
 #### ADR-004: Multi-Provider Strategy
 
@@ -1422,18 +1428,19 @@ impl QualityGateChecker {
 **Decision**: Support multiple embedding and vector storage providers with automatic failover and load balancing.
 
 **Consequences**:
-- ✅ High availability and fault tolerance
-- ✅ Cost optimization through provider selection
-- ⚠️ Configuration complexity
-- ⚠️ Testing complexity across providers
+
+-   ✅ High availability and fault tolerance
+-   ✅ Cost optimization through provider selection
+-   ⚠️ Configuration complexity
+-   ⚠️ Testing complexity across providers
 
 ### ADR Maintenance Process
 
-1. **Proposal**: Create ADR in draft status with problem statement and context
-2. **Discussion**: Technical review and stakeholder feedback
-3. **Decision**: Accept/reject with documented rationale
-4. **Implementation**: Update code and documentation
-5. **Review**: Periodic review and potential supersession
+1.  **Proposal**: Create ADR in draft status with problem statement and context
+2.  **Discussion**: Technical review and stakeholder feedback
+3.  **Decision**: Accept/reject with documented rationale
+4.  **Implementation**: Update code and documentation
+5.  **Review**: Periodic review and potential supersession
 
 ---
 
@@ -1516,10 +1523,10 @@ spec:
 
 #### Configuration Hierarchy
 
-1. **Default Configuration**: Compiled-in defaults
-2. **Environment Variables**: Runtime overrides
-3. **Configuration Files**: TOML/YAML files
-4. **Secrets**: External secret management
+1.  **Default Configuration**: Compiled-in defaults
+2.  **Environment Variables**: Runtime overrides
+3.  **Configuration Files**: TOML/YAML files
+4.  **Secrets**: External secret management
 
 ```rust
 #[derive(Clone)]
@@ -1674,74 +1681,79 @@ impl BackupManager {
 ### Phase 1: Core Foundation (Completed ✅)
 
 **Delivered**:
-- Clean Rust architecture with SOLID principles
-- Provider pattern with mock implementations
-- MCP protocol framework (stdio transport)
-- In-memory vector storage with cosine similarity
-- Core data structures and comprehensive error handling
+
+-   Clean Rust architecture with SOLID principles
+-   Provider pattern with mock implementations
+-   MCP protocol framework (stdio transport)
+-   In-memory vector storage with cosine similarity
+-   Core data structures and comprehensive error handling
 
 ### Phase 2: Provider Ecosystem (In Progress 🚧)
 
 **Current Focus**:
-- Real embedding provider integrations (OpenAI, Ollama)
-- Production vector database integration (Milvus)
-- Enhanced file processing with AST parsing
-- Performance optimization and caching
+
+-   Real embedding provider integrations (OpenAI, Ollama)
+-   Production vector database integration (Milvus)
+-   Enhanced file processing with AST parsing
+-   Performance optimization and caching
 
 **Upcoming Milestones**:
-- **v0.1.0**: Functional MCP tools with basic providers
-- **v0.2.0**: Enhanced providers and storage backends
-- **v0.3.0**: Advanced file processing and incremental indexing
+
+-   **v0.1.0**: Functional MCP tools with basic providers
+-   **v0.2.0**: Enhanced providers and storage backends
+-   **v0.3.0**: Advanced file processing and incremental indexing
 
 ### Phase 3: Enterprise Features (Planned 📋)
 
 **Target Features**:
-- Multi-user support with authentication
-- REST API alongside MCP protocol
-- Advanced monitoring and alerting
-- Automated scaling and high availability
-- Enterprise security and compliance
+
+-   Multi-user support with authentication
+-   REST API alongside MCP protocol
+-   Advanced monitoring and alerting
+-   Automated scaling and high availability
+-   Enterprise security and compliance
 
 **Long-term Vision**:
-- Distributed deployment across multiple regions
-- Edge computing support for low-latency access
-- Advanced AI features (code generation, refactoring suggestions)
-- Integration with popular IDEs and development tools
+
+-   Distributed deployment across multiple regions
+-   Edge computing support for low-latency access
+-   Advanced AI features (code generation, refactoring suggestions)
+-   Integration with popular IDEs and development tools
 
 ### Technical Debt & Improvements
 
 #### Immediate Priorities
 
-1. **Test Coverage**: Increase unit and integration test coverage to >90%
-2. **Performance Optimization**: Implement caching layers and query optimization
-3. **Error Handling**: Enhance error recovery and graceful degradation
-4. **Documentation**: Complete API documentation and user guides
+1.  **Test Coverage**: Increase unit and integration test coverage to >90%
+2.  **Performance Optimization**: Implement caching layers and query optimization
+3.  **Error Handling**: Enhance error recovery and graceful degradation
+4.  **Documentation**: Complete API documentation and user guides
 
 #### Architectural Improvements
 
-1. **Event-Driven Architecture**: Implement event sourcing for better auditability
-2. **CQRS Pattern**: Separate read and write models for better scalability
-3. **Service Mesh**: Istio integration for advanced service management
-4. **GraphQL API**: More flexible query interface alongside REST
+1.  **Event-Driven Architecture**: Implement event sourcing for better auditability
+2.  **CQRS Pattern**: Separate read and write models for better scalability
+3.  **Service Mesh**: Istio integration for advanced service management
+4.  **GraphQL API**: More flexible query interface alongside REST
 
 ### Success Metrics
 
 #### Technical Metrics
 
-- **Performance**: <500ms average query response time
-- **Scalability**: Support 1000+ concurrent users
-- **Reliability**: 99.9% uptime with <1% error rate
-- **Efficiency**: <100ms embedding generation, <50ms vector search
+-   **Performance**: <500ms average query response time
+-   **Scalability**: Support 1000+ concurrent users
+-   **Reliability**: 99.9% uptime with <1% error rate
+-   **Efficiency**: <100ms embedding generation, <50ms vector search
 
 #### Business Metrics
 
-- **Adoption**: 100+ active repositories indexed
-- **User Satisfaction**: >4.5/5 user satisfaction score
-- **Cost Efficiency**: <$0.01 per 1000 search queries
-- **Time Savings**: 50% reduction in code search time
+-   **Adoption**: 100+ active repositories indexed
+-   **User Satisfaction**: >4.5/5 user satisfaction score
+-   **Cost Efficiency**: <$0.01 per 1000 search queries
+-   **Time Savings**: 50% reduction in code search time
 
 ---
 
-This comprehensive architecture documentation provides a solid foundation for understanding, maintaining, and evolving the MCP Context Browser system. The modular, extensible design ensures long-term maintainability while supporting the ambitious roadmap of features and integrations.
+This comprehensive architecture documentation provides a SOLID foundation for understanding, maintaining, and evolving the MCP Context Browser system. The modular, extensible design ensures long-term maintainability while supporting the ambitious roadmap of features and integrations.
 
 For questions or contributions, please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) guide or open an issue on GitHub.

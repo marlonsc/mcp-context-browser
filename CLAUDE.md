@@ -286,6 +286,7 @@ make package        # Create distribution package (tar.gz)
 
 - **✅ All tests must pass**: `make test` = 0 failures (60/60 tests passing)
 - **✅ No warnings**: `make lint` = clean clippy output (minor test warnings allowed)
+- **✅ Markdown lint clean**: `make lint-md` = no markdownlint violations
 - **✅ Format compliance**: `make fmt` = no changes
 - **✅ Documentation sync**: `make validate` = all checks pass
 - **⚠️ Security audit**: `make audit` = monitor known vulnerabilities (currently 3 in dependencies)
@@ -386,6 +387,32 @@ make adr-new
 - **Auto-generated**: Use `make diagrams`
 - **Validation**: `make validate` checks syntax
 - **Location**: `docs/architecture/diagrams/`
+
+### Markdown Standards (MANDATORY)
+
+**All documentation must pass markdownlint:**
+
+```bash
+# Check markdown quality
+make lint-md          # Lint all .md files in docs/
+
+# Auto-fix common issues
+make fix-md           # Auto-fix trailing whitespace, blank lines, etc.
+```
+
+**Markdown Rules:**
+- Use ATX-style headers (# ## ###)
+- Consistent unordered lists (- not *)
+- No trailing whitespace
+- Maximum 2 consecutive blank lines
+- Proper code block language tags
+- Consistent link formatting
+
+**Auto-Fixed Issues:**
+- Trailing whitespace removal
+- Multiple blank line reduction
+- Unordered list consistency (asterisks → dashes)
+- Basic formatting corrections
 
 ### Documentation Automation
 

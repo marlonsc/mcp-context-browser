@@ -37,11 +37,11 @@ Each ADR follows this template:
 
 ## ADR Status
 
-- **Proposed**: Under discussion and review
-- **Accepted**: Decision made and implemented
-- **Rejected**: Decision rejected with rationale
-- **Deprecated**: No longer relevant
-- **Superseded**: Replaced by a newer ADR
+-   **Proposed**: Under discussion and review
+-   **Accepted**: Decision made and implemented
+-   **Rejected**: Decision rejected with rationale
+-   **Deprecated**: No longer relevant
+-   **Superseded**: Replaced by a newer ADR
 
 ## Current ADRs
 
@@ -54,18 +54,18 @@ Each ADR follows this template:
 
 ## Creating a New ADR
 
-1. **Identify the Decision**: Determine if the decision requires an ADR
-2. **Draft the ADR**: Use the template above and place it in `docs/adr/`
-3. **Review Process**: Technical review and stakeholder feedback
-4. **Accept/Reject**: Make final decision and update status
-5. **Implement**: Update code and documentation as needed
+1.  **Identify the Decision**: Determine if the decision requires an ADR
+2.  **Draft the ADR**: Use the template above and place it in `docs/adr/`
+3.  **Review Process**: Technical review and stakeholder feedback
+4.  **Accept/Reject**: Make final decision and update status
+5.  **Implement**: Update code and documentation as needed
 
 ## ADR Maintenance
 
-- ADRs are immutable once accepted
-- Update the README index when adding new ADRs
-- Reference superseded ADRs in new decisions
-- Review ADRs periodically for continued relevance
+-   ADRs are immutable once accepted
+-   Update the README index when adding new ADRs
+-   Reference superseded ADRs in new decisions
+-   Review ADRs periodically for continued relevance
 
 ## Tools and Automation
 
@@ -86,10 +86,10 @@ cargo run --bin adr-tool -- search "security"
 
 When proposing architectural changes:
 
-1. Create an ADR in draft status
-2. Discuss with the technical team
-3. Update status based on consensus
-4. Implement the accepted decision
-5. Update related documentation
+1.  Create an ADR in draft status
+2.  Discuss with the technical team
+3.  Update status based on consensus
+4.  Implement the accepted decision
+5.  Update related documentation
 
 See [CONTRIBUTING.md](../CONTRIBUTING.md) for detailed contribution guidelines.

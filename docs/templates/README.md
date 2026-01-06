@@ -5,17 +5,20 @@ This directory contains templates and standards for MCP Context Browser document
 ## 📋 Available Templates
 
 ### ADR Template
-- **[adr-template.md](adr-template.md)** - Architecture Decision Record template
-- **Usage**: `make adr-new` to create new ADR interactively
+
+-   **[ADR-template.md](adr-template.md)** - Architecture Decision Record template
+-   **Usage**: `make adr-new` to create new ADR interactively
 
 ### Document Standards
 
 #### File Naming Convention
-- Use kebab-case for file names: `my-document.md`
-- Prefix with numbers for ordering: `01-getting-started.md`
-- Use descriptive names: `deployment-guide.md` not `deploy.md`
+
+-   Use kebab-case for file names: `my-document.md`
+-   Prefix with numbers for ordering: `01-getting-started.md`
+-   Use descriptive names: `deployment-guide.md` not `deploy.md`
 
 #### Header Structure
+
 ```markdown
 # Document Title
 
@@ -34,6 +37,7 @@ Content...
 ```
 
 #### Code Examples
+
 ```rust
 // Use syntax highlighting for code blocks
 pub fn example_function() -> Result<()> {
@@ -43,6 +47,7 @@ pub fn example_function() -> Result<()> {
 ```
 
 #### Cross-References
+
 ```markdown
 <!-- Use relative paths for internal links -->
 See [Architecture Overview](../architecture/ARCHITECTURE.md) for details.
@@ -55,20 +60,22 @@ See [Contributing Guide](developer/CONTRIBUTING.md) for guidelines.
 
 ### Creating New Documents
 
-1. **Choose appropriate category**:
-   - `user-guide/` - User-facing documentation
-   - `developer/` - Development guides
-   - `architecture/` - Technical architecture
-   - `operations/` - Deployment & operations
+1.  **Choose appropriate category**:
+   -   `user-guide/` - User-facing documentation
+   -   `developer/` - Development guides
+   -   `architecture/` - Technical architecture
+   -   `operations/` - Deployment & operations
 
-2. **Copy appropriate template**:
+2.  **Copy appropriate template**:
+
    ```bash
    cp docs/templates/adr-template.md docs/architecture/adr/new-adr.md
    ```
 
-3. **Follow naming conventions**
+3.  **Follow naming conventions**
 
-4. **Validate before committing**:
+4.  **Validate before committing**:
+
    ```bash
    make validate-docs
    ```
@@ -76,24 +83,27 @@ See [Contributing Guide](developer/CONTRIBUTING.md) for guidelines.
 ## 📊 Quality Standards
 
 ### Content Quality
-- [ ] Clear purpose and scope
-- [ ] Appropriate audience identification
-- [ ] Logical structure and flow
-- [ ] Accurate technical information
-- [ ] Up-to-date examples and code
+
+-   [ ] Clear purpose and scope
+-   [ ] Appropriate audience identification
+-   [ ] Logical structure and flow
+-   [ ] Accurate technical information
+-   [ ] Up-to-date examples and code
 
 ### Format Quality
-- [ ] Consistent header structure
-- [ ] Proper markdown formatting
-- [ ] Syntax-highlighted code blocks
-- [ ] Working cross-references
-- [ ] Valid front matter (if applicable)
+
+-   [ ] Consistent header structure
+-   [ ] Proper markdown formatting
+-   [ ] Syntax-highlighted code blocks
+-   [ ] Working cross-references
+-   [ ] Valid front matter (if applicable)
 
 ### Maintenance Quality
-- [ ] Automated updates where possible
-- [ ] Version control friendly
-- [ ] CI/CD validated
-- [ ] Regular review schedule
+
+-   [ ] Automated updates where possible
+-   [ ] Version control friendly
+-   [ ] CI/CD validated
+-   [ ] Regular review schedule
 
 ## 🔧 Automation
 

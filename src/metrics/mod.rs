@@ -5,6 +5,10 @@
 use serde::{Deserialize, Serialize};
 use sysinfo::System;
 
+pub mod performance;
+
+pub use performance::{PerformanceMetrics, QueryPerformanceMetrics, CacheMetrics};
+
 /// CPU usage metrics
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CpuMetrics {
@@ -50,7 +54,7 @@ impl SystemMetricsCollector {
         let cpus = self.system.cpus();
         let cores = cpus.len();
 
-        // For older sysinfo versions, CPU usage might not be available
+        // For sysinfo 0.30, CPU usage is available
         let usage = if cores > 0 {
             cpus.iter().map(|cpu| cpu.cpu_usage()).sum::<f32>() / cores as f32
         } else {

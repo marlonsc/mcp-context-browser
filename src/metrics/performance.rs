@@ -2,7 +2,6 @@
 //!
 //! Tracks query latency, cache hit/miss ratios, and other performance indicators.
 
-use crate::core::error::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::time::{Duration, Instant};
@@ -163,8 +162,9 @@ impl PerformanceMetrics {
     /// Clean old records (older than specified duration)
     pub fn clean_old_records(&mut self, max_age: Duration) {
         let now = Instant::now();
-        self.query_records
-            .retain(|record| now.duration_since(record.timestamp) < max_age);
+        self.query_records.retain(|record| {
+            now.duration_since(record.timestamp) < max_age
+        });
     }
 }
 
