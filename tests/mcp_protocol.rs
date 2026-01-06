@@ -69,10 +69,7 @@ mod tests {
 
         let CallToolResultContent::Text { text } = &response.content[0];
         assert!(text.contains("Successfully indexed"));
-            assert!(text.contains("code chunks"));
-        } else {
-            panic!("Expected Text content");
-        }
+        assert!(text.contains("code chunks"));
     }
 
     #[tokio::test]
@@ -105,10 +102,7 @@ mod tests {
 
         let CallToolResultContent::Text { text } = &response.content[0];
         assert!(text.contains("Search Results for"));
-            assert!(text.contains("\"test search\""));
-        } else {
-            panic!("Expected Text content");
-        }
+        assert!(text.contains("\"test search\""));
     }
 
     #[tokio::test]
@@ -169,9 +163,6 @@ mod tests {
 
         let CallToolResultContent::Text { text } = &response.content[0];
         assert!(text.contains("No relevant results found"));
-        } else {
-            panic!("Expected Text content");
-        }
     }
 
     #[tokio::test]
@@ -235,9 +226,6 @@ mod tests {
 
         let CallToolResultContent::Text { text } = &response.content[0];
         assert_eq!(text, "Test message");
-        } else {
-            panic!("Expected Text content");
-        }
     }
 
     #[test]

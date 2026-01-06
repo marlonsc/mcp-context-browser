@@ -256,7 +256,7 @@ mod tests {
         let search_result = search_service.search(collection, "test query", 5).await;
         assert!(search_result.is_ok());
 
-        let results = search_result.unwrap();
+        let _results = search_result.unwrap();
         // Results length should be valid (always >= 0)
     }
 }
