@@ -1,0 +1,27 @@
+# Clippy configuration
+
+# Allow some pedantic lints that are too strict
+allow = []
+
+# Disallow some lints
+disallow = []
+
+# Enable some additional lints
+enable = []
+
+# Configure specific lints
+[lints]
+# Allow unwrap in tests
+allow-unwrap-in-tests = true
+
+# Allow expect in tests
+allow-expect-in-tests = true
+
+# Allow print statements in tests
+allow-print-in-tests = true
+
+# Allow missing docs in tests
+allow-missing-docs-in-tests = true
+
+# Allow unused variables in tests (with underscore prefix)
+allow-unused-variables = true
