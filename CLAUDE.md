@@ -176,7 +176,7 @@ make audit          # Security audit (⚠️ Known vulnerabilities in dependenci
 make bench          # Run benchmarks (0 defined)
 make coverage       # Generate test coverage report
 
-# v0.0.3 Development (NEW)
+# v0.0.3 Development (NEW - Use make help for full list)
 make metrics        # Start metrics HTTP server on port 3001
 make metrics-test   # Test metrics collection functionality
 make dashboard      # Open metrics dashboard in browser

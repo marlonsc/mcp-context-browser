@@ -50,13 +50,19 @@
 ## 🚀 Quick Start
 
 ```bash
-# Install Rust and clone
+# Install Rust and Node.js, then clone
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+# Install Node.js from https://nodejs.org/
 git clone https://github.com/marlonsc/mcp-context-browser.git
 cd mcp-context-browser
 
-# Run development setup
+# Setup all dependencies (MANDATORY)
 make setup
+
+# Verify dependencies
+make check-deps
+
+# Run development
 make dev
 ```
 

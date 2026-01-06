@@ -44,15 +44,15 @@ help-all: ## Show all available commands
 # CORE WORKFLOW - Use these primary commands!
 # =============================================================================
 
-ready: check-deps quality release ## Ready for deployment
-deploy: check-deps ready version-all github-release ## Full deployment workflow
+ready: quality release ## Ready for deployment
+deploy: ready version-all github-release ## Full deployment workflow
 
-check: check-deps build test ## Basic health check
+check: build test ## Basic health check
 check-deps: ## Check all required dependencies
 	@bash scripts/check-deps.sh
-fix: fmt fix-md ## Auto-fix code issues
+fix: check-deps fmt fix-md ## Auto-fix code issues
 
-ci: check lint-md validate ## CI pipeline simulation
+ci: check-deps check lint-md validate ## CI pipeline simulation
 clean-all: clean clean-docs ## Deep clean
 
 # =============================================================================
