@@ -80,24 +80,16 @@ impl ConfigValidator {
     /// Validate provider configurations
     pub fn validate_provider_configs(&self, providers: &crate::config::ProviderConfig) -> Result<()> {
         // Validate embedding provider
-        if let Some(ref embedding) = providers.embedding {
-            self.validate_embedding_provider(embedding)?;
-        } else if self.strict_mode {
-            return Err(Error::config("Embedding provider configuration is required"));
-        }
+        self.validate_embedding_provider(&providers.embedding)?;
 
         // Validate vector store provider
-        if let Some(ref vector_store) = providers.vector_store {
-            self.validate_vector_store_provider(vector_store)?;
-        } else if self.strict_mode {
-            return Err(Error::config("Vector store provider configuration is required"));
-        }
+        self.validate_vector_store_provider(&providers.vector_store)?;
 
         Ok(())
     }
 
     /// Validate embedding provider configuration
-    pub fn validate_embedding_provider(&self, config: &EmbeddingProviderConfig) -> Result<()> {
+    pub fn validate_embedding_provider(&self, config: &crate::core::types::EmbeddingConfig) -> Result<()> {
         match config {
             EmbeddingProviderConfig::OpenAI { model, api_key, .. } => {
                 if model.is_empty() {
@@ -143,31 +135,39 @@ impl ConfigValidator {
     }
 
     /// Validate vector store provider configuration
-    pub fn validate_vector_store_provider(&self, config: &VectorStoreProviderConfig) -> Result<()> {
-        match config {
-            VectorStoreProviderConfig::Milvus { address, .. } => {
-                if address.is_empty() {
-                    return Err(Error::config("Milvus address cannot be empty"));
+    pub fn validate_vector_store_provider(&self, config: &crate::core::types::VectorStoreConfig) -> Result<()> {
+        // Validate based on provider type
+        match config.provider.as_str() {
+            "milvus" => {
+                if let Some(address) = &config.address {
+                    if address.is_empty() {
+                        return Err(Error::config("Milvus address cannot be empty"));
+                    }
+                } else {
+                    return Err(Error::config("Milvus address is required"));
                 }
             }
-            VectorStoreProviderConfig::Pinecone { api_key, index_name, .. } => {
-                if api_key.is_empty() {
-                    return Err(Error::config("Pinecone API key cannot be empty"));
+            "pinecone" => {
+                if let Some(token) = &config.token {
+                    if token.is_empty() {
+                        return Err(Error::config("Pinecone API key cannot be empty"));
+                    }
+                } else {
+                    return Err(Error::config("Pinecone API key is required"));
                 }
-                if index_name.is_empty() {
-                    return Err(Error::config("Pinecone index name cannot be empty"));
+                if let Some(collection) = &config.collection {
+                    if collection.is_empty() {
+                        return Err(Error::config("Pinecone index name cannot be empty"));
+                    }
+                } else {
+                    return Err(Error::config("Pinecone index name is required"));
                 }
             }
-            VectorStoreProviderConfig::Qdrant { url, .. } => {
-                if url.is_empty() {
-                    return Err(Error::config("Qdrant URL cannot be empty"));
-                }
-            }
-            VectorStoreProviderConfig::EdgeDB { .. } => {
-                // EdgeDB validation would go here if needed
-            }
-            VectorStoreProviderConfig::InMemory { .. } => {
+            "in-memory" => {
                 // In-memory store has no validation requirements
+            }
+            _ => {
+                // Other providers are allowed but not specifically validated
             }
         }
         Ok(())
@@ -223,7 +223,6 @@ impl ConfigValidator {
             "voyageai" => EmbeddingProviderConfig::VoyageAI {
                 model: config.model.clone(),
                 api_key: config.api_key.clone().unwrap_or_default(),
-                base_url: config.base_url.clone(),
                 dimensions: config.dimensions,
                 max_tokens: config.max_tokens,
             },

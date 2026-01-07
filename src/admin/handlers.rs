@@ -205,7 +205,7 @@ pub async fn index_operation_handler(
         }
         "status" => {
             // Get current indexing status
-            let status = state.mcp_server.get_indexing_status();
+            let status = state.mcp_server.get_indexing_status_admin();
             let message = if status.is_indexing {
                 format!("Index {} is currently indexing ({} of {} documents)",
                     index_id, status.indexed_documents, status.total_documents)

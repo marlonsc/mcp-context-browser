@@ -63,7 +63,7 @@ impl AdminService for AdminServiceImpl {
     }
 
     async fn get_indexing_status(&self) -> Result<IndexingStatus, AdminError> {
-        let status = self.mcp_server.get_indexing_status();
+        let status = self.mcp_server.get_indexing_status_admin();
         Ok(IndexingStatus {
             is_indexing: status.is_indexing,
             total_documents: status.total_documents,

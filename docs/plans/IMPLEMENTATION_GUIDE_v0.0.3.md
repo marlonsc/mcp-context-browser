@@ -269,7 +269,7 @@ sequenceDiagram
 ### Qualidade de Código
 
 -   **SOLID Principles**: Implementação rigorosa
--   **Async-First**: Design assíncrono completo
+-   **Async-First**: Complete asynchronous design
 -   **Error Handling**: Tipos de erro customizados com thiserror
 -   **Documentation**: Documentação automática e validada
 

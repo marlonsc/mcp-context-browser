@@ -129,44 +129,6 @@ impl ProviderFactory for DefaultProviderFactory {
                 };
                 Ok(Arc::new(FilesystemVectorStore::new(fs_config).await?))
             }
-            "edgevec" => {
-                use crate::providers::vector_store::edgevec::{EdgeVecVectorStoreProvider, EdgeVecConfig, MetricType, HnswConfig};
-
-                // Parse EdgeVec-specific config from the provider config
-                let edgevec_config = if let Some(VectorStoreProviderConfig::EdgeVec {
-                    max_vectors: _,
-                    collection,
-                    hnsw_m,
-                    hnsw_ef_construction,
-                    distance_metric,
-                    use_quantization,
-                }) = &config.provider_config {
-                    EdgeVecConfig {
-                        dimensions: config.dimensions.unwrap_or(1536),
-                        hnsw_config: HnswConfig {
-                            m: hnsw_m.unwrap_or(16) as u32,
-                            m0: (hnsw_m.unwrap_or(16) * 2) as u32, // m0 is typically 2*m
-                            ef_construction: hnsw_ef_construction.unwrap_or(200) as u32,
-                            ef_search: 64, // Default search parameter
-                        },
-                        metric: match distance_metric.as_deref() {
-                            Some("l2_squared") | Some("euclidean") => MetricType::L2Squared,
-                            Some("dot_product") => MetricType::DotProduct,
-                            _ => MetricType::Cosine, // Default
-                        },
-                        use_quantization: use_quantization.unwrap_or(false),
-                        quantizer_config: Default::default(),
-                    }
-                } else {
-                    EdgeVecConfig {
-                        dimensions: config.dimensions.unwrap_or(1536),
-                        ..Default::default()
-                    }
-                };
-
-                let collection_name = config.collection.clone().unwrap_or_else(|| "default".to_string());
-                Ok(Arc::new(EdgeVecVectorStoreProvider::with_collection(edgevec_config, collection_name)?))
-            }
             "milvus" => {
                 let address = config
                     .address

@@ -13,6 +13,7 @@ use crate::server::McpServer;
 use std::sync::Arc;
 use rmcp::transport::stdio;
 use rmcp::ServiceExt;
+use rmcp::ServerHandler;
 use tracing_subscriber::{self, EnvFilter};
 
 /// Initialize logging and tracing for the MCP server

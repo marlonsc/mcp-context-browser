@@ -44,7 +44,12 @@ pub trait EmbeddingProvider: Send + Sync {
     }
 }
 
-/// Vector store provider trait
+/// Enterprise Vector Storage Interface
+///
+/// Defines the business contract for vector storage systems that persist and
+/// retrieve semantic embeddings at enterprise scale. This abstraction supports
+/// multiple storage backends from in-memory development stores to production
+/// Milvus clusters, ensuring optimal performance for different business needs.
 #[async_trait]
 pub trait VectorStoreProvider: Send + Sync {
     async fn create_collection(&self, name: &str, dimensions: usize) -> Result<()>;

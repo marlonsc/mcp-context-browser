@@ -154,8 +154,9 @@ impl McpServer {
             .map_err(|e| format!("Failed to load configuration: {}", e))?;
 
         // Initialize resource limits
-        let resource_limits = Arc::new(ResourceLimits::new(config.resource_limits.clone()));
-        crate::core::limits::init_global_resource_limits(config.resource_limits)?;
+        let resource_limits_config = config.resource_limits.clone();
+        let resource_limits = Arc::new(ResourceLimits::new(resource_limits_config.clone()));
+        crate::core::limits::init_global_resource_limits(resource_limits_config)?;
 
         // Create provider registry and router
         let registry = Arc::new(crate::di::registry::ProviderRegistry::new());
@@ -263,7 +264,7 @@ impl McpServer {
     #[tool(
         description = "Get comprehensive information about indexing status, system health, and available collections"
     )]
-    pub async fn get_indexing_status(
+    pub async fn get_indexing_status_tool(
         &self,
         parameters: Parameters<GetIndexingStatusArgs>,
     ) -> Result<CallToolResult, McpError> {
@@ -298,7 +299,7 @@ impl McpServer {
     }
 
     /// Get indexing status for admin interface
-    pub fn get_indexing_status(&self) -> crate::admin::service::IndexingStatus {
+    pub fn get_indexing_status_admin(&self) -> crate::admin::service::IndexingStatus {
         crate::admin::service::IndexingStatus {
             is_indexing: false, // TODO: Implement real status
             total_documents: 0,
@@ -490,7 +491,7 @@ impl ServerHandler for McpServer {
                 let args: GetIndexingStatusArgs = serde_json::from_value(
                     serde_json::Value::Object(request.arguments.unwrap_or_default())
                 ).map_err(|e| McpError::invalid_params(format!("Invalid arguments: {}", e), None))?;
-                self.get_indexing_status(Parameters(args)).await
+                self.get_indexing_status_tool(Parameters(args)).await
             },
             "clear_index" => {
                 let args: ClearIndexArgs = serde_json::from_value(

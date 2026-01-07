@@ -77,23 +77,6 @@ impl SearchCodeHandler {
             }
         }
     }
-}
-
-impl SearchCodeHandler {
-    /// Create a new search_code handler
-    pub fn new(
-        search_service: Arc<SearchService>,
-        auth_handler: Arc<AuthHandler>,
-        resource_limits: Arc<ResourceLimits>,
-        cache_manager: Arc<CacheManager>,
-    ) -> Self {
-        Self {
-            search_service,
-            auth_handler,
-            resource_limits,
-            cache_manager,
-        }
-    }
 
     /// Handle the search_code tool request
     pub async fn handle(
@@ -152,12 +135,12 @@ impl SearchCodeHandler {
                     query,
                     limit
                 );
-                return Ok(ResponseFormatter::format_search_response(
-                    query,
+                return ResponseFormatter::format_search_response(
+                    &query,
                     &search_results,
                     start_time.elapsed(),
                     true,
-                )?);
+                );
             }
         }
 
@@ -168,7 +151,7 @@ impl SearchCodeHandler {
         );
 
         // Add timeout for search operations
-        let search_future = self.search_service.search(collection, query, limit);
+        let search_future = self.search_service.search(collection, &query, limit);
         let result = tokio::time::timeout(
             std::time::Duration::from_secs(30), // 30 second timeout
             search_future,
@@ -190,7 +173,7 @@ impl SearchCodeHandler {
                     .await;
 
                 // Use the simplified response formatting that was moved to the search method
-                Self::format_search_response_with_cache(query, &results, duration)?
+                Self::format_search_response_with_cache(&query, &results, duration)
             }
             Ok(Err(e)) => {
                 Ok(ResponseFormatter::format_search_error(&e.to_string(), query))

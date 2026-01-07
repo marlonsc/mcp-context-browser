@@ -63,7 +63,7 @@ where
         // Note: This would need access to an embedding provider
         // For now, this is a placeholder - in practice, the repository
         // might handle embedding internally or we'd need to inject an embedder
-        Err(Error::not_implemented("Repository-based embedding not implemented"))
+        Err(Error::generic("Repository-based embedding not implemented"))
     }
 
     /// Store code chunks using the chunk repository

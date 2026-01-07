@@ -399,7 +399,7 @@ impl WebInterface {
         let interface = WebInterface::new().unwrap();
 
         // Get real indexing data
-        let indexing_status = state.mcp_server.get_indexing_status();
+        let indexing_status = state.mcp_server.get_indexing_status_admin();
 
         let indexes = vec![serde_json::json!({
             "id": "main-index",

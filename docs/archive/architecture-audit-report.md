@@ -36,7 +36,7 @@ Esta auditoria avalia a conformidade da implementação atual com a arquitetura 
 
 ### ✅ **BÔNUS IMPLEMENTADO**
 - **Batch Processing**: Processamento em lotes para otimização de performance
-- **Parallel File Processing**: Processamento paralelo de arquivos usando `join_all`
+- **Parallel File Processing**: Parallel file processing using `join_all`
 
 ---
 

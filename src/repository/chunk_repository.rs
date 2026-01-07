@@ -116,7 +116,7 @@ where
 
         // Get vectors from store
         let results = self.vector_store_provider
-            .search_vectors(&collection_name, &[], limit)
+            .search_similar(&collection_name, &[], limit, None)
             .await?;
 
         // Convert results back to CodeChunks
@@ -134,13 +134,13 @@ where
                     .as_u64()? as u32;
 
                 Some(CodeChunk {
-                    id: result.id,
+                    id: format!("{}_{}", file_path, start_line), // Generate ID from file and line
                     content,
                     file_path,
                     start_line,
                     end_line,
                     language: crate::core::types::Language::Rust, // Default
-                    embedding: Some(result.embedding),
+                    metadata: result.metadata.clone(),
                 })
             })
             .collect();
@@ -150,7 +150,7 @@ where
 
     async fn delete(&self, _id: &str) -> Result<()> {
         // Not implemented for vector stores
-        Err(Error::not_implemented("Delete by ID not implemented for vector store repository"))
+        Err(Error::generic("Delete by ID not implemented for vector store repository"))
     }
 
     async fn delete_collection(&self, collection: &str) -> Result<()> {

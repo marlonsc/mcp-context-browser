@@ -87,13 +87,13 @@ let embeddings = provider.embed_batch(&texts).await?;
 -   **Batch de 100**: ~100-500ms
 -   **Memória**: ~100-500MB (dependendo do modelo)
 
-### Otimização
+### Optimization
 
-Para melhor performance:
+For better performance:
 
--   Use batch embedding quando possível
--   Cache embeddings quando apropriado
--   Considere modelos menores para aplicações com restrições de memória
+-   Use batch embedding when possible
+-   Cache embeddings when appropriate
+-   Consider smaller models for applications with memory constraints
 
 ## Troubleshooting
 
