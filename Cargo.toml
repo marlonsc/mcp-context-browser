@@ -89,7 +89,7 @@ dirs = "5.0"
 
 # HTTP server for metrics API (v0.0.3)
 axum = "0.7"
-tower = { version = "0.4", features = ["load-shed", "limit", "load", "retry", "timeout", "util"] }
+tower = { version = "0.5", features = ["load-shed", "limit", "load", "retry", "timeout", "util"] }
 tower-http = { version = "0.5", features = ["cors"] }
 
 # System metrics collection (v0.0.3)
