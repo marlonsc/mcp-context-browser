@@ -344,7 +344,7 @@ impl VectorStoreProvider for MilvusVectorStoreProvider {
             let scores = &search_result.score;
 
             // Create SearchResult for each match
-            for i in 0..ids.len() {
+            for (i, _) in ids.iter().enumerate() {
                 let distance = scores.get(i).copied().unwrap_or(0.0);
                 // Convert L2 distance to similarity score (higher is better)
                 // Using exponential decay: score = exp(-distance)

@@ -103,7 +103,7 @@ impl ContextService {
         let query_embedding = self.embed_text(query).await?;
 
         // Get semantic search results (expanded limit for better hybrid ranking)
-        let expanded_limit = (limit * 2).max(20).min(100); // Get more results for hybrid ranking
+        let expanded_limit = (limit * 2).clamp(20, 100); // Get more results for hybrid ranking
         let semantic_results = self
             .vector_store_provider
             .search_similar(collection, &query_embedding.vector, expanded_limit, None)
@@ -196,9 +196,7 @@ impl ContextService {
         chunks: &[CodeChunk],
     ) -> Result<()> {
         let mut indexed_docs = self.indexed_documents.write().unwrap();
-        let collection_docs = indexed_docs
-            .entry(collection.to_string())
-            .or_insert_with(Vec::new);
+        let collection_docs = indexed_docs.entry(collection.to_string()).or_default();
 
         // Add new chunks to the collection
         collection_docs.extend(chunks.iter().cloned());

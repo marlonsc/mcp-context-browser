@@ -276,11 +276,9 @@ impl CostTracker {
         let mut provider_cost = None;
 
         for cost_entry in self.costs.iter() {
-            if cost_entry.provider_id == provider_id {
-                if cost_entry.cost_per_unit < best_cost {
-                    best_cost = cost_entry.cost_per_unit;
-                    provider_cost = Some(cost_entry.value().clone());
-                }
+            if cost_entry.provider_id == provider_id && cost_entry.cost_per_unit < best_cost {
+                best_cost = cost_entry.cost_per_unit;
+                provider_cost = Some(cost_entry.value().clone());
             }
         }
 

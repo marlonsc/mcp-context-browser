@@ -163,4 +163,3 @@ path = "examples/config_demo.rs"
 [dev-dependencies]
 tempfile = "3.10"
 mockito = "1.4"
-ruff = "0.0.1"

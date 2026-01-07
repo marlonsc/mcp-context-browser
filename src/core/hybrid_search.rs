@@ -213,7 +213,7 @@ impl HybridSearchEngine {
         // Calculate hybrid scores for semantic results
         let mut hybrid_results: Vec<HybridSearchResult> = semantic_results
             .into_iter()
-            .filter_map(|semantic_result| {
+            .map(|semantic_result| {
                 let doc_key = format!(
                     "{}:{}",
                     semantic_result.file_path, semantic_result.line_number
@@ -234,21 +234,21 @@ impl HybridSearchEngine {
                     let hybrid_score =
                         self.bm25_weight * normalized_bm25 + self.semantic_weight * semantic_score;
 
-                    Some(HybridSearchResult {
+                    HybridSearchResult {
                         result: semantic_result,
                         bm25_score,
                         semantic_score,
                         hybrid_score,
-                    })
+                    }
                 } else {
                     // If document not found for BM25, use semantic score only
                     let hybrid_score = self.semantic_weight * semantic_score;
-                    Some(HybridSearchResult {
+                    HybridSearchResult {
                         result: semantic_result,
                         bm25_score: 0.0,
                         semantic_score,
                         hybrid_score,
-                    })
+                    }
                 }
             })
             .collect();

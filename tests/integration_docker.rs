@@ -4,7 +4,6 @@
 //! Run with: make test-integration-docker
 
 use mcp_context_browser::core::types::{EmbeddingConfig, VectorStoreConfig};
-use mcp_context_browser::di::ServiceProvider;
 use std::env;
 
 #[cfg(test)]

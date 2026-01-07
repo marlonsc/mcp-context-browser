@@ -150,10 +150,18 @@ impl AuthService {
     }
 
     /// Create a default auth service with admin user
-    pub fn default() -> Self {
+    pub fn with_default_config() -> Self {
         Self::new(AuthConfig::default())
     }
+}
 
+impl Default for AuthService {
+    fn default() -> Self {
+        Self::with_default_config()
+    }
+}
+
+impl AuthService {
     /// Authenticate user with email/password (simplified for demo)
     /// In production, this would verify against a proper user store
     pub fn authenticate(&self, email: &str, password: &str) -> Result<String> {

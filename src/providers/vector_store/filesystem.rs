@@ -306,11 +306,11 @@ impl FilesystemVectorStore {
         let mut min_vectors = usize::MAX;
 
         for (shard_id, metadata) in shards.iter() {
-            if metadata.vector_count < self.config.max_vectors_per_shard {
-                if metadata.vector_count < min_vectors {
-                    min_vectors = metadata.vector_count;
-                    best_shard = Some(*shard_id);
-                }
+            if metadata.vector_count < self.config.max_vectors_per_shard
+                && metadata.vector_count < min_vectors
+            {
+                min_vectors = metadata.vector_count;
+                best_shard = Some(*shard_id);
             }
         }
 
@@ -428,6 +428,13 @@ impl VectorStoreProvider for FilesystemVectorStore {
         // Try to load existing collection, if it doesn't exist, create it
         if self.load_collection_state(name).await.is_err() {
             // Collection doesn't exist, save initial empty state
+            self.save_collection_state().await?;
+        }
+
+        // Ensure the index file exists after creation
+        let index_path = self.config.base_path.join(format!("{}_index.json", name));
+        if !index_path.exists() {
+            // Force save if file doesn't exist
             self.save_collection_state().await?;
         }
 
@@ -584,55 +591,73 @@ mod tests {
 
     #[tokio::test]
     async fn test_filesystem_vector_store() {
-        let temp_dir = TempDir::new().unwrap();
-        let config = FilesystemVectorStoreConfig {
-            base_path: temp_dir.path().to_path_buf(),
-            dimensions: 3,
-            ..Default::default()
-        };
+        // Set a timeout for the test to prevent hanging
+        let timeout_duration = std::time::Duration::from_secs(10);
 
-        let store = FilesystemVectorStore::new(config).await.unwrap();
+        let result = tokio::time::timeout(timeout_duration, async {
+            let temp_dir = TempDir::new().unwrap();
+            let config = FilesystemVectorStoreConfig {
+                base_path: temp_dir.path().to_path_buf(),
+                dimensions: 3,
+                ..Default::default()
+            };
 
-        // Create collection
-        store.create_collection("test", 3).await.unwrap();
+            println!("Creating filesystem vector store...");
+            let store = FilesystemVectorStore::new(config).await.unwrap();
 
-        // Insert vectors
-        let vectors = vec![Embedding {
-            vector: vec![1.0, 2.0, 3.0],
-            model: "test".to_string(),
-            dimensions: 3,
-        }];
+            println!("Creating collection...");
+            store.create_collection("test", 3).await.unwrap();
 
-        let metadata = vec![{
-            let mut meta = HashMap::new();
-            meta.insert("file_path".to_string(), serde_json::json!("test.rs"));
-            meta.insert("line_number".to_string(), serde_json::json!(42));
-            meta.insert("content".to_string(), serde_json::json!("test content"));
-            meta
-        }];
+            // Insert vectors
+            println!("Inserting vectors...");
+            let vectors = vec![Embedding {
+                vector: vec![1.0, 2.0, 3.0],
+                model: "test".to_string(),
+                dimensions: 3,
+            }];
 
-        let ids = store
-            .insert_vectors("test", &vectors, metadata)
-            .await
-            .unwrap();
-        assert_eq!(ids.len(), 1);
+            let metadata = vec![{
+                let mut meta = HashMap::new();
+                meta.insert("file_path".to_string(), serde_json::json!("test.rs"));
+                meta.insert("line_number".to_string(), serde_json::json!(42));
+                meta.insert("content".to_string(), serde_json::json!("test content"));
+                meta
+            }];
 
-        // Search similar
-        let query = vec![1.0, 0.0, 0.0];
-        let results = store.search_similar("test", &query, 5, None).await.unwrap();
-        assert!(!results.is_empty());
-        assert_eq!(results[0].file_path, "test.rs");
+            let ids = store
+                .insert_vectors("test", &vectors, metadata)
+                .await
+                .unwrap();
+            assert_eq!(ids.len(), 1);
 
-        // Check stats
-        let stats = store.get_stats("test").await.unwrap();
-        assert_eq!(stats.get("total_vectors").unwrap().as_u64().unwrap(), 1);
+            println!("Searching similar vectors...");
+            // Search similar
+            let query = vec![1.0, 0.0, 0.0];
+            let results = store.search_similar("test", &query, 5, None).await.unwrap();
+            assert!(!results.is_empty());
+            assert_eq!(results[0].file_path, "test.rs");
 
-        // Delete vectors
-        store.delete_vectors("test", &ids).await.unwrap();
+            println!("Getting stats...");
+            // Check stats
+            let stats = store.get_stats("test").await.unwrap();
+            assert_eq!(stats.get("total_vectors").unwrap().as_u64().unwrap(), 1);
 
-        // Check stats after deletion
-        let stats = store.get_stats("test").await.unwrap();
-        assert_eq!(stats.get("total_vectors").unwrap().as_u64().unwrap(), 0);
+            println!("Deleting vectors...");
+            // Delete vectors
+            store.delete_vectors("test", &ids).await.unwrap();
+
+            println!("Getting stats after deletion...");
+            // Check stats after deletion
+            let stats = store.get_stats("test").await.unwrap();
+            assert_eq!(stats.get("total_vectors").unwrap().as_u64().unwrap(), 0);
+
+            println!("Test completed successfully!");
+        }).await;
+
+        match result {
+            Ok(_) => {},
+            Err(_) => panic!("Test timed out after {} seconds", timeout_duration.as_secs()),
+        }
     }
 
     #[tokio::test]

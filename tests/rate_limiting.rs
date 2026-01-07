@@ -3,10 +3,9 @@
 //! Tests both the core rate limiter and HTTP middleware integration.
 
 use mcp_context_browser::core::rate_limit::{
-    RateLimitConfig, RateLimitKey, RateLimitResult, RateLimiter,
+    RateLimitBackend, RateLimitConfig, RateLimitKey, RateLimitResult, RateLimiter,
 };
 use std::sync::Arc;
-use std::time::Duration;
 
 #[cfg(test)]
 mod tests {
@@ -62,7 +61,12 @@ mod tests {
     #[tokio::test]
     async fn test_rate_limit_config_default() {
         let config = RateLimitConfig::default();
-        assert_eq!(config.redis_url, "redis://127.0.0.1:6379");
+        match &config.backend {
+            RateLimitBackend::Memory { max_entries } => {
+                assert_eq!(*max_entries, 10000);
+            }
+            _ => panic!("Expected Memory backend"),
+        }
         assert_eq!(config.window_seconds, 60);
         assert_eq!(config.max_requests_per_window, 100);
         assert_eq!(config.burst_allowance, 20);
@@ -104,6 +108,7 @@ mod tests {
             remaining: 95,
             reset_in_seconds: 45,
             current_count: 5,
+            limit: 100,
         };
 
         assert!(result.allowed);
@@ -136,12 +141,6 @@ mod tests {
 #[cfg(test)]
 mod integration_tests {
     use super::*;
-    use axum::{
-        http::{Request, StatusCode},
-        routing::get,
-        Router,
-    };
-    use tower::ServiceExt;
 
     #[tokio::test]
     async fn test_http_middleware_integration() {

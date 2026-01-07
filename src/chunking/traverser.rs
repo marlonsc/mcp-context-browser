@@ -8,6 +8,17 @@ use crate::core::error::Result;
 use crate::core::types::{CodeChunk, Language};
 use std::collections::HashMap;
 
+/// Parameters for creating a code chunk
+#[derive(Debug)]
+struct ChunkParams<'a> {
+    content: String,
+    file_name: &'a str,
+    node_type: &'a str,
+    depth: usize,
+    priority: i32,
+    chunk_index: usize,
+}
+
 /// Generic AST node traverser with configurable rules
 pub struct AstTraverser<'a> {
     rules: &'a [NodeExtractionRule],
@@ -57,15 +68,15 @@ impl<'a> AstTraverser<'a> {
 
                     if let Some(code) = code {
                         if code.len() >= rule.min_length && code.lines().count() >= rule.min_lines {
-                            let mut chunk = self.create_chunk_from_node(
-                                node,
-                                code,
+                            let chunk_params = ChunkParams {
+                                content: code,
                                 file_name,
                                 node_type,
                                 depth,
-                                rule.priority,
-                                chunks.len(),
-                            );
+                                priority: rule.priority,
+                                chunk_index: chunks.len(),
+                            };
+                            let mut chunk = self.create_chunk_from_node(node, chunk_params);
 
                             // Add context metadata if available
                             if let Some(context_lines) = context {
@@ -166,35 +177,31 @@ impl<'a> AstTraverser<'a> {
         (Some(context), Some(context_lines))
     }
 
-    fn create_chunk_from_node(
-        &self,
-        node: tree_sitter::Node,
-        content: String,
-        file_name: &str,
-        node_type: &str,
-        depth: usize,
-        priority: i32,
-        chunk_index: usize,
-    ) -> CodeChunk {
+    fn create_chunk_from_node(&self, node: tree_sitter::Node, params: ChunkParams) -> CodeChunk {
         let start_line = node.start_position().row;
         let end_line = node.end_position().row;
 
         CodeChunk {
             id: format!(
                 "{}_{}_{}_{}_{}_{}",
-                file_name, node_type, start_line, end_line, priority, chunk_index
+                params.file_name,
+                params.node_type,
+                start_line,
+                end_line,
+                params.priority,
+                params.chunk_index
             ),
-            content,
-            file_path: file_name.to_string(),
+            content: params.content,
+            file_path: params.file_name.to_string(),
             start_line: start_line as u32,
             end_line: end_line as u32,
             language: self.language.clone(),
             metadata: {
                 let mut meta = HashMap::new();
-                meta.insert("file".to_string(), serde_json::json!(file_name));
-                meta.insert("node_type".to_string(), serde_json::json!(node_type));
-                meta.insert("depth".to_string(), serde_json::json!(depth));
-                meta.insert("priority".to_string(), serde_json::json!(priority));
+                meta.insert("file".to_string(), serde_json::json!(params.file_name));
+                meta.insert("node_type".to_string(), serde_json::json!(params.node_type));
+                meta.insert("depth".to_string(), serde_json::json!(params.depth));
+                meta.insert("priority".to_string(), serde_json::json!(params.priority));
                 serde_json::to_value(meta).unwrap_or(serde_json::json!({}))
             },
         }

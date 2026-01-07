@@ -292,7 +292,7 @@ pub async fn request_validation_middleware(
     }
 
     // Validate headers
-    if let Err(_) = validate_headers(req.headers()) {
+    if validate_headers(req.headers()).is_err() {
         return Err(StatusCode::BAD_REQUEST);
     }
 
@@ -342,6 +342,14 @@ fn validate_uri(uri: &Uri) -> Result<(), &'static str> {
     for pattern in suspicious {
         if path.contains(pattern) {
             return Err("Suspicious character in URI");
+        }
+    }
+
+    // Check for percent-encoded suspicious characters
+    let suspicious_encoded = ["%3C", "%3E", "%22", "%27"]; // < > " '
+    for pattern in suspicious_encoded {
+        if path.contains(pattern) {
+            return Err("Suspicious encoded character in URI");
         }
     }
 
@@ -413,7 +421,10 @@ mod tests {
         // The important thing is that our validation catches suspicious patterns
         let _ = validate_uri(&uri); // Just ensure it doesn't panic
         assert!(validate_uri(&"/api/%00test".parse().unwrap()).is_err()); // Encoded null
-        assert!(validate_uri(&"/api/<script>".parse().unwrap()).is_err()); // XSS attempt
+
+        // Test XSS attempt - use a URI that contains suspicious characters but is technically valid
+        let uri: axum::http::Uri = "/api/test%3Cscript%3E".parse().unwrap(); // URL encoded <script>
+        assert!(validate_uri(&uri).is_err()); // XSS attempt
     }
 
     #[test]

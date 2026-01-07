@@ -1,10 +1,11 @@
 //! Unit tests for embedding providers
 
 use mcp_context_browser::core::error::Error;
-use mcp_context_browser::providers::EmbeddingProvider;
 use mcp_context_browser::providers::embedding::{
-    OpenAIEmbeddingProvider, GeminiEmbeddingProvider, VoyageAIEmbeddingProvider, OllamaEmbeddingProvider
+    GeminiEmbeddingProvider, OllamaEmbeddingProvider, OpenAIEmbeddingProvider,
+    VoyageAIEmbeddingProvider,
 };
+use mcp_context_browser::providers::EmbeddingProvider;
 
 // Note: MockHttpServer removed as it was unused and causing warnings
 
@@ -21,7 +22,8 @@ mod openai_tests {
             "test-key".to_string(),
             Some("https://api.openai.com/v1".to_string()),
             "text-embedding-3-small".to_string(),
-        ).expect("Failed to create OpenAI provider");
+        )
+        .expect("Failed to create OpenAI provider");
 
         assert_eq!(provider.provider_name(), "openai");
         assert_eq!(provider.model(), "text-embedding-3-small");
@@ -39,11 +41,9 @@ mod openai_tests {
         ];
 
         for (model, expected_dims) in models_and_dims {
-            let provider = OpenAIEmbeddingProvider::new(
-                "test-key".to_string(),
-                None,
-                model.to_string(),
-            ).expect("Failed to create OpenAI provider");
+            let provider =
+                OpenAIEmbeddingProvider::new("test-key".to_string(), None, model.to_string())
+                    .expect("Failed to create OpenAI provider");
             assert_eq!(
                 provider.dimensions(),
                 expected_dims,
@@ -60,14 +60,16 @@ mod openai_tests {
             "test-key".to_string(),
             None,
             "text-embedding-3-small".to_string(),
-        ).expect("Failed to create OpenAI provider");
+        )
+        .expect("Failed to create OpenAI provider");
         assert_eq!(provider_no_url.base_url(), "https://api.openai.com/v1");
 
         let provider_with_url = OpenAIEmbeddingProvider::new(
             "test-key".to_string(),
             Some("https://custom.openai.com/v1".to_string()),
             "text-embedding-3-small".to_string(),
-        ).expect("Failed to create OpenAI provider");
+        )
+        .expect("Failed to create OpenAI provider");
         assert_eq!(provider_with_url.base_url(), "https://custom.openai.com/v1");
     }
 
@@ -96,7 +98,8 @@ mod openai_tests {
             "test-key".to_string(),
             Some(server.url()),
             "text-embedding-3-small".to_string(),
-        ).expect("Failed to create OpenAI provider");
+        )
+        .expect("Failed to create OpenAI provider");
 
         let result = tokio::runtime::Runtime::new()
             .unwrap()
@@ -119,7 +122,8 @@ mod ollama_tests {
         let provider = OllamaEmbeddingProvider::new(
             "http://localhost:11434".to_string(),
             "nomic-embed-text".to_string(),
-        ).expect("Failed to create Ollama provider");
+        )
+        .expect("Failed to create Ollama provider");
 
         assert_eq!(provider.provider_name(), "ollama");
         assert_eq!(provider.model(), "nomic-embed-text");
@@ -141,7 +145,8 @@ mod ollama_tests {
             let provider = OllamaEmbeddingProvider::new(
                 "http://localhost:11434".to_string(),
                 model.to_string(),
-            ).expect("Failed to create Ollama provider");
+            )
+            .expect("Failed to create Ollama provider");
             assert_eq!(
                 provider.dimensions(),
                 expected_dims,
@@ -166,7 +171,8 @@ mod ollama_tests {
             let provider = OllamaEmbeddingProvider::new(
                 "http://localhost:11434".to_string(),
                 model.to_string(),
-            );
+            )
+            .unwrap();
             assert_eq!(
                 provider.max_tokens(),
                 expected_tokens,
@@ -189,7 +195,7 @@ mod voyageai_tests {
             "test-key".to_string(),
             Some("https://api.voyageai.com/v1".to_string()),
             "voyage-code-3".to_string(),
-        ).expect("Failed to create VoyageAI provider");
+        );
 
         assert_eq!(provider.provider_name(), "voyageai");
         assert_eq!(provider.model(), "voyage-code-3");
@@ -206,11 +212,8 @@ mod voyageai_tests {
         ];
 
         for (model, expected_dims) in models_and_dims {
-            let provider = VoyageAIEmbeddingProvider::new(
-                "test-key".to_string(),
-                None,
-                model.to_string(),
-            );
+            let provider =
+                VoyageAIEmbeddingProvider::new("test-key".to_string(), None, model.to_string());
             assert_eq!(
                 provider.dimensions(),
                 expected_dims,
@@ -235,7 +238,10 @@ mod voyageai_tests {
             Some("https://custom.voyageai.com/v1".to_string()),
             "voyage-code-3".to_string(),
         );
-        assert_eq!(provider_with_url.base_url(), "https://custom.voyageai.com/v1");
+        assert_eq!(
+            provider_with_url.base_url(),
+            "https://custom.voyageai.com/v1"
+        );
     }
 }
 
@@ -250,7 +256,8 @@ mod gemini_tests {
             "test-key".to_string(),
             Some("https://generativelanguage.googleapis.com".to_string()),
             "gemini-embedding-001".to_string(),
-        );
+        )
+        .unwrap();
 
         assert_eq!(provider.provider_name(), "gemini");
         assert_eq!(provider.model(), "gemini-embedding-001");
@@ -268,11 +275,9 @@ mod gemini_tests {
         ];
 
         for (model, expected_dims) in models_and_dims {
-            let provider = GeminiEmbeddingProvider::new(
-                "test-key".to_string(),
-                None,
-                model.to_string(),
-            );
+            let provider =
+                GeminiEmbeddingProvider::new("test-key".to_string(), None, model.to_string())
+                    .unwrap();
             assert_eq!(
                 provider.dimensions(),
                 expected_dims,
@@ -289,7 +294,8 @@ mod gemini_tests {
             "test-key".to_string(),
             None,
             "models/gemini-embedding-001".to_string(),
-        );
+        )
+        .unwrap();
 
         // Should strip the "models/" prefix
         assert_eq!(provider.api_model_name(), "gemini-embedding-001");
@@ -301,14 +307,19 @@ mod gemini_tests {
             "test-key".to_string(),
             None,
             "gemini-embedding-001".to_string(),
+        )
+        .unwrap();
+        assert_eq!(
+            provider_no_url.base_url(),
+            "https://generativelanguage.googleapis.com"
         );
-        assert_eq!(provider_no_url.base_url(), "https://generativelanguage.googleapis.com");
 
         let provider_with_url = GeminiEmbeddingProvider::new(
             "test-key".to_string(),
             Some("https://custom.gemini.com".to_string()),
             "gemini-embedding-001".to_string(),
-        );
+        )
+        .unwrap();
         assert_eq!(provider_with_url.base_url(), "https://custom.gemini.com");
     }
 }
@@ -363,12 +374,14 @@ mod provider_trait_tests {
             "test-key".to_string(),
             None,
             "text-embedding-3-small".to_string(),
-        ).unwrap();
+        )
+        .unwrap();
         let gemini_provider = GeminiEmbeddingProvider::new(
             "test-key".to_string(),
             None,
             "gemini-embedding-001".to_string(),
-        );
+        )
+        .unwrap();
         let voyageai_provider = VoyageAIEmbeddingProvider::new(
             "test-key".to_string(),
             None,
@@ -377,7 +390,8 @@ mod provider_trait_tests {
         let ollama_provider = OllamaEmbeddingProvider::new(
             "http://localhost:11434".to_string(),
             "nomic-embed-text".to_string(),
-        );
+        )
+        .unwrap();
 
         let providers: Vec<&dyn EmbeddingProvider> = vec![
             &null_provider,
@@ -389,8 +403,14 @@ mod provider_trait_tests {
 
         // Test that all providers have non-empty names
         for provider in &providers {
-            assert!(!provider.provider_name().is_empty(), "Provider name should not be empty");
-            assert!(provider.dimensions() > 0, "Provider dimensions should be positive");
+            assert!(
+                !provider.provider_name().is_empty(),
+                "Provider name should not be empty"
+            );
+            assert!(
+                provider.dimensions() > 0,
+                "Provider dimensions should be positive"
+            );
         }
 
         // Test provider-specific validations
@@ -419,14 +439,16 @@ mod provider_trait_tests {
             "test-key".to_string(),
             None,
             "text-embedding-3-small".to_string(),
-        );
+        )
+        .unwrap();
         assert_eq!(openai_default.base_url(), "https://api.openai.com/v1");
 
         let openai_custom = OpenAIEmbeddingProvider::new(
             "test-key".to_string(),
             Some("https://custom.openai.com/v1".to_string()),
             "text-embedding-3-small".to_string(),
-        );
+        )
+        .unwrap();
         assert_eq!(openai_custom.base_url(), "https://custom.openai.com/v1");
 
         // Gemini
@@ -434,14 +456,19 @@ mod provider_trait_tests {
             "test-key".to_string(),
             None,
             "gemini-embedding-001".to_string(),
+        )
+        .unwrap();
+        assert_eq!(
+            gemini_default.base_url(),
+            "https://generativelanguage.googleapis.com"
         );
-        assert_eq!(gemini_default.base_url(), "https://generativelanguage.googleapis.com");
 
         let gemini_custom = GeminiEmbeddingProvider::new(
             "test-key".to_string(),
             Some("https://custom.gemini.com".to_string()),
             "gemini-embedding-001".to_string(),
-        );
+        )
+        .unwrap();
         assert_eq!(gemini_custom.base_url(), "https://custom.gemini.com");
 
         // VoyageAI
@@ -473,13 +500,16 @@ mod provider_trait_tests {
         ];
 
         for (model, expected_dims) in openai_models {
-            let provider = OpenAIEmbeddingProvider::new(
-                "test-key".to_string(),
-                None,
-                model.to_string(),
+            let provider =
+                OpenAIEmbeddingProvider::new("test-key".to_string(), None, model.to_string())
+                    .unwrap();
+            assert_eq!(
+                provider.dimensions(),
+                expected_dims,
+                "OpenAI model {} should have {} dimensions",
+                model,
+                expected_dims
             );
-            assert_eq!(provider.dimensions(), expected_dims,
-                      "OpenAI model {} should have {} dimensions", model, expected_dims);
         }
 
         // Gemini models
@@ -491,13 +521,16 @@ mod provider_trait_tests {
         ];
 
         for (model, expected_dims) in gemini_models {
-            let provider = GeminiEmbeddingProvider::new(
-                "test-key".to_string(),
-                None,
-                model.to_string(),
+            let provider =
+                GeminiEmbeddingProvider::new("test-key".to_string(), None, model.to_string())
+                    .unwrap();
+            assert_eq!(
+                provider.dimensions(),
+                expected_dims,
+                "Gemini model {} should have {} dimensions",
+                model,
+                expected_dims
             );
-            assert_eq!(provider.dimensions(), expected_dims,
-                      "Gemini model {} should have {} dimensions", model, expected_dims);
         }
 
         // Test Gemini model name stripping
@@ -505,7 +538,8 @@ mod provider_trait_tests {
             "test-key".to_string(),
             None,
             "models/gemini-embedding-001".to_string(),
-        );
+        )
+        .unwrap();
         assert_eq!(gemini_with_prefix.api_model_name(), "gemini-embedding-001");
 
         // Ollama models
@@ -521,9 +555,15 @@ mod provider_trait_tests {
             let provider = OllamaEmbeddingProvider::new(
                 "http://localhost:11434".to_string(),
                 model.to_string(),
+            )
+            .unwrap();
+            assert_eq!(
+                provider.dimensions(),
+                expected_dims,
+                "Ollama model {} should have {} dimensions",
+                model,
+                expected_dims
             );
-            assert_eq!(provider.dimensions(), expected_dims,
-                      "Ollama model {} should have {} dimensions", model, expected_dims);
         }
     }
 
@@ -536,7 +576,8 @@ mod provider_trait_tests {
             "test-key".to_string(),
             None,
             "text-embedding-3-small".to_string(),
-        );
+        )
+        .unwrap();
         assert_eq!(openai_provider.max_tokens(), 8192);
 
         // Gemini
@@ -544,7 +585,8 @@ mod provider_trait_tests {
             "test-key".to_string(),
             None,
             "gemini-embedding-001".to_string(),
-        );
+        )
+        .unwrap();
         assert_eq!(gemini_provider.max_tokens(), 2048);
 
         // VoyageAI
@@ -559,7 +601,8 @@ mod provider_trait_tests {
         let ollama_provider = OllamaEmbeddingProvider::new(
             "http://localhost:11434".to_string(),
             "nomic-embed-text".to_string(),
-        );
+        )
+        .unwrap();
         assert_eq!(ollama_provider.max_tokens(), 8192);
     }
 
@@ -583,16 +626,19 @@ mod provider_trait_tests {
         assert!(result.is_ok(), "Null provider should handle long text");
 
         // Test batch with mixed empty/non-empty texts
-        let texts = vec![
-            "".to_string(),
-            "short".to_string(),
-            "a ".repeat(1000),
-        ];
+        let texts = vec!["".to_string(), "short".to_string(), "a ".repeat(1000)];
         let result = tokio::runtime::Runtime::new()
             .unwrap()
             .block_on(null_provider.embed_batch(&texts));
-        assert!(result.is_ok(), "Null provider should handle mixed text lengths");
-        assert_eq!(result.unwrap().len(), 3, "Should return embeddings for all inputs");
+        assert!(
+            result.is_ok(),
+            "Null provider should handle mixed text lengths"
+        );
+        assert_eq!(
+            result.unwrap().len(),
+            3,
+            "Should return embeddings for all inputs"
+        );
     }
 
     #[test]
@@ -603,38 +649,54 @@ mod provider_trait_tests {
         let null_provider = NullEmbeddingProvider::new();
 
         // Test basic trait methods
-        assert!(!null_provider.provider_name().is_empty(),
-               "NullProvider should have non-empty name");
-        assert!(null_provider.dimensions() > 0,
-               "NullProvider should have positive dimensions");
+        assert!(
+            !null_provider.provider_name().is_empty(),
+            "NullProvider should have non-empty name"
+        );
+        assert!(
+            null_provider.dimensions() > 0,
+            "NullProvider should have positive dimensions"
+        );
 
         // Test embed_batch with single item (should work)
         let result = tokio::runtime::Runtime::new()
             .unwrap()
             .block_on(null_provider.embed_batch(&["test".to_string()]));
-        assert!(result.is_ok(),
-               "NullProvider should handle single item batch");
+        assert!(
+            result.is_ok(),
+            "NullProvider should handle single item batch"
+        );
         let embeddings = result.unwrap();
-        assert_eq!(embeddings.len(), 1,
-                  "NullProvider should return one embedding");
+        assert_eq!(
+            embeddings.len(),
+            1,
+            "NullProvider should return one embedding"
+        );
 
         let embedding = &embeddings[0];
-        assert!(!embedding.vector.is_empty(),
-               "NullProvider should return non-empty vector");
-        assert_eq!(embedding.dimensions, null_provider.dimensions(),
-                  "NullProvider embedding dimensions should match provider");
+        assert!(
+            !embedding.vector.is_empty(),
+            "NullProvider should return non-empty vector"
+        );
+        assert_eq!(
+            embedding.dimensions,
+            null_provider.dimensions(),
+            "NullProvider embedding dimensions should match provider"
+        );
 
         // Test that other providers are structurally correct (just instantiation)
         let _openai_provider = OpenAIEmbeddingProvider::new(
             "test-key".to_string(),
             None,
             "text-embedding-3-small".to_string(),
-        );
+        )
+        .unwrap();
         let _gemini_provider = GeminiEmbeddingProvider::new(
             "test-key".to_string(),
             None,
             "gemini-embedding-001".to_string(),
-        );
+        )
+        .unwrap();
         let _voyageai_provider = VoyageAIEmbeddingProvider::new(
             "test-key".to_string(),
             None,
@@ -643,7 +705,8 @@ mod provider_trait_tests {
         let _ollama_provider = OllamaEmbeddingProvider::new(
             "http://localhost:11434".to_string(),
             "nomic-embed-text".to_string(),
-        );
+        )
+        .unwrap();
     }
 
     #[test]
@@ -658,14 +721,28 @@ mod provider_trait_tests {
             .unwrap()
             .block_on(provider.embed_batch(&large_batch));
 
-        assert!(result.is_ok(), "Should handle large batches without memory issues");
+        assert!(
+            result.is_ok(),
+            "Should handle large batches without memory issues"
+        );
         let embeddings = result.unwrap();
-        assert_eq!(embeddings.len(), 1000, "Should return embeddings for all items in large batch");
+        assert_eq!(
+            embeddings.len(),
+            1000,
+            "Should return embeddings for all items in large batch"
+        );
 
         // Test memory consistency
         for embedding in &embeddings {
-            assert_eq!(embedding.vector.len(), 1, "All embeddings should have consistent vector size");
-            assert_eq!(embedding.dimensions, 1, "All embeddings should have consistent dimensions");
+            assert_eq!(
+                embedding.vector.len(),
+                1,
+                "All embeddings should have consistent vector size"
+            );
+            assert_eq!(
+                embedding.dimensions, 1,
+                "All embeddings should have consistent dimensions"
+            );
         }
     }
 
@@ -696,7 +773,8 @@ mod provider_trait_tests {
                 api_key,
                 base_url,
                 "text-embedding-3-small".to_string(),
-            );
+            )
+            .unwrap();
 
             let runtime = tokio::runtime::Runtime::new().unwrap();
 
@@ -736,11 +814,9 @@ mod provider_trait_tests {
             if let Ok(api_key) = std::env::var("GEMINI_API_KEY") {
                 println!("Running Gemini integration test with real API...");
 
-                let provider = GeminiEmbeddingProvider::new(
-                    api_key,
-                    None,
-                    "gemini-embedding-001".to_string(),
-                );
+                let provider =
+                    GeminiEmbeddingProvider::new(api_key, None, "gemini-embedding-001".to_string())
+                        .unwrap();
 
                 let runtime = tokio::runtime::Runtime::new().unwrap();
 
@@ -782,11 +858,8 @@ mod provider_trait_tests {
             if let Ok(api_key) = std::env::var("VOYAGE_API_KEY") {
                 println!("Running VoyageAI integration test with real API...");
 
-                let provider = VoyageAIEmbeddingProvider::new(
-                    api_key,
-                    None,
-                    "voyage-code-3".to_string(),
-                );
+                let provider =
+                    VoyageAIEmbeddingProvider::new(api_key, None, "voyage-code-3".to_string());
 
                 let runtime = tokio::runtime::Runtime::new().unwrap();
 
@@ -828,10 +901,8 @@ mod provider_trait_tests {
             if let Ok(base_url) = std::env::var("OLLAMA_URL") {
                 println!("Running Ollama integration test with real API...");
 
-                let provider = OllamaEmbeddingProvider::new(
-                    base_url,
-                    "nomic-embed-text".to_string(),
-                );
+                let provider =
+                    OllamaEmbeddingProvider::new(base_url, "nomic-embed-text".to_string()).unwrap();
 
                 let runtime = tokio::runtime::Runtime::new().unwrap();
 
@@ -880,7 +951,8 @@ mod provider_trait_tests {
                 "Another test sentence to measure embedding speed.".to_string(),
                 "Performance testing with multiple sentences.".to_string(),
                 "The quick brown fox jumps over the lazy dog.".to_string(),
-                "Machine learning and artificial intelligence are transforming technology.".to_string(),
+                "Machine learning and artificial intelligence are transforming technology."
+                    .to_string(),
             ];
 
             // Test NullProvider performance (baseline)
@@ -888,45 +960,55 @@ mod provider_trait_tests {
             let result = runtime.block_on(null_provider.embed_batch(&test_texts));
             let null_duration = start.elapsed();
 
-            assert!(result.is_ok(), "Null provider performance test should succeed");
+            assert!(
+                result.is_ok(),
+                "Null provider performance test should succeed"
+            );
             let embeddings = result.unwrap();
             assert_eq!(embeddings.len(), test_texts.len());
 
             println!("📊 Performance Results:");
             println!("  Null Provider: {:?}", null_duration);
-            println!("  Throughput: {:.2} embeddings/sec", test_texts.len() as f64 / null_duration.as_secs_f64());
+            println!(
+                "  Throughput: {:.2} embeddings/sec",
+                test_texts.len() as f64 / null_duration.as_secs_f64()
+            );
 
             // Test with real providers if available
             if let Ok(api_key) = std::env::var("OPENAI_API_KEY") {
-                let openai_provider = OpenAIEmbeddingProvider::new(
+                if let Ok(openai_provider) = OpenAIEmbeddingProvider::new(
                     api_key,
                     None,
                     "text-embedding-3-small".to_string(),
-                );
+                ) {
+                    let start = std::time::Instant::now();
+                    let result = runtime.block_on(openai_provider.embed_batch(&test_texts));
+                    let openai_duration = start.elapsed();
 
-                let start = std::time::Instant::now();
-                let result = runtime.block_on(openai_provider.embed_batch(&test_texts));
-                let openai_duration = start.elapsed();
-
-                if result.is_ok() {
-                    println!("  OpenAI API: {:?}", openai_duration);
-                    println!("  OpenAI Throughput: {:.2} embeddings/sec", test_texts.len() as f64 / openai_duration.as_secs_f64());
+                    if result.is_ok() {
+                        println!("  OpenAI API: {:?}", openai_duration);
+                        println!(
+                            "  OpenAI Throughput: {:.2} embeddings/sec",
+                            test_texts.len() as f64 / openai_duration.as_secs_f64()
+                        );
+                    }
                 }
             }
 
             if let Ok(api_key) = std::env::var("GEMINI_API_KEY") {
-                if let Ok(gemini_provider) = GeminiEmbeddingProvider::new(
-                    api_key,
-                    None,
-                    "gemini-embedding-001".to_string(),
-                ) {
+                if let Ok(gemini_provider) =
+                    GeminiEmbeddingProvider::new(api_key, None, "gemini-embedding-001".to_string())
+                {
                     let start = std::time::Instant::now();
                     let result = runtime.block_on(gemini_provider.embed_batch(&test_texts));
                     let gemini_duration = start.elapsed();
 
                     if result.is_ok() {
                         println!("  Gemini API: {:?}", gemini_duration);
-                        println!("  Gemini Throughput: {:.2} embeddings/sec", test_texts.len() as f64 / gemini_duration.as_secs_f64());
+                        println!(
+                            "  Gemini Throughput: {:.2} embeddings/sec",
+                            test_texts.len() as f64 / gemini_duration.as_secs_f64()
+                        );
                     }
                 }
             }
@@ -1056,7 +1138,9 @@ mod factory_tests {
 
         assert!(result.is_err());
         match result {
-            Err(Error::Config { message: msg }) => assert!(msg.contains("Unsupported embedding provider")),
+            Err(Error::Config { message: msg }) => {
+                assert!(msg.contains("Unsupported embedding provider"))
+            }
             _ => panic!("Expected Config error"),
         }
     }

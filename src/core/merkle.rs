@@ -79,10 +79,11 @@ impl MerkleTree {
     /// Build a Merkle node from filesystem
     fn build_node(path: &std::path::Path, name: &str) -> Result<MerkleNode> {
         let metadata = std::fs::metadata(path).map_err(|e| Error::Io {
-            source: std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Failed to read metadata for {}: {}", path.display(), e),
-            ),
+            source: std::io::Error::other(format!(
+                "Failed to read metadata for {}: {}",
+                path.display(),
+                e
+            )),
         })?;
 
         if metadata.is_file() {
@@ -280,7 +281,7 @@ impl MerkleTree {
                 }
 
                 // Find added files/directories (present in right, absent in left)
-                for (name, _) in right_children {
+                for name in right_children.keys() {
                     if !left_children.contains_key(name) {
                         let mut current_path = path.clone();
                         current_path.push(name.clone());

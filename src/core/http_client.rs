@@ -111,16 +111,24 @@ pub fn get_global_http_client() -> Option<Arc<HttpClientPool>> {
 /// Get the global HTTP client or create a default one
 pub fn get_or_create_global_http_client(
 ) -> Result<Arc<HttpClientPool>, Box<dyn std::error::Error + Send + Sync>> {
+    // First check if we already have a pool
     if let Some(pool) = get_global_http_client() {
-        Ok(pool)
-    } else {
-        let pool = Arc::new(HttpClientPool::new()?);
-        HTTP_CLIENT_POOL
-            .set(Arc::clone(&pool))
-            .map_err(|_| "HTTP client pool already initialized")?;
-        Ok(pool)
+        return Ok(pool);
+    }
+
+    // Try to create and set a new pool
+    let pool = Arc::new(HttpClientPool::new()?);
+
+    // Try to set it, but if it fails (already set), get the existing one
+    match HTTP_CLIENT_POOL.set(Arc::clone(&pool)) {
+        Ok(()) => Ok(pool),
+        Err(_) => {
+            // Already set by another thread/test, get the existing one
+            get_global_http_client().ok_or_else(|| "HTTP client pool not available".into())
+        }
     }
 }
+
 
 #[cfg(test)]
 mod tests {

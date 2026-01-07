@@ -3,9 +3,9 @@
 //! High-performance embedded vector database implementation using EdgeVec.
 //! EdgeVec provides sub-millisecond vector similarity search with HNSW algorithm.
 
+use async_trait::async_trait;
 use std::collections::HashMap;
 use std::sync::Arc;
-use async_trait::async_trait;
 use tokio::sync::RwLock;
 
 use crate::core::error::{Error, Result};
@@ -61,10 +61,18 @@ pub struct HnswConfig {
     pub ef_search: u32,
 }
 
-fn default_m() -> u32 { 16 }
-fn default_m0() -> u32 { 32 }
-fn default_ef_construction() -> u32 { 200 }
-fn default_ef_search() -> u32 { 64 }
+fn default_m() -> u32 {
+    16
+}
+fn default_m0() -> u32 {
+    32
+}
+fn default_ef_construction() -> u32 {
+    200
+}
+fn default_ef_search() -> u32 {
+    64
+}
 
 impl Default for HnswConfig {
     fn default() -> Self {
@@ -180,7 +188,9 @@ impl EdgeVecVectorStoreProvider {
 impl VectorStoreProvider for EdgeVecVectorStoreProvider {
     async fn create_collection(&self, name: &str, _dimensions: usize) -> Result<()> {
         let mut metadata_store = self.metadata_store.write().await;
-        metadata_store.entry(name.to_string()).or_insert_with(HashMap::new);
+        metadata_store
+            .entry(name.to_string())
+            .or_insert_with(HashMap::new);
         Ok(())
     }
 
@@ -219,7 +229,7 @@ impl VectorStoreProvider for EdgeVecVectorStoreProvider {
     ) -> Result<Vec<String>> {
         if vectors.len() != metadata.len() {
             return Err(Error::invalid_argument(
-                "Number of vectors must match number of metadata entries"
+                "Number of vectors must match number of metadata entries",
             ));
         }
 
@@ -239,7 +249,8 @@ impl VectorStoreProvider for EdgeVecVectorStoreProvider {
             let external_id = format!("{}_{}", collection, uuid::Uuid::new_v4());
 
             // Insert vector into EdgeVec storage and index
-            let vector_id = index.insert(&vector.vector, &mut storage)
+            let vector_id = index
+                .insert(&vector.vector, &mut storage)
                 .map_err(|e| Error::internal(format!("Failed to insert vector: {}", e)))?;
 
             // Map external ID to internal vector ID
@@ -248,10 +259,15 @@ impl VectorStoreProvider for EdgeVecVectorStoreProvider {
             // Store metadata - for vector stores, we need to map to SearchResult fields
             let mut enriched_metadata = meta.clone();
             // Ensure we have the required fields for SearchResult
-            enriched_metadata.entry("id".to_string()).or_insert(serde_json::json!(external_id));
-            collection_metadata.insert(external_id.clone(), serde_json::Value::Object(
-                serde_json::Map::from_iter(enriched_metadata.into_iter())
-            ));
+            enriched_metadata
+                .entry("id".to_string())
+                .or_insert(serde_json::json!(external_id));
+            collection_metadata.insert(
+                external_id.clone(),
+                serde_json::Value::Object(serde_json::Map::from_iter(
+                    enriched_metadata.into_iter(),
+                )),
+            );
             ids.push(external_id);
         }
 
@@ -276,7 +292,8 @@ impl VectorStoreProvider for EdgeVecVectorStoreProvider {
             .ok_or_else(|| Error::not_found(format!("Collection '{}' not found", collection)))?;
 
         // Perform similarity search
-        let results = index.search(query_vector, limit, &storage)
+        let results = index
+            .search(query_vector, limit, &storage)
             .map_err(|e| Error::internal(format!("Search failed: {}", e)))?;
 
         let mut final_results = Vec::with_capacity(results.len());
@@ -285,24 +302,46 @@ impl VectorStoreProvider for EdgeVecVectorStoreProvider {
             // Find external ID for this vector ID
             let external_id = id_map
                 .iter()
-                .find_map(|(ext_id, &vec_id)| if vec_id == result.vector_id { Some(ext_id) } else { None })
-                .ok_or_else(|| Error::internal(format!("Vector ID {:?} not found in mapping", result.vector_id)))?;
+                .find_map(|(ext_id, &vec_id)| {
+                    if vec_id == result.vector_id {
+                        Some(ext_id)
+                    } else {
+                        None
+                    }
+                })
+                .ok_or_else(|| {
+                    Error::internal(format!(
+                        "Vector ID {:?} not found in mapping",
+                        result.vector_id
+                    ))
+                })?;
 
             // Get metadata for this vector
-            let (file_path, line_number, content, metadata) = if let Some(meta_value) = collection_metadata.get(external_id) {
-                if let serde_json::Value::Object(obj) = meta_value {
-                    let map = obj.clone().into_iter().collect::<HashMap<_, _>>();
-                    (
-                        map.get("file_path").and_then(|v| v.as_str()).unwrap_or("unknown").to_string(),
-                        map.get("line_number").and_then(|v| v.as_u64()).unwrap_or(0) as u32,
-                        map.get("content").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-                        serde_json::to_value(&map).unwrap_or_default(),
-                    )
-                } else {
-                    ("unknown".to_string(), 0, "".to_string(), serde_json::Value::Null)
-                }
+            let (file_path, line_number, content, metadata) = if let Some(
+                serde_json::Value::Object(obj),
+            ) =
+                collection_metadata.get(external_id)
+            {
+                let map = obj.clone().into_iter().collect::<HashMap<_, _>>();
+                (
+                    map.get("file_path")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("unknown")
+                        .to_string(),
+                    map.get("line_number").and_then(|v| v.as_u64()).unwrap_or(0) as u32,
+                    map.get("content")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string(),
+                    serde_json::to_value(&map).unwrap_or_default(),
+                )
             } else {
-                ("unknown".to_string(), 0, "".to_string(), serde_json::Value::Null)
+                (
+                    "unknown".to_string(),
+                    0,
+                    "".to_string(),
+                    serde_json::Value::Null,
+                )
             };
 
             final_results.push(SearchResult {
@@ -354,10 +393,19 @@ impl VectorStoreProvider for EdgeVecVectorStoreProvider {
         let mut stats = HashMap::new();
         stats.insert("collection".to_string(), serde_json::json!(collection));
         stats.insert("vector_count".to_string(), serde_json::json!(vector_count));
-        stats.insert("total_indexed_vectors".to_string(), serde_json::json!(index.len()));
-        stats.insert("dimensions".to_string(), serde_json::json!(self.config.dimensions));
+        stats.insert(
+            "total_indexed_vectors".to_string(),
+            serde_json::json!(index.len()),
+        );
+        stats.insert(
+            "dimensions".to_string(),
+            serde_json::json!(self.config.dimensions),
+        );
         stats.insert("metric".to_string(), serde_json::json!(self.config.metric));
-        stats.insert("use_quantization".to_string(), serde_json::json!(self.config.use_quantization));
+        stats.insert(
+            "use_quantization".to_string(),
+            serde_json::json!(self.config.use_quantization),
+        );
 
         Ok(stats)
     }
@@ -389,7 +437,10 @@ mod tests {
         let provider = EdgeVecVectorStoreProvider::new(config).unwrap();
 
         // Test collection creation
-        assert!(provider.create_collection("test_collection", 1536).await.is_ok());
+        assert!(provider
+            .create_collection("test_collection", 1536)
+            .await
+            .is_ok());
 
         // Test collection exists
         assert!(provider.collection_exists("test_collection").await.unwrap());
@@ -420,17 +471,17 @@ mod tests {
             Embedding {
                 vector: vec![1.0, 0.0, 0.0],
                 dimensions: 3,
-                model: "test".to_string()
+                model: "test".to_string(),
             },
             Embedding {
                 vector: vec![0.0, 1.0, 0.0],
                 dimensions: 3,
-                model: "test".to_string()
+                model: "test".to_string(),
             },
             Embedding {
                 vector: vec![0.0, 0.0, 1.0],
                 dimensions: 3,
-                model: "test".to_string()
+                model: "test".to_string(),
             },
         ];
 
@@ -439,28 +490,34 @@ mod tests {
                 ("file_path".to_string(), serde_json::json!("test.rs")),
                 ("line_number".to_string(), serde_json::json!(1)),
                 ("content".to_string(), serde_json::json!("vec1")),
-                ("type".to_string(), serde_json::json!("vec1"))
+                ("type".to_string(), serde_json::json!("vec1")),
             ]),
             HashMap::from([
                 ("file_path".to_string(), serde_json::json!("test.rs")),
                 ("line_number".to_string(), serde_json::json!(2)),
                 ("content".to_string(), serde_json::json!("vec2")),
-                ("type".to_string(), serde_json::json!("vec2"))
+                ("type".to_string(), serde_json::json!("vec2")),
             ]),
             HashMap::from([
                 ("file_path".to_string(), serde_json::json!("test.rs")),
                 ("line_number".to_string(), serde_json::json!(3)),
                 ("content".to_string(), serde_json::json!("vec3")),
-                ("type".to_string(), serde_json::json!("vec3"))
+                ("type".to_string(), serde_json::json!("vec3")),
             ]),
         ];
 
-        let ids = provider.insert_vectors("test", &vectors, metadata).await.unwrap();
+        let ids = provider
+            .insert_vectors("test", &vectors, metadata)
+            .await
+            .unwrap();
         assert_eq!(ids.len(), 3);
 
         // Test similarity search
         let query = vec![1.0, 0.1, 0.1];
-        let results = provider.search_similar("test", &query, 2, None).await.unwrap();
+        let results = provider
+            .search_similar("test", &query, 2, None)
+            .await
+            .unwrap();
         assert_eq!(results.len(), 2);
 
         // Test vector deletion

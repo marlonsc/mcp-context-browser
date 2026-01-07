@@ -12,6 +12,9 @@ use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tokio::sync::RwLock;
 
+/// Type alias for sliding window data structure
+type SlidingWindowData = HashMap<String, VecDeque<(u64, u32)>>;
+
 /// Rate limit configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RateLimitConfig {
@@ -50,7 +53,6 @@ fn default_memory_max_entries() -> usize {
     10000
 }
 
-
 impl Default for RateLimitConfig {
     fn default() -> Self {
         Self {
@@ -76,6 +78,8 @@ pub struct RateLimitResult {
     pub reset_in_seconds: u64,
     /// Current request count in window
     pub current_count: u32,
+    /// Total limit (max_requests_per_window + burst_allowance)
+    pub limit: u32,
 }
 
 /// Rate limit key types
@@ -108,14 +112,12 @@ enum RateLimitStorage {
     /// In-memory storage for single-node deployments
     Memory {
         /// Sliding window data: key -> (timestamps, counts)
-        windows: Arc<RwLock<HashMap<String, VecDeque<(u64, u32)>>>>,
+        windows: Arc<RwLock<SlidingWindowData>>,
         /// Maximum entries to prevent memory leaks
         max_entries: usize,
     },
     /// Redis storage for clustered deployments
-    Redis {
-        client: Arc<RwLock<Option<Client>>>,
-    },
+    Redis { client: Arc<RwLock<Option<Client>>> },
 }
 
 /// Rate limiter with pluggable storage backends
@@ -191,6 +193,7 @@ impl RateLimiter {
                 remaining: u32::MAX,
                 reset_in_seconds: 0,
                 current_count: 0,
+                limit: self.config.max_requests_per_window + self.config.burst_allowance,
             });
         }
 
@@ -233,7 +236,7 @@ impl RateLimiter {
     async fn check_memory_rate_limit(
         &self,
         key: &RateLimitKey,
-        windows: &Arc<RwLock<HashMap<String, VecDeque<(u64, u32)>>>>,
+        windows: &Arc<RwLock<SlidingWindowData>>,
         max_entries: usize,
     ) -> Result<RateLimitResult> {
         let storage_key = key.to_string();
@@ -275,11 +278,7 @@ impl RateLimiter {
         let max_allowed = self.config.max_requests_per_window + self.config.burst_allowance;
         let would_be_count = current_count + 1;
         let allowed = would_be_count <= max_allowed;
-        let remaining = if would_be_count > max_allowed {
-            0
-        } else {
-            max_allowed - would_be_count
-        };
+        let remaining = max_allowed.saturating_sub(would_be_count);
 
         // If allowed, add current request to window
         if allowed {
@@ -294,6 +293,7 @@ impl RateLimiter {
             remaining,
             reset_in_seconds,
             current_count,
+            limit: self.config.max_requests_per_window + self.config.burst_allowance,
         })
     }
 
@@ -337,11 +337,7 @@ impl RateLimiter {
 
         let max_allowed = self.config.max_requests_per_window + self.config.burst_allowance;
         let allowed = current_count < max_allowed;
-        let remaining = if current_count >= max_allowed {
-            0
-        } else {
-            max_allowed - current_count
-        };
+        let remaining = max_allowed.saturating_sub(current_count);
 
         // If allowed, add current request to window
         if allowed {
@@ -373,6 +369,7 @@ impl RateLimiter {
             remaining,
             reset_in_seconds,
             current_count,
+            limit: self.config.max_requests_per_window + self.config.burst_allowance,
         })
     }
 

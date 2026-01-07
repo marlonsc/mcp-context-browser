@@ -217,22 +217,13 @@ mod tests {
     async fn test_server_initialization_with_dependencies() {
         // This test ensures the server can be created with all its dependencies
         // In a real scenario, this would involve mock providers
-        let server = McpServer::new(None).unwrap();
+        let _server = McpServer::new(None).unwrap();
 
-        match server {
-            Ok(_) => {
-                // Server creation succeeded - this is expected with mock/default providers
-                assert!(
-                    true,
-                    "Server should initialize successfully with default providers"
-                );
-            }
-            Err(e) => {
-                // If it fails, it should be due to configuration, not structural issues
-                assert!(e.to_string().contains("configuration") || e.to_string().contains("Failed to load configuration"),
-                       "Server initialization should fail only due to configuration issues, not structural problems. Error: {}", e);
-            }
-        }
+        // Server creation succeeded - this is expected with mock/default providers
+        assert!(
+            true,
+            "Server should initialize successfully with default providers"
+        );
     }
 
     #[tokio::test]
@@ -242,7 +233,7 @@ mod tests {
 
         // We expect server creation to succeed in test environment
         // In case of failure, it should be due to configuration, not code structure
-        let server_result = McpServer::new();
+        let server_result = McpServer::new(None);
 
         // Either it succeeds, or fails with a configuration-related error
         match server_result {
@@ -270,7 +261,7 @@ mod tests {
     #[test]
     fn test_server_tool_router_initialization() {
         // Test that the server properly initializes its tool router
-        let _server = McpServer::new().unwrap();
+        let _server = McpServer::new(None).unwrap();
 
         // The server should have a tool router (internal implementation detail)
         // We can't directly test the router, but we can verify the server structure

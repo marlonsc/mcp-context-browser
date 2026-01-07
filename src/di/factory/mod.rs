@@ -112,7 +112,7 @@ impl ProviderFactory for DefaultProviderFactory {
                 let base_path = config
                     .address
                     .as_ref()
-                    .map(|p| std::path::PathBuf::from(p))
+                    .map(std::path::PathBuf::from)
                     .unwrap_or_else(|| std::path::PathBuf::from("./data/vectors"));
                 let fs_config = FilesystemVectorStoreConfig {
                     base_path,

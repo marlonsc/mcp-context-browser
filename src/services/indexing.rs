@@ -204,16 +204,14 @@ impl IndexingService {
             let batch_results = join_all(futures).await;
 
             // Store chunks sequentially to avoid concurrent access issues
-            for chunks_option in batch_results {
-                if let Some(chunks) = chunks_option {
-                    match self.context_service.store_chunks(collection, &chunks).await {
-                        Ok(()) => {
-                            total_chunks += chunks.len();
-                        }
-                        Err(e) => {
-                            eprintln!("[INDEX] Failed to store batch of chunks: {}", e);
-                            // Continue with other batches
-                        }
+            for chunks in batch_results.into_iter().flatten() {
+                match self.context_service.store_chunks(collection, &chunks).await {
+                    Ok(()) => {
+                        total_chunks += chunks.len();
+                    }
+                    Err(e) => {
+                        eprintln!("[INDEX] Failed to store batch of chunks: {}", e);
+                        // Continue with other batches
                     }
                 }
             }

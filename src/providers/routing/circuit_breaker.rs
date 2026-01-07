@@ -162,7 +162,7 @@ impl CircuitBreaker {
         // Spawn background persistence task
         let breaker_clone = Arc::new(breaker.clone());
         tokio::spawn(async move {
-            while let Some(_) = persistence_receiver.recv().await {
+            while persistence_receiver.recv().await.is_some() {
                 if let Err(e) = breaker_clone.save_state_async().await {
                     warn!("Failed to persist circuit breaker state for {}: {}", id, e);
                 }
@@ -194,7 +194,6 @@ impl CircuitBreaker {
         debug!("Saved circuit breaker state for {}", self.id);
         Ok(())
     }
-
 
     /// Load state from disk
     fn load_state(&mut self) -> Result<()> {
