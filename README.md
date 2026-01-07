@@ -59,24 +59,9 @@ MCP Context Browser v0.0.4 is an **advanced MCP server** with enterprise-grade a
 -   [**Implementation Status**](docs/implementation-status.md) - Real-time implementation tracking
 -   [**API Reference**](docs/api-reference.md) - Auto-generated API documentation
 
-## 🚀 Quick Start
+## 🚀 Getting Started
 
-```bash
-# Install Rust and Node.js, then clone
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-# Install Node.js from https://nodejs.org/
-git clone https://github.com/marlonsc/mcp-context-browser.git
-cd mcp-context-browser
-
-# Setup all dependencies (MANDATORY)
-make setup
-
-# Verify dependencies
-make check-deps
-
-# Run development
-make dev
-```
+Para desenvolvimento completo com todas as funcionalidades avançadas:
 
 ## 🧪 Testing & Quality
 

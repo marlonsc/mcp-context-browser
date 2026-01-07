@@ -20,6 +20,11 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
+// Module declarations
+pub mod validation;
+pub mod providers;
+pub mod environment;
+
 /// Embedding provider configuration types (similar to Claude Context)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "provider")]
@@ -67,6 +72,15 @@ pub enum EmbeddingProviderConfig {
     },
     #[serde(rename = "mock")]
     Mock {
+        #[serde(default)]
+        dimensions: Option<usize>,
+        #[serde(default)]
+        max_tokens: Option<usize>,
+    },
+    #[serde(rename = "fastembed")]
+    FastEmbed {
+        #[serde(default)]
+        model: Option<String>,
         #[serde(default)]
         dimensions: Option<usize>,
         #[serde(default)]
@@ -334,6 +348,18 @@ impl ConfigManager {
                 model: model.clone(),
                 api_key: Some(api_key.clone()),
                 base_url: base_url.clone(),
+                dimensions: *dimensions,
+                max_tokens: *max_tokens,
+            },
+            EmbeddingProviderConfig::FastEmbed {
+                model,
+                dimensions,
+                max_tokens,
+            } => crate::core::types::EmbeddingConfig {
+                provider: "fastembed".to_string(),
+                model: model.clone().unwrap_or_else(|| "default".to_string()),
+                api_key: None,
+                base_url: None,
                 dimensions: *dimensions,
                 max_tokens: *max_tokens,
             },
@@ -930,19 +956,19 @@ impl Default for ProviderConfig {
     fn default() -> Self {
         Self {
             embedding: crate::core::types::EmbeddingConfig {
-                provider: "mock".to_string(),
-                model: "mock".to_string(),
+                provider: "ollama".to_string(),
+                model: "nomic-embed-text".to_string(),
                 api_key: None,
-                base_url: None,
-                dimensions: Some(128),
-                max_tokens: Some(512),
+                base_url: Some("http://localhost:11434".to_string()),
+                dimensions: Some(768),
+                max_tokens: Some(8192),
             },
             vector_store: crate::core::types::VectorStoreConfig {
                 provider: "in-memory".to_string(),
                 address: None,
                 token: None,
                 collection: None,
-                dimensions: Some(128),
+                dimensions: Some(768),
             },
         }
     }
@@ -1206,5 +1232,105 @@ impl Config {
 
         println!();
         println!("✅ Configuration validated successfully");
+    }
+}
+
+/// Builder pattern implementation for Config
+impl Config {
+    /// Create a new configuration builder
+    pub fn builder() -> ConfigBuilder {
+        ConfigBuilder::new()
+    }
+}
+
+/// Fluent configuration builder
+pub struct ConfigBuilder {
+    config: Config,
+}
+
+impl ConfigBuilder {
+    /// Create a new configuration builder with defaults
+    pub fn new() -> Self {
+        Self {
+            config: Config::default(),
+        }
+    }
+
+    /// Set server host
+    pub fn server_host(mut self, host: String) -> Self {
+        self.config.server.host = host;
+        self
+    }
+
+    /// Set server port
+    pub fn server_port(mut self, port: u16) -> Self {
+        self.config.server.port = port;
+        self
+    }
+
+    /// Set embedding provider configuration
+    pub fn embedding_provider(mut self, provider: crate::core::types::EmbeddingConfig) -> Self {
+        self.config.providers.embedding = provider;
+        self
+    }
+
+    /// Set vector store provider configuration
+    pub fn vector_store_provider(mut self, provider: crate::core::types::VectorStoreConfig) -> Self {
+        self.config.providers.vector_store = provider;
+        self
+    }
+
+    /// Set metrics port
+    pub fn metrics_port(mut self, port: u16) -> Self {
+        self.config.metrics.port = port;
+        self
+    }
+
+    /// Set metrics enabled
+    pub fn metrics_enabled(mut self, enabled: bool) -> Self {
+        self.config.metrics.enabled = enabled;
+        self
+    }
+
+    /// Set sync interval
+    pub fn sync_interval_ms(mut self, interval: u64) -> Self {
+        self.config.sync.interval_ms = interval;
+        self
+    }
+
+    /// Set daemon cleanup interval
+    pub fn daemon_cleanup_interval_secs(mut self, interval: u64) -> Self {
+        self.config.daemon.cleanup_interval_secs = interval;
+        self
+    }
+
+    /// Set application name
+    pub fn name(mut self, name: String) -> Self {
+        self.config.name = name;
+        self
+    }
+
+    /// Set application version
+    pub fn version(mut self, version: String) -> Self {
+        self.config.version = version;
+        self
+    }
+
+    /// Build the configuration with validation
+    pub fn build(self) -> Result<Config> {
+        let config = self.config;
+
+        // Validate the built configuration
+        use crate::config::validation::ConfigValidator;
+        let validator = ConfigValidator::new();
+        validator.validate(&config)?;
+
+        Ok(config)
+    }
+}
+
+impl Default for ConfigBuilder {
+    fn default() -> Self {
+        Self::new()
     }
 }

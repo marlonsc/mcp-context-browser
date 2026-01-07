@@ -7,6 +7,7 @@ use crate::core::{
 use crate::providers::{EmbeddingProvider, VectorStoreProvider};
 
 // Import individual providers that exist
+use crate::providers::embedding::fastembed::FastEmbedProvider;
 use crate::providers::embedding::gemini::GeminiEmbeddingProvider;
 use crate::providers::embedding::null::NullEmbeddingProvider;
 use crate::providers::embedding::ollama::OllamaEmbeddingProvider;
@@ -92,6 +93,7 @@ impl ProviderFactory for DefaultProviderFactory {
                 )?))
             }
             "mock" => Ok(Arc::new(NullEmbeddingProvider::new())),
+            "fastembed" => Ok(Arc::new(FastEmbedProvider::new()?)),
             _ => Err(Error::config(format!(
                 "Unsupported embedding provider: {}",
                 config.provider
@@ -177,6 +179,7 @@ impl ProviderFactory for DefaultProviderFactory {
             "ollama".to_string(),
             "voyageai".to_string(),
             "gemini".to_string(),
+            "fastembed".to_string(),
             "mock".to_string(),
         ]
     }
