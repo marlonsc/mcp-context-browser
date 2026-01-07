@@ -223,7 +223,6 @@ impl WebComponent for NotificationComponent {
         Ok(html)
     }
 }
-use crate::core::error::Result;
 
 /// Web interface manager with advanced components
 pub struct WebInterface {
@@ -451,8 +450,20 @@ impl WebInterface {
     }
 
     async fn search_page(State(state): State<AdminState>) -> impl IntoResponse {
-        // Implementation for search page
-        Html("Search page - Coming Soon".to_string())
+        let interface = WebInterface::new().unwrap();
+
+        let mut context = Context::new();
+        context.insert("title", "Search");
+        context.insert("page", "search");
+
+        match interface.render("search.html", &context) {
+            Ok(html) => Html(html).into_response(),
+            Err(e) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Template error: {}", e),
+            )
+                .into_response(),
+        }
     }
 
     // Advanced Logging System Pages
@@ -567,21 +578,6 @@ impl WebInterface {
         match state.tera.render("admin/data_management.html", &context) {
             Ok(html) => Html(html),
             Err(e) => Html(format!("Template error: {}", e)),
-        }
-    }
-        let interface = WebInterface::new().unwrap();
-
-        let mut context = Context::new();
-        context.insert("title", "Search");
-        context.insert("page", "search");
-
-        match interface.render("search.html", &context) {
-            Ok(html) => Html(html).into_response(),
-            Err(e) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Template error: {}", e),
-            )
-                .into_response(),
         }
     }
 
@@ -715,7 +711,6 @@ console.log('MCP Context Browser Admin Interface loaded');
             js,
         )
     }
-}
 
 /// Gerenciador de temas avançado
 pub struct ThemeManager {

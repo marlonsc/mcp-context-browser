@@ -102,6 +102,24 @@ pub use args::{IndexCodebaseArgs, SearchCodeArgs}; // API contracts
 pub use formatter::ResponseFormatter;          // Result presentation
 ```
 
+## File Structure
+
+```text
+rate_limit_middleware.rs    # Request throttling and quota management
+security.rs                 # Enterprise security controls and validation
+args.rs                     # API contract definitions and validation
+auth.rs                     # Authentication and authorization business logic
+formatter.rs                # Response formatting for AI assistant consumption
+handlers/mod.rs             # Business operation handlers
+handlers/index_codebase.rs  # Codebase ingestion business logic
+handlers/search_code.rs     # Semantic search business logic
+handlers/get_indexing_status.rs # System monitoring business logic
+handlers/clear_index.rs     # Index management business operations
+init.rs                     # Server initialization and orchestration
+server.rs                   # Main MCP server implementation
+mod.rs                      # Module exports and organization
+```
+
 ## Quality Assurance
 
 - **Protocol Compliance**: Full MCP specification validation and testing

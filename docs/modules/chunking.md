@@ -1,34 +1,31 @@
 # chunking Module
 
 **Source**: `src/chunking/`
-**Files**: 9
-**Lines of Code**: 1004
+**Files**: 7
+**Lines of Code**: 1242
 **Traits**: 1
-**Structs**: 6
+**Structs**: 7
 **Enums**: 0
 **Functions**: 0
 
 ## Overview
 
-Intelligent code chunking for semantic analysis
+Intelligent code chunking using tree-sitter for structural parsing
 //!
-This module provides intelligent code chunking capabilities
-for various programming languages, enabling semantic analysis
-and vector embedding generation.
+Provides language-aware chunking that respects code structure rather than
+naive line-based or character-based splitting.
 
 ## Key Exports
 
-`config::{LanguageConfig, NodeExtractionRule},languages::*,processor::{BaseProcessor, LanguageProcessor},`
+`config::{LanguageConfig, NodeExtractionRule, NodeExtractionRuleBuilder},engine::IntelligentChunker,processor::LanguageProcessor,languages::*,`
 
 ## File Structure
 
 ```text
-languages/rust.rs
-languages/python.rs
-languages/javascript.rs
-languages/mod.rs
 config.rs
+engine.rs
 fallback.rs
+languages/mod.rs
 mod.rs
 processor.rs
 traverser.rs
@@ -36,4 +33,4 @@ traverser.rs
 
 ---
 
-*Auto-generated from source code on qua 07 jan 2026 15:53:56 -03*
+*Auto-generated from source code on qua 07 jan 2026 18:27:27 -03*

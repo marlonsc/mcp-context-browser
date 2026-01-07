@@ -16,7 +16,7 @@ The providers module implements the enterprise provider ecosystem that powers th
 - **Enterprise Agreements**: Leverage existing corporate AI contracts and licensing
 
 ### 🏢 Enterprise Flexibility
-- **Multi-Provider Support**: OpenAI, Ollama, Gemini, VoyageAI, and more
+- **Multi-Provider Support**: OpenAI, Ollama, Gemini, VoyageAI, FastEmbed, and more
 - **Storage Options**: Milvus, Filesystem, In-Memory for different deployment scenarios
 - **Deployment Choices**: Cloud, on-premises, or hybrid infrastructure support
 
@@ -45,6 +45,12 @@ The providers module implements the enterprise provider ecosystem that powers th
 **Business Use Case**: Specialized AI capabilities for advanced code understanding
 - **Multimodal Intelligence**: Enhanced code comprehension through multiple AI approaches
 - **Performance Optimization**: Specialized models for code-specific semantic analysis
+
+#### FastEmbed Integration
+**Business Use Case**: High-performance local embeddings for privacy and speed
+- **Local Processing**: No external API calls for maximum privacy
+- **Performance**: Optimized for speed with competitive accuracy
+- **Offline Capability**: Works without internet connectivity
 
 ### Enterprise Storage Providers
 
@@ -90,12 +96,47 @@ pub trait VectorStoreProvider;   // Enterprise storage contract
 // Provider implementations
 pub use embedding::OpenAIEmbeddingProvider;    // Enterprise AI integration
 pub use embedding::OllamaEmbeddingProvider;    // Self-hosted AI deployment
+pub use embedding::GeminiEmbeddingProvider;    // Google AI integration
+pub use embedding::VoyageAIEmbeddingProvider;  // Specialized embeddings
+pub use embedding::FastEmbedEmbeddingProvider; // Local high-performance
 pub use vector_store::MilvusVectorStoreProvider; // Production storage
 pub use vector_store::FilesystemVectorStore;     // Development storage
 
 // Intelligent routing
 pub use routing::ProviderRouter;                // Smart provider selection
 pub use routing::circuit_breaker::CircuitBreaker; // Failure protection
+pub use routing::cost_tracker::CostTracker;     // Expense optimization
+pub use routing::health::HealthMonitor;         // System reliability
+```
+
+## File Structure
+
+```text
+embedding/                    # AI semantic intelligence providers
+├── gemini.rs                # Google Gemini AI integration
+├── mod.rs                   # Embedding provider abstractions
+├── null.rs                  # Mock provider for testing
+├── ollama.rs                # Self-hosted Ollama integration
+├── openai.rs                # OpenAI API integration
+├── voyageai.rs              # VoyageAI specialized embeddings
+└── fastembed.rs             # FastEmbed local processing
+routing/                     # Intelligent provider management
+├── circuit_breaker.rs       # Failure prevention and recovery
+├── cost_tracker.rs          # Expense monitoring and optimization
+├── failover.rs              # Automatic provider switching
+├── health.rs                # System health and monitoring
+├── metrics.rs               # Performance tracking and analytics
+├── mod.rs                   # Routing system coordination
+└── router.rs                # Intelligent provider selection
+vector_store/                # Enterprise storage backends
+├── edgevec.rs              # Edge-optimized vector storage
+├── encrypted.rs            # Encrypted storage for sensitive data
+├── filesystem.rs           # Local file-based persistence
+├── in_memory.rs            # High-performance memory storage
+├── milvus.rs               # Distributed vector database
+├── mod.rs                  # Storage provider abstractions
+└── null.rs                 # Mock storage for testing
+mod.rs                      # Module coordination and exports
 ```
 
 ## Enterprise Deployment Patterns
@@ -117,6 +158,12 @@ pub use routing::circuit_breaker::CircuitBreaker; // Failure protection
 - Distributed Milvus clusters for vector storage scalability
 - Multiple AI providers for optimal query routing
 - Advanced monitoring and automatic scaling capabilities
+
+### Privacy-First Deployment
+**Pattern**: Maximum data privacy and control
+- Local FastEmbed models for semantic processing
+- On-premises Milvus deployment for vector storage
+- No external API dependencies or data exfiltration risks
 
 ## Quality Assurance
 

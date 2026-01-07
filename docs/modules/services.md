@@ -77,6 +77,15 @@ pub use crate::core::types::{CodeChunk, SearchResult};
 4. **Query Processing**: SearchService delivers instant, relevant code discoveries
 5. **AI Integration**: MCP server provides seamless access to development teams
 
+## File Structure
+
+```text
+context.rs       # AI semantic intelligence and code transformation
+indexing.rs      # Codebase ingestion and AST-based processing
+mod.rs          # Service orchestration and business logic coordination
+search.rs       # Natural language query processing and result ranking
+```
+
 ## Quality Assurance
 
 - **108 Business Tests**: Comprehensive validation of enterprise scenarios

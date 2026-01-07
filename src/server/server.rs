@@ -51,7 +51,7 @@ pub struct McpServer {
 }
 
 /// Real-time performance metrics tracking
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct PerformanceMetrics {
     /// Total queries processed
     pub total_queries: AtomicU64,
@@ -69,6 +69,21 @@ pub struct PerformanceMetrics {
     pub active_connections: AtomicU64,
     /// Server start time
     pub start_time: std::time::Instant,
+}
+
+impl Default for PerformanceMetrics {
+    fn default() -> Self {
+        Self {
+            total_queries: AtomicU64::new(0),
+            successful_queries: AtomicU64::new(0),
+            failed_queries: AtomicU64::new(0),
+            response_time_sum: AtomicU64::new(0),
+            cache_hits: AtomicU64::new(0),
+            cache_misses: AtomicU64::new(0),
+            active_connections: AtomicU64::new(0),
+            start_time: std::time::Instant::now(),
+        }
+    }
 }
 
 /// Tracks ongoing indexing operations
@@ -532,7 +547,7 @@ impl McpServer {
             failed_queries,
             average_response_time_ms,
             cache_hit_rate,
-            active_connections: self.performance_metrics.active_connections.load(Ordering::Relaxed),
+            active_connections: self.performance_metrics.active_connections.load(Ordering::Relaxed) as u32,
             uptime_seconds,
         }
     }
