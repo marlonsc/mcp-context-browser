@@ -97,7 +97,7 @@ sysinfo = "0.30"
 nix = { version = "0.27", features = ["fs"] }
 
 # Code analysis and AST parsing
-tree-sitter = "0.22"
+tree-sitter = "0.26"
 tree-sitter-c = "0.21"
 tree-sitter-cpp = "0.21"
 tree-sitter-c-sharp = "0.21"
