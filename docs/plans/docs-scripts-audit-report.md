@@ -22,7 +22,7 @@
 
 ### ❌ **Scripts NÃO UTILIZADOS (Obsoletos)**
 
-| Script | Status | Motivo | Recomendação |
+| Script | Status | Reason | Recommendation |
 |--------|--------|--------|--------------|
 | `audit-code-vs-docs.sh` | ❌ **OBSOLETO** | Funcionalidade integrada na `automation.sh` (adr-check) | 🗑️ **REMOVER** |
 | `check-sync.sh` | ❌ **OBSOLETO** | Funcionalidade integrada na `automation.sh` (validate) | 🗑️ **REMOVER** |

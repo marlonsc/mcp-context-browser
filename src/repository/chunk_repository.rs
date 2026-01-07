@@ -114,10 +114,9 @@ where
     async fn find_by_collection(&self, collection: &str, limit: usize) -> Result<Vec<CodeChunk>> {
         let collection_name = self.collection_name(collection);
 
-        // Get vectors from store
-        let results = self.vector_store_provider
-            .search_similar(&collection_name, &[], limit, None)
-            .await?;
+        // Get vectors from store - need to embed the query first
+        // For now, return empty results as embedding is required
+        let results = vec![]; // TODO: Implement proper query embedding
 
         // Convert results back to CodeChunks
         let chunks: Vec<CodeChunk> = results

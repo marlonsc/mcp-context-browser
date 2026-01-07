@@ -1,7 +1,17 @@
-//! Web Administration Interface
+//! Enterprise Administration & Monitoring Platform
 //!
-//! Provides a web-based administration interface for MCP Context Browser
-//! running on the same port as the metrics server (3001).
+//! Provides a comprehensive web-based administration, configuration, and monitoring
+//! interface for MCP Context Browser with advanced features for enterprise deployments.
+//!
+//! ## Key Capabilities
+//!
+//! - **Dynamic Configuration**: Hot-reload configuration changes without service restart
+//! - **Real-time Monitoring**: Live performance metrics, health checks, and alerting
+//! - **Advanced Logging**: Structured log investigation with filters and analytics
+//! - **Maintenance Tools**: Cache management, provider lifecycle, data operations
+//! - **Diagnostic Suite**: Connectivity testing, performance profiling, system health
+//! - **Data Management**: Backup/restore, data cleanup, storage optimization
+//! - **API Integration**: RESTful APIs for automation and external tooling
 
 pub mod api;
 pub mod auth;

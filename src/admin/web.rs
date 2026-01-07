@@ -281,6 +281,11 @@ impl WebInterface {
             .route("/providers", get(Self::providers_page))
             .route("/indexes", get(Self::indexes_page))
             .route("/config", get(Self::config_page))
+            .route("/configuration", get(Self::configuration_page))
+            .route("/logs", get(Self::logs_page))
+            .route("/maintenance", get(Self::maintenance_page))
+            .route("/diagnostics", get(Self::diagnostics_page))
+            .route("/data", get(Self::data_management_page))
             .route("/search", get(Self::search_page))
             // HTMX endpoints
             .route("/htmx/dashboard/metrics", get(Self::htmx_dashboard_metrics))
@@ -446,6 +451,124 @@ impl WebInterface {
     }
 
     async fn search_page(State(state): State<AdminState>) -> impl IntoResponse {
+        // Implementation for search page
+        Html("Search page - Coming Soon".to_string())
+    }
+
+    // Advanced Logging System Pages
+    async fn logs_page(State(state): State<AdminState>) -> impl IntoResponse {
+        let mut context = Context::new();
+
+        // Get log statistics for overview
+        match state.admin_service.get_log_stats().await {
+            Ok(stats) => {
+                context.insert("log_stats", &stats);
+            }
+            Err(_) => {
+                // Handle error gracefully
+            }
+        }
+
+        context.insert("page_title", "System Logs");
+        context.insert("page_description", "Advanced log viewer with filtering and analytics");
+
+        match state.tera.render("admin/logs.html", &context) {
+            Ok(html) => Html(html),
+            Err(e) => Html(format!("Template error: {}", e)),
+        }
+    }
+
+    // Configuration Management Pages
+    async fn configuration_page(State(state): State<AdminState>) -> impl IntoResponse {
+        let mut context = Context::new();
+
+        // Get current configuration
+        match state.admin_service.get_configuration().await {
+            Ok(config) => {
+                context.insert("configuration", &config);
+            }
+            Err(_) => {
+                // Handle error gracefully
+            }
+        }
+
+        // Get configuration history
+        match state.admin_service.get_configuration_history(Some(10)).await {
+            Ok(history) => {
+                context.insert("config_history", &history);
+            }
+            Err(_) => {
+                // Handle error gracefully
+            }
+        }
+
+        context.insert("page_title", "Configuration Management");
+        context.insert("page_description", "Dynamic configuration management with hot-reload capabilities");
+
+        match state.tera.render("admin/configuration.html", &context) {
+            Ok(html) => Html(html),
+            Err(e) => Html(format!("Template error: {}", e)),
+        }
+    }
+
+    // Maintenance Operations Pages
+    async fn maintenance_page(State(state): State<AdminState>) -> impl IntoResponse {
+        let mut context = Context::new();
+
+        context.insert("page_title", "System Maintenance");
+        context.insert("page_description", "Cache management, provider lifecycle, and data operations");
+
+        match state.tera.render("admin/maintenance.html", &context) {
+            Ok(html) => Html(html),
+            Err(e) => Html(format!("Template error: {}", e)),
+        }
+    }
+
+    // Diagnostic Operations Pages
+    async fn diagnostics_page(State(state): State<AdminState>) -> impl IntoResponse {
+        let mut context = Context::new();
+
+        // Get latest health check results
+        match state.admin_service.run_health_check().await {
+            Ok(health_check) => {
+                context.insert("health_check", &health_check);
+            }
+            Err(_) => {
+                // Handle error gracefully
+            }
+        }
+
+        context.insert("page_title", "System Diagnostics");
+        context.insert("page_description", "Health checks, connectivity tests, and performance diagnostics");
+
+        match state.tera.render("admin/diagnostics.html", &context) {
+            Ok(html) => Html(html),
+            Err(e) => Html(format!("Template error: {}", e)),
+        }
+    }
+
+    // Data Management Pages
+    async fn data_management_page(State(state): State<AdminState>) -> impl IntoResponse {
+        let mut context = Context::new();
+
+        // Get backup list
+        match state.admin_service.list_backups().await {
+            Ok(backups) => {
+                context.insert("backups", &backups);
+            }
+            Err(_) => {
+                // Handle error gracefully
+            }
+        }
+
+        context.insert("page_title", "Data Management");
+        context.insert("page_description", "Backup and restore operations for system data");
+
+        match state.tera.render("admin/data_management.html", &context) {
+            Ok(html) => Html(html),
+            Err(e) => Html(format!("Template error: {}", e)),
+        }
+    }
         let interface = WebInterface::new().unwrap();
 
         let mut context = Context::new();

@@ -180,13 +180,13 @@ pub trait EmbeddingProvider: Send + Sync {
 #### Async-First Design
 
 -   **Tokio Runtime**: Async throughout the application
--   **Streams**: Processamento eficiente de dados
+-   **Streams**: Efficient data processing
 -   **Mutex**: Thread-safe coordination
--   **Queues**: Processamento concorrente controlado
+-   **Queues**: Controlled concurrent processing
 
 ---
 
-## 🔄 Fluxos de Processamento
+## 🔄 Processing Flows
 
 ### 1. Codebase Indexing
 

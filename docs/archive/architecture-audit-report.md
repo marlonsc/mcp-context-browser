@@ -35,7 +35,7 @@ Esta auditoria avalia a conformidade da implementação atual com a arquitetura 
 - **Cancellation Safety**: Tratamento adequado de sinais de cancelamento
 
 ### ✅ **BÔNUS IMPLEMENTADO**
-- **Batch Processing**: Processamento em lotes para otimização de performance
+- **Batch Processing**: Batch processing for performance optimization
 - **Parallel File Processing**: Parallel file processing using `join_all`
 
 ---
@@ -87,9 +87,9 @@ Server Layer (MCP) → Service Layer → Provider Layer → Infrastructure
 - Cache preparado (não totalmente implementado)
 
 ### ✅ **IndexingService**
-- Processamento incremental com snapshots
+- Incremental processing with snapshots
 - Suporte multi-linguagem com detecção AST
-- Processamento paralelo em lotes
+- Parallel batch processing
 - Coordenação com sync manager
 
 ### ⚠️ **GAP IDENTIFICADO**
@@ -230,7 +230,7 @@ A implementação demonstra **excelente conformidade arquitetural** com os princ
 
 **Gaps críticos** na Multi-Provider Strategy e observabilidade precisam ser endereçados para alcançar maturidade de produção. A arquitetura proposta é sólida e a implementação segue as melhores práticas estabelecidas.
 
-**Recomendação**: Projeto pronto para desenvolvimento incremental focado nos gaps identificados. A base arquitetural é excelente e suporta escalabilidade futura.
+**Recommendation**: Project ready for incremental development focused on identified gaps. The architectural foundation is excellent and supports future scalability.
 
 ---
 

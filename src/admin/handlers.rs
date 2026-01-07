@@ -282,6 +282,217 @@ pub struct SearchQuery {
     pub limit: Option<usize>,
 }
 
+// Configuration Management Handlers
+/// Get current system configuration
+pub async fn get_configuration_handler(
+    State(state): State<AdminState>,
+) -> Result<Json<ApiResponse<crate::admin::service::ConfigurationData>>, StatusCode> {
+    let config = state.admin_service.get_configuration().await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(ApiResponse::success(config)))
+}
+
+/// Update system configuration
+pub async fn update_configuration_handler(
+    State(state): State<AdminState>,
+    Json(updates): Json<std::collections::HashMap<String, serde_json::Value>>,
+) -> Result<Json<ApiResponse<crate::admin::service::ConfigurationUpdateResult>>, StatusCode> {
+    // Get user from request context (simplified - in real implementation, get from JWT)
+    let user = "admin";
+
+    let result = state.admin_service.update_configuration(updates, user).await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(ApiResponse::success(result)))
+}
+
+/// Validate configuration changes
+pub async fn validate_configuration_handler(
+    State(state): State<AdminState>,
+    Json(updates): Json<std::collections::HashMap<String, serde_json::Value>>,
+) -> Result<Json<ApiResponse<Vec<String>>>, StatusCode> {
+    let warnings = state.admin_service.validate_configuration(&updates).await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(ApiResponse::success(warnings)))
+}
+
+/// Get configuration change history
+pub async fn get_configuration_history_handler(
+    State(state): State<AdminState>,
+    Query(params): Query<HistoryQuery>,
+) -> Result<Json<ApiResponse<Vec<crate::admin::service::ConfigurationChange>>>, StatusCode> {
+    let history = state.admin_service.get_configuration_history(params.limit).await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(ApiResponse::success(history)))
+}
+
+// Logging System Handlers
+/// Get system logs with filtering
+pub async fn get_logs_handler(
+    State(state): State<AdminState>,
+    Query(filter): Query<crate::admin::service::LogFilter>,
+) -> Result<Json<ApiResponse<crate::admin::service::LogEntries>>, StatusCode> {
+    let logs = state.admin_service.get_logs(filter).await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(ApiResponse::success(logs)))
+}
+
+/// Export logs to file
+pub async fn export_logs_handler(
+    State(state): State<AdminState>,
+    Query(filter): Query<crate::admin::service::LogFilter>,
+    Query(params): Query<ExportQuery>,
+) -> Result<Json<ApiResponse<String>>, StatusCode> {
+    let filename = state.admin_service.export_logs(filter, params.format).await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(ApiResponse::success(filename)))
+}
+
+/// Get log statistics
+pub async fn get_log_stats_handler(
+    State(state): State<AdminState>,
+) -> Result<Json<ApiResponse<crate::admin::service::LogStats>>, StatusCode> {
+    let stats = state.admin_service.get_log_stats().await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(ApiResponse::success(stats)))
+}
+
+// Maintenance Operations Handlers
+/// Clear system cache
+pub async fn clear_cache_handler(
+    State(state): State<AdminState>,
+    Path(cache_type): Path<String>,
+) -> Result<Json<ApiResponse<crate::admin::service::MaintenanceResult>>, StatusCode> {
+    let cache_type_enum = match cache_type.as_str() {
+        "all" => crate::admin::service::CacheType::All,
+        "query" => crate::admin::service::CacheType::QueryResults,
+        "embeddings" => crate::admin::service::CacheType::Embeddings,
+        "indexes" => crate::admin::service::CacheType::Indexes,
+        _ => return Ok(Json(ApiResponse::error("Invalid cache type".to_string()))),
+    };
+
+    let result = state.admin_service.clear_cache(cache_type_enum).await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(ApiResponse::success(result)))
+}
+
+/// Restart provider connection
+pub async fn restart_provider_handler(
+    State(state): State<AdminState>,
+    Path(provider_id): Path<String>,
+) -> Result<Json<ApiResponse<crate::admin::service::MaintenanceResult>>, StatusCode> {
+    let result = state.admin_service.restart_provider(&provider_id).await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(ApiResponse::success(result)))
+}
+
+/// Rebuild search index
+pub async fn rebuild_index_handler(
+    State(state): State<AdminState>,
+    Path(index_id): Path<String>,
+) -> Result<Json<ApiResponse<crate::admin::service::MaintenanceResult>>, StatusCode> {
+    let result = state.admin_service.rebuild_index(&index_id).await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(ApiResponse::success(result)))
+}
+
+/// Cleanup old data
+pub async fn cleanup_data_handler(
+    State(state): State<AdminState>,
+    Json(cleanup_config): Json<crate::admin::service::CleanupConfig>,
+) -> Result<Json<ApiResponse<crate::admin::service::MaintenanceResult>>, StatusCode> {
+    let result = state.admin_service.cleanup_data(cleanup_config).await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(ApiResponse::success(result)))
+}
+
+// Diagnostic Operations Handlers
+/// Run comprehensive health check
+pub async fn health_check_handler(
+    State(state): State<AdminState>,
+) -> Result<Json<ApiResponse<crate::admin::service::HealthCheckResult>>, StatusCode> {
+    let result = state.admin_service.run_health_check().await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(ApiResponse::success(result)))
+}
+
+/// Test provider connectivity
+pub async fn test_connectivity_handler(
+    State(state): State<AdminState>,
+    Path(provider_id): Path<String>,
+) -> Result<Json<ApiResponse<crate::admin::service::ConnectivityTestResult>>, StatusCode> {
+    let result = state.admin_service.test_provider_connectivity(&provider_id).await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(ApiResponse::success(result)))
+}
+
+/// Run performance test
+pub async fn performance_test_handler(
+    State(state): State<AdminState>,
+    Json(test_config): Json<crate::admin::service::PerformanceTestConfig>,
+) -> Result<Json<ApiResponse<crate::admin::service::PerformanceTestResult>>, StatusCode> {
+    let result = state.admin_service.run_performance_test(test_config).await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(ApiResponse::success(result)))
+}
+
+// Data Management Handlers
+/// Create system backup
+pub async fn create_backup_handler(
+    State(state): State<AdminState>,
+    Json(backup_config): Json<crate::admin::service::BackupConfig>,
+) -> Result<Json<ApiResponse<crate::admin::service::BackupResult>>, StatusCode> {
+    let result = state.admin_service.create_backup(backup_config).await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(ApiResponse::success(result)))
+}
+
+/// List available backups
+pub async fn list_backups_handler(
+    State(state): State<AdminState>,
+) -> Result<Json<ApiResponse<Vec<crate::admin::service::BackupInfo>>>, StatusCode> {
+    let backups = state.admin_service.list_backups().await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(ApiResponse::success(backups)))
+}
+
+/// Restore from backup
+pub async fn restore_backup_handler(
+    State(state): State<AdminState>,
+    Path(backup_id): Path<String>,
+) -> Result<Json<ApiResponse<crate::admin::service::RestoreResult>>, StatusCode> {
+    let result = state.admin_service.restore_backup(&backup_id).await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(ApiResponse::success(result)))
+}
+
+// Query Parameter Structures
+#[derive(Deserialize)]
+pub struct HistoryQuery {
+    pub limit: Option<usize>,
+}
+
+#[derive(Deserialize)]
+pub struct ExportQuery {
+    pub format: crate::admin::service::LogExportFormat,
+}
+
 /// Search handler
 pub async fn search_handler(
     State(state): State<AdminState>,

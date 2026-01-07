@@ -5,7 +5,10 @@
 //! semantic search operations. The server orchestrates the complete business
 //! workflow from query understanding to result delivery.
 
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
+use tokio::sync::RwLock;
 use rmcp::model::{CallToolResult, Content, Implementation, ListToolsResult, PaginatedRequestParam, ProtocolVersion, ServerCapabilities, ServerInfo, Tool};
 use rmcp::ErrorData as McpError;
 use rmcp::handler::server::wrapper::Parameters;
@@ -41,6 +44,48 @@ pub struct McpServer {
     clear_index_handler: Arc<ClearIndexHandler>,
     /// Service provider for dependency injection
     service_provider: Arc<ServiceProvider>,
+    /// Real-time performance metrics
+    performance_metrics: Arc<PerformanceMetrics>,
+    /// Ongoing indexing operations tracking
+    indexing_operations: Arc<RwLock<HashMap<String, IndexingOperation>>>,
+}
+
+/// Real-time performance metrics tracking
+#[derive(Debug, Default)]
+pub struct PerformanceMetrics {
+    /// Total queries processed
+    pub total_queries: AtomicU64,
+    /// Successful queries
+    pub successful_queries: AtomicU64,
+    /// Failed queries
+    pub failed_queries: AtomicU64,
+    /// Response time accumulator (in milliseconds)
+    pub response_time_sum: AtomicU64,
+    /// Cache hits
+    pub cache_hits: AtomicU64,
+    /// Cache misses
+    pub cache_misses: AtomicU64,
+    /// Active connections
+    pub active_connections: AtomicU64,
+    /// Server start time
+    pub start_time: std::time::Instant,
+}
+
+/// Tracks ongoing indexing operations
+#[derive(Debug, Clone)]
+pub struct IndexingOperation {
+    /// Operation ID
+    pub id: String,
+    /// Collection being indexed
+    pub collection: String,
+    /// Current file being processed
+    pub current_file: Option<String>,
+    /// Total files to process
+    pub total_files: usize,
+    /// Files processed so far
+    pub processed_files: usize,
+    /// Start time
+    pub start_time: std::time::Instant,
 }
 
 impl McpServer {
@@ -186,6 +231,8 @@ impl McpServer {
             get_indexing_status_handler,
             clear_index_handler,
             service_provider,
+            performance_metrics: Arc::new(PerformanceMetrics::default()),
+            indexing_operations: Arc::new(RwLock::new(HashMap::new())),
         })
     }
 
@@ -219,6 +266,37 @@ impl McpServer {
     /// List all registered providers
     pub fn list_providers(&self) -> (Vec<String>, Vec<String>) {
         self.service_provider.list_providers()
+    }
+
+    /// Get detailed provider information for admin interface
+    pub fn get_registered_providers(&self) -> Vec<crate::admin::service::ProviderInfo> {
+        let (embedding_providers, vector_store_providers) = self.list_providers();
+
+        let mut providers = Vec::new();
+
+        // Add embedding providers
+        for name in embedding_providers {
+            providers.push(crate::admin::service::ProviderInfo {
+                id: name.clone(),
+                name,
+                provider_type: "embedding".to_string(),
+                status: "active".to_string(), // Assume active for now
+                config: serde_json::json!({ "type": "embedding" }),
+            });
+        }
+
+        // Add vector store providers
+        for name in vector_store_providers {
+            providers.push(crate::admin::service::ProviderInfo {
+                id: name.clone(),
+                name,
+                provider_type: "vector_store".to_string(),
+                status: "active".to_string(), // Assume active for now
+                config: serde_json::json!({ "type": "vector_store" }),
+            });
+        }
+
+        providers
     }
 
     /// Get provider health status
@@ -298,29 +376,164 @@ impl McpServer {
         vec![]
     }
 
-    /// Get indexing status for admin interface
-    pub fn get_indexing_status_admin(&self) -> crate::admin::service::IndexingStatus {
+    /// Get real indexing status for admin interface
+    pub async fn get_indexing_status_admin(&self) -> crate::admin::service::IndexingStatus {
+        let operations = self.indexing_operations.read().await;
+
+        // Check if any indexing operations are active
+        let is_indexing = !operations.is_empty();
+
+        // Find the most recent operation for current status
+        let (current_file, start_time, processed_files, total_files) = if let Some((_, operation)) = operations.iter().next() {
+            (
+                operation.current_file.clone(),
+                Some(operation.start_time.elapsed().as_secs() as u64),
+                operation.processed_files,
+                operation.total_files,
+            )
+        } else {
+            (None, None, 0, 0)
+        };
+
+        // Calculate totals across all operations
+        let total_documents: usize = operations.values().map(|op| op.total_files).sum();
+        let indexed_documents: usize = operations.values().map(|op| op.processed_files).sum();
+
+        // For now, no failed documents tracking
+        let failed_documents = 0;
+
+        // Estimate completion based on progress
+        let estimated_completion = if is_indexing && total_documents > 0 {
+            let progress = indexed_documents as f64 / total_documents as f64;
+            if progress > 0.0 {
+                let elapsed = start_time.unwrap_or(0);
+                let estimated_total = (elapsed as f64 / progress) as u64;
+                Some(estimated_total.saturating_sub(elapsed))
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
         crate::admin::service::IndexingStatus {
-            is_indexing: false, // TODO: Implement real status
-            total_documents: 0,
-            indexed_documents: 0,
-            failed_documents: 0,
-            current_file: None,
-            start_time: None,
-            estimated_completion: None,
+            is_indexing,
+            total_documents: total_documents as u64,
+            indexed_documents: indexed_documents as u64,
+            failed_documents: failed_documents as u64,
+            current_file,
+            start_time,
+            estimated_completion,
         }
     }
 
-    /// Get performance metrics for admin interface
+    /// Start tracking an indexing operation
+    pub async fn start_indexing_operation(&self, operation_id: String, collection: String, total_files: usize) {
+        let operation = IndexingOperation {
+            id: operation_id.clone(),
+            collection,
+            current_file: None,
+            total_files,
+            processed_files: 0,
+            start_time: std::time::Instant::now(),
+        };
+
+        let mut operations = self.indexing_operations.write().await;
+        operations.insert(operation_id, operation);
+    }
+
+    /// Update indexing operation progress
+    pub async fn update_indexing_progress(&self, operation_id: &str, current_file: Option<String>, processed_files: usize) {
+        let mut operations = self.indexing_operations.write().await;
+        if let Some(operation) = operations.get_mut(operation_id) {
+            operation.current_file = current_file;
+            operation.processed_files = processed_files;
+        }
+    }
+
+    /// Complete an indexing operation
+    pub async fn complete_indexing_operation(&self, operation_id: &str) {
+        let mut operations = self.indexing_operations.write().await;
+        operations.remove(operation_id);
+    }
+
+    /// Record a query operation with timing
+    pub fn record_query(&self, response_time_ms: u64, success: bool, cache_hit: bool) {
+        self.performance_metrics.total_queries.fetch_add(1, Ordering::Relaxed);
+
+        if success {
+            self.performance_metrics.successful_queries.fetch_add(1, Ordering::Relaxed);
+        } else {
+            self.performance_metrics.failed_queries.fetch_add(1, Ordering::Relaxed);
+        }
+
+        self.performance_metrics.response_time_sum.fetch_add(response_time_ms, Ordering::Relaxed);
+
+        if cache_hit {
+            self.performance_metrics.cache_hits.fetch_add(1, Ordering::Relaxed);
+        } else {
+            self.performance_metrics.cache_misses.fetch_add(1, Ordering::Relaxed);
+        }
+    }
+
+    /// Update active connection count
+    pub fn update_active_connections(&self, delta: i64) {
+        if delta > 0 {
+            self.performance_metrics.active_connections.fetch_add(delta as u64, Ordering::Relaxed);
+        } else {
+            let current = self.performance_metrics.active_connections.load(Ordering::Relaxed);
+            let new_value = current.saturating_sub((-delta) as u64);
+            self.performance_metrics.active_connections.store(new_value, Ordering::Relaxed);
+        }
+    }
+
+    /// Get real system information
+    pub fn get_system_info(&self) -> crate::admin::service::SystemInfo {
+        let uptime = self.performance_metrics.start_time.elapsed().as_secs() as u64;
+        let pid = std::process::id();
+
+        crate::admin::service::SystemInfo {
+            version: env!("CARGO_PKG_VERSION").to_string(),
+            uptime,
+            pid,
+        }
+    }
+
+    /// Get real performance metrics for admin interface
     pub fn get_performance_metrics(&self) -> crate::admin::service::PerformanceMetrics {
+        let total_queries = self.performance_metrics.total_queries.load(Ordering::Relaxed);
+        let successful_queries = self.performance_metrics.successful_queries.load(Ordering::Relaxed);
+        let failed_queries = self.performance_metrics.failed_queries.load(Ordering::Relaxed);
+        let response_time_sum = self.performance_metrics.response_time_sum.load(Ordering::Relaxed);
+        let cache_hits = self.performance_metrics.cache_hits.load(Ordering::Relaxed);
+        let cache_misses = self.performance_metrics.cache_misses.load(Ordering::Relaxed);
+
+        // Calculate average response time
+        let average_response_time_ms = if total_queries > 0 {
+            response_time_sum as f64 / total_queries as f64
+        } else {
+            0.0
+        };
+
+        // Calculate cache hit rate
+        let total_cache_requests = cache_hits + cache_misses;
+        let cache_hit_rate = if total_cache_requests > 0 {
+            cache_hits as f64 / total_cache_requests as f64
+        } else {
+            0.0
+        };
+
+        // Calculate uptime
+        let uptime_seconds = self.performance_metrics.start_time.elapsed().as_secs() as u64;
+
         crate::admin::service::PerformanceMetrics {
-            total_queries: 0,
-            successful_queries: 0,
-            failed_queries: 0,
-            average_response_time_ms: 0.0,
-            cache_hit_rate: 0.0,
-            active_connections: 0,
-            uptime_seconds: 0,
+            total_queries,
+            successful_queries,
+            failed_queries,
+            average_response_time_ms,
+            cache_hit_rate,
+            active_connections: self.performance_metrics.active_connections.load(Ordering::Relaxed),
+            uptime_seconds,
         }
     }
 }

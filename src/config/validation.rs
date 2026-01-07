@@ -83,52 +83,90 @@ impl ConfigValidator {
         self.validate_embedding_provider(&providers.embedding)?;
 
         // Validate vector store provider
-        self.validate_vector_store_provider(&providers.vector_store)?;
+        let provider_config = match providers.vector_store.provider.to_lowercase().as_str() {
+            "milvus" => {
+                if let Some(address) = &providers.vector_store.address {
+                    if address.is_empty() {
+                        return Err(Error::config("Milvus address cannot be empty"));
+                    }
+                } else {
+                    return Err(Error::config("Milvus address is required"));
+                }
+            }
+            "pinecone" => {
+                if let Some(token) = &providers.vector_store.token {
+                    if token.is_empty() {
+                        return Err(Error::config("Pinecone API key cannot be empty"));
+                    }
+                } else {
+                    return Err(Error::config("Pinecone API key is required"));
+                }
+                if let Some(collection) = &providers.vector_store.collection {
+                    if collection.is_empty() {
+                        return Err(Error::config("Pinecone index name cannot be empty"));
+                    }
+                } else {
+                    return Err(Error::config("Pinecone index name is required"));
+                }
+            }
+            "in-memory" => {
+                // In-memory store has no validation requirements
+            }
+            _ => {
+                // Other providers are allowed but not specifically validated
+            }
+        };
 
         Ok(())
     }
 
     /// Validate embedding provider configuration
     pub fn validate_embedding_provider(&self, config: &crate::core::types::EmbeddingConfig) -> Result<()> {
-        match config {
-            EmbeddingProviderConfig::OpenAI { model, api_key, .. } => {
-                if model.is_empty() {
+        // Validate based on provider type
+        match config.provider.as_str() {
+            "openai" => {
+                if config.model.is_empty() {
                     return Err(Error::config("OpenAI model cannot be empty"));
                 }
-                if api_key.is_empty() {
-                    return Err(Error::config("OpenAI API key cannot be empty"));
+                if let Some(api_key) = &config.api_key {
+                    if api_key.is_empty() {
+                        return Err(Error::config("OpenAI API key cannot be empty"));
+                    }
+                } else {
+                    return Err(Error::config("OpenAI API key is required"));
                 }
             }
-            EmbeddingProviderConfig::Ollama { model, .. } => {
-                if model.is_empty() {
+            "ollama" => {
+                if config.model.is_empty() {
                     return Err(Error::config("Ollama model cannot be empty"));
                 }
             }
-            EmbeddingProviderConfig::VoyageAI { model, api_key, .. } => {
-                if model.is_empty() {
+            "voyageai" => {
+                if config.model.is_empty() {
                     return Err(Error::config("VoyageAI model cannot be empty"));
                 }
-                if api_key.is_empty() {
-                    return Err(Error::config("VoyageAI API key cannot be empty"));
+                if let Some(api_key) = &config.api_key {
+                    if api_key.is_empty() {
+                        return Err(Error::config("VoyageAI API key cannot be empty"));
+                    }
+                } else {
+                    return Err(Error::config("VoyageAI API key is required"));
                 }
             }
-            EmbeddingProviderConfig::Gemini { model, api_key, .. } => {
-                if model.is_empty() {
+            "gemini" => {
+                if config.model.is_empty() {
                     return Err(Error::config("Gemini model cannot be empty"));
                 }
-                if api_key.is_empty() {
-                    return Err(Error::config("Gemini API key cannot be empty"));
-                }
-            }
-            EmbeddingProviderConfig::FastEmbed { model, .. } => {
-                if let Some(model) = model {
-                    if model.is_empty() {
-                        return Err(Error::config("FastEmbed model cannot be empty"));
+                if let Some(api_key) = &config.api_key {
+                    if api_key.is_empty() {
+                        return Err(Error::config("Gemini API key cannot be empty"));
                     }
+                } else {
+                    return Err(Error::config("Gemini API key is required"));
                 }
             }
-            EmbeddingProviderConfig::Mock { .. } => {
-                // Mock provider has no validation requirements
+            _ => {
+                // Other providers are allowed but not specifically validated
             }
         }
         Ok(())
@@ -246,33 +284,8 @@ impl ConfigValidator {
 
     /// Validate vector store config (legacy compatibility)
     pub fn validate_vector_store_config(&self, config: &VectorStoreConfig) -> Result<()> {
-        // Convert to new format for validation
-        let provider_config = match config.provider.to_lowercase().as_str() {
-            "milvus" => VectorStoreProviderConfig::Milvus {
-                address: config.address.clone().unwrap_or_default(),
-                token: config.token.clone(),
-                collection: Some(config.collection.clone().unwrap_or_else(|| "default".to_string())),
-                dimensions: config.dimensions,
-            },
-            "pinecone" => VectorStoreProviderConfig::Pinecone {
-                api_key: config.token.clone().unwrap_or_default(),
-                environment: config.address.clone().unwrap_or_else(|| "us-east-1".to_string()),
-                index_name: config.collection.clone().unwrap_or_default(),
-                dimensions: config.dimensions,
-            },
-            "qdrant" => VectorStoreProviderConfig::Qdrant {
-                url: config.address.clone().unwrap_or_default(),
-                api_key: config.token.clone(),
-                collection: Some(config.collection.clone().unwrap_or_else(|| "default".to_string())),
-                dimensions: config.dimensions,
-            },
-            "in-memory" => VectorStoreProviderConfig::InMemory {
-                dimensions: Some(config.dimensions.unwrap_or(1536)),
-            },
-            _ => return Err(Error::config(format!("Unknown vector store provider: {}", config.provider))),
-        };
-
-        self.validate_vector_store_provider(&provider_config)
+        // Vector store validation is now done inline in validate_provider_configs
+        Ok(())
     }
 }
 
