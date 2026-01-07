@@ -42,7 +42,7 @@ quote = "1.0"
 cargo_metadata = "0.18"
 
 # Template engine for documentation generation
-handlebars = "5.0"
+handlebars = "6.4"
 tera = "1.20"
 
 # File operations
