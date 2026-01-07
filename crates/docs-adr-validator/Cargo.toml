@@ -47,7 +47,7 @@ fs2 = "0.4"
 reqwest = { version = "0.12", features = ["json", "__tls"] }
 
 # Git integration for ADR history
-git2 = "0.19"
+git2 = "0.20"
 
 [dev-dependencies]
 tempfile = "3.10"
