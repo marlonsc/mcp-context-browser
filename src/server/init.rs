@@ -13,7 +13,6 @@ use crate::server::McpServer;
 use std::sync::Arc;
 use rmcp::transport::stdio;
 use rmcp::ServiceExt;
-use std::sync::Arc;
 use tracing_subscriber::{self, EnvFilter};
 
 /// Initialize logging and tracing for the MCP server
@@ -44,6 +43,10 @@ async fn initialize_server_components(
     // Load configuration from environment
     let config = crate::config::Config::from_env()
         .map_err(|e| format!("Failed to load configuration: {}", e))?;
+
+    // Initialize resource limits
+    let resource_limits = Arc::new(crate::core::limits::ResourceLimits::new(config.resource_limits.clone()));
+    crate::core::limits::init_global_resource_limits(config.resource_limits.clone())?;
 
     // Initialize global HTTP client pool
     tracing::info!("🌐 Initializing HTTP client pool...");
@@ -140,7 +143,7 @@ async fn initialize_server_components(
         let metrics_server = MetricsApiServer::with_limits(
             config.metrics.port,
             rate_limiter.clone(),
-            Some(resource_limits),
+            Some(resource_limits.clone()),
         );
 
         Some(tokio::spawn(async move {

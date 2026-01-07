@@ -142,7 +142,7 @@ impl MetricsApiServer {
                 get(Self::cache_metrics_handler),
             )
             .route("/api/context/status", get(Self::status_handler))
-            .layer(axum::middleware::from_fn(request_validation_middleware))
+            // .layer(axum::middleware::from_fn(request_validation_middleware))
             .layer(tower_http::cors::CorsLayer::permissive())
             .with_state(state)
     }

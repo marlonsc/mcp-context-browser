@@ -6,10 +6,14 @@ pub mod config;
 pub mod core;
 pub mod daemon;
 pub mod di;
+pub mod factory;
+pub mod metrics;
 pub mod providers;
 pub mod repository;
 pub mod server;
 pub mod services;
+pub mod snapshot;
+pub mod sync;
 
 // Re-export rate limiting system
 pub use core::rate_limit::{RateLimitConfig, RateLimitKey, RateLimitResult, RateLimiter};

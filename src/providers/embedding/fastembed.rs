@@ -80,7 +80,7 @@ impl EmbeddingProvider for FastEmbedProvider {
         let text_refs: Vec<&str> = texts.iter().map(|s| s.as_str()).collect();
 
         // Lock the model for exclusive access
-        let mut model = self.model.lock().await;
+        let model = self.model.lock().await;
 
         // Generate embeddings
         let embeddings_result = model.embed(text_refs, None)

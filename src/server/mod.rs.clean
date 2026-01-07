@@ -1,0 +1,29 @@
+//! MCP Context Browser Server
+//!
+//! A Model Context Protocol server that provides semantic code search and indexing
+//! capabilities using vector embeddings. This server follows the official MCP SDK
+//! patterns and provides tools for:
+//!
+//! - Indexing codebases for semantic search
+//! - Performing natural language code queries
+//! - Managing search collections
+//!
+//! Based on the official rmcp SDK examples and best practices.
+
+// Module declarations
+pub mod args;
+pub mod auth;
+pub mod formatter;
+pub mod handlers;
+pub mod init;
+pub mod rate_limit_middleware;
+pub mod security;
+pub mod server;
+
+// Re-exports for public API
+pub use args::*;
+pub use auth::AuthHandler;
+pub use formatter::ResponseFormatter;
+pub use handlers::*;
+pub use init::run_server;
+pub use server::McpServer;

@@ -27,6 +27,7 @@ impl AdminApiServer {
         let state = AdminState {
             admin_api,
             admin_service,
+            mcp_server: Arc::clone(&self.mcp_server),
         };
 
         create_admin_router(state)

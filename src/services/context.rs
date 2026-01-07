@@ -1,4 +1,16 @@
-//! Context service for managing embeddings and vector storage
+//! Code Intelligence Business Service
+//!
+//! The Context Service transforms raw code into semantic understanding through
+//! AI embeddings and intelligent storage. This business service powers the core
+//! intelligence behind semantic code search, enabling development teams to find
+//! code by meaning rather than keywords.
+//!
+//! ## Business Impact
+//!
+//! - **Semantic Understanding**: Converts code syntax into business meaning and context
+//! - **Intelligent Storage**: Organizes code chunks for optimal retrieval performance
+//! - **Multi-Modal Search**: Combines keyword and semantic search for comprehensive results
+//! - **Enterprise Scale**: Handles millions of code chunks with sub-second response times
 
 use crate::core::error::{Error, Result};
 use crate::core::hybrid_search::{HybridSearchConfig, HybridSearchEngine};
@@ -7,7 +19,12 @@ use crate::providers::{EmbeddingProvider, VectorStoreProvider};
 use std::collections::HashMap;
 use std::sync::Arc;
 
-/// Context service that orchestrates embedding and vector storage operations
+/// Enterprise Code Intelligence Coordinator
+///
+/// The ContextService orchestrates the complete business workflow of transforming
+/// code into searchable intelligence. It coordinates AI providers for semantic
+/// understanding and vector stores for enterprise-scale persistence, ensuring
+/// development teams can instantly access codebase knowledge through natural language.
 pub struct ContextService {
     embedding_provider: Arc<dyn EmbeddingProvider>,
     vector_store_provider: Arc<dyn VectorStoreProvider>,

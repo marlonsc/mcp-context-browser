@@ -119,7 +119,7 @@ pub struct SystemInfo {
     pub pid: u32,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ProviderInfo {
     pub id: String,
     pub name: String,

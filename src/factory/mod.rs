@@ -1,22 +1,32 @@
 //! Factory implementations for creating providers
 
+// Standard library imports
+use std::sync::Arc;
+
+// External crate imports
+use async_trait::async_trait;
+
+// Internal imports - core types
 use crate::core::{
     error::{Error, Result},
-    types::{EmbeddingConfig, VectorStoreConfig, VectorStoreProviderConfig},
+    types::{EmbeddingConfig, VectorStoreConfig},
 };
+use crate::config::VectorStoreProviderConfig;
 use crate::providers::{EmbeddingProvider, VectorStoreProvider};
 
-// Import individual providers that exist
-use crate::providers::embedding::fastembed::FastEmbedProvider;
-use crate::providers::embedding::gemini::GeminiEmbeddingProvider;
-use crate::providers::embedding::null::NullEmbeddingProvider;
-use crate::providers::embedding::ollama::OllamaEmbeddingProvider;
-use crate::providers::embedding::openai::OpenAIEmbeddingProvider;
-use crate::providers::embedding::voyageai::VoyageAIEmbeddingProvider;
+// Internal imports - embedding providers
+use crate::providers::embedding::{
+    fastembed::FastEmbedProvider,
+    gemini::GeminiEmbeddingProvider,
+    null::NullEmbeddingProvider,
+    ollama::OllamaEmbeddingProvider,
+    openai::OpenAIEmbeddingProvider,
+    voyageai::VoyageAIEmbeddingProvider,
+};
+
+// Internal imports - vector store providers
 use crate::providers::vector_store::milvus::MilvusVectorStoreProvider;
 use crate::providers::vector_store::InMemoryVectorStoreProvider;
-use async_trait::async_trait;
-use std::sync::Arc;
 
 /// Provider factory trait
 #[async_trait]
@@ -126,9 +136,9 @@ impl ProviderFactory for DefaultProviderFactory {
                 let edgevec_config = if let Some(VectorStoreProviderConfig::EdgeVec {
                     max_vectors: _,
                     collection,
-                    hnsw_m: _,
-                    hnsw_ef_construction: _,
-                    distance_metric: _,
+                    hnsw_m,
+                    hnsw_ef_construction,
+                    distance_metric,
                     use_quantization,
                 }) = &config.provider_config {
                     EdgeVecConfig {
@@ -154,8 +164,8 @@ impl ProviderFactory for DefaultProviderFactory {
                     }
                 };
 
-                let collection = collection.clone().unwrap_or_else(|| "default".to_string());
-                Ok(Arc::new(EdgeVecVectorStoreProvider::with_collection(edgevec_config, collection)?))
+                let collection_name = config.collection.clone().unwrap_or_else(|| "default".to_string());
+                Ok(Arc::new(EdgeVecVectorStoreProvider::with_collection(edgevec_config, collection_name)?))
             }
             "milvus" => {
                 let address = config

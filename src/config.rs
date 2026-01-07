@@ -1,10 +1,21 @@
-//! Configuration management for MCP Context Browser v0.0.4
+//! Configuration Management System
 //!
-//! Professional configuration system with schema validation, similar to Claude Context:
-//! - Schema validation (equivalent to convict.js)
-//! - Global config file support (~/.context/.env)
-//! - Provider-specific configuration
-//! - Comprehensive documentation and examples
+//! Enterprise-grade configuration system with validation and environment support.
+//! Provides type-safe configuration management similar to convict.js.
+//!
+//! ## Features
+//!
+//! - **Schema Validation**: Type-safe configuration with validation
+//! - **Environment Variables**: Support for .env files and environment variables
+//! - **Provider Configuration**: AI and vector store provider settings
+//! - **Runtime Validation**: Configuration validation at startup
+//! - **Documentation**: Comprehensive configuration documentation
+//!
+//! ## Configuration Sources (in priority order)
+//!
+//! 1. Environment variables (highest priority)
+//! 2. Configuration files (~/.mcp-context-browser/config.toml)
+//! 3. Default values (lowest priority)
 
 use crate::core::auth::AuthConfig;
 use crate::core::cache::CacheConfig;
@@ -183,16 +194,22 @@ pub struct GlobalProviderConfig {
 }
 
 /// Main application configuration
+///
+/// Central configuration structure containing all settings for the MCP Context Browser.
+/// Supports hierarchical configuration with validation and environment variable overrides.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
+    /// Application name
     pub name: String,
+    /// Application version
     pub version: String,
+    /// Server configuration (host, port, etc.)
     pub server: ServerConfig,
+    /// AI and vector store provider configurations
     pub providers: ProviderConfig,
-    /// Metrics API configuration
+    /// Metrics and monitoring configuration
     pub metrics: MetricsConfig,
-
-    /// Authentication configuration
+    /// Authentication and authorization settings
     #[serde(default)]
     pub auth: AuthConfig,
 

@@ -1,9 +1,34 @@
-//! Provider interfaces and implementations
+//! Enterprise AI & Storage Provider Ecosystem
+//!
+//! This module defines the business interfaces and implementations for AI and storage
+//! providers that power the semantic code search platform. The provider architecture
+//! enables enterprise flexibility, allowing organizations to choose optimal AI services
+//! and storage backends based on their specific business requirements.
+//!
+//! ## Business Value Delivered
+//!
+//! - **AI Provider Flexibility**: Support for leading AI models (OpenAI, Ollama, Gemini, VoyageAI)
+//! - **Storage Backend Options**: Multiple storage solutions for different deployment scenarios
+//! - **Enterprise Integration**: Seamless integration with corporate AI infrastructure
+//! - **Cost Optimization**: Intelligent provider selection based on performance and cost
+//! - **Business Continuity**: Automatic failover and health monitoring across providers
+//!
+//! ## Architecture Benefits
+//!
+//! - **Scalability**: Provider abstraction enables horizontal scaling across different services
+//! - **Cost Efficiency**: Route requests to optimal providers based on business requirements
+//! - **Reliability**: Circuit breakers and health checks prevent cascading failures
+//! - **Future-Proof**: Clean interfaces enable easy integration of new AI and storage providers
 
 use crate::core::{error::Result, types::Embedding};
 use async_trait::async_trait;
 
-/// Embedding provider trait
+/// AI Semantic Understanding Interface
+///
+/// Defines the business contract for AI providers that transform text into
+/// semantic embeddings. This abstraction enables the platform to work with
+/// any AI service that can understand code semantics, from enterprise OpenAI
+/// deployments to self-hosted Ollama instances.
 #[async_trait]
 pub trait EmbeddingProvider: Send + Sync {
     async fn embed(&self, text: &str) -> Result<Embedding>;
@@ -64,3 +89,9 @@ pub use embedding::NullEmbeddingProvider as MockEmbeddingProvider; // Backward c
 pub use embedding::OllamaEmbeddingProvider;
 pub use embedding::OpenAIEmbeddingProvider;
 pub use vector_store::InMemoryVectorStoreProvider;
+
+// Re-export routing system
+pub use routing::{
+    ProviderContext, ProviderRouter, ProviderSelectionStrategy, circuit_breaker::CircuitBreaker,
+    metrics::ProviderMetricsCollector,
+};

@@ -103,15 +103,15 @@ impl AuthService {
 /// Authentication middleware
 pub async fn auth_middleware(
     State(state): State<crate::admin::models::AdminState>,
-    req: Request,
+    mut req: Request<axum::body::Body>,
     next: Next,
 ) -> Result<Response, StatusCode> {
     // Extract token from Authorization header
         let auth_header = req
         .headers()
         .get("authorization")
-        .and_then(|h: &str| h.to_str().ok())
-        .and_then(|h: &str| h.strip_prefix("Bearer "));
+        .and_then(|h| h.to_str().ok())
+        .and_then(|h| h.strip_prefix("Bearer "));
 
     let token = match auth_header {
         Some(token) => token,

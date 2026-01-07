@@ -8,7 +8,7 @@ use sysinfo::System;
 pub mod http_server;
 pub mod performance;
 
-pub use http_server::MetricsApiServer;
+pub use http_server::{HealthResponse, MetricsApiServer};
 pub use performance::PERFORMANCE_METRICS;
 pub use performance::{CacheMetrics, PerformanceMetrics, QueryPerformanceMetrics};
 

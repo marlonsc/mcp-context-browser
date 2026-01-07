@@ -1,7 +1,15 @@
 //! Authentication and Authorization System
 //!
-//! JWT-based authentication with RBAC (Role-Based Access Control).
-//! Supports multiple user roles with granular permissions for enterprise security.
+//! Enterprise-grade authentication system with JWT tokens and RBAC.
+//! Provides secure user management with hierarchical role-based permissions.
+//!
+//! ## Features
+//!
+//! - JWT token-based authentication
+//! - Role-Based Access Control (RBAC) with permission hierarchies
+//! - Secure password validation and user management
+//! - Token expiration and refresh capabilities
+//! - Enterprise-ready security controls
 
 use crate::core::error::{Error, Result};
 use serde::{Deserialize, Serialize};
@@ -138,8 +146,20 @@ impl Default for AuthConfig {
     }
 }
 
-/// Authentication service
+/// Authentication and authorization service
+///
+/// Handles JWT-based authentication with role-based access control.
+/// Provides secure user management and permission validation.
+///
+/// ## Security Features
+///
+/// - JWT token generation and validation
+/// - Password-based authentication
+/// - Role-based permission checking
+/// - Token expiration handling
+/// - Secure user data management
 pub struct AuthService {
+    /// Authentication configuration
     config: AuthConfig,
 }
 
@@ -162,8 +182,32 @@ impl Default for AuthService {
 }
 
 impl AuthService {
-    /// Authenticate user with email/password (simplified for demo)
-    /// In production, this would verify against a proper user store
+    /// Authenticate user with email and password
+    ///
+    /// Performs user authentication and returns a JWT token on success.
+    /// This is a simplified implementation for demonstration purposes.
+    ///
+    /// # Arguments
+    ///
+    /// * `email` - User email address
+    /// * `password` - User password (plaintext for demo)
+    ///
+    /// # Returns
+    ///
+    /// Returns a JWT token string on successful authentication.
+    ///
+    /// # Security Note
+    ///
+    /// In production, passwords should be hashed and compared using secure
+    /// password hashing algorithms like Argon2, bcrypt, or scrypt.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Authentication is disabled
+    /// - Invalid credentials provided
+    /// - User not found
+    /// - Token generation fails
     pub fn authenticate(&self, email: &str, password: &str) -> Result<String> {
         if !self.config.enabled {
             return Err(Error::generic("Authentication is disabled"));
@@ -184,7 +228,32 @@ impl AuthService {
         }
     }
 
-    /// Validate JWT token and return claims
+    /// Validate JWT token and extract claims
+    ///
+    /// Parses and validates a JWT token, checking its signature, expiration,
+    /// and extracting the claims payload.
+    ///
+    /// # Arguments
+    ///
+    /// * `token` - JWT token string to validate
+    ///
+    /// # Returns
+    ///
+    /// Returns the token claims if validation succeeds.
+    ///
+    /// # Security Note
+    ///
+    /// This is a simplified implementation for demonstration.
+    /// In production, use a proper JWT library like `jsonwebtoken` crate
+    /// with proper signature verification.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Authentication is disabled
+    /// - Token format is invalid
+    /// - Token is expired
+    /// - Token signature is invalid
     pub fn validate_token(&self, token: &str) -> Result<Claims> {
         if !self.config.enabled {
             return Err(Error::generic("Authentication is disabled"));

@@ -17,9 +17,9 @@ use tera::{Context, Tera, Function as TeraFunction};
 use async_trait::async_trait;
 
 use crate::admin::models::{AdminState, ApiResponse};
-use crate::admin::service::AdminServiceImpl;
+use crate::admin::service::{AdminService, AdminServiceImpl};
 use crate::admin::{AdminApi, AdminConfig};
-use crate::metrics::http_server::HealthResponse;
+use crate::metrics::http_server::{HealthResponse, MetricsApiServer};
 
 /// Trait para componentes web reutilizáveis
 #[async_trait]
@@ -230,7 +230,7 @@ pub struct WebInterface {
     tera: Tera,
     component_manager: ComponentManager,
     theme_manager: ThemeManager,
-    admin_service: crate::admin::service::AdminServiceImpl,
+    admin_service: Arc<dyn crate::admin::service::AdminService>,
 }
 
 impl WebInterface {
@@ -253,7 +253,7 @@ impl WebInterface {
         let theme_manager = ThemeManager::new();
 
         // Create admin service - will be injected at runtime
-        let admin_service = crate::admin::service::AdminServiceImpl::new(std::sync::Arc::new(crate::server::McpServer::new(None).unwrap()));
+        let admin_service: Arc<dyn AdminService> = Arc::new(crate::admin::service::AdminServiceImpl::new(std::sync::Arc::new(crate::server::McpServer::new(None).unwrap())));
 
         Ok(Self {
             tera,
@@ -266,10 +266,11 @@ impl WebInterface {
     /// Get the web routes
     pub fn routes(&self, mcp_server: Arc<crate::server::McpServer>) -> Router {
         let admin_api = Arc::new(AdminApi::new(AdminConfig::default()));
-        let admin_service = Arc::new(AdminServiceImpl::new(Arc::clone(&mcp_server)));
+        let admin_service: Arc<dyn AdminService> = Arc::new(AdminServiceImpl::new(Arc::clone(&mcp_server)));
         let state = AdminState {
             admin_api,
             admin_service,
+            mcp_server,
         };
         Router::new()
             .route("/", get(Self::dashboard_page))

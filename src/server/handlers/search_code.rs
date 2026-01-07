@@ -14,6 +14,7 @@ use serde_json;
 use crate::core::auth::Permission;
 use crate::core::cache::{CacheManager, CacheResult};
 use crate::core::limits::ResourceLimits;
+use crate::core::validation::{StringValidator, ValidationError, StringValidatorTrait};
 use crate::server::args::SearchCodeArgs;
 use crate::server::auth::AuthHandler;
 use crate::server::formatter::ResponseFormatter;
@@ -25,6 +26,57 @@ pub struct SearchCodeHandler {
     auth_handler: Arc<AuthHandler>,
     resource_limits: Arc<ResourceLimits>,
     cache_manager: Arc<CacheManager>,
+}
+
+impl SearchCodeHandler {
+    /// Create a new search_code handler
+    pub fn new(
+        search_service: Arc<SearchService>,
+        auth_handler: Arc<AuthHandler>,
+        resource_limits: Arc<ResourceLimits>,
+        cache_manager: Arc<CacheManager>,
+    ) -> Self {
+        Self {
+            search_service,
+            auth_handler,
+            resource_limits,
+            cache_manager,
+        }
+    }
+
+    /// Validate search query using the validation framework
+    fn validate_search_query(&self, query: &str) -> Result<String, CallToolResult> {
+        let trimmed = query.trim();
+
+        // Create validator for search queries
+        let validator = StringValidator::not_empty()
+            .combine_with(StringValidator::min_length(3))
+            .combine_with(StringValidator::max_length(1000)); // Reasonable limit
+
+        match validator.validate(trimmed) {
+            Ok(validated) => Ok(validated),
+            Err(ValidationError::Required { .. }) => {
+                Err(ResponseFormatter::format_query_validation_error(
+                    "Search query cannot be empty. Please provide a natural language query."
+                ))
+            },
+            Err(ValidationError::TooShort { .. }) => {
+                Err(ResponseFormatter::format_query_validation_error(
+                    "Search query too short. Please use at least 3 characters for meaningful results."
+                ))
+            },
+            Err(ValidationError::TooLong { .. }) => {
+                Err(ResponseFormatter::format_query_validation_error(
+                    "Search query too long. Please limit to 1000 characters."
+                ))
+            },
+            _ => {
+                Err(ResponseFormatter::format_query_validation_error(
+                    "Invalid search query format."
+                ))
+            }
+        }
+    }
 }
 
 impl SearchCodeHandler {
@@ -76,19 +128,11 @@ impl SearchCodeHandler {
             }
         };
 
-        // Validate query input
-        let query = query.trim();
-        if query.is_empty() {
-            return Ok(ResponseFormatter::format_query_validation_error(
-                "Search query cannot be empty. Please provide a natural language query."
-            ));
-        }
-
-        if query.len() < 3 {
-            return Ok(ResponseFormatter::format_query_validation_error(
-                "Search query too short. Please use at least 3 characters for meaningful results."
-            ));
-        }
+        // Validate query input using validation framework
+        let query = match self.validate_search_query(&query) {
+            Ok(validated) => validated,
+            Err(error_response) => return Ok(error_response),
+        };
 
         // Validate limit
         let limit = limit.clamp(1, 50); // Reasonable bounds for performance
@@ -108,12 +152,12 @@ impl SearchCodeHandler {
                     query,
                     limit
                 );
-                return ResponseFormatter::format_search_response(
+                return Ok(ResponseFormatter::format_search_response(
                     query,
                     &search_results,
                     start_time.elapsed(),
                     true,
-                );
+                )?);
             }
         }
 
@@ -146,7 +190,7 @@ impl SearchCodeHandler {
                     .await;
 
                 // Use the simplified response formatting that was moved to the search method
-                Self::format_search_response_with_cache(query, &results, duration)
+                Self::format_search_response_with_cache(query, &results, duration)?
             }
             Ok(Err(e)) => {
                 Ok(ResponseFormatter::format_search_error(&e.to_string(), query))

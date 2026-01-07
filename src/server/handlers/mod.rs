@@ -8,3 +8,9 @@ pub mod index_codebase;
 pub mod search_code;
 pub mod get_indexing_status;
 pub mod clear_index;
+
+// Re-export handlers for convenience
+pub use clear_index::ClearIndexHandler;
+pub use get_indexing_status::GetIndexingStatusHandler;
+pub use index_codebase::IndexCodebaseHandler;
+pub use search_code::SearchCodeHandler;

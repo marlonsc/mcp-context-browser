@@ -133,6 +133,9 @@ unicode-segmentation = "1.12"
 # Schema generation for MCP
 schemars = "1.0"
 
+# Input validation
+validator = { version = "0.16", features = ["derive"] }
+
 # MCP SDK
 rmcp = { version = "0.12.0", features = ["server", "client", "macros", "transport-io", "transport-child-process"] }
 
@@ -158,7 +161,7 @@ downcast-rs = "2.0.2"
 futures-util = "0.3.31"
 
 # Local embeddings without external services
-fastembed = { version = "5.0", default-features = false }
+fastembed = { version = "4.4", default-features = false, features = ["default"] }
 
 [dev-dependencies]
 tempfile = "3.10"
