@@ -365,17 +365,50 @@ mod tests {
 
         // Test various unsupported languages that should use generic chunking
         let test_languages = vec![
-            (Language::Go, "package main\n\nimport \"fmt\"\n\nfunc main() {\n    fmt.Println(\"Hello, World!\")\n    fmt.Println(\"This is a test program\")\n}\n"),
-            (Language::Java, "public class HelloWorld {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, World!\");\n        System.out.println(\"Java test program\");\n    }\n}\n"),
-            (Language::C, "#include <stdio.h>\n\nint main() {\n    printf(\"Hello, World!\\n\");\n    printf(\"C language test\\n\");\n    return 0;\n}\n"),
-            (Language::Cpp, "#include <iostream>\n\nint main() {\n    std::cout << \"Hello, World!\" << std::endl;\n    std::cout << \"C++ test program\" << std::endl;\n    return 0;\n}\n"),
-            (Language::CSharp, "using System;\n\nclass Program {\n    static void Main() {\n        Console.WriteLine(\"Hello, World!\");\n        Console.WriteLine(\"C# test program\");\n    }\n}\n"),
-            (Language::Php, "<?php\n\necho \"Hello, World!\\n\";\necho \"PHP test script\\n\";\n\n?>"),
-            (Language::Ruby, "puts \"Hello, World!\"\nputs \"Ruby test program\"\nputs \"This is a longer line to ensure chunking works\"\n"),
-            (Language::Swift, "print(\"Hello, World!\")\nprint(\"Swift test program\")\nprint(\"This line ensures proper chunking\")\n"),
-            (Language::Kotlin, "fun main() {\n    println(\"Hello, World!\")\n    println(\"Kotlin test program\")\n    println(\"Ensuring proper chunk generation\")\n}\n"),
-            (Language::Scala, "object Main extends App {\n  println(\"Hello, World!\")\n  println(\"Scala test program\")\n  println(\"Making sure chunks are created\")\n}\n"),
-            (Language::Haskell, "main = do\n    putStrLn \"Hello, World!\"\n    putStrLn \"Haskell test program\"\n    putStrLn \"This ensures chunking works properly\"\n"),
+            (
+                Language::Go,
+                "package main\n\nimport \"fmt\"\n\nfunc main() {\n    fmt.Println(\"Hello, World!\")\n    fmt.Println(\"This is a test program\")\n}\n",
+            ),
+            (
+                Language::Java,
+                "public class HelloWorld {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, World!\");\n        System.out.println(\"Java test program\");\n    }\n}\n",
+            ),
+            (
+                Language::C,
+                "#include <stdio.h>\n\nint main() {\n    printf(\"Hello, World!\\n\");\n    printf(\"C language test\\n\");\n    return 0;\n}\n",
+            ),
+            (
+                Language::Cpp,
+                "#include <iostream>\n\nint main() {\n    std::cout << \"Hello, World!\" << std::endl;\n    std::cout << \"C++ test program\" << std::endl;\n    return 0;\n}\n",
+            ),
+            (
+                Language::CSharp,
+                "using System;\n\nclass Program {\n    static void Main() {\n        Console.WriteLine(\"Hello, World!\");\n        Console.WriteLine(\"C# test program\");\n    }\n}\n",
+            ),
+            (
+                Language::Php,
+                "<?php\n\necho \"Hello, World!\\n\";\necho \"PHP test script\\n\";\n\n?>",
+            ),
+            (
+                Language::Ruby,
+                "puts \"Hello, World!\"\nputs \"Ruby test program\"\nputs \"This is a longer line to ensure chunking works\"\n",
+            ),
+            (
+                Language::Swift,
+                "print(\"Hello, World!\")\nprint(\"Swift test program\")\nprint(\"This line ensures proper chunking\")\n",
+            ),
+            (
+                Language::Kotlin,
+                "fun main() {\n    println(\"Hello, World!\")\n    println(\"Kotlin test program\")\n    println(\"Ensuring proper chunk generation\")\n}\n",
+            ),
+            (
+                Language::Scala,
+                "object Main extends App {\n  println(\"Hello, World!\")\n  println(\"Scala test program\")\n  println(\"Making sure chunks are created\")\n}\n",
+            ),
+            (
+                Language::Haskell,
+                "main = do\n    putStrLn \"Hello, World!\"\n    putStrLn \"Haskell test program\"\n    putStrLn \"This ensures chunking works properly\"\n",
+            ),
         ];
 
         for (language, code) in test_languages {

@@ -3,12 +3,14 @@
 //! Provides AES-256-GCM encryption for sensitive data stored on disk.
 //! Implements envelope encryption with data keys and master keys.
 
+#![allow(deprecated)] // Allow deprecated aes_gcm API for compatibility
+
 use crate::core::error::{Error, Result};
 use aes_gcm::{
-    aead::{Aead, KeyInit},
     Aes256Gcm, Key,
+    aead::{Aead, KeyInit},
 };
-use rand::{rng, Rng};
+use rand::{Rng, rng};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;

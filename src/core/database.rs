@@ -5,7 +5,7 @@
 
 use crate::core::error::{Error, Result};
 use r2d2::Pool;
-use r2d2_postgres::{postgres::NoTls, PostgresConnectionManager};
+use r2d2_postgres::{PostgresConnectionManager, postgres::NoTls};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 

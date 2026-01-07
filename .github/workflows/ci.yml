@@ -158,8 +158,7 @@ jobs:
       - name: Setup Documentation Tools
         run: |
           bash scripts/setup/install-adr-tools.sh
-          cargo install cargo-spellcheck
-          cargo install cargo-deadlinks
+          bash scripts/docs/automation.sh setup
 
       - name: Validate Documentation
         run: bash scripts/docs/automation.sh validate
@@ -173,50 +172,32 @@ jobs:
       - name: Lint Markdown Files
         run: bash scripts/docs/lint-markdown.sh
 
-  docs-generation:
-    name: Documentation Generation
+  docs-interactive:
+    name: Interactive Documentation
     runs-on: ubuntu-latest
-    needs: [lint, build]
+    needs: [docs-quality]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Documentation Tools
+      - name: Setup mdbook
+        run: bash scripts/docs/automation.sh setup
+
+      - name: Initialize mdbook (if needed)
         run: |
-          bash scripts/setup/install-adr-tools.sh
-          cargo install cargo-modules 2>/dev/null || echo "cargo-modules not available"
+          if [ ! -f "docs/book/book.toml" ]; then
+            bash scripts/docs/init-mdbook.sh
+          fi
 
-      - name: Generate Documentation
-        run: bash scripts/docs/automation.sh generate
+      - name: Build Interactive Documentation
+        run: bash scripts/docs/automation.sh mdbook build
 
-      - name: Generate Module Documentation
-        run: bash scripts/docs/generate-module-docs.sh
-
-      - name: Upload Generated Documentation
+      - name: Upload mdbook
         uses: actions/upload-artifact@v4
         with:
-          name: generated-docs
-          path: docs/
+          name: mdbook-docs
+          path: docs/book/book/
           retention-days: 30
-
-      - name: Check Documentation Changes
-        run: |
-          if [ -n "$(git status --porcelain docs/)" ]; then
-            echo "📝 Documentation has been updated"
-            echo "::set-output name=docs-changed::true"
-          else
-            echo "✅ Documentation is up to date"
-            echo "::set-output name=docs-changed::false"
-          fi
-        id: check-docs
-
-      - name: Commit Documentation Changes (if any)
-        if: steps.check-docs.outputs.docs-changed == 'true'
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add docs/
-          git commit -m "docs: auto-generate documentation from source code" || echo "No changes to commit"
 
   # Platform-specific builds for releases
   build-release:

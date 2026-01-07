@@ -6,7 +6,7 @@
 use mcp_context_browser::server::{
     ClearIndexArgs, GetIndexingStatusArgs, IndexCodebaseArgs, McpServer, SearchCodeArgs,
 };
-use rmcp::{model::ProtocolVersion, ServerHandler};
+use rmcp::{ServerHandler, model::ProtocolVersion};
 
 #[cfg(test)]
 mod tests {

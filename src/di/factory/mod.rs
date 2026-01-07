@@ -12,8 +12,8 @@ use crate::providers::embedding::null::NullEmbeddingProvider;
 use crate::providers::embedding::ollama::OllamaEmbeddingProvider;
 use crate::providers::embedding::openai::OpenAIEmbeddingProvider;
 use crate::providers::embedding::voyageai::VoyageAIEmbeddingProvider;
-use crate::providers::vector_store::milvus::MilvusVectorStoreProvider;
 use crate::providers::vector_store::InMemoryVectorStoreProvider;
+use crate::providers::vector_store::milvus::MilvusVectorStoreProvider;
 use async_trait::async_trait;
 use std::sync::Arc;
 

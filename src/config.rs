@@ -606,7 +606,7 @@ impl ConfigManager {
                 return Err(Error::config(format!(
                     "Unknown embedding provider: {}",
                     config.provider
-                )))
+                )));
             }
         }
 
@@ -656,7 +656,7 @@ impl ConfigManager {
                 return Err(Error::config(format!(
                     "Unknown vector store provider: {}",
                     config.provider
-                )))
+                )));
             }
         }
 
@@ -828,7 +828,9 @@ monitoring_interval_secs = 60  # 1 minute
         println!();
         println!("# Core Providers");
         println!("EMBEDDING_PROVIDER=openai|ollama|voyageai|gemini|mock");
-        println!("EMBEDDING_MODEL=text-embedding-3-small|nomic-embed-text|voyage-code-3|gemini-embedding-001");
+        println!(
+            "EMBEDDING_MODEL=text-embedding-3-small|nomic-embed-text|voyage-code-3|gemini-embedding-001"
+        );
         println!("VECTOR_STORE_PROVIDER=milvus|pinecone|qdrant|in-memory");
         println!();
         println!("# API Keys");

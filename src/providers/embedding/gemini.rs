@@ -1,7 +1,7 @@
 //! Gemini (Google AI) embedding provider implementation
 
 use crate::core::error::{Error, Result};
-use crate::core::http_client::{get_or_create_global_http_client, HttpClientPool};
+use crate::core::http_client::{HttpClientPool, get_or_create_global_http_client};
 use crate::core::types::Embedding;
 use crate::providers::EmbeddingProvider;
 use async_trait::async_trait;

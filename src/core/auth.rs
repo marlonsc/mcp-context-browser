@@ -222,7 +222,7 @@ impl AuthService {
 
     /// Simplified token encoding (for demo - use proper JWT library in production)
     fn encode_token(&self, claims: &Claims) -> Result<String> {
-        use base64::{engine::general_purpose, Engine as _};
+        use base64::{Engine as _, engine::general_purpose};
 
         let claims_json = serde_json::to_string(claims)?;
         let claims_b64 = general_purpose::URL_SAFE_NO_PAD.encode(claims_json.as_bytes());
@@ -241,7 +241,7 @@ impl AuthService {
 
     /// Simplified token decoding (for demo - use proper JWT library in production)
     fn decode_token(&self, token: &str) -> Result<Claims> {
-        use base64::{engine::general_purpose, Engine as _};
+        use base64::{Engine as _, engine::general_purpose};
 
         let parts: Vec<&str> = token.split('.').collect();
         if parts.len() != 3 {
@@ -288,7 +288,7 @@ pub mod middleware {
     use super::*;
     use axum::{
         extract::Request,
-        http::{header, StatusCode},
+        http::{StatusCode, header},
         middleware::Next,
         response::Response,
     };

@@ -437,10 +437,12 @@ mod tests {
         let provider = EdgeVecVectorStoreProvider::new(config).unwrap();
 
         // Test collection creation
-        assert!(provider
-            .create_collection("test_collection", 1536)
-            .await
-            .is_ok());
+        assert!(
+            provider
+                .create_collection("test_collection", 1536)
+                .await
+                .is_ok()
+        );
 
         // Test collection exists
         assert!(provider.collection_exists("test_collection").await.unwrap());

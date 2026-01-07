@@ -1,11 +1,11 @@
 //! Unit tests for embedding providers
 
 use mcp_context_browser::core::error::Error;
+use mcp_context_browser::providers::EmbeddingProvider;
 use mcp_context_browser::providers::embedding::{
     GeminiEmbeddingProvider, OllamaEmbeddingProvider, OpenAIEmbeddingProvider,
     VoyageAIEmbeddingProvider,
 };
-use mcp_context_browser::providers::EmbeddingProvider;
 
 // Note: MockHttpServer removed as it was unused and causing warnings
 
@@ -754,7 +754,9 @@ mod provider_trait_tests {
         #[test]
         fn test_openai_real_api() {
             if std::env::var("OPENAI_LIVE_TEST").ok().as_deref() != Some("1") {
-                println!("Skipping OpenAI integration test - set OPENAI_LIVE_TEST=1 to run against the real API");
+                println!(
+                    "Skipping OpenAI integration test - set OPENAI_LIVE_TEST=1 to run against the real API"
+                );
                 return;
             }
 

@@ -305,7 +305,7 @@ mod tests {
             return Ok(());
         }
 
-        use rmcp::{model::CallToolRequestParam, transport::TokioChildProcess, ServiceExt};
+        use rmcp::{ServiceExt, model::CallToolRequestParam, transport::TokioChildProcess};
         use tokio::process::Command;
 
         // Start MCP server process using rmcp client infrastructure

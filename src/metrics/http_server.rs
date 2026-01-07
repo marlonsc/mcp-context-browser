@@ -5,12 +5,12 @@
 //! - System metrics (CPU, memory, disk, network)
 //! - Performance metrics (queries, cache)
 
-use axum::{extract::State, http::StatusCode, response::Json, routing::get, Router};
+use axum::{Router, extract::State, http::StatusCode, response::Json, routing::get};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-use crate::core::cache::{get_global_cache_manager, CacheStats};
+use crate::core::cache::{CacheStats, get_global_cache_manager};
 use crate::core::limits::ResourceLimits;
 use crate::core::rate_limit::RateLimiter;
 // Rate limiting middleware will be added later

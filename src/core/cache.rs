@@ -175,7 +175,10 @@ impl CacheManager {
                             Some(client)
                         }
                         Err(e) => {
-                            tracing::warn!("⚠️  Redis cache connection failed, falling back to local cache: {}", e);
+                            tracing::warn!(
+                                "⚠️  Redis cache connection failed, falling back to local cache: {}",
+                                e
+                            );
                             None
                         }
                     }

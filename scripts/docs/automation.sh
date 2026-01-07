@@ -23,6 +23,7 @@
 #   validate     Validate documentation quality and ADR compliance
 #   quality      Run quality checks on documentation
 #   adr-check    Check ADR compliance
+#   mdbook       Manage mdbook interactive documentation (init|build|serve|clean)
 #   setup        Install and configure all tools
 #
 # =============================================================================
@@ -63,6 +64,51 @@ log_error() {
 # Check if command exists (including in cargo bin)
 command_exists() {
     command -v "$1" >/dev/null 2>&1 || [ -x "$HOME/.cargo/bin/$1" ]
+}
+
+# Ensure mdbook is available
+ensure_mdbook() {
+    if ! command_exists mdbook; then
+        log_error "mdbook not found. Run: ./scripts/docs/automation.sh setup"
+        exit 1
+    fi
+}
+
+# Run mdbook commands
+mdbook_command() {
+    local subcommand="$1"
+    shift
+
+    case "$subcommand" in
+        "init")
+            log_info "Initializing mdbook documentation..."
+            mkdir -p "${PROJECT_ROOT}/docs/book"
+            cd "${PROJECT_ROOT}/docs/book"
+            mdbook init --title "MCP Context Browser - Documentation Excellence v0.0.4"
+            log_success "mdbook initialized"
+            ;;
+        "build")
+            log_info "Building mdbook documentation..."
+            cd "${PROJECT_ROOT}/docs/book"
+            mdbook build
+            log_success "mdbook built successfully"
+            ;;
+        "serve")
+            log_info "Serving mdbook documentation on http://localhost:3000"
+            cd "${PROJECT_ROOT}/docs/book"
+            mdbook serve --open
+            ;;
+        "clean")
+            log_info "Cleaning mdbook build artifacts..."
+            cd "${PROJECT_ROOT}/docs/book"
+            rm -rf book/
+            log_success "mdbook cleaned"
+            ;;
+        *)
+            echo "Usage: $0 mdbook <init|build|serve|clean>"
+            exit 1
+            ;;
+    esac
 }
 
 # Ensure tools are installed
@@ -397,6 +443,15 @@ setup_tools() {
         exit 1
     fi
 
+    # Install mdbook
+    log_info "Installing mdbook..."
+    if cargo install mdbook; then
+        log_success "mdbook installed successfully"
+    else
+        log_error "Failed to install mdbook"
+        exit 1
+    fi
+
     # Check for optional tools
     if command_exists rust-code-analysis; then
         log_success "rust-code-analysis is available"
@@ -449,6 +504,10 @@ main() {
         "adr-check")
             ensure_tools
             adr_check "$@"
+            ;;
+        "mdbook")
+            ensure_mdbook
+            mdbook_command "$@"
             ;;
         "setup")
             setup_tools "$@"

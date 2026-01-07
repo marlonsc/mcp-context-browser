@@ -4,12 +4,12 @@
 //! against common web vulnerabilities.
 
 use axum::{
+    Router,
     body::Body,
     http::{Method, Request, StatusCode},
     routing::get,
-    Router,
 };
-use mcp_context_browser::server::security::{request_validation_middleware, SecurityConfig};
+use mcp_context_browser::server::security::{SecurityConfig, request_validation_middleware};
 use tower::ServiceExt;
 
 #[cfg(test)]

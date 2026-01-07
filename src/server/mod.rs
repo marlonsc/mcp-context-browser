@@ -16,19 +16,19 @@ pub mod security;
 use crate::core::auth::{AuthService, Claims, Permission};
 use crate::core::cache::CacheManager;
 use crate::core::database::init_global_database_pool;
-use crate::core::http_client::{init_global_http_client, HttpClientConfig};
-use crate::core::limits::{init_global_resource_limits, ResourceLimits};
+use crate::core::http_client::{HttpClientConfig, init_global_http_client};
+use crate::core::limits::{ResourceLimits, init_global_resource_limits};
 use crate::core::rate_limit::RateLimiter;
 use crate::metrics::MetricsApiServer;
 use crate::services::{IndexingService, SearchService};
 use rmcp::{
+    ErrorData as McpError, ServerHandler, ServiceExt,
     handler::server::{router::tool::ToolRouter, wrapper::Parameters},
     model::{
         CallToolResult, Content, Implementation, ProtocolVersion, ServerCapabilities, ServerInfo,
     },
     schemars, tool, tool_handler, tool_router,
     transport::stdio,
-    ErrorData as McpError, ServerHandler, ServiceExt,
 };
 use std::sync::Arc;
 use std::time::Instant;
@@ -293,7 +293,7 @@ impl McpServer {
                 return Ok(CallToolResult::success(vec![Content::text(format!(
                     "❌ Resource Limit Error: {}",
                     e
-                ))]))
+                ))]));
             }
         };
 
@@ -544,7 +544,7 @@ impl McpServer {
                 return Ok(CallToolResult::success(vec![Content::text(format!(
                     "❌ Resource Limit Error: {}",
                     e
-                ))]))
+                ))]));
             }
         };
 

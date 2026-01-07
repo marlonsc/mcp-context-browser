@@ -26,6 +26,6 @@ pub use core::hybrid_search::{BM25Params, BM25Scorer, HybridSearchConfig, Hybrid
 
 // Re-export multi-provider strategy system
 pub use providers::routing::{
-    circuit_breaker::CircuitBreaker, metrics::ProviderMetricsCollector, ProviderContext,
-    ProviderRouter, ProviderSelectionStrategy,
+    ProviderContext, ProviderRouter, ProviderSelectionStrategy, circuit_breaker::CircuitBreaker,
+    metrics::ProviderMetricsCollector,
 };

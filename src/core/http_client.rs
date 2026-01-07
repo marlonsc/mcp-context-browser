@@ -109,8 +109,8 @@ pub fn get_global_http_client() -> Option<Arc<HttpClientPool>> {
 }
 
 /// Get the global HTTP client or create a default one
-pub fn get_or_create_global_http_client(
-) -> Result<Arc<HttpClientPool>, Box<dyn std::error::Error + Send + Sync>> {
+pub fn get_or_create_global_http_client()
+-> Result<Arc<HttpClientPool>, Box<dyn std::error::Error + Send + Sync>> {
     // First check if we already have a pool
     if let Some(pool) = get_global_http_client() {
         return Ok(pool);
