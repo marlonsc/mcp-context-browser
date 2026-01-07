@@ -44,7 +44,7 @@ cargo-deadlinks = { version = "0.8", optional = true }
 fs2 = "0.4"
 
 # HTTP client for external checks
-reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
+reqwest = { version = "0.13", features = ["json", "rustls-tls"] }
 
 [features]
 default = []

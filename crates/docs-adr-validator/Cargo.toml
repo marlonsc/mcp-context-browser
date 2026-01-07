@@ -44,7 +44,7 @@ quote = "1.0"
 fs2 = "0.4"
 
 # HTTP client for external validation
-reqwest = { version = "0.12", features = ["json", "__tls"] }
+reqwest = { version = "0.13", features = ["json", "__tls"] }
 
 # Git integration for ADR history
 git2 = "0.19"
