@@ -3,6 +3,7 @@
 use crate::core::error::{Error, Result};
 use crate::core::types::Embedding;
 use crate::providers::VectorStoreProvider;
+use crate::core::locks::lock_mutex;
 use async_trait::async_trait;
 use std::collections::HashMap;
 
@@ -32,7 +33,7 @@ impl Default for NullVectorStoreProvider {
 #[async_trait]
 impl VectorStoreProvider for NullVectorStoreProvider {
     async fn create_collection(&self, name: &str, _dimensions: usize) -> Result<()> {
-        let mut collections = self.collections.lock().unwrap();
+        let mut collections = lock_mutex(&self.collections, "NullVectorStoreProvider::create_collection")?;
         if collections.contains_key(name) {
             return Err(Error::vector_db(format!(
                 "Collection '{}' already exists",
@@ -44,13 +45,13 @@ impl VectorStoreProvider for NullVectorStoreProvider {
     }
 
     async fn delete_collection(&self, name: &str) -> Result<()> {
-        let mut collections = self.collections.lock().unwrap();
+        let mut collections = lock_mutex(&self.collections, "NullVectorStoreProvider::delete_collection")?;
         collections.remove(name);
         Ok(())
     }
 
     async fn collection_exists(&self, name: &str) -> Result<bool> {
-        let collections = self.collections.lock().unwrap();
+        let collections = lock_mutex(&self.collections, "NullVectorStoreProvider::collection_exists")?;
         Ok(collections.contains_key(name))
     }
 

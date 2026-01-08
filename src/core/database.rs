@@ -157,8 +157,10 @@ pub fn get_or_create_global_database_pool() -> Result<&'static DatabasePool> {
         let pool = DatabasePool::new(config)?;
         DB_POOL
             .set(pool)
-            .map_err(|_| "Database pool already initialized")?;
-        Ok(DB_POOL.get().unwrap())
+            .map_err(|_| Error::internal("Database pool already initialized"))?;
+        DB_POOL
+            .get()
+            .ok_or_else(|| Error::internal("Failed to retrieve database pool after initialization"))
     }
 }
 

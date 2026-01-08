@@ -15,13 +15,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_mcp_server_creation() {
-        let result = McpServer::new(None);
+        let result = McpServer::new(None).await;
         assert!(result.is_ok(), "MCP server should be created successfully");
     }
 
     #[tokio::test]
     async fn test_server_info_structure() {
-        let server = McpServer::new(None).unwrap();
+        let server = McpServer::new(None).await.unwrap();
         let info = server.get_info();
 
         // Check protocol version
@@ -70,7 +70,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_server_instructions_comprehensive() {
-        let server = McpServer::new(None).unwrap();
+        let server = McpServer::new(None).await.unwrap();
         let info = server.get_info();
         let instructions = info.instructions.as_ref().unwrap();
 
@@ -162,6 +162,8 @@ mod tests {
         let args = SearchCodeArgs {
             query: "function".to_string(),
             limit: 10,
+            collection: Some("test".to_string()),
+            extensions: Some(vec!["rs".to_string()]),
             filters: Some(mcp_context_browser::server::args::SearchFilters {
                 file_extensions: Some(vec!["rs".to_string(), "py".to_string()]),
                 languages: Some(vec!["rust".to_string()]),
@@ -177,7 +179,10 @@ mod tests {
         assert!(args.filters.is_some());
 
         let filters = args.filters.unwrap();
-        assert_eq!(filters.file_extensions, Some(vec!["rs".to_string(), "py".to_string()]));
+        assert_eq!(
+            filters.file_extensions,
+            Some(vec!["rs".to_string(), "py".to_string()])
+        );
         assert_eq!(filters.languages, Some(vec!["rust".to_string()]));
         assert_eq!(filters.exclude_patterns, Some(vec!["test_*".to_string()]));
         assert_eq!(filters.min_score, Some(0.5));
@@ -215,7 +220,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_server_capabilities_structure() {
-        let server = McpServer::new(None).unwrap();
+        let server = McpServer::new(None).await.unwrap();
         let info = server.get_info();
         let capabilities = &info.capabilities;
 
@@ -243,7 +248,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_server_implementation_info() {
-        let server = McpServer::new(None).unwrap();
+        let server = McpServer::new(None).await.unwrap();
         let info = server.get_info();
         let implementation = &info.server_info;
 
@@ -261,7 +266,7 @@ mod tests {
     async fn test_server_initialization_with_dependencies() {
         // This test ensures the server can be created with all its dependencies
         // In a real scenario, this would involve mock providers
-        let _server = McpServer::new(None).unwrap();
+        let _server = McpServer::new(None).await.unwrap();
 
         // Server creation succeeded - this is expected with mock/default providers
         assert!(
@@ -277,7 +282,7 @@ mod tests {
 
         // We expect server creation to succeed in test environment
         // In case of failure, it should be due to configuration, not code structure
-        let server_result = McpServer::new(None);
+        let server_result = McpServer::new(None).await;
 
         // Either it succeeds, or fails with a configuration-related error
         match server_result {
@@ -305,7 +310,7 @@ mod tests {
     #[tokio::test]
     async fn test_server_tool_router_initialization() {
         // Test that the server properly initializes its tool router
-        let _server = McpServer::new(None).unwrap();
+        let _server = McpServer::new(None).await.unwrap();
 
         // The server should have a tool router (internal implementation detail)
         // We can't directly test the router, but we can verify the server structure
@@ -314,7 +319,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_server_instructions_formatting() {
-        let server = McpServer::new(None).unwrap();
+        let server = McpServer::new(None).await.unwrap();
         let info = server.get_info();
         let instructions = info.instructions.as_ref().unwrap();
 
@@ -339,7 +344,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_server_capabilities_compliance() {
-        let server = McpServer::new(None).unwrap();
+        let server = McpServer::new(None).await.unwrap();
         let info = server.get_info();
 
         // Verify MCP protocol compliance
@@ -368,7 +373,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_instructions_contain_essential_information() {
-        let server = McpServer::new(None).unwrap();
+        let server = McpServer::new(None).await.unwrap();
         let info = server.get_info();
         let instructions = info.instructions.as_ref().unwrap();
 
@@ -400,7 +405,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_instructions_provide_usage_guidance() {
-        let server = McpServer::new(None).unwrap();
+        let server = McpServer::new(None).await.unwrap();
         let info = server.get_info();
         let instructions = info.instructions.as_ref().unwrap();
 
@@ -427,7 +432,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_server_info_serialization() {
-        let server = McpServer::new(None).unwrap();
+        let server = McpServer::new(None).await.unwrap();
         let info = server.get_info();
 
         // Test that the server info can be serialized (required for MCP protocol)
@@ -443,7 +448,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_server_supports_required_mcp_features() {
-        let server = McpServer::new(None).unwrap();
+        let server = McpServer::new(None).await.unwrap();
         let info = server.get_info();
 
         // Must support MCP protocol version 2024-11-05

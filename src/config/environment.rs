@@ -114,10 +114,10 @@ impl EnvironmentLoader {
         if let Some(host) = self.get_var("HOST") {
             config.server.host = host;
         }
-        if let Some(port_str) = self.get_var("PORT") {
-            if let Ok(port) = port_str.parse::<u16>() {
-                config.server.port = port;
-            }
+        if let Some(port_str) = self.get_var("PORT")
+            && let Ok(port) = port_str.parse::<u16>()
+        {
+            config.server.port = port;
         }
 
         // Override metrics config
@@ -125,32 +125,38 @@ impl EnvironmentLoader {
             let _ = port_str.parse().map(|port| config.metrics.port = port);
         }
         if let Some(enabled_str) = self.get_var("METRICS_ENABLED") {
-            let _ = enabled_str.parse().map(|enabled| config.metrics.enabled = enabled);
+            let _ = enabled_str
+                .parse()
+                .map(|enabled| config.metrics.enabled = enabled);
         }
 
         // Override sync config
         if let Some(interval_str) = self.get_var("SYNC_INTERVAL_MS") {
-            let _ = interval_str.parse().map(|interval| config.sync.interval_ms = interval);
+            let _ = interval_str
+                .parse()
+                .map(|interval| config.sync.interval_ms = interval);
         }
         if let Some(enable_str) = self.get_var("SYNC_ENABLE_LOCKFILE") {
-            let _ = enable_str.parse().map(|enable| config.sync.enable_lockfile = enable);
+            let _ = enable_str
+                .parse()
+                .map(|enable| config.sync.enable_lockfile = enable);
         }
-        if let Some(debounce_str) = self.get_var("SYNC_DEBOUNCE_MS") {
-            if let Ok(debounce) = debounce_str.parse() {
-                config.sync.debounce_ms = debounce;
-            }
+        if let Some(debounce_str) = self.get_var("SYNC_DEBOUNCE_MS")
+            && let Ok(debounce) = debounce_str.parse()
+        {
+            config.sync.debounce_ms = debounce;
         }
 
         // Override daemon config
-        if let Some(cleanup_str) = self.get_var("DAEMON_CLEANUP_INTERVAL_SECS") {
-            if let Ok(cleanup) = cleanup_str.parse() {
-                config.daemon.cleanup_interval_secs = cleanup;
-            }
+        if let Some(cleanup_str) = self.get_var("DAEMON_CLEANUP_INTERVAL_SECS")
+            && let Ok(cleanup) = cleanup_str.parse()
+        {
+            config.daemon.cleanup_interval_secs = cleanup;
         }
-        if let Some(monitoring_str) = self.get_var("DAEMON_MONITORING_INTERVAL_SECS") {
-            if let Ok(monitoring) = monitoring_str.parse() {
-                config.daemon.monitoring_interval_secs = monitoring;
-            }
+        if let Some(monitoring_str) = self.get_var("DAEMON_MONITORING_INTERVAL_SECS")
+            && let Ok(monitoring) = monitoring_str.parse()
+        {
+            config.daemon.monitoring_interval_secs = monitoring;
         }
         if let Some(max_age_str) = self.get_var("DAEMON_MAX_LOCK_AGE_SECS") {
             if let Ok(max_age) = max_age_str.parse() {
@@ -285,8 +291,7 @@ impl EnvironmentLoader {
                 ))
             })?;
 
-            #[allow(clippy::useless_conversion)]
-            if port < 1024 || port > 65535 {
+            if !(1024..=65535).contains(&port) {
                 return Err(Error::config(format!(
                     "Server port {} is out of valid range (1024-65535)",
                     port
@@ -303,8 +308,7 @@ impl EnvironmentLoader {
                 ))
             })?;
 
-            #[allow(clippy::useless_conversion)]
-            if metrics_port < 1024 || metrics_port > 65535 {
+            if !(1024..=65535).contains(&metrics_port) {
                 return Err(Error::config(format!(
                     "Metrics port {} is out of valid range (1024-65535)",
                     metrics_port
@@ -312,15 +316,14 @@ impl EnvironmentLoader {
             }
 
             // Check for port conflicts if both are set
-            if let Some(port_str) = self.get_var("PORT") {
-                if let Ok(port) = port_str.parse::<u16>() {
-                    if port == metrics_port {
-                        return Err(Error::config(format!(
-                            "Server port ({}) and metrics port ({}) cannot be the same",
-                            port, metrics_port
-                        )));
-                    }
-                }
+            if let Some(port_str) = self.get_var("PORT")
+                && let Ok(port) = port_str.parse::<u16>()
+                && port == metrics_port
+            {
+                return Err(Error::config(format!(
+                    "Server port ({}) and metrics port ({}) cannot be the same",
+                    port, metrics_port
+                )));
             }
         }
 

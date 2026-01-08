@@ -14,58 +14,40 @@ use crate::admin::models::{
 
 /// Get system configuration
 pub async fn get_config_handler(
-    State(_state): State<AdminState>,
+    State(state): State<AdminState>,
 ) -> Result<Json<ApiResponse<SystemConfig>>, StatusCode> {
-    // TODO: Implement actual config retrieval from MCP server
+    // Get real configuration from admin service
+    let config_data = state
+        .admin_service
+        .get_configuration()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    // Convert to admin models
     let config = SystemConfig {
-        providers: vec![
-            ProviderInfo {
-                id: "openai-1".to_string(),
-                name: "OpenAI".to_string(),
-                provider_type: "embedding".to_string(),
-                status: "active".to_string(),
-                config: serde_json::json!({
-                    "model": "text-embedding-ada-002",
-                    "api_key": "***"
-                }),
-            },
-            ProviderInfo {
-                id: "milvus-1".to_string(),
-                name: "Milvus".to_string(),
-                provider_type: "vector_store".to_string(),
-                status: "active".to_string(),
-                config: serde_json::json!({
-                    "host": "localhost",
-                    "port": 19530
-                }),
-            },
-        ],
+        providers: config_data.providers.into_iter().map(|p| ProviderInfo {
+            id: p.id,
+            name: p.name,
+            provider_type: p.provider_type,
+            status: p.status,
+            config: p.config,
+        }).collect(),
         indexing: crate::admin::models::IndexingConfig {
-            chunk_size: 1000,
-            chunk_overlap: 200,
-            max_file_size: 10 * 1024 * 1024, // 10MB
-            supported_extensions: vec![
-                ".rs".to_string(),
-                ".js".to_string(),
-                ".ts".to_string(),
-                ".py".to_string(),
-                ".md".to_string(),
-            ],
-            exclude_patterns: vec![
-                "target/".to_string(),
-                "node_modules/".to_string(),
-                ".git/".to_string(),
-            ],
+            chunk_size: config_data.indexing.chunk_size,
+            chunk_overlap: config_data.indexing.chunk_overlap,
+            max_file_size: config_data.indexing.max_file_size,
+            supported_extensions: config_data.indexing.supported_extensions,
+            exclude_patterns: config_data.indexing.exclude_patterns,
         },
         security: crate::admin::models::SecurityConfig {
-            enable_auth: true,
-            rate_limiting: true,
-            max_requests_per_minute: 60,
+            enable_auth: config_data.security.enable_auth,
+            rate_limiting: config_data.security.rate_limiting,
+            max_requests_per_minute: config_data.security.max_requests_per_minute,
         },
         metrics: crate::admin::models::MetricsConfig {
-            enabled: true,
-            collection_interval: 30,
-            retention_days: 30,
+            enabled: config_data.metrics.enabled,
+            collection_interval: config_data.metrics.collection_interval,
+            retention_days: config_data.metrics.retention_days,
         },
     };
 

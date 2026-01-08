@@ -201,7 +201,8 @@ impl HybridSearchEngine {
                 .collect());
         }
 
-        let bm25_scorer = self.bm25_scorer.as_ref().unwrap();
+        let bm25_scorer = self.bm25_scorer.as_ref()
+            .ok_or_else(|| crate::core::error::Error::internal("BM25 scorer not initialized"))?;
 
         // Create a mapping from file_path + line_number to document for BM25 scoring
         let mut doc_map = HashMap::new();

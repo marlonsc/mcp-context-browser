@@ -52,7 +52,11 @@ pub struct SearchFilters {
     #[schemars(description = "Exclude files matching these glob patterns")]
     pub exclude_patterns: Option<Vec<String>>,
     /// Minimum similarity score (0.0 to 1.0)
-    #[validate(range(min = 0.0, max = 1.0, message = "Min score must be between 0.0 and 1.0"))]
+    #[validate(range(
+        min = 0.0,
+        max = 1.0,
+        message = "Min score must be between 0.0 and 1.0"
+    ))]
     #[schemars(description = "Minimum similarity score threshold")]
     pub min_score: Option<f32>,
 }

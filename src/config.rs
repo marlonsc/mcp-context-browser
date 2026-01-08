@@ -616,8 +616,10 @@ impl ConfigManager {
         // Check required fields based on provider
         match config.provider.to_lowercase().as_str() {
             "openai" => {
-                if config.api_key.is_none() || config.api_key.as_ref().unwrap().is_empty() {
-                    return Err(Error::config("OpenAI API key is required"));
+                let api_key = config.api_key.as_ref()
+                    .ok_or_else(|| Error::config("OpenAI API key is required"))?;
+                if api_key.is_empty() {
+                    return Err(Error::config("OpenAI API key cannot be empty"));
                 }
                 if config.model.is_empty() {
                     return Err(Error::config("OpenAI model is required"));
@@ -629,16 +631,20 @@ impl ConfigManager {
                 }
             }
             "voyageai" => {
-                if config.api_key.is_none() || config.api_key.as_ref().unwrap().is_empty() {
-                    return Err(Error::config("VoyageAI API key is required"));
+                let api_key = config.api_key.as_ref()
+                    .ok_or_else(|| Error::config("VoyageAI API key is required"))?;
+                if api_key.is_empty() {
+                    return Err(Error::config("VoyageAI API key cannot be empty"));
                 }
                 if config.model.is_empty() {
                     return Err(Error::config("VoyageAI model is required"));
                 }
             }
             "gemini" => {
-                if config.api_key.is_none() || config.api_key.as_ref().unwrap().is_empty() {
-                    return Err(Error::config("Gemini API key is required"));
+                let api_key = config.api_key.as_ref()
+                    .ok_or_else(|| Error::config("Gemini API key is required"))?;
+                if api_key.is_empty() {
+                    return Err(Error::config("Gemini API key cannot be empty"));
                 }
                 if config.model.is_empty() {
                     return Err(Error::config("Gemini model is required"));
@@ -677,21 +683,29 @@ impl ConfigManager {
     ) -> Result<()> {
         match config.provider.to_lowercase().as_str() {
             "milvus" => {
-                if config.address.is_none() || config.address.as_ref().unwrap().is_empty() {
-                    return Err(Error::config("Milvus address is required"));
+                let address = config.address.as_ref()
+                    .ok_or_else(|| Error::config("Milvus address is required"))?;
+                if address.is_empty() {
+                    return Err(Error::config("Milvus address cannot be empty"));
                 }
             }
             "pinecone" => {
-                if config.token.is_none() || config.token.as_ref().unwrap().is_empty() {
-                    return Err(Error::config("Pinecone API key is required"));
+                let token = config.token.as_ref()
+                    .ok_or_else(|| Error::config("Pinecone API key is required"))?;
+                if token.is_empty() {
+                    return Err(Error::config("Pinecone API key cannot be empty"));
                 }
-                if config.collection.is_none() || config.collection.as_ref().unwrap().is_empty() {
-                    return Err(Error::config("Pinecone index name is required"));
+                let collection = config.collection.as_ref()
+                    .ok_or_else(|| Error::config("Pinecone index name is required"))?;
+                if collection.is_empty() {
+                    return Err(Error::config("Pinecone index name cannot be empty"));
                 }
             }
             "qdrant" => {
-                if config.address.is_none() || config.address.as_ref().unwrap().is_empty() {
-                    return Err(Error::config("Qdrant URL is required"));
+                let address = config.address.as_ref()
+                    .ok_or_else(|| Error::config("Qdrant URL is required"))?;
+                if address.is_empty() {
+                    return Err(Error::config("Qdrant URL cannot be empty"));
                 }
             }
             "in-memory" => {} // In-memory has no requirements

@@ -345,8 +345,7 @@ make package        # Create distribution package (tar.gz)
 │   │   ├── adr/                 # Architectural business decisions and rationale
 │   │   └── diagrams/            # Business process and system architecture visualizations
 │   ├── operations/              # Enterprise deployment and operations business guides
-│   ├── modules/                 # Business capability module documentation
-│   └── plans/                   # Business roadmap and implementation planning
+│   └── modules/                 # Business capability module documentation
 └── Makefile                    # Enterprise Build Orchestration (Business Automation)
 ```
 

@@ -6,30 +6,11 @@
 use crate::core::error::{Error, Result};
 use crate::core::types::CodeChunk;
 use crate::providers::{EmbeddingProvider, VectorStoreProvider};
+use crate::repository::{ChunkRepository, RepositoryStats};
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-/// Statistics about the repository
-#[derive(Debug, Clone)]
-pub struct RepositoryStats {
-    pub total_chunks: u64,
-    pub total_collections: u64,
-    pub storage_size_bytes: u64,
-    pub avg_chunk_size_bytes: f64,
-}
-
-/// Repository trait for code chunks
-#[async_trait]
-pub trait ChunkRepository {
-    async fn save(&self, chunk: &CodeChunk) -> Result<String>;
-    async fn save_batch(&self, chunks: &[CodeChunk]) -> Result<Vec<String>>;
-    async fn find_by_id(&self, id: &str) -> Result<Option<CodeChunk>>;
-    async fn find_by_collection(&self, collection: &str, limit: usize) -> Result<Vec<CodeChunk>>;
-    async fn delete(&self, id: &str) -> Result<()>;
-    async fn delete_collection(&self, collection: &str) -> Result<()>;
-    async fn stats(&self) -> Result<RepositoryStats>;
-}
 
 /// Vector store backed chunk repository
 pub struct VectorStoreChunkRepository<E, V> {
@@ -69,7 +50,11 @@ where
             return Ok(vec![]);
         }
 
-        let collection = "default";
+        // Use the first chunk's collection or default to "default"
+        let collection = chunks.first()
+            .and_then(|chunk| chunk.metadata.get("collection"))
+            .and_then(|c| c.as_str())
+            .unwrap_or("default");
         let collection_name = self.collection_name(collection);
 
         // Generate embeddings for all chunks
@@ -122,12 +107,16 @@ where
         Ok(None)
     }
 
-    async fn find_by_collection(&self, collection: &str, _limit: usize) -> Result<Vec<CodeChunk>> {
-        let _collection_name = self.collection_name(collection);
+    async fn find_by_collection(&self, collection: &str, limit: usize) -> Result<Vec<CodeChunk>> {
+        let collection_name = self.collection_name(collection);
 
-        // Get vectors from store - need to embed the query first
-        // For now, return empty results as embedding is required
-        let results = vec![]; // TODO: Implement proper query embedding
+        // For collection search without specific query, we need to search all vectors
+        // This is a simplified implementation - in practice you'd want to search by a meaningful query
+        let query_vector = vec![0.0; self.embedding_provider.dimensions()]; // Zero vector for collection search
+
+        let results = self.vector_store_provider
+            .search_similar(&collection_name, &query_vector, limit, None)
+            .await?;
 
         // Convert results back to CodeChunks
         let chunks: Vec<CodeChunk> = results

@@ -61,10 +61,7 @@ mod error_handling_unit_tests {
     #[test]
     fn test_error_creation() {
         let error = Error::generic("test error");
-        match error {
-            Error::Generic(msg) => assert_eq!(format!("{}", msg), "Generic error: test error"),
-            _ => panic!("Expected Generic error"),
-        }
+        assert_eq!(format!("{}", error), "Generic error: test error");
     }
 
     #[test]
@@ -85,7 +82,6 @@ mod error_handling_unit_tests {
 /// Test validation logic for individual components
 #[cfg(test)]
 mod validation_unit_tests {
-    
 
     #[test]
     fn test_basic_validation_rules() {
@@ -105,7 +101,6 @@ mod validation_unit_tests {
 /// Test configuration parsing and validation
 #[cfg(test)]
 mod config_unit_tests {
-    
 
     #[test]
     fn test_config_parsing() {
@@ -124,7 +119,6 @@ mod config_unit_tests {
 /// Test repository pattern implementations
 #[cfg(test)]
 mod repository_unit_tests {
-    
 
     #[test]
     fn test_repository_interface() {
@@ -143,7 +137,6 @@ mod repository_unit_tests {
 /// Test provider strategy implementations
 #[cfg(test)]
 mod provider_unit_tests {
-    
 
     #[test]
     fn test_provider_interfaces() {
@@ -161,7 +154,6 @@ mod provider_unit_tests {
 /// Test service layer business logic
 #[cfg(test)]
 mod service_unit_tests {
-    
 
     #[test]
     fn test_service_initialization() {
@@ -179,7 +171,6 @@ mod service_unit_tests {
 /// Test utility functions and helpers
 #[cfg(test)]
 mod utility_unit_tests {
-    
 
     #[test]
     fn test_helper_functions() {
@@ -197,7 +188,6 @@ mod utility_unit_tests {
 /// Performance and benchmarking tests
 #[cfg(test)]
 mod performance_unit_tests {
-    
 
     #[test]
     fn test_operation_performance() {
@@ -215,7 +205,6 @@ mod performance_unit_tests {
 /// Security and safety tests
 #[cfg(test)]
 mod security_unit_tests {
-    
 
     #[test]
     fn test_input_sanitization() {

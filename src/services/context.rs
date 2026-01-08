@@ -16,6 +16,7 @@ use crate::core::error::{Error, Result};
 use crate::core::hybrid_search::{HybridSearchConfig, HybridSearchEngine};
 use crate::core::types::{CodeChunk, Embedding, SearchResult};
 use crate::providers::{EmbeddingProvider, VectorStoreProvider};
+use crate::core::locks::{lock_rwlock_read, lock_rwlock_write};
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -239,7 +240,7 @@ impl ContextService {
             .collect();
 
         // Apply hybrid search if available
-        let hybrid_engine = self.hybrid_search_engine.read().unwrap();
+        let hybrid_engine = lock_rwlock_read(&self.hybrid_search_engine, "ContextService::search_similar")?;
         if hybrid_engine.has_bm25_index() {
             let hybrid_results =
                 hybrid_engine.hybrid_search(query, semantic_search_results, limit)?;
@@ -299,14 +300,14 @@ impl ContextService {
         collection: &str,
         chunks: &[CodeChunk],
     ) -> Result<()> {
-        let mut indexed_docs = self.indexed_documents.write().unwrap();
+        let mut indexed_docs = lock_rwlock_write(&self.indexed_documents, "ContextService::index_chunks_for_hybrid_search")?;
         let collection_docs = indexed_docs.entry(collection.to_string()).or_default();
 
         // Add new chunks to the collection
         collection_docs.extend(chunks.iter().cloned());
 
         // Update BM25 index
-        let mut engine = self.hybrid_search_engine.write().unwrap();
+        let mut engine = lock_rwlock_write(&self.hybrid_search_engine, "ContextService::index_chunks_for_hybrid_search")?;
         engine.index_documents(collection_docs.clone());
 
         Ok(())
@@ -314,12 +315,12 @@ impl ContextService {
 
     /// Clear indexed documents for a collection
     pub async fn clear_indexed_documents(&self, collection: &str) -> Result<()> {
-        let mut indexed_docs = self.indexed_documents.write().unwrap();
+        let mut indexed_docs = lock_rwlock_write(&self.indexed_documents, "ContextService::clear_indexed_documents")?;
         indexed_docs.remove(collection);
 
         // Rebuild BM25 index without this collection
         let all_docs: Vec<CodeChunk> = indexed_docs.values().flatten().cloned().collect();
-        let mut engine = self.hybrid_search_engine.write().unwrap();
+        let mut engine = lock_rwlock_write(&self.hybrid_search_engine, "ContextService::clear_indexed_documents")?;
         engine.index_documents(all_docs);
 
         Ok(())
@@ -327,7 +328,10 @@ impl ContextService {
 
     /// Get hybrid search statistics
     pub async fn get_hybrid_search_stats(&self) -> HashMap<String, serde_json::Value> {
-        let engine = self.hybrid_search_engine.read().unwrap();
+        let engine = match lock_rwlock_read(&self.hybrid_search_engine, "ContextService::get_hybrid_search_stats") {
+            Ok(e) => e,
+            Err(_) => return HashMap::new(),
+        };
         let mut stats = HashMap::new();
 
         stats.insert("hybrid_search_enabled".to_string(), serde_json::json!(true));
@@ -340,7 +344,10 @@ impl ContextService {
             stats.extend(bm25_stats);
         }
 
-        let indexed_docs = self.indexed_documents.read().unwrap();
+        let indexed_docs = match lock_rwlock_read(&self.indexed_documents, "ContextService::get_hybrid_search_stats") {
+            Ok(d) => d,
+            Err(_) => return stats,
+        };
         stats.insert(
             "total_collections".to_string(),
             serde_json::json!(indexed_docs.len()),
@@ -443,7 +450,7 @@ where
             .collect();
 
         // Apply hybrid search if available
-        let hybrid_engine = self.hybrid_search_engine.read().unwrap();
+        let hybrid_engine = lock_rwlock_read(&self.hybrid_search_engine, "GenericContextService::search_similar")?;
         if hybrid_engine.has_bm25_index() {
             let hybrid_results =
                 hybrid_engine.hybrid_search(query, semantic_search_results, limit)?;
@@ -487,7 +494,10 @@ where
 
     /// Get hybrid search statistics
     pub fn get_hybrid_search_stats(&self) -> HashMap<String, serde_json::Value> {
-        let engine = self.hybrid_search_engine.read().unwrap();
+        let engine = match lock_rwlock_read(&self.hybrid_search_engine, "GenericContextService::get_hybrid_search_stats") {
+            Ok(e) => e,
+            Err(_) => return HashMap::new(),
+        };
         let mut stats = HashMap::new();
 
         stats.insert("hybrid_search_enabled".to_string(), serde_json::json!(true));
@@ -500,7 +510,10 @@ where
             stats.extend(bm25_stats);
         }
 
-        let indexed_docs = self.indexed_documents.read().unwrap();
+        let indexed_docs = match lock_rwlock_read(&self.indexed_documents, "GenericContextService::get_hybrid_search_stats") {
+            Ok(d) => d,
+            Err(_) => return stats,
+        };
         stats.insert(
             "total_collections".to_string(),
             serde_json::json!(indexed_docs.len()),

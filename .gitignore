@@ -1,6 +1,5 @@
 # Rust build artifacts
 target/
-Cargo.lock
 
 # IDE files
 .vscode/
@@ -24,12 +23,17 @@ Thumbs.db
 *.bak
 *.bak?
 *.backup
+*.backup2
 *.disabled
 *.new
 *.old
 *.broken
 *.clean
 .fastembed_cache/
+
+# Rust-specific temporary files
+*.rs.bak
+*.rs.backup
 
 # Temporary files
 *.tmp
@@ -38,6 +42,7 @@ Thumbs.db
 # Test coverage
 *.profraw
 coverage/
+*.proptest-regressions
 
 # Documentation build
 book/
@@ -46,7 +51,17 @@ book/
 .cargo/
 .coverage/
 *.lcov
-docs/plans/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache directories
+.cache/
+__pycache__/
+*.pyc
+*.pyo
 
 # CI/CD artifacts
 .github/workflows/*.log

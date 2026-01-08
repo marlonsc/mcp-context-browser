@@ -6,7 +6,6 @@ pub mod config;
 pub mod core;
 pub mod daemon;
 pub mod di;
-pub mod factory;
 pub mod metrics;
 pub mod providers;
 pub mod repository;

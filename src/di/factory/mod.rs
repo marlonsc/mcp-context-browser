@@ -7,6 +7,7 @@ use crate::core::{
 use crate::providers::{EmbeddingProvider, VectorStoreProvider};
 
 // Import individual providers that exist
+use crate::providers::embedding::fastembed::FastEmbedProvider;
 use crate::providers::embedding::gemini::GeminiEmbeddingProvider;
 use crate::providers::embedding::null::NullEmbeddingProvider;
 use crate::providers::embedding::ollama::OllamaEmbeddingProvider;
@@ -91,6 +92,7 @@ impl ProviderFactory for DefaultProviderFactory {
                     std::time::Duration::from_secs(30),
                 )?))
             }
+            "fastembed" => Ok(Arc::new(FastEmbedProvider::new()?)),
             "mock" => Ok(Arc::new(NullEmbeddingProvider::new())),
             _ => Err(Error::config(format!(
                 "Unsupported embedding provider: {}",
@@ -130,6 +132,16 @@ impl ProviderFactory for DefaultProviderFactory {
                     MilvusVectorStoreProvider::new(address.clone(), config.token.clone()).await?,
                 ))
             }
+            "edgevec" => {
+                use crate::providers::vector_store::edgevec::{
+                    EdgeVecVectorStoreProvider, EdgeVecConfig,
+                };
+                let edgevec_config = EdgeVecConfig {
+                    dimensions: config.dimensions.unwrap_or(1536),
+                    ..Default::default()
+                };
+                Ok(Arc::new(EdgeVecVectorStoreProvider::new(edgevec_config)?))
+            }
             _ => Err(Error::config(format!(
                 "Unsupported vector store provider: {}",
                 config.provider
@@ -143,6 +155,7 @@ impl ProviderFactory for DefaultProviderFactory {
             "ollama".to_string(),
             "voyageai".to_string(),
             "gemini".to_string(),
+            "fastembed".to_string(),
             "mock".to_string(),
         ]
     }
@@ -152,6 +165,7 @@ impl ProviderFactory for DefaultProviderFactory {
             "in-memory".to_string(),
             "filesystem".to_string(),
             "milvus".to_string(),
+            "edgevec".to_string(),
         ]
     }
 }

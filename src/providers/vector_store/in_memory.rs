@@ -3,6 +3,7 @@
 use crate::core::error::{Error, Result};
 use crate::core::types::{Embedding, SearchResult};
 use crate::providers::VectorStoreProvider;
+use crate::core::locks::lock_mutex;
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::sync::Mutex;
@@ -31,7 +32,7 @@ impl Default for InMemoryVectorStoreProvider {
 #[async_trait]
 impl VectorStoreProvider for InMemoryVectorStoreProvider {
     async fn create_collection(&self, name: &str, _dimensions: usize) -> Result<()> {
-        let mut collections = self.collections.lock().unwrap();
+        let mut collections = lock_mutex(&self.collections, "InMemoryVectorStoreProvider::create_collection")?;
         if collections.contains_key(name) {
             return Err(Error::vector_db(format!(
                 "Collection '{}' already exists",
@@ -43,13 +44,13 @@ impl VectorStoreProvider for InMemoryVectorStoreProvider {
     }
 
     async fn delete_collection(&self, name: &str) -> Result<()> {
-        let mut collections = self.collections.lock().unwrap();
+        let mut collections = lock_mutex(&self.collections, "InMemoryVectorStoreProvider::delete_collection")?;
         collections.remove(name);
         Ok(())
     }
 
     async fn collection_exists(&self, name: &str) -> Result<bool> {
-        let collections = self.collections.lock().unwrap();
+        let collections = lock_mutex(&self.collections, "InMemoryVectorStoreProvider::collection_exists")?;
         Ok(collections.contains_key(name))
     }
 
@@ -59,7 +60,7 @@ impl VectorStoreProvider for InMemoryVectorStoreProvider {
         vectors: &[Embedding],
         metadata: Vec<HashMap<String, serde_json::Value>>,
     ) -> Result<Vec<String>> {
-        let mut collections = self.collections.lock().unwrap();
+        let mut collections = lock_mutex(&self.collections, "InMemoryVectorStoreProvider::insert_vectors")?;
         let coll = collections
             .get_mut(collection)
             .ok_or_else(|| Error::vector_db(format!("Collection '{}' not found", collection)))?;
@@ -83,7 +84,7 @@ impl VectorStoreProvider for InMemoryVectorStoreProvider {
         limit: usize,
         _filter: Option<&str>,
     ) -> Result<Vec<SearchResult>> {
-        let collections = self.collections.lock().unwrap();
+        let collections = lock_mutex(&self.collections, "InMemoryVectorStoreProvider::search_similar")?;
         let coll = collections
             .get(collection)
             .ok_or_else(|| Error::vector_db(format!("Collection '{}' not found", collection)))?;
@@ -127,7 +128,7 @@ impl VectorStoreProvider for InMemoryVectorStoreProvider {
     }
 
     async fn delete_vectors(&self, collection: &str, ids: &[String]) -> Result<()> {
-        let mut collections = self.collections.lock().unwrap();
+        let mut collections = lock_mutex(&self.collections, "InMemoryVectorStoreProvider::delete_vectors")?;
         let coll = collections
             .get_mut(collection)
             .ok_or_else(|| Error::vector_db(format!("Collection '{}' not found", collection)))?;
@@ -144,7 +145,7 @@ impl VectorStoreProvider for InMemoryVectorStoreProvider {
     }
 
     async fn get_stats(&self, collection: &str) -> Result<HashMap<String, serde_json::Value>> {
-        let collections = self.collections.lock().unwrap();
+        let collections = lock_mutex(&self.collections, "InMemoryVectorStoreProvider::get_stats")?;
         let count = collections
             .get(collection)
             .map(|data| data.len())

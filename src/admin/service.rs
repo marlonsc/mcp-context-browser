@@ -458,19 +458,19 @@ impl AdminService for AdminServiceImpl {
     async fn get_configuration(&self) -> Result<ConfigurationData, AdminError> {
         // Build configuration from current system state
         let providers = self.get_providers().await?;
-        let _indexing_status = self.get_indexing_status().await?;
+        let _system_info = self.mcp_server.get_system_info();
 
         Ok(ConfigurationData {
             providers,
             indexing: IndexingConfig {
-                chunk_size: 1000, // Default values - in real implementation, get from config
+                chunk_size: 1000, // TODO: Get from actual config when available
                 chunk_overlap: 200,
                 max_file_size: 10 * 1024 * 1024,
                 supported_extensions: vec![".rs".to_string(), ".js".to_string(), ".ts".to_string()],
                 exclude_patterns: vec!["target/".to_string(), "node_modules/".to_string()],
             },
             security: SecurityConfig {
-                enable_auth: true,
+                enable_auth: true, // TODO: Get from actual config
                 rate_limiting: true,
                 max_requests_per_minute: 60,
             },

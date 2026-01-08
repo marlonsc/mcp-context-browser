@@ -6,6 +6,7 @@ use axum::{
     middleware::Next,
     response::{IntoResponse, Json, Response},
 };
+use bcrypt::{hash, verify, DEFAULT_COST};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -26,6 +27,7 @@ pub struct AuthService {
     jwt_secret: String,
     jwt_expiration: u64,
     admin_username: String,
+    admin_password_hash: String,
 }
 
 impl AuthService {
@@ -34,12 +36,17 @@ impl AuthService {
         jwt_secret: String,
         jwt_expiration: u64,
         admin_username: String,
-    ) -> Self {
-        Self {
+        admin_password: String,
+    ) -> Result<Self, String> {
+        let admin_password_hash = hash(admin_password, DEFAULT_COST)
+            .map_err(|e| format!("Failed to hash password: {}", e))?;
+
+        Ok(Self {
             jwt_secret,
             jwt_expiration,
             admin_username,
-        }
+            admin_password_hash,
+        })
     }
 
     /// Authenticate user credentials
@@ -55,11 +62,9 @@ impl AuthService {
         }
     }
 
-    /// Verify password (simple implementation - use proper hashing in production)
+    /// Verify password using bcrypt
     fn verify_password(&self, password: &str) -> bool {
-        // For demo purposes - in production, use bcrypt or argon2
-        // For now, just check if password matches "admin" for development
-        password == "admin"
+        verify(password, &self.admin_password_hash).unwrap_or(false)
     }
 
     /// Generate JWT token
@@ -146,11 +151,15 @@ pub async fn auth_middleware(
         }
         _ => {
             // Production mode - use admin auth service
-            let auth_service = AuthService::new(
+            let auth_service = match AuthService::new(
                 state.admin_api.config().jwt_secret.clone(),
                 state.admin_api.config().jwt_expiration,
                 state.admin_api.config().username.clone(),
-            );
+                state.admin_api.config().password.clone(),
+            ) {
+                Ok(service) => service,
+                Err(e) => return Ok((StatusCode::INTERNAL_SERVER_ERROR, format!("Auth service initialization failed: {}", e)).into_response()),
+            };
 
             // For now, do basic validation - TODO: implement full JWT validation
             auth_service.validate_token_simple(token)
@@ -172,11 +181,16 @@ pub async fn login_handler(
     State(state): State<crate::admin::models::AdminState>,
     Json(login_req): Json<LoginRequest>,
 ) -> Result<Json<ApiResponse<LoginResponse>>, StatusCode> {
-    let auth_service = AuthService::new(
+    let auth_service = match AuthService::new(
         state.admin_api.config().jwt_secret.clone(),
         state.admin_api.config().jwt_expiration,
         state.admin_api.config().username.clone(),
-    );
+        state.admin_api.config().password.clone(),
+    ) {
+        Ok(service) => service,
+        Err(e) => return Ok(Json(ApiResponse::error(format!(
+            "Auth service initialization failed: {}", e)))),
+    };
 
     match auth_service.authenticate(&login_req.username, &login_req.password) {
         Ok(user) => match auth_service.generate_token(&user) {

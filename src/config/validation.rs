@@ -84,7 +84,7 @@ impl ConfigValidator {
         self.validate_embedding_provider(&providers.embedding)?;
 
         // Validate vector store provider
-        let _provider_config = match providers.vector_store.provider.to_lowercase().as_str() {
+        match providers.vector_store.provider.to_lowercase().as_str() {
             "milvus" => {
                 if let Some(address) = &providers.vector_store.address {
                     if address.is_empty() {

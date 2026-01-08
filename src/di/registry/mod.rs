@@ -2,6 +2,7 @@
 
 use crate::core::error::{Error, Result};
 use crate::providers::{EmbeddingProvider, VectorStoreProvider};
+use crate::core::locks::{lock_rwlock_read, lock_rwlock_write};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
@@ -28,7 +29,7 @@ impl ProviderRegistry {
         provider: Arc<dyn EmbeddingProvider>,
     ) -> Result<()> {
         let name = name.into();
-        let mut providers = self.embedding_providers.write().unwrap();
+        let mut providers = lock_rwlock_write(&self.embedding_providers, "ProviderRegistry::register_embedding_provider")?;
 
         if providers.contains_key(&name) {
             return Err(Error::generic(format!(
@@ -48,7 +49,7 @@ impl ProviderRegistry {
         provider: Arc<dyn VectorStoreProvider>,
     ) -> Result<()> {
         let name = name.into();
-        let mut providers = self.vector_store_providers.write().unwrap();
+        let mut providers = lock_rwlock_write(&self.vector_store_providers, "ProviderRegistry::register_vector_store_provider")?;
 
         if providers.contains_key(&name) {
             return Err(Error::generic(format!(
@@ -63,7 +64,7 @@ impl ProviderRegistry {
 
     /// Get an embedding provider by name
     pub fn get_embedding_provider(&self, name: &str) -> Result<Arc<dyn EmbeddingProvider>> {
-        let providers = self.embedding_providers.read().unwrap();
+        let providers = lock_rwlock_read(&self.embedding_providers, "ProviderRegistry::get_embedding_provider")?;
         providers
             .get(name)
             .cloned()
@@ -72,7 +73,7 @@ impl ProviderRegistry {
 
     /// Get a vector store provider by name
     pub fn get_vector_store_provider(&self, name: &str) -> Result<Arc<dyn VectorStoreProvider>> {
-        let providers = self.vector_store_providers.read().unwrap();
+        let providers = lock_rwlock_read(&self.vector_store_providers, "ProviderRegistry::get_vector_store_provider")?;
         providers
             .get(name)
             .cloned()
@@ -81,13 +82,19 @@ impl ProviderRegistry {
 
     /// List all registered embedding providers
     pub fn list_embedding_providers(&self) -> Vec<String> {
-        let providers = self.embedding_providers.read().unwrap();
+        let providers = match lock_rwlock_read(&self.embedding_providers, "ProviderRegistry::list_embedding_providers") {
+            Ok(p) => p,
+            Err(_) => return vec![],
+        };
         providers.keys().cloned().collect()
     }
 
     /// List all registered vector store providers
     pub fn list_vector_store_providers(&self) -> Vec<String> {
-        let providers = self.vector_store_providers.read().unwrap();
+        let providers = match lock_rwlock_read(&self.vector_store_providers, "ProviderRegistry::list_vector_store_providers") {
+            Ok(p) => p,
+            Err(_) => return vec![],
+        };
         providers.keys().cloned().collect()
     }
 }

@@ -6,17 +6,16 @@
 //! - environment.rs: Environment variable handling
 //! - config.rs: Core configuration struct
 
+use mcp_context_browser::config::Config;
 use mcp_context_browser::config::environment::EnvironmentLoader;
 use mcp_context_browser::config::providers::ProviderConfigManager;
-use mcp_context_browser::config::validation::ConfigValidator;
-use mcp_context_browser::config::Config;
-use mcp_context_browser::core::types::{EmbeddingConfig, VectorStoreConfig};
 use mcp_context_browser::config::providers::ProviderHealth;
+use mcp_context_browser::config::validation::ConfigValidator;
+use mcp_context_browser::core::types::EmbeddingConfig;
 
 /// Test validation module functionality
 #[cfg(test)]
 mod validation_tests {
-    use super::*;
     use super::*;
 
     #[test]
@@ -101,7 +100,10 @@ mod provider_tests {
             embedding_health.is_some(),
             "Should have embedding provider health info after update"
         );
-        assert!(matches!(embedding_health.unwrap(), &ProviderHealth::Healthy));
+        assert!(matches!(
+            embedding_health.unwrap(),
+            &ProviderHealth::Healthy
+        ));
     }
 
     #[test]

@@ -5,8 +5,8 @@
 
 #[cfg(test)]
 mod property_tests {
+    use mcp_context_browser::core::types::{CodeChunk, Embedding, Language};
     use proptest::prelude::*;
-    use mcp_context_browser::core::types::{CodeChunk, Language, Embedding};
 
     // Property: CodeChunk content length should be preserved through operations
     proptest! {
@@ -81,11 +81,9 @@ mod property_tests {
                 metadata: serde_json::json!({}),
             };
 
-            // File path should be preserved
-            prop_assert_eq!(chunk.file_path, path);
-
-            // Should not contain directory traversal
-            prop_assert!(!chunk.file_path.contains(".."));
+            // File path should be preserved and not contain directory traversal
+            prop_assert_eq!(chunk.file_path, path.clone());
+            prop_assert!(!path.clone().contains(".."));
         }
     }
 
@@ -166,9 +164,9 @@ mod property_tests {
             };
 
             // Model name should be preserved and reasonable length
-            prop_assert_eq!(embedding.model, model);
-            prop_assert!(embedding.model.len() <= 100);
-            prop_assert!(!embedding.model.is_empty());
+            prop_assert_eq!(embedding.model, model.clone());
+            prop_assert!(model.len() <= 100);
+            prop_assert!(!model.is_empty());
         }
     }
 
@@ -185,7 +183,7 @@ mod property_tests {
             }
 
             let embedding = Embedding {
-                vector: values,
+                vector: values.clone(),
                 model: "test".to_string(),
                 dimensions: 0, // Will be set correctly in real usage
             };
@@ -204,6 +202,7 @@ mod property_tests {
 #[cfg(test)]
 mod integration_property_tests {
 
+    use mcp_context_browser::core::types::{CodeChunk, Embedding, Language};
     use proptest::prelude::*;
 
     // Property: System should handle various input sizes gracefully
@@ -242,7 +241,7 @@ mod integration_property_tests {
         fn test_data_integrity_under_operations(
             operations in prop::collection::vec(
                 prop_oneof![
-                    (1u32..100u32).prop_map(|line| ("set_line", line)),
+                    (1u32..100u32).prop_map(|line| ("set_line", line.to_string())),
                     prop::string::string_regex("\\PC{1,50}").unwrap().prop_map(|content| ("set_content", content)),
                     prop::bool::ANY.prop_map(|flag| ("toggle_flag", if flag { "true" } else { "false" }.to_string()))
                 ],
@@ -296,6 +295,7 @@ mod integration_property_tests {
 #[cfg(test)]
 mod stress_tests {
 
+    use mcp_context_browser::core::types::{CodeChunk, Embedding, Language};
     use proptest::prelude::*;
 
     // Test with extreme but valid inputs

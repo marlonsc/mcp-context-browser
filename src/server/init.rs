@@ -124,7 +124,7 @@ async fn initialize_server_components(
     };
 
     // Create server instance
-    let server = match McpServer::new(cache_manager) {
+    let server = match McpServer::new(cache_manager).await {
         Ok(server) => {
             tracing::info!("✅ Service providers initialized successfully");
             server
