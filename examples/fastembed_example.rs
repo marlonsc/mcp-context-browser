@@ -4,7 +4,7 @@
 //! to generate embeddings for text without external API dependencies.
 
 use mcp_context_browser::core::types::EmbeddingConfig;
-use mcp_context_browser::factory::DefaultProviderFactory;
+use mcp_context_browser::factory::{DefaultProviderFactory, ProviderFactory};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -48,16 +48,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             match provider.embed_batch(&test_texts).await {
                 Ok(embeddings) => {
-                    println!("✅ Successfully generated {} embeddings!", embeddings.len());
+                    let embedding_count = embeddings.len();
+                    println!("✅ Successfully generated {} embeddings!", embedding_count);
 
                     for (i, embedding) in embeddings.iter().enumerate() {
-                        println!("   Embedding {}: {} dimensions, model: {}",
-                                i + 1,
-                                embedding.dimensions,
-                                embedding.model);
+                        println!(
+                            "   Embedding {}: {} dimensions, model: {}",
+                            i + 1,
+                            embedding.dimensions,
+                            embedding.model
+                        );
 
                         // Show first 5 values of the vector
-                        let preview: Vec<String> = embedding.vector.iter()
+                        let preview: Vec<String> = embedding
+                            .vector
+                            .iter()
                             .take(5)
                             .map(|v| format!("{:.4}", v))
                             .collect();
@@ -69,7 +74,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     match provider.embed("Single test text").await {
                         Ok(embedding) => {
                             println!("✅ Single embedding generated successfully!");
-                            println!("   Dimensions: {}, Model: {}", embedding.dimensions, embedding.model);
+                            println!(
+                                "   Dimensions: {}, Model: {}",
+                                embedding.dimensions, embedding.model
+                            );
                         }
                         Err(e) => {
                             println!("❌ Single embedding failed: {}", e);

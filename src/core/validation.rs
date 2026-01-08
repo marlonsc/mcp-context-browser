@@ -37,13 +37,26 @@ pub enum ValidationError {
     /// Field is required but missing or empty
     Required { field: String },
     /// Value is too short
-    TooShort { field: String, min_length: usize, actual_length: usize },
+    TooShort {
+        field: String,
+        min_length: usize,
+        actual_length: usize,
+    },
     /// Value is too long
-    TooLong { field: String, max_length: usize, actual_length: usize },
+    TooLong {
+        field: String,
+        max_length: usize,
+        actual_length: usize,
+    },
     /// Value doesn't match required format
     InvalidFormat { field: String, expected: String },
     /// Numeric value is out of allowed range
-    OutOfRange { field: String, value: String, min: String, max: String },
+    OutOfRange {
+        field: String,
+        value: String,
+        min: String,
+        max: String,
+    },
 }
 
 impl fmt::Display for ValidationError {
@@ -52,17 +65,46 @@ impl fmt::Display for ValidationError {
             ValidationError::Required { field } => {
                 write!(f, "Field '{}' is required", field)
             }
-            ValidationError::TooShort { field, min_length, actual_length } => {
-                write!(f, "Field '{}' is too short: {} < {}", field, actual_length, min_length)
+            ValidationError::TooShort {
+                field,
+                min_length,
+                actual_length,
+            } => {
+                write!(
+                    f,
+                    "Field '{}' is too short: {} < {}",
+                    field, actual_length, min_length
+                )
             }
-            ValidationError::TooLong { field, max_length, actual_length } => {
-                write!(f, "Field '{}' is too long: {} > {}", field, actual_length, max_length)
+            ValidationError::TooLong {
+                field,
+                max_length,
+                actual_length,
+            } => {
+                write!(
+                    f,
+                    "Field '{}' is too long: {} > {}",
+                    field, actual_length, max_length
+                )
             }
             ValidationError::InvalidFormat { field, expected } => {
-                write!(f, "Field '{}' has invalid format. Expected: {}", field, expected)
+                write!(
+                    f,
+                    "Field '{}' has invalid format. Expected: {}",
+                    field, expected
+                )
             }
-            ValidationError::OutOfRange { field, value, min, max } => {
-                write!(f, "Field '{}' value '{}' is out of range [{}, {}]", field, value, min, max)
+            ValidationError::OutOfRange {
+                field,
+                value,
+                min,
+                max,
+            } => {
+                write!(
+                    f,
+                    "Field '{}' value '{}' is out of range [{}, {}]",
+                    field, value, min, max
+                )
             }
         }
     }
@@ -106,7 +148,9 @@ impl StringValidator {
         let mut validator = Self::new();
         validator.rules.push(Box::new(|s: &str| {
             if s.trim().is_empty() {
-                Err(ValidationError::Required { field: "input".to_string() })
+                Err(ValidationError::Required {
+                    field: "input".to_string(),
+                })
             } else {
                 Ok(s.to_string())
             }
@@ -323,9 +367,8 @@ impl NumberValidatorTrait for NumberValidator {
 
 /// Common validation patterns and factory methods
 pub mod common {
-    //! Pre-built validators for common use cases
 
-    use super::{StringValidator, NumberValidator};
+    use super::{NumberValidator, StringValidator};
 
     /// Create a username validator (3-20 chars, alphanumeric + underscore)
     ///
@@ -405,7 +448,9 @@ mod tests {
 
     #[test]
     fn test_validation_error_display() {
-        let error = ValidationError::Required { field: "name".to_string() };
+        let error = ValidationError::Required {
+            field: "name".to_string(),
+        };
         assert_eq!(error.to_string(), "Field 'name' is required");
 
         let error = ValidationError::TooShort {

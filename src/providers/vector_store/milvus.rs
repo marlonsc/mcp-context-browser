@@ -268,7 +268,8 @@ impl VectorStoreProvider for MilvusVectorStoreProvider {
         let load_percent = collection_instance.get_load_percent().await.unwrap_or(0);
 
         if load_percent < 100
-            && let Err(_e) = collection_instance.load(1).await {
+            && let Err(_e) = collection_instance.load(1).await
+        {
             return Ok(Vec::new());
         }
 

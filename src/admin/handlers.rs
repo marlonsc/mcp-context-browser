@@ -11,11 +11,10 @@ use crate::admin::models::{
     AdminState, ApiResponse, IndexInfo, IndexOperationRequest, ProviderConfigRequest, ProviderInfo,
     SystemConfig,
 };
-use crate::admin::service::{AdminService, AdminServiceImpl};
 
 /// Get system configuration
 pub async fn get_config_handler(
-    State(state): State<AdminState>,
+    State(_state): State<AdminState>,
 ) -> Result<Json<ApiResponse<SystemConfig>>, StatusCode> {
     // TODO: Implement actual config retrieval from MCP server
     let config = SystemConfig {
@@ -79,7 +78,9 @@ pub async fn update_config_handler(
     Json(_config): Json<SystemConfig>,
 ) -> Result<Json<ApiResponse<SystemConfig>>, StatusCode> {
     // TODO: Implement config update
-    Ok(Json(ApiResponse::error("Configuration update not yet implemented".to_string())))
+    Ok(Json(ApiResponse::error(
+        "Configuration update not yet implemented".to_string(),
+    )))
 }
 
 /// List all providers
@@ -87,7 +88,10 @@ pub async fn list_providers_handler(
     State(state): State<AdminState>,
 ) -> Result<Json<ApiResponse<Vec<ProviderInfo>>>, StatusCode> {
     // Get real provider data from MCP server
-    let provider_statuses = state.admin_service.get_providers().await
+    let provider_statuses = state
+        .admin_service
+        .get_providers()
+        .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let providers = provider_statuses
@@ -106,7 +110,7 @@ pub async fn list_providers_handler(
 
 /// Add a new provider
 pub async fn add_provider_handler(
-    State(state): State<AdminState>,
+    State(_state): State<AdminState>,
     Json(provider_config): Json<ProviderConfigRequest>,
 ) -> Result<Json<ApiResponse<ProviderInfo>>, StatusCode> {
     // Validate provider configuration based on type
@@ -114,22 +118,33 @@ pub async fn add_provider_handler(
         "embedding" => {
             // Validate embedding provider configuration
             if provider_config.config.get("model").is_none() {
-                return Ok(Json(ApiResponse::error("Model is required for embedding providers".to_string())));
+                return Ok(Json(ApiResponse::error(
+                    "Model is required for embedding providers".to_string(),
+                )));
             }
         }
         "vector_store" => {
             // Validate vector store provider configuration
             if provider_config.config.get("host").is_none() {
-                return Ok(Json(ApiResponse::error("Host is required for vector store providers".to_string())));
+                return Ok(Json(ApiResponse::error(
+                    "Host is required for vector store providers".to_string(),
+                )));
             }
         }
-        _ => return Ok(Json(ApiResponse::error("Invalid provider type".to_string()))),
+        _ => {
+            return Ok(Json(ApiResponse::error(
+                "Invalid provider type".to_string(),
+            )));
+        }
     }
 
     // In a real implementation, this would register the provider with the MCP server
     // For now, return success with mock data
     let provider_info = ProviderInfo {
-        id: format!("{}-{}", provider_config.provider_type, provider_config.provider_type),
+        id: format!(
+            "{}-{}",
+            provider_config.provider_type, provider_config.provider_type
+        ),
         name: provider_config.provider_type.clone(),
         provider_type: provider_config.provider_type,
         status: "pending".to_string(),
@@ -145,7 +160,10 @@ pub async fn remove_provider_handler(
     Path(provider_id): Path<String>,
 ) -> Result<Json<ApiResponse<String>>, StatusCode> {
     // Check if provider exists
-    let providers = state.admin_service.get_providers().await
+    let providers = state
+        .admin_service
+        .get_providers()
+        .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     if !providers.iter().any(|p| p.id == provider_id) {
         return Ok(Json(ApiResponse::error("Provider not found".to_string())));
@@ -153,7 +171,10 @@ pub async fn remove_provider_handler(
 
     // In a real implementation, this would unregister the provider from the MCP server
     // For now, return success
-    Ok(Json(ApiResponse::success(format!("Provider {} removed successfully", provider_id))))
+    Ok(Json(ApiResponse::success(format!(
+        "Provider {} removed successfully",
+        provider_id
+    ))))
 }
 
 /// List all indexes
@@ -161,22 +182,27 @@ pub async fn list_indexes_handler(
     State(state): State<AdminState>,
 ) -> Result<Json<ApiResponse<Vec<IndexInfo>>>, StatusCode> {
     // Get real indexing status from MCP server
-    let indexing_status = state.admin_service.get_indexing_status().await
+    let indexing_status = state
+        .admin_service
+        .get_indexing_status()
+        .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    let indexes = vec![
-        IndexInfo {
-            id: "main-index".to_string(),
-            name: "Main Codebase Index".to_string(),
-            status: if indexing_status.is_indexing { "indexing".to_string() } else { "active".to_string() },
-            document_count: indexing_status.indexed_documents,
-            created_at: indexing_status.start_time.unwrap_or(1640995200),
-            updated_at: std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_secs(),
+    let indexes = vec![IndexInfo {
+        id: "main-index".to_string(),
+        name: "Main Codebase Index".to_string(),
+        status: if indexing_status.is_indexing {
+            "indexing".to_string()
+        } else {
+            "active".to_string()
         },
-    ];
+        document_count: indexing_status.indexed_documents,
+        created_at: indexing_status.start_time.unwrap_or(1640995200),
+        updated_at: std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs(),
+    }];
 
     Ok(Json(ApiResponse::success(indexes)))
 }
@@ -188,7 +214,7 @@ pub async fn index_operation_handler(
     Json(operation): Json<IndexOperationRequest>,
 ) -> Result<Json<ApiResponse<String>>, StatusCode> {
     // Validate index exists
-    let indexes = vec!["main-index"]; // In real implementation, get from server
+    let indexes = ["main-index"]; // In real implementation, get from server
     if !indexes.contains(&index_id.as_str()) {
         return Ok(Json(ApiResponse::error("Index not found".to_string())));
     }
@@ -197,21 +223,31 @@ pub async fn index_operation_handler(
     match operation.operation.as_str() {
         "clear" => {
             // In real implementation, this would clear the index via MCP server
-            Ok(Json(ApiResponse::success(format!("Index {} cleared successfully", index_id))))
+            Ok(Json(ApiResponse::success(format!(
+                "Index {} cleared successfully",
+                index_id
+            ))))
         }
         "rebuild" => {
             // In real implementation, this would trigger index rebuild
-            Ok(Json(ApiResponse::success(format!("Index {} rebuild started", index_id))))
+            Ok(Json(ApiResponse::success(format!(
+                "Index {} rebuild started",
+                index_id
+            ))))
         }
         "status" => {
             // Get current indexing status
-            let status = state.mcp_server.get_indexing_status_admin();
+            let status = state.mcp_server.get_indexing_status_admin().await;
             let message = if status.is_indexing {
-                format!("Index {} is currently indexing ({} of {} documents)",
-                    index_id, status.indexed_documents, status.total_documents)
+                format!(
+                    "Index {} is currently indexing ({} of {} documents)",
+                    index_id, status.indexed_documents, status.total_documents
+                )
             } else {
-                format!("Index {} is idle ({} documents indexed)",
-                    index_id, status.indexed_documents)
+                format!(
+                    "Index {} is idle ({} documents indexed)",
+                    index_id, status.indexed_documents
+                )
             };
             Ok(Json(ApiResponse::success(message)))
         }
@@ -224,13 +260,25 @@ pub async fn get_status_handler(
     State(state): State<AdminState>,
 ) -> Result<Json<ApiResponse<serde_json::Value>>, StatusCode> {
     // Get real system information
-    let system_info = state.admin_service.get_system_info().await
+    let system_info = state
+        .admin_service
+        .get_system_info()
+        .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    let providers = state.admin_service.get_providers().await
+    let providers = state
+        .admin_service
+        .get_providers()
+        .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    let indexing_status = state.admin_service.get_indexing_status().await
+    let indexing_status = state
+        .admin_service
+        .get_indexing_status()
+        .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    let performance = state.admin_service.get_performance_metrics().await
+    let performance = state
+        .admin_service
+        .get_performance_metrics()
+        .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     // Group providers by type
@@ -287,7 +335,10 @@ pub struct SearchQuery {
 pub async fn get_configuration_handler(
     State(state): State<AdminState>,
 ) -> Result<Json<ApiResponse<crate::admin::service::ConfigurationData>>, StatusCode> {
-    let config = state.admin_service.get_configuration().await
+    let config = state
+        .admin_service
+        .get_configuration()
+        .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(ApiResponse::success(config)))
@@ -301,7 +352,10 @@ pub async fn update_configuration_handler(
     // Get user from request context (simplified - in real implementation, get from JWT)
     let user = "admin";
 
-    let result = state.admin_service.update_configuration(updates, user).await
+    let result = state
+        .admin_service
+        .update_configuration(updates, user)
+        .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(ApiResponse::success(result)))
@@ -312,7 +366,10 @@ pub async fn validate_configuration_handler(
     State(state): State<AdminState>,
     Json(updates): Json<std::collections::HashMap<String, serde_json::Value>>,
 ) -> Result<Json<ApiResponse<Vec<String>>>, StatusCode> {
-    let warnings = state.admin_service.validate_configuration(&updates).await
+    let warnings = state
+        .admin_service
+        .validate_configuration(&updates)
+        .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(ApiResponse::success(warnings)))
@@ -323,7 +380,10 @@ pub async fn get_configuration_history_handler(
     State(state): State<AdminState>,
     Query(params): Query<HistoryQuery>,
 ) -> Result<Json<ApiResponse<Vec<crate::admin::service::ConfigurationChange>>>, StatusCode> {
-    let history = state.admin_service.get_configuration_history(params.limit).await
+    let history = state
+        .admin_service
+        .get_configuration_history(params.limit)
+        .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(ApiResponse::success(history)))
@@ -335,7 +395,10 @@ pub async fn get_logs_handler(
     State(state): State<AdminState>,
     Query(filter): Query<crate::admin::service::LogFilter>,
 ) -> Result<Json<ApiResponse<crate::admin::service::LogEntries>>, StatusCode> {
-    let logs = state.admin_service.get_logs(filter).await
+    let logs = state
+        .admin_service
+        .get_logs(filter)
+        .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(ApiResponse::success(logs)))
@@ -347,7 +410,10 @@ pub async fn export_logs_handler(
     Query(filter): Query<crate::admin::service::LogFilter>,
     Query(params): Query<ExportQuery>,
 ) -> Result<Json<ApiResponse<String>>, StatusCode> {
-    let filename = state.admin_service.export_logs(filter, params.format).await
+    let filename = state
+        .admin_service
+        .export_logs(filter, params.format)
+        .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(ApiResponse::success(filename)))
@@ -357,7 +423,10 @@ pub async fn export_logs_handler(
 pub async fn get_log_stats_handler(
     State(state): State<AdminState>,
 ) -> Result<Json<ApiResponse<crate::admin::service::LogStats>>, StatusCode> {
-    let stats = state.admin_service.get_log_stats().await
+    let stats = state
+        .admin_service
+        .get_log_stats()
+        .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(ApiResponse::success(stats)))
@@ -377,7 +446,10 @@ pub async fn clear_cache_handler(
         _ => return Ok(Json(ApiResponse::error("Invalid cache type".to_string()))),
     };
 
-    let result = state.admin_service.clear_cache(cache_type_enum).await
+    let result = state
+        .admin_service
+        .clear_cache(cache_type_enum)
+        .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(ApiResponse::success(result)))
@@ -388,7 +460,10 @@ pub async fn restart_provider_handler(
     State(state): State<AdminState>,
     Path(provider_id): Path<String>,
 ) -> Result<Json<ApiResponse<crate::admin::service::MaintenanceResult>>, StatusCode> {
-    let result = state.admin_service.restart_provider(&provider_id).await
+    let result = state
+        .admin_service
+        .restart_provider(&provider_id)
+        .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(ApiResponse::success(result)))
@@ -399,7 +474,10 @@ pub async fn rebuild_index_handler(
     State(state): State<AdminState>,
     Path(index_id): Path<String>,
 ) -> Result<Json<ApiResponse<crate::admin::service::MaintenanceResult>>, StatusCode> {
-    let result = state.admin_service.rebuild_index(&index_id).await
+    let result = state
+        .admin_service
+        .rebuild_index(&index_id)
+        .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(ApiResponse::success(result)))
@@ -410,7 +488,10 @@ pub async fn cleanup_data_handler(
     State(state): State<AdminState>,
     Json(cleanup_config): Json<crate::admin::service::CleanupConfig>,
 ) -> Result<Json<ApiResponse<crate::admin::service::MaintenanceResult>>, StatusCode> {
-    let result = state.admin_service.cleanup_data(cleanup_config).await
+    let result = state
+        .admin_service
+        .cleanup_data(cleanup_config)
+        .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(ApiResponse::success(result)))
@@ -421,7 +502,10 @@ pub async fn cleanup_data_handler(
 pub async fn health_check_handler(
     State(state): State<AdminState>,
 ) -> Result<Json<ApiResponse<crate::admin::service::HealthCheckResult>>, StatusCode> {
-    let result = state.admin_service.run_health_check().await
+    let result = state
+        .admin_service
+        .run_health_check()
+        .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(ApiResponse::success(result)))
@@ -432,7 +516,10 @@ pub async fn test_connectivity_handler(
     State(state): State<AdminState>,
     Path(provider_id): Path<String>,
 ) -> Result<Json<ApiResponse<crate::admin::service::ConnectivityTestResult>>, StatusCode> {
-    let result = state.admin_service.test_provider_connectivity(&provider_id).await
+    let result = state
+        .admin_service
+        .test_provider_connectivity(&provider_id)
+        .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(ApiResponse::success(result)))
@@ -443,7 +530,10 @@ pub async fn performance_test_handler(
     State(state): State<AdminState>,
     Json(test_config): Json<crate::admin::service::PerformanceTestConfig>,
 ) -> Result<Json<ApiResponse<crate::admin::service::PerformanceTestResult>>, StatusCode> {
-    let result = state.admin_service.run_performance_test(test_config).await
+    let result = state
+        .admin_service
+        .run_performance_test(test_config)
+        .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(ApiResponse::success(result)))
@@ -455,7 +545,10 @@ pub async fn create_backup_handler(
     State(state): State<AdminState>,
     Json(backup_config): Json<crate::admin::service::BackupConfig>,
 ) -> Result<Json<ApiResponse<crate::admin::service::BackupResult>>, StatusCode> {
-    let result = state.admin_service.create_backup(backup_config).await
+    let result = state
+        .admin_service
+        .create_backup(backup_config)
+        .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(ApiResponse::success(result)))
@@ -465,7 +558,10 @@ pub async fn create_backup_handler(
 pub async fn list_backups_handler(
     State(state): State<AdminState>,
 ) -> Result<Json<ApiResponse<Vec<crate::admin::service::BackupInfo>>>, StatusCode> {
-    let backups = state.admin_service.list_backups().await
+    let backups = state
+        .admin_service
+        .list_backups()
+        .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(ApiResponse::success(backups)))
@@ -476,7 +572,10 @@ pub async fn restore_backup_handler(
     State(state): State<AdminState>,
     Path(backup_id): Path<String>,
 ) -> Result<Json<ApiResponse<crate::admin::service::RestoreResult>>, StatusCode> {
-    let result = state.admin_service.restore_backup(&backup_id).await
+    let result = state
+        .admin_service
+        .restore_backup(&backup_id)
+        .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(ApiResponse::success(result)))
@@ -495,7 +594,7 @@ pub struct ExportQuery {
 
 /// Search handler
 pub async fn search_handler(
-    State(state): State<AdminState>,
+    State(_state): State<AdminState>,
     Query(params): Query<SearchQuery>,
 ) -> Result<Json<ApiResponse<serde_json::Value>>, StatusCode> {
     // TODO: Implement search through MCP server

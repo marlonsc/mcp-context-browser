@@ -4,9 +4,11 @@
 
 #[cfg(test)]
 mod validation_tests {
-    use mcp_context_browser::core::validation::{ValidationError, ValidationResult, StringValidatorTrait, NumberValidatorTrait};
-    use mcp_context_browser::core::validation::{StringValidator, NumberValidator};
     use mcp_context_browser::core::validation::common;
+    use mcp_context_browser::core::validation::{NumberValidator, StringValidator};
+    use mcp_context_browser::core::validation::{
+        NumberValidatorTrait, StringValidatorTrait, ValidationError,
+    };
 
     #[test]
     fn test_string_validator_not_empty() {
@@ -104,7 +106,9 @@ mod validation_tests {
 
     #[test]
     fn test_validation_error_display() {
-        let error = ValidationError::Required { field: "name".to_string() };
+        let error = ValidationError::Required {
+            field: "name".to_string(),
+        };
         assert_eq!(error.to_string(), "Field 'name' is required");
 
         let error = ValidationError::TooShort {

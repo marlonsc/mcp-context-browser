@@ -3,18 +3,18 @@
 //! This service provides a clean interface to access system data
 //! following SOLID principles and dependency injection.
 
-use std::sync::Arc;
 use async_trait::async_trait;
-use std::collections::HashMap;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::sync::Arc;
 
 // Data structures for admin service operations
 
 /// Configuration data structure
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConfigurationData {
-    pub providers: Vec<crate::admin::models::ProviderInfo>,
+    pub providers: Vec<ProviderInfo>,
     pub indexing: IndexingConfig,
     pub security: SecurityConfig,
     pub metrics: MetricsConfigData,
@@ -275,20 +275,34 @@ pub trait AdminService: Send + Sync {
     async fn get_configuration(&self) -> Result<ConfigurationData, AdminError>;
 
     /// Update configuration dynamically
-    async fn update_configuration(&self, updates: HashMap<String, serde_json::Value>, user: &str) -> Result<ConfigurationUpdateResult, AdminError>;
+    async fn update_configuration(
+        &self,
+        updates: HashMap<String, serde_json::Value>,
+        user: &str,
+    ) -> Result<ConfigurationUpdateResult, AdminError>;
 
     /// Validate configuration changes
-    async fn validate_configuration(&self, updates: &HashMap<String, serde_json::Value>) -> Result<Vec<String>, AdminError>;
+    async fn validate_configuration(
+        &self,
+        updates: &HashMap<String, serde_json::Value>,
+    ) -> Result<Vec<String>, AdminError>;
 
     /// Get configuration change history
-    async fn get_configuration_history(&self, limit: Option<usize>) -> Result<Vec<ConfigurationChange>, AdminError>;
+    async fn get_configuration_history(
+        &self,
+        limit: Option<usize>,
+    ) -> Result<Vec<ConfigurationChange>, AdminError>;
 
     /// Logging System
     /// Get recent log entries with filtering
     async fn get_logs(&self, filter: LogFilter) -> Result<LogEntries, AdminError>;
 
     /// Export logs to file
-    async fn export_logs(&self, filter: LogFilter, format: LogExportFormat) -> Result<String, AdminError>;
+    async fn export_logs(
+        &self,
+        filter: LogFilter,
+        format: LogExportFormat,
+    ) -> Result<String, AdminError>;
 
     /// Get log statistics
     async fn get_log_stats(&self) -> Result<LogStats, AdminError>;
@@ -304,17 +318,26 @@ pub trait AdminService: Send + Sync {
     async fn rebuild_index(&self, index_id: &str) -> Result<MaintenanceResult, AdminError>;
 
     /// Cleanup old data
-    async fn cleanup_data(&self, cleanup_config: CleanupConfig) -> Result<MaintenanceResult, AdminError>;
+    async fn cleanup_data(
+        &self,
+        cleanup_config: CleanupConfig,
+    ) -> Result<MaintenanceResult, AdminError>;
 
     /// Diagnostic Operations
     /// Run comprehensive health check
     async fn run_health_check(&self) -> Result<HealthCheckResult, AdminError>;
 
     /// Test provider connectivity
-    async fn test_provider_connectivity(&self, provider_id: &str) -> Result<ConnectivityTestResult, AdminError>;
+    async fn test_provider_connectivity(
+        &self,
+        provider_id: &str,
+    ) -> Result<ConnectivityTestResult, AdminError>;
 
     /// Run performance benchmark
-    async fn run_performance_test(&self, test_config: PerformanceTestConfig) -> Result<PerformanceTestResult, AdminError>;
+    async fn run_performance_test(
+        &self,
+        test_config: PerformanceTestConfig,
+    ) -> Result<PerformanceTestResult, AdminError>;
 
     /// Data Management
     /// Create system backup
@@ -393,8 +416,8 @@ impl AdminService for AdminServiceImpl {
     }
 
     async fn get_indexing_status(&self) -> Result<IndexingStatus, AdminError> {
-        let status = self.mcp_server.get_indexing_status_admin().await;
-        Ok(status)
+        let status = self.mcp_server.get_indexing_status_admin();
+        Ok(status.await)
     }
 
     async fn get_performance_metrics(&self) -> Result<PerformanceMetrics, AdminError> {
@@ -435,7 +458,7 @@ impl AdminService for AdminServiceImpl {
     async fn get_configuration(&self) -> Result<ConfigurationData, AdminError> {
         // Build configuration from current system state
         let providers = self.get_providers().await?;
-        let indexing_status = self.get_indexing_status().await?;
+        let _indexing_status = self.get_indexing_status().await?;
 
         Ok(ConfigurationData {
             providers,
@@ -469,7 +492,11 @@ impl AdminService for AdminServiceImpl {
         })
     }
 
-    async fn update_configuration(&self, updates: HashMap<String, serde_json::Value>, user: &str) -> Result<ConfigurationUpdateResult, AdminError> {
+    async fn update_configuration(
+        &self,
+        updates: HashMap<String, serde_json::Value>,
+        user: &str,
+    ) -> Result<ConfigurationUpdateResult, AdminError> {
         // Validate changes first
         let validation_warnings = self.validate_configuration(&updates).await?;
 
@@ -487,7 +514,11 @@ impl AdminService for AdminServiceImpl {
         }
 
         // Log the configuration change
-        tracing::info!("Configuration updated by {}: {} changes applied", user, changes_applied.len());
+        tracing::info!(
+            "Configuration updated by {}: {} changes applied",
+            user,
+            changes_applied.len()
+        );
 
         Ok(ConfigurationUpdateResult {
             success: true,
@@ -497,30 +528,35 @@ impl AdminService for AdminServiceImpl {
         })
     }
 
-    async fn validate_configuration(&self, updates: &HashMap<String, serde_json::Value>) -> Result<Vec<String>, AdminError> {
+    async fn validate_configuration(
+        &self,
+        updates: &HashMap<String, serde_json::Value>,
+    ) -> Result<Vec<String>, AdminError> {
         let mut warnings = Vec::new();
 
         for (path, value) in updates {
             match path.as_str() {
                 "metrics.collection_interval" => {
-                    if let Some(interval) = value.as_u64() {
-                        if interval < 5 {
-                            warnings.push("Collection interval below 5 seconds may impact performance".to_string());
-                        }
+                    if let Some(interval) = value.as_u64() && interval < 5 {
+                        warnings.push(
+                            "Collection interval below 5 seconds may impact performance"
+                                .to_string(),
+                        );
                     }
                 }
                 "cache.max_size" => {
-                    if let Some(size) = value.as_u64() {
-                        if size > 10 * 1024 * 1024 * 1024 { // 10GB
-                            warnings.push("Cache size above 10GB may cause memory issues".to_string());
-                        }
+                    if let Some(size) = value.as_u64() && size > 10 * 1024 * 1024 * 1024 {
+                        // 10GB
+                        warnings
+                            .push("Cache size above 10GB may cause memory issues".to_string());
                     }
                 }
                 "database.pool_size" => {
-                    if let Some(pool_size) = value.as_u64() {
-                        if pool_size > 100 {
-                            warnings.push("Database pool size above 100 may cause resource exhaustion".to_string());
-                        }
+                    if let Some(pool_size) = value.as_u64() && pool_size > 100 {
+                        warnings.push(
+                            "Database pool size above 100 may cause resource exhaustion"
+                                .to_string(),
+                        );
                     }
                 }
                 _ => {}
@@ -530,34 +566,39 @@ impl AdminService for AdminServiceImpl {
         Ok(warnings)
     }
 
-    async fn get_configuration_history(&self, limit: Option<usize>) -> Result<Vec<ConfigurationChange>, AdminError> {
+    async fn get_configuration_history(
+        &self,
+        _limit: Option<usize>,
+    ) -> Result<Vec<ConfigurationChange>, AdminError> {
         // In a real implementation, this would return actual change history
         // For now, return empty list
         Ok(Vec::new())
     }
 
     // Logging System Implementation
-    async fn get_logs(&self, filter: LogFilter) -> Result<LogEntries, AdminError> {
+    async fn get_logs(&self, _filter: LogFilter) -> Result<LogEntries, AdminError> {
         // In a real implementation, this would query the actual logging system
         // For now, return mock data
         Ok(LogEntries {
-            entries: vec![
-                LogEntry {
-                    timestamp: chrono::Utc::now(),
-                    level: "INFO".to_string(),
-                    module: "mcp_server".to_string(),
-                    message: "Server started successfully".to_string(),
-                    target: "mcp_context_browser".to_string(),
-                    file: Some("src/main.rs".to_string()),
-                    line: Some(42),
-                }
-            ],
+            entries: vec![LogEntry {
+                timestamp: chrono::Utc::now(),
+                level: "INFO".to_string(),
+                module: "mcp_server".to_string(),
+                message: "Server started successfully".to_string(),
+                target: "mcp_context_browser".to_string(),
+                file: Some("src/main.rs".to_string()),
+                line: Some(42),
+            }],
             total_count: 1,
             has_more: false,
         })
     }
 
-    async fn export_logs(&self, filter: LogFilter, format: LogExportFormat) -> Result<String, AdminError> {
+    async fn export_logs(
+        &self,
+        _filter: LogFilter,
+        format: LogExportFormat,
+    ) -> Result<String, AdminError> {
         // Generate filename based on current time and format
         let timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S");
         let extension = match format {
@@ -608,7 +649,11 @@ impl AdminService for AdminServiceImpl {
 
         let execution_time = start_time.elapsed().as_millis() as u64;
 
-        tracing::info!("Cache cleared: {} items removed in {}ms", affected_items, execution_time);
+        tracing::info!(
+            "Cache cleared: {} items removed in {}ms",
+            affected_items,
+            execution_time
+        );
 
         Ok(MaintenanceResult {
             success: true,
@@ -642,7 +687,11 @@ impl AdminService for AdminServiceImpl {
         // In real implementation, this would trigger index rebuild
         let execution_time = start_time.elapsed().as_millis() as u64;
 
-        tracing::info!("Index {} rebuild completed in {}ms", index_id, execution_time);
+        tracing::info!(
+            "Index {} rebuild completed in {}ms",
+            index_id,
+            execution_time
+        );
 
         Ok(MaintenanceResult {
             success: true,
@@ -653,7 +702,10 @@ impl AdminService for AdminServiceImpl {
         })
     }
 
-    async fn cleanup_data(&self, cleanup_config: CleanupConfig) -> Result<MaintenanceResult, AdminError> {
+    async fn cleanup_data(
+        &self,
+        _cleanup_config: CleanupConfig,
+    ) -> Result<MaintenanceResult, AdminError> {
         let start_time = std::time::Instant::now();
 
         // In real implementation, this would clean up old data
@@ -661,7 +713,11 @@ impl AdminService for AdminServiceImpl {
 
         let execution_time = start_time.elapsed().as_millis() as u64;
 
-        tracing::info!("Data cleanup completed: {} items removed in {}ms", affected_items, execution_time);
+        tracing::info!(
+            "Data cleanup completed: {} items removed in {}ms",
+            affected_items,
+            execution_time
+        );
 
         Ok(MaintenanceResult {
             success: true,
@@ -696,7 +752,12 @@ impl AdminService for AdminServiceImpl {
         for provider in providers {
             checks.push(HealthCheck {
                 name: format!("provider_{}", provider.id),
-                status: if provider.status == "active" { "healthy" } else { "degraded" }.to_string(),
+                status: if provider.status == "active" {
+                    "healthy"
+                } else {
+                    "degraded"
+                }
+                .to_string(),
                 message: format!("Provider {} is {}", provider.name, provider.status),
                 duration_ms: 5,
                 details: Some(provider.config),
@@ -722,7 +783,8 @@ impl AdminService for AdminServiceImpl {
             "unhealthy"
         } else {
             "degraded"
-        }.to_string();
+        }
+        .to_string();
 
         let duration_ms = start_time.elapsed().as_millis() as u64;
 
@@ -734,11 +796,14 @@ impl AdminService for AdminServiceImpl {
         })
     }
 
-    async fn test_provider_connectivity(&self, provider_id: &str) -> Result<ConnectivityTestResult, AdminError> {
+    async fn test_provider_connectivity(
+        &self,
+        provider_id: &str,
+    ) -> Result<ConnectivityTestResult, AdminError> {
         let start_time = std::time::Instant::now();
 
         // In real implementation, this would test actual connectivity
-        let (success, response_time, error_message) = match provider_id {
+        let (success, _response_time, error_message) = match provider_id {
             "openai-1" => (true, Some(150), None),
             "milvus-1" => (true, Some(25), None),
             _ => (false, None, Some("Provider not found".to_string())),
@@ -762,7 +827,10 @@ impl AdminService for AdminServiceImpl {
         })
     }
 
-    async fn run_performance_test(&self, test_config: PerformanceTestConfig) -> Result<PerformanceTestResult, AdminError> {
+    async fn run_performance_test(
+        &self,
+        test_config: PerformanceTestConfig,
+    ) -> Result<PerformanceTestResult, AdminError> {
         let start_time = std::time::Instant::now();
 
         // Mock performance test results
@@ -798,7 +866,7 @@ impl AdminService for AdminServiceImpl {
 
         Ok(BackupResult {
             backup_id,
-            name: backup_config.name,
+            name: backup_config.name.clone(),
             size_bytes,
             created_at,
             path: format!("/backups/{}", backup_config.name),
@@ -807,15 +875,13 @@ impl AdminService for AdminServiceImpl {
 
     async fn list_backups(&self) -> Result<Vec<BackupInfo>, AdminError> {
         // Mock backup list
-        Ok(vec![
-            BackupInfo {
-                id: "backup_20241201_120000".to_string(),
-                name: "daily_backup".to_string(),
-                created_at: chrono::Utc::now() - chrono::Duration::hours(24),
-                size_bytes: 512 * 1024 * 1024,
-                status: "completed".to_string(),
-            }
-        ])
+        Ok(vec![BackupInfo {
+            id: "backup_20241201_120000".to_string(),
+            name: "daily_backup".to_string(),
+            created_at: chrono::Utc::now() - chrono::Duration::hours(24),
+            size_bytes: 512 * 1024 * 1024,
+            status: "completed".to_string(),
+        }])
     }
 
     async fn restore_backup(&self, backup_id: &str) -> Result<RestoreResult, AdminError> {

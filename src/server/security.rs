@@ -83,13 +83,15 @@ pub async fn security_middleware(
     if let Some(content_length) = req.headers().get(header::CONTENT_LENGTH)
         && let Ok(size_str) = content_length.to_str()
         && let Ok(size) = size_str.parse::<usize>()
-        && size > config.max_request_size {
+        && size > config.max_request_size
+    {
         return Err(StatusCode::PAYLOAD_TOO_LARGE);
     }
 
     // Block suspicious requests
     if config.block_suspicious_requests
-        && let Err(response) = validate_request_safety(&req).await {
+        && let Err(response) = validate_request_safety(&req).await
+    {
         return Ok(response);
     }
 
@@ -155,7 +157,8 @@ async fn validate_request_safety(req: &Request) -> Result<(), Response> {
     for header_name in suspicious_headers {
         if let Some(value) = req.headers().get(header_name)
             && let Ok(value_str) = value.to_str()
-            && (value_str.contains(",") || value_str.contains("\n") || value_str.contains("\r")) {
+            && (value_str.contains(",") || value_str.contains("\n") || value_str.contains("\r"))
+        {
             tracing::warn!(
                 "Suspicious header detected: {} = {}",
                 header_name,
@@ -190,7 +193,8 @@ fn add_security_headers(response: &mut Response, config: &SecurityConfig) {
 
     // Content Security Policy
     if let Some(csp) = &config.content_security_policy
-        && let Ok(value) = HeaderValue::from_str(csp) {
+        && let Ok(value) = HeaderValue::from_str(csp)
+    {
         headers.insert("Content-Security-Policy", value);
     }
 
@@ -207,7 +211,8 @@ fn add_security_headers(response: &mut Response, config: &SecurityConfig) {
 
     // X-Frame-Options
     if let Some(xfo) = &config.x_frame_options
-        && let Ok(value) = HeaderValue::from_str(xfo) {
+        && let Ok(value) = HeaderValue::from_str(xfo)
+    {
         headers.insert("X-Frame-Options", value);
     }
 
@@ -221,31 +226,36 @@ fn add_security_headers(response: &mut Response, config: &SecurityConfig) {
 
     // Referrer-Policy
     if let Some(rp) = &config.referrer_policy
-        && let Ok(value) = HeaderValue::from_str(rp) {
+        && let Ok(value) = HeaderValue::from_str(rp)
+    {
         headers.insert("Referrer-Policy", value);
     }
 
     // Permissions-Policy
     if let Some(pp) = &config.permissions_policy
-        && let Ok(value) = HeaderValue::from_str(pp) {
+        && let Ok(value) = HeaderValue::from_str(pp)
+    {
         headers.insert("Permissions-Policy", value);
     }
 
     // Cross-Origin-Embedder-Policy
     if let Some(coep) = &config.cross_origin_embedder_policy
-        && let Ok(value) = HeaderValue::from_str(coep) {
+        && let Ok(value) = HeaderValue::from_str(coep)
+    {
         headers.insert("Cross-Origin-Embedder-Policy", value);
     }
 
     // Cross-Origin-Opener-Policy
     if let Some(coop) = &config.cross_origin_opener_policy
-        && let Ok(value) = HeaderValue::from_str(coop) {
+        && let Ok(value) = HeaderValue::from_str(coop)
+    {
         headers.insert("Cross-Origin-Opener-Policy", value);
     }
 
     // Cross-Origin-Resource-Policy
     if let Some(corp) = &config.cross_origin_resource_policy
-        && let Ok(value) = HeaderValue::from_str(corp) {
+        && let Ok(value) = HeaderValue::from_str(corp)
+    {
         headers.insert("Cross-Origin-Resource-Policy", value);
     }
 

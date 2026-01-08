@@ -4,8 +4,8 @@
 //! Tests cover server creation, tool validation, and MCP protocol compliance.
 
 use mcp_context_browser::server::{
-    args::{ClearIndexArgs, GetIndexingStatusArgs, IndexCodebaseArgs, SearchCodeArgs},
     McpServer,
+    args::{ClearIndexArgs, GetIndexingStatusArgs, IndexCodebaseArgs, SearchCodeArgs},
 };
 use rmcp::{ServerHandler, model::ProtocolVersion};
 
@@ -107,6 +107,11 @@ mod tests {
         // Valid args should work
         let args = IndexCodebaseArgs {
             path: "/some/path".to_string(),
+            collection: None,
+            extensions: None,
+            ignore_patterns: None,
+            max_file_size: None,
+            follow_symlinks: None,
             token: None,
         };
         assert_eq!(args.path, "/some/path");
@@ -114,6 +119,11 @@ mod tests {
         // Empty path should be valid (validation happens in the tool)
         let args_empty = IndexCodebaseArgs {
             path: "".to_string(),
+            collection: None,
+            extensions: None,
+            ignore_patterns: None,
+            max_file_size: None,
+            follow_symlinks: None,
             token: None,
         };
         assert_eq!(args_empty.path, "");
@@ -125,6 +135,9 @@ mod tests {
         let args = SearchCodeArgs {
             query: "test query".to_string(),
             limit: 5,
+            collection: None,
+            extensions: None,
+            filters: None,
             token: None,
         };
         assert_eq!(args.query, "test query");
@@ -134,10 +147,40 @@ mod tests {
         let args_default = SearchCodeArgs {
             query: "another query".to_string(),
             limit: 10, // This is the default
+            collection: None,
+            extensions: None,
+            filters: None,
             token: None,
         };
         assert_eq!(args_default.query, "another query");
         assert_eq!(args_default.limit, 10);
+    }
+
+    #[test]
+    fn test_search_code_with_filters_validation() {
+        // Test that SearchCodeArgs can include filters
+        let args = SearchCodeArgs {
+            query: "function".to_string(),
+            limit: 10,
+            filters: Some(mcp_context_browser::server::args::SearchFilters {
+                file_extensions: Some(vec!["rs".to_string(), "py".to_string()]),
+                languages: Some(vec!["rust".to_string()]),
+                exclude_patterns: Some(vec!["test_*".to_string()]),
+                min_score: Some(0.5),
+            }),
+            token: None,
+        };
+
+        // Basic validation that the struct can be created
+        assert_eq!(args.query, "function");
+        assert_eq!(args.limit, 10);
+        assert!(args.filters.is_some());
+
+        let filters = args.filters.unwrap();
+        assert_eq!(filters.file_extensions, Some(vec!["rs".to_string(), "py".to_string()]));
+        assert_eq!(filters.languages, Some(vec!["rust".to_string()]));
+        assert_eq!(filters.exclude_patterns, Some(vec!["test_*".to_string()]));
+        assert_eq!(filters.min_score, Some(0.5));
     }
 
     #[test]

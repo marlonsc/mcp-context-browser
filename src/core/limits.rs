@@ -332,7 +332,8 @@ impl ResourceLimits {
 
         // Check memory
         if let Ok(memory_stats) = self.get_memory_stats().await
-            && memory_stats.usage_percent >= self.config.memory.max_usage_percent {
+            && memory_stats.usage_percent >= self.config.memory.max_usage_percent
+        {
             violations.push(ResourceViolation::MemoryLimitExceeded {
                 current_percent: memory_stats.usage_percent,
                 limit_percent: self.config.memory.max_usage_percent,
@@ -341,7 +342,8 @@ impl ResourceLimits {
 
         // Check CPU
         if let Ok(cpu_stats) = self.get_cpu_stats().await
-            && cpu_stats.usage_percent >= self.config.cpu.max_usage_percent {
+            && cpu_stats.usage_percent >= self.config.cpu.max_usage_percent
+        {
             violations.push(ResourceViolation::CpuLimitExceeded {
                 current_percent: cpu_stats.usage_percent,
                 limit_percent: self.config.cpu.max_usage_percent,

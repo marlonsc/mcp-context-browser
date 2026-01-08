@@ -32,9 +32,9 @@ use std::fs;
 use std::path::PathBuf;
 
 // Module declarations
-pub mod validation;
-pub mod providers;
 pub mod environment;
+pub mod providers;
+pub mod validation;
 
 /// Embedding provider configuration types (similar to Claude Context)
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -655,13 +655,15 @@ impl ConfigManager {
 
         // Validate dimensions if specified
         if let Some(dim) = config.dimensions
-            && dim == 0 {
+            && dim == 0
+        {
             return Err(Error::config("Embedding dimensions cannot be zero"));
         }
 
         // Validate max tokens if specified
         if let Some(tokens) = config.max_tokens
-            && tokens == 0 {
+            && tokens == 0
+        {
             return Err(Error::config("Max tokens cannot be zero"));
         }
 
@@ -703,7 +705,8 @@ impl ConfigManager {
 
         // Validate dimensions if specified
         if let Some(dim) = config.dimensions
-            && dim == 0 {
+            && dim == 0
+        {
             return Err(Error::config("Vector dimensions cannot be zero"));
         }
 
@@ -1292,7 +1295,10 @@ impl ConfigBuilder {
     }
 
     /// Set vector store provider configuration
-    pub fn vector_store_provider(mut self, provider: crate::core::types::VectorStoreConfig) -> Self {
+    pub fn vector_store_provider(
+        mut self,
+        provider: crate::core::types::VectorStoreConfig,
+    ) -> Self {
         self.config.providers.vector_store = provider;
         self
     }

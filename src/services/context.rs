@@ -48,10 +48,7 @@ where
     S: crate::repository::SearchRepository + Send + Sync,
 {
     /// Create a new repository-based context service
-    pub fn new(
-        chunk_repository: Arc<C>,
-        search_repository: Arc<S>,
-    ) -> Self {
+    pub fn new(chunk_repository: Arc<C>, search_repository: Arc<S>) -> Self {
         Self {
             chunk_repository,
             search_repository,
@@ -59,7 +56,7 @@ where
     }
 
     /// Generate embeddings for text using repository-based approach
-    pub async fn embed_text(&self, text: &str) -> Result<Embedding> {
+    pub async fn embed_text(&self, _text: &str) -> Result<Embedding> {
         // Note: This would need access to an embedding provider
         // For now, this is a placeholder - in practice, the repository
         // might handle embedding internally or we'd need to inject an embedder
@@ -67,12 +64,14 @@ where
     }
 
     /// Store code chunks using the chunk repository
-    pub async fn store_chunks(&self, collection: &str, chunks: &[CodeChunk]) -> Result<()> {
+    pub async fn store_chunks(&self, _collection: &str, chunks: &[CodeChunk]) -> Result<()> {
         // Save chunks via repository
         self.chunk_repository.save_batch(chunks).await?;
 
         // Index for hybrid search
-        self.search_repository.index_for_hybrid_search(chunks).await?;
+        self.search_repository
+            .index_for_hybrid_search(chunks)
+            .await?;
 
         Ok(())
     }
@@ -90,7 +89,9 @@ where
         let query_vector = vec![0.0f32; 384]; // Mock dimension
 
         // Perform hybrid search using the search repository
-        self.search_repository.hybrid_search(collection, query, &query_vector, limit).await
+        self.search_repository
+            .hybrid_search(collection, query, &query_vector, limit)
+            .await
     }
 
     /// Clear a collection using repositories
@@ -105,7 +106,12 @@ where
     }
 
     /// Get repository statistics
-    pub async fn get_repository_stats(&self) -> Result<(crate::repository::RepositoryStats, crate::repository::SearchStats)> {
+    pub async fn get_repository_stats(
+        &self,
+    ) -> Result<(
+        crate::repository::RepositoryStats,
+        crate::repository::SearchStats,
+    )> {
         let chunk_stats = self.chunk_repository.stats().await?;
         let search_stats = self.search_repository.search_stats().await?;
 
@@ -369,10 +375,7 @@ where
     V: VectorStoreProvider + Send + Sync,
 {
     /// Create a new generic context service with specified provider strategies
-    pub fn new(
-        embedding_provider: Arc<E>,
-        vector_store_provider: Arc<V>,
-    ) -> Self {
+    pub fn new(embedding_provider: Arc<E>, vector_store_provider: Arc<V>) -> Self {
         let config = HybridSearchConfig::from_env();
         let hybrid_search_engine = if config.enabled {
             HybridSearchEngine::new(config.bm25_weight, config.semantic_weight)

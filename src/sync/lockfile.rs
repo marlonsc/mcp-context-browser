@@ -236,7 +236,8 @@ impl CodebaseLockManager {
             let path = entry.path();
 
             if let Some(ext) = path.extension()
-                && ext == Self::META_EXT.trim_start_matches('.') {
+                && ext == Self::META_EXT.trim_start_matches('.')
+            {
                 match fs::read_to_string(&path) {
                     Ok(content) => {
                         if let Ok(metadata) = serde_json::from_str::<LockMetadata>(&content) {

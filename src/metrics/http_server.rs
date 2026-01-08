@@ -14,7 +14,6 @@ use crate::core::cache::{CacheStats, get_global_cache_manager};
 use crate::core::limits::ResourceLimits;
 use crate::core::rate_limit::RateLimiter;
 // Rate limiting middleware will be added later
-use crate::server::security::request_validation_middleware;
 
 use crate::metrics::{PerformanceMetrics, SystemMetricsCollector};
 

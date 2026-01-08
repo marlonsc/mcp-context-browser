@@ -3,7 +3,7 @@
 //! This module provides comprehensive environment variable handling
 //! with priority-based configuration merging and validation.
 
-use crate::config::{Config, ServerConfig, MetricsConfig, ProviderConfig, SyncConfig, DaemonConfig};
+use crate::config::{Config, DaemonConfig, MetricsConfig, ServerConfig, SyncConfig};
 use crate::core::error::{Error, Result};
 use std::collections::HashMap;
 use std::env;
@@ -38,21 +38,34 @@ impl EnvironmentLoader {
 
     /// Load server configuration from environment variables
     pub fn load_server_config(&self) -> Result<ServerConfig> {
-        Ok(ServerConfig {
-            host: self.get_var("HOST").unwrap_or_else(|| "127.0.0.1".to_string()),
-            port: self.get_var("PORT")
-                .and_then(|s| s.parse().ok())
-                .unwrap_or(3000),
-        })
+        let host = self
+            .get_var("HOST")
+            .unwrap_or_else(|| "127.0.0.1".to_string());
+
+        let port_str = self.get_var("PORT");
+        let port = if let Some(port_str) = port_str {
+            port_str.parse().map_err(|_| {
+                Error::config(format!(
+                    "Invalid PORT value '{}': must be a valid port number",
+                    port_str
+                ))
+            })?
+        } else {
+            3000
+        };
+
+        Ok(ServerConfig { host, port })
     }
 
     /// Load metrics configuration from environment variables
     pub fn load_metrics_config(&self) -> Result<MetricsConfig> {
         Ok(MetricsConfig {
-            port: self.get_var("METRICS_PORT")
+            port: self
+                .get_var("METRICS_PORT")
                 .and_then(|s| s.parse().ok())
                 .unwrap_or(3001),
-            enabled: self.get_var("METRICS_ENABLED")
+            enabled: self
+                .get_var("METRICS_ENABLED")
                 .and_then(|s| s.parse().ok())
                 .unwrap_or(true),
             rate_limiting: Default::default(), // Would be loaded separately if needed
@@ -62,13 +75,16 @@ impl EnvironmentLoader {
     /// Load sync configuration from environment variables
     pub fn load_sync_config(&self) -> Result<SyncConfig> {
         Ok(SyncConfig {
-            interval_ms: self.get_var("SYNC_INTERVAL_MS")
+            interval_ms: self
+                .get_var("SYNC_INTERVAL_MS")
                 .and_then(|s| s.parse().ok())
                 .unwrap_or(900000), // 15 minutes default
-            enable_lockfile: self.get_var("SYNC_ENABLE_LOCKFILE")
+            enable_lockfile: self
+                .get_var("SYNC_ENABLE_LOCKFILE")
                 .and_then(|s| s.parse().ok())
                 .unwrap_or(true),
-            debounce_ms: self.get_var("SYNC_DEBOUNCE_MS")
+            debounce_ms: self
+                .get_var("SYNC_DEBOUNCE_MS")
                 .and_then(|s| s.parse().ok())
                 .unwrap_or(60000), // 60 seconds default
         })
@@ -77,13 +93,16 @@ impl EnvironmentLoader {
     /// Load daemon configuration from environment variables
     pub fn load_daemon_config(&self) -> Result<DaemonConfig> {
         Ok(DaemonConfig {
-            cleanup_interval_secs: self.get_var("DAEMON_CLEANUP_INTERVAL_SECS")
+            cleanup_interval_secs: self
+                .get_var("DAEMON_CLEANUP_INTERVAL_SECS")
                 .and_then(|s| s.parse().ok())
                 .unwrap_or(30), // 30 seconds default
-            monitoring_interval_secs: self.get_var("DAEMON_MONITORING_INTERVAL_SECS")
+            monitoring_interval_secs: self
+                .get_var("DAEMON_MONITORING_INTERVAL_SECS")
                 .and_then(|s| s.parse().ok())
                 .unwrap_or(30), // 30 seconds default
-            max_lock_age_secs: self.get_var("DAEMON_MAX_LOCK_AGE_SECS")
+            max_lock_age_secs: self
+                .get_var("DAEMON_MAX_LOCK_AGE_SECS")
                 .and_then(|s| s.parse().ok())
                 .unwrap_or(300), // 5 minutes default
         })
@@ -96,33 +115,25 @@ impl EnvironmentLoader {
             config.server.host = host;
         }
         if let Some(port_str) = self.get_var("PORT") {
-            if let Ok(port) = port_str.parse() {
+            if let Ok(port) = port_str.parse::<u16>() {
                 config.server.port = port;
             }
         }
 
         // Override metrics config
         if let Some(port_str) = self.get_var("METRICS_PORT") {
-            if let Ok(port) = port_str.parse() {
-                config.metrics.port = port;
-            }
+            let _ = port_str.parse().map(|port| config.metrics.port = port);
         }
         if let Some(enabled_str) = self.get_var("METRICS_ENABLED") {
-            if let Ok(enabled) = enabled_str.parse() {
-                config.metrics.enabled = enabled;
-            }
+            let _ = enabled_str.parse().map(|enabled| config.metrics.enabled = enabled);
         }
 
         // Override sync config
         if let Some(interval_str) = self.get_var("SYNC_INTERVAL_MS") {
-            if let Ok(interval) = interval_str.parse() {
-                config.sync.interval_ms = interval;
-            }
+            let _ = interval_str.parse().map(|interval| config.sync.interval_ms = interval);
         }
         if let Some(enable_str) = self.get_var("SYNC_ENABLE_LOCKFILE") {
-            if let Ok(enable) = enable_str.parse() {
-                config.sync.enable_lockfile = enable;
-            }
+            let _ = enable_str.parse().map(|enable| config.sync.enable_lockfile = enable);
         }
         if let Some(debounce_str) = self.get_var("SYNC_DEBOUNCE_MS") {
             if let Ok(debounce) = debounce_str.parse() {
@@ -150,21 +161,45 @@ impl EnvironmentLoader {
         Ok(config)
     }
 
-    /// Get environment variable with prefix
+    /// Get environment variable with prefix resolution
+    ///
+    /// Searches for environment variables in the following priority order:
+    /// 1. Cache + prefixed version (e.g., MCP_HOST)
+    /// 2. Cache + legacy CONTEXT_ prefix (e.g., CONTEXT_HOST) - for backward compatibility
+    /// 3. Cache + unprefixed version (e.g., HOST)
+    /// 4. Environment variables (same order as cache)
+    ///
+    /// # Arguments
+    /// * `key` - The base key name without prefix
+    ///
+    /// # Returns
+    /// The value of the first matching environment variable or cache entry, or None if not found
     pub fn get_var(&self, key: &str) -> Option<String> {
-        // Try prefixed version first
+        // Priority order: MCP_ prefix > CONTEXT_ prefix > unprefixed
+        // This matches the expected precedence in tests
+
+        // Try prefixed version first (highest priority)
         let prefixed_key = format!("{}{}", self.prefix, key);
+        if let Some(value) = self.cache.get(&prefixed_key) {
+            return Some(value.clone());
+        }
         if let Ok(value) = env::var(&prefixed_key) {
             return Some(value);
         }
 
         // Try legacy CONTEXT_ prefix for backward compatibility
         let legacy_key = format!("CONTEXT_{}", key);
+        if let Some(value) = self.cache.get(&legacy_key) {
+            return Some(value.clone());
+        }
         if let Ok(value) = env::var(&legacy_key) {
             return Some(value);
         }
 
-        // Try unprefixed version
+        // Try unprefixed version (lowest priority)
+        if let Some(value) = self.cache.get(key) {
+            return Some(value.clone());
+        }
         env::var(key).ok()
     }
 
@@ -192,31 +227,99 @@ impl EnvironmentLoader {
             .collect()
     }
 
+    /// Get detailed information about environment variable resolution for a key
+    ///
+    /// Useful for debugging configuration issues and understanding which
+    /// environment variables are being used.
+    ///
+    /// # Arguments
+    /// * `key` - The base key name without prefix
+    ///
+    /// # Returns
+    /// A tuple containing (found_value, source_description)
+    pub fn get_var_info(&self, key: &str) -> (Option<String>, String) {
+        // Check cache first
+        let prefixed_key = format!("{}{}", self.prefix, key);
+        if let Some(value) = self.cache.get(&prefixed_key) {
+            return (
+                Some(value.clone()),
+                format!("cache (prefixed: {})", prefixed_key),
+            );
+        }
+        if let Ok(value) = env::var(&prefixed_key) {
+            return (
+                Some(value),
+                format!("environment (prefixed: {})", prefixed_key),
+            );
+        }
+
+        let legacy_key = format!("CONTEXT_{}", key);
+        if let Some(value) = self.cache.get(&legacy_key) {
+            return (
+                Some(value.clone()),
+                format!("cache (legacy: {})", legacy_key),
+            );
+        }
+        if let Ok(value) = env::var(&legacy_key) {
+            return (Some(value), format!("environment (legacy: {})", legacy_key));
+        }
+
+        if let Some(value) = self.cache.get(key) {
+            return (Some(value.clone()), format!("cache (unprefixed: {})", key));
+        }
+        if let Ok(value) = env::var(key) {
+            return (Some(value), format!("environment (unprefixed: {})", key));
+        }
+
+        (None, "not found".to_string())
+    }
+
     /// Validate environment variable configuration
     pub fn validate_environment(&self) -> Result<()> {
-        // Check for conflicting settings
-        if self.get_var("PORT").is_some() && self.get_var("METRICS_PORT").is_some() {
-            let port: u16 = self.get_var("PORT").and_then(|s| s.parse().ok()).unwrap_or(3000);
-            let metrics_port: u16 = self.get_var("METRICS_PORT").and_then(|s| s.parse().ok()).unwrap_or(3001);
-
-            if port == metrics_port {
-                return Err(Error::config("Server port and metrics port cannot be the same"));
-            }
-        }
-
-        // Validate port ranges
+        // Validate server port
         if let Some(port_str) = self.get_var("PORT") {
-            if let Ok(port) = port_str.parse::<u16>() {
-                if port < 1024 || port > 65535 {
-                    return Err(Error::config("Server port must be between 1024 and 65535"));
-                }
+            let port: u16 = port_str.parse().map_err(|_| {
+                Error::config(format!(
+                    "Invalid PORT value '{}': must be a valid port number between 1024 and 65535",
+                    port_str
+                ))
+            })?;
+
+            #[allow(clippy::useless_conversion)]
+            if port < 1024 || port > 65535 {
+                return Err(Error::config(format!(
+                    "Server port {} is out of valid range (1024-65535)",
+                    port
+                )));
             }
         }
 
-        if let Some(port_str) = self.get_var("METRICS_PORT") {
-            if let Ok(port) = port_str.parse::<u16>() {
-                if port < 1024 || port > 65535 {
-                    return Err(Error::config("Metrics port must be between 1024 and 65535"));
+        // Validate metrics port
+        if let Some(metrics_port_str) = self.get_var("METRICS_PORT") {
+            let metrics_port: u16 = metrics_port_str.parse().map_err(|_| {
+                Error::config(format!(
+                    "Invalid METRICS_PORT value '{}': must be a valid port number between 1024 and 65535",
+                    metrics_port_str
+                ))
+            })?;
+
+            #[allow(clippy::useless_conversion)]
+            if metrics_port < 1024 || metrics_port > 65535 {
+                return Err(Error::config(format!(
+                    "Metrics port {} is out of valid range (1024-65535)",
+                    metrics_port
+                )));
+            }
+
+            // Check for port conflicts if both are set
+            if let Some(port_str) = self.get_var("PORT") {
+                if let Ok(port) = port_str.parse::<u16>() {
+                    if port == metrics_port {
+                        return Err(Error::config(format!(
+                            "Server port ({}) and metrics port ({}) cannot be the same",
+                            port, metrics_port
+                        )));
+                    }
                 }
             }
         }
@@ -263,12 +366,17 @@ mod tests {
     fn test_environment_precedence() {
         let mut loader = EnvironmentLoader::new();
 
+        // Clean up any existing environment variables first
+        loader.remove_var("MCP_PORT");
+        loader.remove_var("CONTEXT_PORT");
+        loader.remove_var("PORT");
+
         // Set variables with different prefixes
         loader.set_var("MCP_PORT", "3000");
         loader.set_var("CONTEXT_PORT", "4000"); // Legacy prefix
         loader.set_var("PORT", "5000"); // No prefix
 
-        // MCP_ prefix should take precedence
+        // MCP_ prefix should take precedence over unprefixed
         assert_eq!(loader.get_var("PORT"), Some("3000".to_string()));
 
         // Clean up
@@ -314,6 +422,10 @@ mod tests {
 
         // Invalid port range
         loader.set_var("MCP_PORT", "80");
+        assert!(loader.validate_environment().is_err());
+
+        // Invalid port value (non-numeric)
+        loader.set_var("MCP_PORT", "not-a-number");
         assert!(loader.validate_environment().is_err());
 
         // Clean up

@@ -4,17 +4,17 @@
 //! It validates queries, checks permissions, manages caching, and coordinates
 //! the search process with proper error handling and timeouts.
 
-use std::sync::Arc;
-use std::time::Instant;
-use rmcp::model::{CallToolResult, Content};
 use rmcp::ErrorData as McpError;
 use rmcp::handler::server::wrapper::Parameters;
+use rmcp::model::{CallToolResult, Content};
 use serde_json;
+use std::sync::Arc;
+use std::time::Instant;
 
 use crate::core::auth::Permission;
 use crate::core::cache::{CacheManager, CacheResult};
 use crate::core::limits::ResourceLimits;
-use crate::core::validation::{StringValidator, ValidationError, StringValidatorTrait};
+use crate::core::validation::{StringValidator, StringValidatorTrait, ValidationError};
 use crate::server::args::SearchCodeArgs;
 use crate::server::auth::AuthHandler;
 use crate::server::formatter::ResponseFormatter;
@@ -57,24 +57,22 @@ impl SearchCodeHandler {
             Ok(validated) => Ok(validated),
             Err(ValidationError::Required { .. }) => {
                 Err(ResponseFormatter::format_query_validation_error(
-                    "Search query cannot be empty. Please provide a natural language query."
-                ))
-            },
-            Err(ValidationError::TooShort { .. }) => {
-                Err(ResponseFormatter::format_query_validation_error(
-                    "Search query too short. Please use at least 3 characters for meaningful results."
-                ))
-            },
-            Err(ValidationError::TooLong { .. }) => {
-                Err(ResponseFormatter::format_query_validation_error(
-                    "Search query too long. Please limit to 1000 characters."
-                ))
-            },
-            _ => {
-                Err(ResponseFormatter::format_query_validation_error(
-                    "Invalid search query format."
+                    "Search query cannot be empty. Please provide a natural language query.",
                 ))
             }
+            Err(ValidationError::TooShort { .. }) => {
+                Err(ResponseFormatter::format_query_validation_error(
+                    "Search query too short. Please use at least 3 characters for meaningful results.",
+                ))
+            }
+            Err(ValidationError::TooLong { .. }) => {
+                Err(ResponseFormatter::format_query_validation_error(
+                    "Search query too long. Please limit to 1000 characters.",
+                ))
+            }
+            _ => Err(ResponseFormatter::format_query_validation_error(
+                "Invalid search query format.",
+            )),
         }
     }
 
@@ -85,18 +83,25 @@ impl SearchCodeHandler {
             query,
             limit,
             token,
+            filters: _,
+            ..
         }): Parameters<SearchCodeArgs>,
     ) -> Result<CallToolResult, McpError> {
         let start_time = Instant::now();
 
         // Check authentication and permissions
-        if let Err(e) = self.auth_handler.check_auth(token.as_ref(), &Permission::SearchCodebase) {
+        if let Err(e) = self
+            .auth_handler
+            .check_auth(token.as_ref(), &Permission::SearchCodebase)
+        {
             return Ok(ResponseFormatter::format_auth_error(&e.to_string()));
         }
 
         // Check resource limits for search operation
         if let Err(e) = self.resource_limits.check_operation_allowed("search").await {
-            return Ok(ResponseFormatter::format_resource_limit_error(&e.to_string()));
+            return Ok(ResponseFormatter::format_resource_limit_error(
+                &e.to_string(),
+            ));
         }
 
         // Acquire search permit
@@ -107,7 +112,9 @@ impl SearchCodeHandler {
         {
             Ok(permit) => permit,
             Err(e) => {
-                return Ok(ResponseFormatter::format_resource_limit_error(&e.to_string()));
+                return Ok(ResponseFormatter::format_resource_limit_error(
+                    &e.to_string(),
+                ));
             }
         };
 
@@ -175,12 +182,11 @@ impl SearchCodeHandler {
                 // Use the simplified response formatting that was moved to the search method
                 Self::format_search_response_with_cache(&query, &results, duration)
             }
-            Ok(Err(e)) => {
-                Ok(ResponseFormatter::format_search_error(&e.to_string(), query))
-            }
-            Err(_) => {
-                Ok(ResponseFormatter::format_search_timeout(query))
-            }
+            Ok(Err(e)) => Ok(ResponseFormatter::format_search_error(
+                &e.to_string(),
+                &query,
+            )),
+            Err(_) => Ok(ResponseFormatter::format_search_timeout(&query)),
         }
     }
 
@@ -205,7 +211,9 @@ impl SearchCodeHandler {
             message.push_str("• Query terms not present in the codebase\n");
             message.push_str("• Try different keywords or more general terms\n\n");
             message.push_str("**💡 Search Tips:**\n");
-            message.push_str("• Use natural language: \"find error handling\", \"authentication logic\"\n");
+            message.push_str(
+                "• Use natural language: \"find error handling\", \"authentication logic\"\n",
+            );
             message.push_str("• Be specific: \"HTTP request middleware\" > \"middleware\"\n");
             message.push_str("• Include technologies: \"React component state management\"\n");
             message.push_str("• Try synonyms: \"validate\" instead of \"check\"\n");

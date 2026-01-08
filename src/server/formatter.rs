@@ -4,8 +4,8 @@
 //! user-friendly way. It handles the presentation of search results, indexing status,
 //! and error messages.
 
-use rmcp::model::{Content, CallToolResult};
 use rmcp::ErrorData as McpError;
+use rmcp::model::{CallToolResult, Content};
 use std::path::Path;
 
 /// Response formatter for MCP server tools
@@ -269,17 +269,11 @@ impl ResponseFormatter {
 
     /// Format validation error for path
     pub fn format_path_validation_error(error: &str) -> CallToolResult {
-        CallToolResult::success(vec![Content::text(format!(
-            "❌ Error: {}",
-            error
-        ))])
+        CallToolResult::success(vec![Content::text(format!("❌ Error: {}", error))])
     }
 
     /// Format validation error for query
     pub fn format_query_validation_error(error: &str) -> CallToolResult {
-        CallToolResult::success(vec![Content::text(format!(
-            "❌ Error: {}",
-            error
-        ))])
+        CallToolResult::success(vec![Content::text(format!("❌ Error: {}", error))])
     }
 }

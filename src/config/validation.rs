@@ -3,7 +3,7 @@
 //! This module provides comprehensive validation for all configuration components
 //! including server settings, provider configurations, and system parameters.
 
-use crate::config::{Config, EmbeddingProviderConfig, VectorStoreProviderConfig};
+use crate::config::{Config, EmbeddingProviderConfig};
 use crate::core::error::{Error, Result};
 use crate::core::types::{EmbeddingConfig, VectorStoreConfig};
 
@@ -15,16 +15,12 @@ pub struct ConfigValidator {
 impl ConfigValidator {
     /// Create a new configuration validator
     pub fn new() -> Self {
-        Self {
-            strict_mode: true,
-        }
+        Self { strict_mode: true }
     }
 
     /// Create a validator with relaxed validation rules
     pub fn relaxed() -> Self {
-        Self {
-            strict_mode: false,
-        }
+        Self { strict_mode: false }
     }
 
     /// Validate a complete configuration
@@ -59,7 +55,9 @@ impl ConfigValidator {
 
         // Validate host format (basic check)
         if server.host.contains("://") {
-            return Err(Error::config("Server host should not include protocol (http/https)"));
+            return Err(Error::config(
+                "Server host should not include protocol (http/https)",
+            ));
         }
 
         Ok(())
@@ -78,12 +76,15 @@ impl ConfigValidator {
     }
 
     /// Validate provider configurations
-    pub fn validate_provider_configs(&self, providers: &crate::config::ProviderConfig) -> Result<()> {
+    pub fn validate_provider_configs(
+        &self,
+        providers: &crate::config::ProviderConfig,
+    ) -> Result<()> {
         // Validate embedding provider
         self.validate_embedding_provider(&providers.embedding)?;
 
         // Validate vector store provider
-        let provider_config = match providers.vector_store.provider.to_lowercase().as_str() {
+        let _provider_config = match providers.vector_store.provider.to_lowercase().as_str() {
             "milvus" => {
                 if let Some(address) = &providers.vector_store.address {
                     if address.is_empty() {
@@ -121,7 +122,10 @@ impl ConfigValidator {
     }
 
     /// Validate embedding provider configuration
-    pub fn validate_embedding_provider(&self, config: &crate::core::types::EmbeddingConfig) -> Result<()> {
+    pub fn validate_embedding_provider(
+        &self,
+        config: &crate::core::types::EmbeddingConfig,
+    ) -> Result<()> {
         // Validate based on provider type
         match config.provider.as_str() {
             "openai" => {
@@ -173,7 +177,15 @@ impl ConfigValidator {
     }
 
     /// Validate vector store provider configuration
-    pub fn validate_vector_store_provider(&self, config: &crate::core::types::VectorStoreConfig) -> Result<()> {
+    pub fn validate_vector_store_provider(
+        &self,
+        config: &crate::core::types::VectorStoreConfig,
+    ) -> Result<()> {
+        // Basic validation first
+        if config.provider.is_empty() {
+            return Err(Error::config("Vector store provider cannot be empty"));
+        }
+
         // Validate based on provider type
         match config.provider.as_str() {
             "milvus" => {
@@ -218,7 +230,9 @@ impl ConfigValidator {
         }
 
         if sync.interval_ms < 1000 && self.strict_mode {
-            return Err(Error::config("Sync interval should be at least 1000ms for performance"));
+            return Err(Error::config(
+                "Sync interval should be at least 1000ms for performance",
+            ));
         }
 
         Ok(())
@@ -235,7 +249,9 @@ impl ConfigValidator {
         }
 
         if daemon.cleanup_interval_secs < daemon.monitoring_interval_secs && self.strict_mode {
-            return Err(Error::config("Cleanup interval should be greater than or equal to monitoring interval"));
+            return Err(Error::config(
+                "Cleanup interval should be greater than or equal to monitoring interval",
+            ));
         }
 
         Ok(())
@@ -244,7 +260,7 @@ impl ConfigValidator {
     /// Validate embedding config (legacy compatibility)
     pub fn validate_embedding_config(&self, config: &EmbeddingConfig) -> Result<()> {
         // Convert to new format for validation
-        let provider_config = match config.provider.to_lowercase().as_str() {
+        let _provider_config = match config.provider.to_lowercase().as_str() {
             "openai" => EmbeddingProviderConfig::OpenAI {
                 model: config.model.clone(),
                 api_key: config.api_key.clone().unwrap_or_default(),
@@ -276,14 +292,19 @@ impl ConfigValidator {
                 dimensions: config.dimensions,
                 max_tokens: config.max_tokens,
             },
-            _ => return Err(Error::config(format!("Unknown embedding provider: {}", config.provider))),
+            _ => {
+                return Err(Error::config(format!(
+                    "Unknown embedding provider: {}",
+                    config.provider
+                )));
+            }
         };
 
-        self.validate_embedding_provider(&provider_config)
+        self.validate_embedding_provider(config)
     }
 
     /// Validate vector store config (legacy compatibility)
-    pub fn validate_vector_store_config(&self, config: &VectorStoreConfig) -> Result<()> {
+    pub fn validate_vector_store_config(&self, _config: &VectorStoreConfig) -> Result<()> {
         // Vector store validation is now done inline in validate_provider_configs
         Ok(())
     }
@@ -298,7 +319,7 @@ impl Default for ConfigValidator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::{ServerConfig, MetricsConfig, ProviderConfig, SyncConfig, DaemonConfig};
+    use crate::config::ServerConfig;
 
     #[test]
     fn test_validator_creation() {
@@ -340,24 +361,34 @@ mod tests {
         let validator = ConfigValidator::new();
 
         // Valid OpenAI config
-        let openai_config = EmbeddingProviderConfig::OpenAI {
+        let openai_config = crate::core::types::EmbeddingConfig {
+            provider: "openai".to_string(),
             model: "text-embedding-3-small".to_string(),
-            api_key: "sk-test123".to_string(),
+            api_key: Some("sk-test123".to_string()),
             base_url: None,
             dimensions: Some(1536),
             max_tokens: Some(8191),
         };
-        assert!(validator.validate_embedding_provider(&openai_config).is_ok());
+        assert!(
+            validator
+                .validate_embedding_provider(&openai_config)
+                .is_ok()
+        );
 
         // Invalid OpenAI config (empty API key)
-        let invalid_openai = EmbeddingProviderConfig::OpenAI {
+        let invalid_openai = crate::core::types::EmbeddingConfig {
+            provider: "openai".to_string(),
             model: "text-embedding-3-small".to_string(),
-            api_key: "".to_string(),
+            api_key: Some("".to_string()),
             base_url: None,
             dimensions: Some(1536),
             max_tokens: Some(8191),
         };
-        assert!(validator.validate_embedding_provider(&invalid_openai).is_err());
+        assert!(
+            validator
+                .validate_embedding_provider(&invalid_openai)
+                .is_err()
+        );
     }
 
     #[test]
@@ -365,18 +396,31 @@ mod tests {
         let validator = ConfigValidator::new();
 
         // Valid InMemory config
-        let in_memory_config = VectorStoreProviderConfig::InMemory {
-            dimensions: Some(1536),
-        };
-        assert!(validator.validate_vector_store_provider(&in_memory_config).is_ok());
-
-        // Invalid Milvus config (empty address)
-        let invalid_milvus = VectorStoreProviderConfig::Milvus {
-            address: "".to_string(),
+        let in_memory_config = crate::core::types::VectorStoreConfig {
+            provider: "in-memory".to_string(),
+            address: None,
             token: None,
             collection: Some("default".to_string()),
             dimensions: Some(1536),
         };
-        assert!(validator.validate_vector_store_provider(&invalid_milvus).is_err());
+        assert!(
+            validator
+                .validate_vector_store_provider(&in_memory_config)
+                .is_ok()
+        );
+
+        // Invalid config (empty provider)
+        let invalid_config = crate::core::types::VectorStoreConfig {
+            provider: "".to_string(),
+            address: None,
+            token: None,
+            collection: Some("default".to_string()),
+            dimensions: Some(1536),
+        };
+        assert!(
+            validator
+                .validate_vector_store_provider(&invalid_config)
+                .is_err()
+        );
     }
 }

@@ -317,7 +317,8 @@ impl CacheManager {
 
         // Store in Redis if available
         if self.redis_client.is_some()
-            && let Err(e) = self.set_in_redis(&full_key, &entry, ttl).await {
+            && let Err(e) = self.set_in_redis(&full_key, &entry, ttl).await
+        {
             tracing::warn!("Redis set failed: {}", e);
         }
 
@@ -337,7 +338,8 @@ impl CacheManager {
 
         // Delete from Redis
         if self.redis_client.is_some()
-            && let Err(e) = self.delete_from_redis(&full_key).await {
+            && let Err(e) = self.delete_from_redis(&full_key).await
+        {
             tracing::warn!("Redis delete failed: {}", e);
         }
 
@@ -357,7 +359,8 @@ impl CacheManager {
 
         // Clear from Redis
         if self.redis_client.is_some()
-            && let Err(e) = self.clear_namespace_redis(&pattern).await {
+            && let Err(e) = self.clear_namespace_redis(&pattern).await
+        {
             tracing::warn!("Redis namespace clear failed: {}", e);
         }
 

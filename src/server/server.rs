@@ -5,25 +5,36 @@
 //! semantic search operations. The server orchestrates the complete business
 //! workflow from query understanding to result delivery.
 
-use std::collections::HashMap;
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Arc;
-use tokio::sync::RwLock;
-use rmcp::model::{CallToolResult, Content, Implementation, ListToolsResult, PaginatedRequestParam, ProtocolVersion, ServerCapabilities, ServerInfo, Tool};
 use rmcp::ErrorData as McpError;
 use rmcp::handler::server::wrapper::Parameters;
-use rmcp::{tool, ServerHandler, ServiceExt};
-use schemars::JsonSchema;
+use rmcp::model::{
+    CallToolResult, Implementation, ListToolsResult, PaginatedRequestParam, ProtocolVersion,
+    ServerCapabilities, ServerInfo, Tool,
+};
+use rmcp::{ServerHandler, tool};
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
+use tokio::sync::RwLock;
 
-use crate::core::auth::Permission;
 use crate::core::cache::CacheManager;
 use crate::core::limits::ResourceLimits;
 use crate::di::factory::ServiceProvider;
 use crate::providers::routing::ProviderRouter;
-use crate::server::args::{ClearIndexArgs, GetIndexingStatusArgs, IndexCodebaseArgs, SearchCodeArgs};
+use crate::server::args::{
+    ClearIndexArgs, GetIndexingStatusArgs, IndexCodebaseArgs, SearchCodeArgs,
+};
 use crate::server::auth::AuthHandler;
-use crate::server::handlers::{ClearIndexHandler, GetIndexingStatusHandler, IndexCodebaseHandler, SearchCodeHandler};
+use crate::server::handlers::{
+    ClearIndexHandler, GetIndexingStatusHandler, IndexCodebaseHandler, SearchCodeHandler,
+};
 use crate::services::{IndexingService, SearchService};
+
+/// Type alias for provider tuple to reduce complexity
+type ProviderTuple = (
+    Arc<dyn crate::providers::EmbeddingProvider>,
+    Arc<dyn crate::providers::VectorStoreProvider>,
+);
 
 /// Enterprise Semantic Search Coordinator
 ///
@@ -105,7 +116,7 @@ pub struct IndexingOperation {
 
 impl McpServer {
     /// Create providers based on configuration with fallback to defaults
-    fn create_providers(config: &crate::config::Config) -> Result<(Arc<dyn crate::providers::EmbeddingProvider>, Arc<dyn crate::providers::VectorStoreProvider>), Box<dyn std::error::Error>> {
+    fn create_providers(config: &crate::config::Config) -> Result<ProviderTuple, Box<dyn std::error::Error>> {
         // Try to create configured providers, fallback to defaults
         let embedding_provider = Self::create_embedding_provider(config)?;
         let vector_store_provider = Self::create_vector_store_provider(config)?;
@@ -114,10 +125,15 @@ impl McpServer {
     }
 
     /// Create embedding provider with fallback logic
-    fn create_embedding_provider(config: &crate::config::Config) -> Result<Arc<dyn crate::providers::EmbeddingProvider>, Box<dyn std::error::Error>> {
+    fn create_embedding_provider(
+        config: &crate::config::Config,
+    ) -> Result<Arc<dyn crate::providers::EmbeddingProvider>, Box<dyn std::error::Error>> {
         match config.providers.embedding.provider.as_str() {
             "ollama" => {
-                let base_url = config.providers.embedding.base_url
+                let base_url = config
+                    .providers
+                    .embedding
+                    .base_url
                     .clone()
                     .unwrap_or_else(|| "http://localhost:11434".to_string());
                 let model = config.providers.embedding.model.clone();
@@ -128,21 +144,32 @@ impl McpServer {
                         Ok(Arc::new(crate::providers::MockEmbeddingProvider::new()))
                     }
                 }
-            },
+            }
             _ => Ok(Arc::new(crate::providers::MockEmbeddingProvider::new())),
         }
     }
 
     /// Create vector store provider with fallback logic
-    fn create_vector_store_provider(config: &crate::config::Config) -> Result<Arc<dyn crate::providers::VectorStoreProvider>, Box<dyn std::error::Error>> {
+    fn create_vector_store_provider(
+        config: &crate::config::Config,
+    ) -> Result<Arc<dyn crate::providers::VectorStoreProvider>, Box<dyn std::error::Error>> {
         match config.providers.vector_store.provider.as_str() {
-            "in-memory" => Ok(Arc::new(crate::providers::InMemoryVectorStoreProvider::new())),
-            _ => Ok(Arc::new(crate::providers::InMemoryVectorStoreProvider::new())),
+            "in-memory" => Ok(Arc::new(
+                crate::providers::InMemoryVectorStoreProvider::new(),
+            )),
+            _ => Ok(Arc::new(
+                crate::providers::InMemoryVectorStoreProvider::new(),
+            )),
         }
     }
 
     /// Initialize core services (authentication, indexing, search)
-    fn initialize_services(config: &crate::config::Config) -> Result<(Arc<AuthHandler>, Arc<IndexingService>, Arc<SearchService>), Box<dyn std::error::Error>> {
+    fn initialize_services(
+        config: &crate::config::Config,
+    ) -> Result<
+        (Arc<AuthHandler>, Arc<IndexingService>, Arc<SearchService>),
+        Box<dyn std::error::Error>,
+    > {
         // Create authentication service and handler
         let auth_service = crate::core::auth::AuthService::new(config.auth.clone());
         let auth_handler = Arc::new(AuthHandler::new(auth_service));
@@ -162,7 +189,9 @@ impl McpServer {
     }
 
     /// Initialize cache manager with fallback to disabled cache
-    fn initialize_cache_manager(cache_manager: Option<Arc<CacheManager>>) -> Result<Arc<CacheManager>, Box<dyn std::error::Error>> {
+    fn initialize_cache_manager(
+        cache_manager: Option<Arc<CacheManager>>,
+    ) -> Result<Arc<CacheManager>, Box<dyn std::error::Error>> {
         let cache_manager = cache_manager.unwrap_or_else(|| {
             Arc::new({
                 let config = crate::core::cache::CacheConfig {
@@ -185,7 +214,15 @@ impl McpServer {
         auth_handler: Arc<AuthHandler>,
         resource_limits: Arc<ResourceLimits>,
         cache_manager: Arc<CacheManager>,
-    ) -> Result<(Arc<IndexCodebaseHandler>, Arc<SearchCodeHandler>, Arc<GetIndexingStatusHandler>, Arc<ClearIndexHandler>), Box<dyn std::error::Error>> {
+    ) -> Result<
+        (
+            Arc<IndexCodebaseHandler>,
+            Arc<SearchCodeHandler>,
+            Arc<GetIndexingStatusHandler>,
+            Arc<ClearIndexHandler>,
+        ),
+        Box<dyn std::error::Error>,
+    > {
         Ok((
             Arc::new(IndexCodebaseHandler::new(
                 indexing_service,
@@ -220,9 +257,7 @@ impl McpServer {
 
         // Create provider registry and router
         let registry = Arc::new(crate::di::registry::ProviderRegistry::new());
-        let provider_router = Arc::new(ProviderRouter::with_defaults(
-            Arc::clone(&registry),
-        )?);
+        let _provider_router = Arc::new(ProviderRouter::with_defaults(Arc::clone(&registry))?);
         let service_provider = Arc::new(ServiceProvider::new());
 
         // Initialize core services
@@ -232,7 +267,12 @@ impl McpServer {
         let cache_manager = Self::initialize_cache_manager(cache_manager)?;
 
         // Create handlers
-        let (index_codebase_handler, search_code_handler, get_indexing_status_handler, clear_index_handler) = Self::initialize_handlers(
+        let (
+            index_codebase_handler,
+            search_code_handler,
+            get_indexing_status_handler,
+            clear_index_handler,
+        ) = Self::initialize_handlers(
             indexing_service,
             search_service,
             Arc::clone(&auth_handler),
@@ -329,7 +369,7 @@ impl McpServer {
     /// creates vector embeddings, and stores them for efficient semantic search.
     /// Supports incremental indexing and multiple programming languages.
     #[tool(description = "Index a codebase directory for semantic search using vector embeddings")]
-    async fn index_codebase(
+    pub async fn index_codebase(
         &self,
         parameters: Parameters<IndexCodebaseArgs>,
     ) -> Result<CallToolResult, McpError> {
@@ -343,7 +383,7 @@ impl McpServer {
     #[tool(
         description = "Search for code using natural language queries with semantic understanding"
     )]
-    async fn search_code(
+    pub async fn search_code(
         &self,
         parameters: Parameters<SearchCodeArgs>,
     ) -> Result<CallToolResult, McpError> {
@@ -385,12 +425,6 @@ impl McpServer {
         }
     }
 
-    /// Get registered providers for admin interface
-    pub fn get_registered_providers(&self) -> Vec<crate::admin::service::ProviderInfo> {
-        // TODO: Implement provider enumeration
-        vec![]
-    }
-
     /// Get real indexing status for admin interface
     pub async fn get_indexing_status_admin(&self) -> crate::admin::service::IndexingStatus {
         let operations = self.indexing_operations.read().await;
@@ -399,16 +433,17 @@ impl McpServer {
         let is_indexing = !operations.is_empty();
 
         // Find the most recent operation for current status
-        let (current_file, start_time, processed_files, total_files) = if let Some((_, operation)) = operations.iter().next() {
-            (
-                operation.current_file.clone(),
-                Some(operation.start_time.elapsed().as_secs() as u64),
-                operation.processed_files,
-                operation.total_files,
-            )
-        } else {
-            (None, None, 0, 0)
-        };
+        let (current_file, start_time, _processed_files, _total_files) =
+            if let Some((_, operation)) = operations.iter().next() {
+                (
+                    operation.current_file.clone(),
+                    Some(operation.start_time.elapsed().as_secs()),
+                    operation.processed_files,
+                    operation.total_files,
+                )
+            } else {
+                (None, None, 0, 0)
+            };
 
         // Calculate totals across all operations
         let total_documents: usize = operations.values().map(|op| op.total_files).sum();
@@ -421,9 +456,10 @@ impl McpServer {
         let estimated_completion = if is_indexing && total_documents > 0 {
             let progress = indexed_documents as f64 / total_documents as f64;
             if progress > 0.0 {
-                let elapsed = start_time.unwrap_or(0);
-                let estimated_total = (elapsed as f64 / progress) as u64;
-                Some(estimated_total.saturating_sub(elapsed))
+                start_time.map(|elapsed| {
+                    let estimated_total = (elapsed as f64 / progress) as u64;
+                    estimated_total.saturating_sub(elapsed)
+                })
             } else {
                 None
             }
@@ -443,7 +479,12 @@ impl McpServer {
     }
 
     /// Start tracking an indexing operation
-    pub async fn start_indexing_operation(&self, operation_id: String, collection: String, total_files: usize) {
+    pub async fn start_indexing_operation(
+        &self,
+        operation_id: String,
+        collection: String,
+        total_files: usize,
+    ) {
         let operation = IndexingOperation {
             id: operation_id.clone(),
             collection,
@@ -458,7 +499,12 @@ impl McpServer {
     }
 
     /// Update indexing operation progress
-    pub async fn update_indexing_progress(&self, operation_id: &str, current_file: Option<String>, processed_files: usize) {
+    pub async fn update_indexing_progress(
+        &self,
+        operation_id: &str,
+        current_file: Option<String>,
+        processed_files: usize,
+    ) {
         let mut operations = self.indexing_operations.write().await;
         if let Some(operation) = operations.get_mut(operation_id) {
             operation.current_file = current_file;
@@ -474,54 +520,76 @@ impl McpServer {
 
     /// Record a query operation with timing
     pub fn record_query(&self, response_time_ms: u64, success: bool, cache_hit: bool) {
-        self.performance_metrics.total_queries.fetch_add(1, Ordering::Relaxed);
+        self.performance_metrics
+            .total_queries
+            .fetch_add(1, Ordering::Relaxed);
 
         if success {
-            self.performance_metrics.successful_queries.fetch_add(1, Ordering::Relaxed);
+            self.performance_metrics
+                .successful_queries
+                .fetch_add(1, Ordering::Relaxed);
         } else {
-            self.performance_metrics.failed_queries.fetch_add(1, Ordering::Relaxed);
+            self.performance_metrics
+                .failed_queries
+                .fetch_add(1, Ordering::Relaxed);
         }
 
-        self.performance_metrics.response_time_sum.fetch_add(response_time_ms, Ordering::Relaxed);
+        self.performance_metrics
+            .response_time_sum
+            .fetch_add(response_time_ms, Ordering::Relaxed);
 
         if cache_hit {
-            self.performance_metrics.cache_hits.fetch_add(1, Ordering::Relaxed);
+            self.performance_metrics
+                .cache_hits
+                .fetch_add(1, Ordering::Relaxed);
         } else {
-            self.performance_metrics.cache_misses.fetch_add(1, Ordering::Relaxed);
+            self.performance_metrics
+                .cache_misses
+                .fetch_add(1, Ordering::Relaxed);
         }
     }
 
     /// Update active connection count
     pub fn update_active_connections(&self, delta: i64) {
         if delta > 0 {
-            self.performance_metrics.active_connections.fetch_add(delta as u64, Ordering::Relaxed);
+            self.performance_metrics
+                .active_connections
+                .fetch_add(delta as u64, Ordering::Relaxed);
         } else {
-            let current = self.performance_metrics.active_connections.load(Ordering::Relaxed);
+            let current = self
+                .performance_metrics
+                .active_connections
+                .load(Ordering::Relaxed);
             let new_value = current.saturating_sub((-delta) as u64);
-            self.performance_metrics.active_connections.store(new_value, Ordering::Relaxed);
-        }
-    }
-
-    /// Get real system information
-    pub fn get_system_info(&self) -> crate::admin::service::SystemInfo {
-        let uptime = self.performance_metrics.start_time.elapsed().as_secs() as u64;
-        let pid = std::process::id();
-
-        crate::admin::service::SystemInfo {
-            version: env!("CARGO_PKG_VERSION").to_string(),
-            uptime,
-            pid,
+            self.performance_metrics
+                .active_connections
+                .store(new_value, Ordering::Relaxed);
         }
     }
 
     /// Get real performance metrics for admin interface
     pub fn get_performance_metrics(&self) -> crate::admin::service::PerformanceMetrics {
-        let total_queries = self.performance_metrics.total_queries.load(Ordering::Relaxed);
-        let successful_queries = self.performance_metrics.successful_queries.load(Ordering::Relaxed);
-        let failed_queries = self.performance_metrics.failed_queries.load(Ordering::Relaxed);
-        let response_time_sum = self.performance_metrics.response_time_sum.load(Ordering::Relaxed);
+        let total_queries = self
+            .performance_metrics
+            .total_queries
+            .load(Ordering::Relaxed);
+        let successful_queries = self
+            .performance_metrics
+            .successful_queries
+            .load(Ordering::Relaxed);
+        let failed_queries = self
+            .performance_metrics
+            .failed_queries
+            .load(Ordering::Relaxed);
+        let response_time_sum = self
+            .performance_metrics
+            .response_time_sum
+            .load(Ordering::Relaxed);
         let cache_hits = self.performance_metrics.cache_hits.load(Ordering::Relaxed);
-        let cache_misses = self.performance_metrics.cache_misses.load(Ordering::Relaxed);
+        let cache_misses = self
+            .performance_metrics
+            .cache_misses
+            .load(Ordering::Relaxed);
 
         // Calculate average response time
         let average_response_time_ms = if total_queries > 0 {
@@ -539,7 +607,7 @@ impl McpServer {
         };
 
         // Calculate uptime
-        let uptime_seconds = self.performance_metrics.start_time.elapsed().as_secs() as u64;
+        let uptime_seconds = self.performance_metrics.start_time.elapsed().as_secs();
 
         crate::admin::service::PerformanceMetrics {
             total_queries,
@@ -547,7 +615,10 @@ impl McpServer {
             failed_queries,
             average_response_time_ms,
             cache_hit_rate,
-            active_connections: self.performance_metrics.active_connections.load(Ordering::Relaxed) as u32,
+            active_connections: self
+                .performance_metrics
+                .active_connections
+                .load(Ordering::Relaxed) as u32,
             uptime_seconds,
         }
     }
@@ -650,8 +721,16 @@ impl ServerHandler for McpServer {
             Tool {
                 name: Cow::Borrowed("index_codebase"),
                 title: None,
-                description: Some(Cow::Borrowed("Index a codebase directory for semantic search using vector embeddings")),
-                input_schema: Arc::new(serde_json::to_value(schemars::schema_for!(IndexCodebaseArgs)).unwrap().as_object().unwrap().clone()),
+                description: Some(Cow::Borrowed(
+                    "Index a codebase directory for semantic search using vector embeddings",
+                )),
+                input_schema: Arc::new(
+                    serde_json::to_value(schemars::schema_for!(IndexCodebaseArgs))
+                        .unwrap()
+                        .as_object()
+                        .unwrap()
+                        .clone(),
+                ),
                 output_schema: None,
                 annotations: None,
                 icons: None,
@@ -660,8 +739,16 @@ impl ServerHandler for McpServer {
             Tool {
                 name: Cow::Borrowed("search_code"),
                 title: None,
-                description: Some(Cow::Borrowed("Search for code using natural language queries")),
-                input_schema: Arc::new(serde_json::to_value(schemars::schema_for!(SearchCodeArgs)).unwrap().as_object().unwrap().clone()),
+                description: Some(Cow::Borrowed(
+                    "Search for code using natural language queries",
+                )),
+                input_schema: Arc::new(
+                    serde_json::to_value(schemars::schema_for!(SearchCodeArgs))
+                        .unwrap()
+                        .as_object()
+                        .unwrap()
+                        .clone(),
+                ),
                 output_schema: None,
                 annotations: None,
                 icons: None,
@@ -670,8 +757,16 @@ impl ServerHandler for McpServer {
             Tool {
                 name: Cow::Borrowed("get_indexing_status"),
                 title: None,
-                description: Some(Cow::Borrowed("Get the current indexing status and statistics")),
-                input_schema: Arc::new(serde_json::to_value(schemars::schema_for!(GetIndexingStatusArgs)).unwrap().as_object().unwrap().clone()),
+                description: Some(Cow::Borrowed(
+                    "Get the current indexing status and statistics",
+                )),
+                input_schema: Arc::new(
+                    serde_json::to_value(schemars::schema_for!(GetIndexingStatusArgs))
+                        .unwrap()
+                        .as_object()
+                        .unwrap()
+                        .clone(),
+                ),
                 output_schema: None,
                 annotations: None,
                 icons: None,
@@ -681,7 +776,13 @@ impl ServerHandler for McpServer {
                 name: Cow::Borrowed("clear_index"),
                 title: None,
                 description: Some(Cow::Borrowed("Clear the search index for a collection")),
-                input_schema: Arc::new(serde_json::to_value(schemars::schema_for!(ClearIndexArgs)).unwrap().as_object().unwrap().clone()),
+                input_schema: Arc::new(
+                    serde_json::to_value(schemars::schema_for!(ClearIndexArgs))
+                        .unwrap()
+                        .as_object()
+                        .unwrap()
+                        .clone(),
+                ),
                 output_schema: None,
                 annotations: None,
                 icons: None,
@@ -704,30 +805,37 @@ impl ServerHandler for McpServer {
     ) -> Result<CallToolResult, McpError> {
         match request.name.as_ref() {
             "index_codebase" => {
-                let args: IndexCodebaseArgs = serde_json::from_value(
-                    serde_json::Value::Object(request.arguments.unwrap_or_default())
-                ).map_err(|e| McpError::invalid_params(format!("Invalid arguments: {}", e), None))?;
+                let args: IndexCodebaseArgs = serde_json::from_value(serde_json::Value::Object(
+                    request.arguments.unwrap_or_default(),
+                ))
+                .map_err(|e| McpError::invalid_params(format!("Invalid arguments: {}", e), None))?;
                 self.index_codebase(Parameters(args)).await
-            },
+            }
             "search_code" => {
-                let args: SearchCodeArgs = serde_json::from_value(
-                    serde_json::Value::Object(request.arguments.unwrap_or_default())
-                ).map_err(|e| McpError::invalid_params(format!("Invalid arguments: {}", e), None))?;
+                let args: SearchCodeArgs = serde_json::from_value(serde_json::Value::Object(
+                    request.arguments.unwrap_or_default(),
+                ))
+                .map_err(|e| McpError::invalid_params(format!("Invalid arguments: {}", e), None))?;
                 self.search_code(Parameters(args)).await
-            },
+            }
             "get_indexing_status" => {
                 let args: GetIndexingStatusArgs = serde_json::from_value(
-                    serde_json::Value::Object(request.arguments.unwrap_or_default())
-                ).map_err(|e| McpError::invalid_params(format!("Invalid arguments: {}", e), None))?;
+                    serde_json::Value::Object(request.arguments.unwrap_or_default()),
+                )
+                .map_err(|e| McpError::invalid_params(format!("Invalid arguments: {}", e), None))?;
                 self.get_indexing_status_tool(Parameters(args)).await
-            },
+            }
             "clear_index" => {
-                let args: ClearIndexArgs = serde_json::from_value(
-                    serde_json::Value::Object(request.arguments.unwrap_or_default())
-                ).map_err(|e| McpError::invalid_params(format!("Invalid arguments: {}", e), None))?;
+                let args: ClearIndexArgs = serde_json::from_value(serde_json::Value::Object(
+                    request.arguments.unwrap_or_default(),
+                ))
+                .map_err(|e| McpError::invalid_params(format!("Invalid arguments: {}", e), None))?;
                 self.clear_index(Parameters(args)).await
-            },
-            _ => Err(McpError::invalid_params(format!("Unknown tool: {}", request.name), None)),
+            }
+            _ => Err(McpError::invalid_params(
+                format!("Unknown tool: {}", request.name),
+                None,
+            )),
         }
     }
 }

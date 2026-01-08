@@ -4,14 +4,15 @@
 //! It validates inputs, prevents accidental clearing of critical collections,
 //! and provides comprehensive warnings about the destructive operation.
 
-use rmcp::model::CallToolResult;
 use rmcp::ErrorData as McpError;
 use rmcp::handler::server::wrapper::Parameters;
+use rmcp::model::CallToolResult;
 
 use crate::server::args::ClearIndexArgs;
 use crate::server::formatter::ResponseFormatter;
 
 /// Handler for index clearing operations
+#[derive(Default)]
 pub struct ClearIndexHandler;
 
 impl ClearIndexHandler {
@@ -28,14 +29,14 @@ impl ClearIndexHandler {
         // Validate collection name
         if collection.trim().is_empty() {
             return Ok(ResponseFormatter::format_query_validation_error(
-                "Collection name cannot be empty. Please specify a valid collection name."
+                "Collection name cannot be empty. Please specify a valid collection name.",
             ));
         }
 
         // Prevent clearing critical collections accidentally
         if collection == "system" || collection == "admin" {
             return Ok(ResponseFormatter::format_query_validation_error(
-                "Cannot clear system collections. These are reserved for internal use."
+                "Cannot clear system collections. These are reserved for internal use.",
             ));
         }
 
@@ -91,6 +92,8 @@ impl ClearIndexHandler {
             collection
         );
 
-        Ok(rmcp::model::CallToolResult::success(vec![rmcp::model::Content::text(message)]))
+        Ok(rmcp::model::CallToolResult::success(vec![
+            rmcp::model::Content::text(message),
+        ]))
     }
 }

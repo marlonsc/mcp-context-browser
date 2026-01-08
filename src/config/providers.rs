@@ -3,8 +3,8 @@
 //! This module provides comprehensive management for AI and vector store providers
 //! including health checking, configuration validation, and provider selection logic.
 
-use crate::config::{EmbeddingProviderConfig, VectorStoreProviderConfig};
-use crate::core::error::{Error, Result};
+use crate::config::EmbeddingProviderConfig;
+use crate::core::error::Result;
 
 /// Health status of a provider
 #[derive(Debug, Clone, PartialEq)]
@@ -40,14 +40,20 @@ impl ProviderConfigManager {
     }
 
     /// Validate embedding provider configuration
-    pub fn validate_embedding_config(&self, config: &EmbeddingProviderConfig) -> Result<()> {
+    pub fn validate_embedding_config(
+        &self,
+        config: &crate::core::types::EmbeddingConfig,
+    ) -> Result<()> {
         use crate::config::validation::ConfigValidator;
         let validator = ConfigValidator::new();
         validator.validate_embedding_provider(config)
     }
 
     /// Validate vector store provider configuration
-    pub fn validate_vector_store_config(&self, config: &VectorStoreProviderConfig) -> Result<()> {
+    pub fn validate_vector_store_config(
+        &self,
+        config: &crate::core::types::VectorStoreConfig,
+    ) -> Result<()> {
         use crate::config::validation::ConfigValidator;
         let validator = ConfigValidator::new();
         validator.validate_vector_store_provider(config)
@@ -66,7 +72,8 @@ impl ProviderConfigManager {
     /// Update provider health status
     pub fn update_provider_health(&mut self, provider_type: &str, health: ProviderHealth) {
         self.health_cache.insert(provider_type.to_string(), health);
-        self.last_health_check.insert(provider_type.to_string(), std::time::Instant::now());
+        self.last_health_check
+            .insert(provider_type.to_string(), std::time::Instant::now());
     }
 
     /// Get all provider health statuses
@@ -82,17 +89,23 @@ impl ProviderConfigManager {
                 // In the future, this could be based on actual performance metrics
                 Some("openai".to_string())
             }
-            "vector_store" => {
-                Some("in-memory".to_string())
-            }
+            "vector_store" => Some("in-memory".to_string()),
             _ => None,
         }
     }
 
     /// Check if a provider configuration is compatible with requirements
-    pub fn is_provider_compatible(&self, config: &EmbeddingProviderConfig, requirements: &ProviderRequirements) -> bool {
+    pub fn is_provider_compatible(
+        &self,
+        config: &EmbeddingProviderConfig,
+        requirements: &ProviderRequirements,
+    ) -> bool {
         match config {
-            EmbeddingProviderConfig::OpenAI { dimensions, max_tokens, .. } => {
+            EmbeddingProviderConfig::OpenAI {
+                dimensions,
+                max_tokens,
+                ..
+            } => {
                 if let Some(req_dims) = requirements.min_dimensions {
                     if let Some(cfg_dims) = dimensions {
                         if *cfg_dims < req_dims {
@@ -111,7 +124,11 @@ impl ProviderConfigManager {
                 }
                 true
             }
-            EmbeddingProviderConfig::Ollama { dimensions, max_tokens, .. } => {
+            EmbeddingProviderConfig::Ollama {
+                dimensions,
+                max_tokens,
+                ..
+            } => {
                 // Similar checks for Ollama
                 if let Some(req_dims) = requirements.min_dimensions {
                     if let Some(cfg_dims) = dimensions {
@@ -129,7 +146,11 @@ impl ProviderConfigManager {
                 }
                 true
             }
-            EmbeddingProviderConfig::VoyageAI { dimensions, max_tokens, .. } => {
+            EmbeddingProviderConfig::VoyageAI {
+                dimensions,
+                max_tokens,
+                ..
+            } => {
                 if let Some(req_dims) = requirements.min_dimensions {
                     if let Some(cfg_dims) = dimensions {
                         if *cfg_dims < req_dims {
@@ -146,7 +167,11 @@ impl ProviderConfigManager {
                 }
                 true
             }
-            EmbeddingProviderConfig::Gemini { dimensions, max_tokens, .. } => {
+            EmbeddingProviderConfig::Gemini {
+                dimensions,
+                max_tokens,
+                ..
+            } => {
                 if let Some(req_dims) = requirements.min_dimensions {
                     if let Some(cfg_dims) = dimensions {
                         if *cfg_dims < req_dims {
@@ -217,11 +242,17 @@ mod tests {
 
         // Update health
         manager.update_provider_health("embedding", ProviderHealth::Healthy);
-        assert_eq!(manager.check_embedding_provider_health(), Some(&ProviderHealth::Healthy));
+        assert_eq!(
+            manager.check_embedding_provider_health(),
+            Some(&ProviderHealth::Healthy)
+        );
 
         // Update to unhealthy
         manager.update_provider_health("embedding", ProviderHealth::Unhealthy);
-        assert_eq!(manager.check_embedding_provider_health(), Some(&ProviderHealth::Unhealthy));
+        assert_eq!(
+            manager.check_embedding_provider_health(),
+            Some(&ProviderHealth::Unhealthy)
+        );
     }
 
     #[test]
@@ -229,9 +260,10 @@ mod tests {
         let manager = ProviderConfigManager::new();
 
         // Valid OpenAI config
-        let openai_config = EmbeddingProviderConfig::OpenAI {
+        let openai_config = crate::core::types::EmbeddingConfig {
+            provider: "openai".to_string(),
             model: "text-embedding-3-small".to_string(),
-            api_key: "sk-test123".to_string(),
+            api_key: Some("sk-test123".to_string()),
             base_url: None,
             dimensions: Some(1536),
             max_tokens: Some(8191),
@@ -239,9 +271,10 @@ mod tests {
         assert!(manager.validate_embedding_config(&openai_config).is_ok());
 
         // Invalid config (empty API key)
-        let invalid_config = EmbeddingProviderConfig::OpenAI {
+        let invalid_config = crate::core::types::EmbeddingConfig {
+            provider: "openai".to_string(),
             model: "text-embedding-3-small".to_string(),
-            api_key: "".to_string(),
+            api_key: Some("".to_string()),
             base_url: None,
             dimensions: Some(1536),
             max_tokens: Some(8191),
@@ -278,8 +311,14 @@ mod tests {
     fn test_recommended_provider() {
         let manager = ProviderConfigManager::new();
 
-        assert_eq!(manager.get_recommended_provider("embedding"), Some("openai".to_string()));
-        assert_eq!(manager.get_recommended_provider("vector_store"), Some("in-memory".to_string()));
+        assert_eq!(
+            manager.get_recommended_provider("embedding"),
+            Some("openai".to_string())
+        );
+        assert_eq!(
+            manager.get_recommended_provider("vector_store"),
+            Some("in-memory".to_string())
+        );
         assert_eq!(manager.get_recommended_provider("unknown"), None);
     }
 }

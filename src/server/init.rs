@@ -6,14 +6,14 @@
 use crate::core::cache::CacheManager;
 use crate::core::database::init_global_database_pool;
 use crate::core::http_client::{HttpClientConfig, init_global_http_client};
-use crate::core::limits::{init_global_resource_limits, ResourceLimits};
+use crate::core::limits::ResourceLimits;
 use crate::core::rate_limit::RateLimiter;
 use crate::metrics::MetricsApiServer;
 use crate::server::McpServer;
-use std::sync::Arc;
-use rmcp::transport::stdio;
-use rmcp::ServiceExt;
 use rmcp::ServerHandler;
+use rmcp::ServiceExt;
+use rmcp::transport::stdio;
+use std::sync::Arc;
 use tracing_subscriber::{self, EnvFilter};
 
 /// Initialize logging and tracing for the MCP server
@@ -40,13 +40,22 @@ fn init_tracing() -> Result<(), Box<dyn std::error::Error>> {
 /// Initialize all server components and services
 async fn initialize_server_components(
     cache_manager: Option<Arc<CacheManager>>,
-) -> Result<(McpServer, Option<tokio::task::JoinHandle<()>>, Arc<ResourceLimits>), Box<dyn std::error::Error>> {
+) -> Result<
+    (
+        McpServer,
+        Option<tokio::task::JoinHandle<()>>,
+        Arc<ResourceLimits>,
+    ),
+    Box<dyn std::error::Error>,
+> {
     // Load configuration from environment
     let config = crate::config::Config::from_env()
         .map_err(|e| format!("Failed to load configuration: {}", e))?;
 
     // Initialize resource limits
-    let resource_limits = Arc::new(crate::core::limits::ResourceLimits::new(config.resource_limits.clone()));
+    let resource_limits = Arc::new(crate::core::limits::ResourceLimits::new(
+        config.resource_limits.clone(),
+    ));
     crate::core::limits::init_global_resource_limits(config.resource_limits.clone())?;
 
     // Initialize global HTTP client pool
@@ -193,7 +202,7 @@ pub async fn run_server() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // Initialize all server components
-    let (server, metrics_handle, resource_limits) = initialize_server_components(None).await?;
+    let (server, metrics_handle, _resource_limits) = initialize_server_components(None).await?;
 
     tracing::info!("📡 Starting MCP protocol server on stdio transport");
     tracing::info!("🎯 Ready to accept MCP client connections");

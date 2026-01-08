@@ -4,7 +4,7 @@
 //! the Repository pattern to separate data access logic from business logic.
 
 use crate::core::error::Result;
-use crate::core::types::{CodeChunk, Embedding, SearchResult};
+use crate::core::types::{CodeChunk, SearchResult};
 use async_trait::async_trait;
 
 /// Repository for managing code chunks

@@ -3,13 +3,14 @@
 //! This handler provides comprehensive information about the current state
 //! of indexed collections, system health, and available search capabilities.
 
-use rmcp::model::CallToolResult;
 use rmcp::ErrorData as McpError;
 use rmcp::handler::server::wrapper::Parameters;
+use rmcp::model::CallToolResult;
 
 use crate::server::args::GetIndexingStatusArgs;
 
 /// Handler for indexing status operations
+#[derive(Default)]
 pub struct GetIndexingStatusHandler;
 
 impl GetIndexingStatusHandler {
@@ -91,6 +92,8 @@ impl GetIndexingStatusHandler {
             collection
         );
 
-        Ok(rmcp::model::CallToolResult::success(vec![rmcp::model::Content::text(message)]))
+        Ok(rmcp::model::CallToolResult::success(vec![
+            rmcp::model::Content::text(message),
+        ]))
     }
 }

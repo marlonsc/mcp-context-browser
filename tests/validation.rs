@@ -2,8 +2,10 @@
 //!
 //! This module demonstrates TDD approach - RED phase: write failing tests first
 
-use mcp_context_browser::core::validation::{ValidationError, ValidationResult, StringValidatorTrait, NumberValidatorTrait};
-use mcp_context_browser::core::validation::{StringValidator, NumberValidator};
+use mcp_context_browser::core::validation::{NumberValidator, StringValidator};
+use mcp_context_browser::core::validation::{
+    NumberValidatorTrait, StringValidatorTrait, ValidationError,
+};
 
 #[cfg(test)]
 mod tests {
@@ -24,7 +26,10 @@ mod tests {
         let validator = StringValidator::not_empty();
         let result = validator.validate("");
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), ValidationError::Required { .. }));
+        assert!(matches!(
+            result.unwrap_err(),
+            ValidationError::Required { .. }
+        ));
     }
 
     #[test]
@@ -32,7 +37,10 @@ mod tests {
         let validator = StringValidator::not_empty();
         let result = validator.validate("   ");
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), ValidationError::Required { .. }));
+        assert!(matches!(
+            result.unwrap_err(),
+            ValidationError::Required { .. }
+        ));
     }
 
     #[test]
@@ -48,7 +56,10 @@ mod tests {
         let validator = StringValidator::min_length(3);
         let result = validator.validate("hi");
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), ValidationError::TooShort { .. }));
+        assert!(matches!(
+            result.unwrap_err(),
+            ValidationError::TooShort { .. }
+        ));
     }
 
     #[test]
@@ -64,7 +75,10 @@ mod tests {
         let validator = StringValidator::max_length(3);
         let result = validator.validate("hello");
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), ValidationError::TooLong { .. }));
+        assert!(matches!(
+            result.unwrap_err(),
+            ValidationError::TooLong { .. }
+        ));
     }
 
     #[test]
@@ -80,7 +94,10 @@ mod tests {
         let validator = StringValidator::contains("test");
         let result = validator.validate("hello world");
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), ValidationError::InvalidFormat { .. }));
+        assert!(matches!(
+            result.unwrap_err(),
+            ValidationError::InvalidFormat { .. }
+        ));
     }
 
     #[test]
@@ -96,17 +113,26 @@ mod tests {
         // Should fail first rule (empty)
         let result = validator.validate("");
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), ValidationError::Required { .. }));
+        assert!(matches!(
+            result.unwrap_err(),
+            ValidationError::Required { .. }
+        ));
 
         // Should fail second rule (too short)
         let result = validator.validate("hi");
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), ValidationError::TooShort { .. }));
+        assert!(matches!(
+            result.unwrap_err(),
+            ValidationError::TooShort { .. }
+        ));
 
         // Should fail third rule (too long)
         let result = validator.validate("this_is_too_long");
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), ValidationError::TooLong { .. }));
+        assert!(matches!(
+            result.unwrap_err(),
+            ValidationError::TooLong { .. }
+        ));
     }
 
     // ===== NUMBER VALIDATION TESTS =====
@@ -116,7 +142,7 @@ mod tests {
         let validator = NumberValidator::range(10, 100);
         let result = validator.validate(&50);
         assert!(result.is_ok());
-        assert_eq!(*result.unwrap(), 50);
+        assert_eq!(result.unwrap(), 50);
     }
 
     #[test]
@@ -124,7 +150,10 @@ mod tests {
         let validator = NumberValidator::range(10, 100);
         let result = validator.validate(&5);
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), ValidationError::OutOfRange { .. }));
+        assert!(matches!(
+            result.unwrap_err(),
+            ValidationError::OutOfRange { .. }
+        ));
     }
 
     #[test]
@@ -132,7 +161,10 @@ mod tests {
         let validator = NumberValidator::range(10, 100);
         let result = validator.validate(&150);
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), ValidationError::OutOfRange { .. }));
+        assert!(matches!(
+            result.unwrap_err(),
+            ValidationError::OutOfRange { .. }
+        ));
     }
 
     #[test]
@@ -140,7 +172,7 @@ mod tests {
         let validator = NumberValidator::positive();
         let result = validator.validate(&42);
         assert!(result.is_ok());
-        assert_eq!(*result.unwrap(), 42);
+        assert_eq!(result.unwrap(), 42);
     }
 
     #[test]
@@ -148,7 +180,10 @@ mod tests {
         let validator = NumberValidator::positive();
         let result = validator.validate(&-5);
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), ValidationError::OutOfRange { .. }));
+        assert!(matches!(
+            result.unwrap_err(),
+            ValidationError::OutOfRange { .. }
+        ));
     }
 
     #[test]
@@ -156,7 +191,10 @@ mod tests {
         let validator = NumberValidator::positive();
         let result = validator.validate(&0);
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), ValidationError::OutOfRange { .. }));
+        assert!(matches!(
+            result.unwrap_err(),
+            ValidationError::OutOfRange { .. }
+        ));
     }
 
     #[test]
@@ -171,7 +209,10 @@ mod tests {
         let validator = NumberValidator::non_negative();
         let result = validator.validate(&-5);
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), ValidationError::OutOfRange { .. }));
+        assert!(matches!(
+            result.unwrap_err(),
+            ValidationError::OutOfRange { .. }
+        ));
     }
 
     // ===== COMPOSITE VALIDATION TESTS =====
@@ -211,7 +252,11 @@ mod tests {
         let validator = StringValidator::min_length(5);
         let result = validator.validate("hi");
         match result {
-            Err(ValidationError::TooShort { field, min_length, actual_length }) => {
+            Err(ValidationError::TooShort {
+                field,
+                min_length,
+                actual_length,
+            }) => {
                 assert_eq!(field, "input");
                 assert_eq!(min_length, 5);
                 assert_eq!(actual_length, 2);

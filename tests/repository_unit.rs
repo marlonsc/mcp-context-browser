@@ -1,7 +1,7 @@
 //! Unit tests for repository pattern implementations
 
 use mcp_context_browser::core::types::{CodeChunk, Language};
-use mcp_context_browser::repository::{ChunkRepository, SearchRepository, RepositoryStats, SearchStats};
+use mcp_context_browser::repository::{RepositoryStats, SearchStats};
 
 /// Test repository trait implementations
 #[cfg(test)]
@@ -61,7 +61,8 @@ mod repository_data_tests {
     fn test_code_chunk_for_repository() {
         let chunk = CodeChunk {
             id: "repo_chunk_1".to_string(),
-            content: "fn process_data(data: &str) -> Result<String> { Ok(data.to_uppercase()) }".to_string(),
+            content: "fn process_data(data: &str) -> Result<String> { Ok(data.to_uppercase()) }"
+                .to_string(),
             file_path: "src/processor.rs".to_string(),
             start_line: 10,
             end_line: 12,
@@ -89,7 +90,10 @@ mod repository_data_tests {
 
         // Test metadata manipulation
         if let serde_json::Value::Object(ref mut map) = chunk.metadata {
-            map.insert("indexed_at".to_string(), serde_json::json!("2024-01-01T00:00:00Z"));
+            map.insert(
+                "indexed_at".to_string(),
+                serde_json::json!("2024-01-01T00:00:00Z"),
+            );
             map.insert("repository_id".to_string(), serde_json::json!("repo_123"));
         }
 
@@ -101,7 +105,6 @@ mod repository_data_tests {
 /// Test repository interface contracts
 #[cfg(test)]
 mod repository_contract_tests {
-    use super::*;
 
     #[test]
     fn test_repository_id_uniqueness() {
@@ -126,7 +129,6 @@ mod repository_contract_tests {
 /// Test repository performance characteristics
 #[cfg(test)]
 mod repository_performance_tests {
-    use super::*;
 
     #[test]
     fn test_repository_operation_timing() {
@@ -168,7 +170,8 @@ mod repository_validation_tests {
 
         // Test that serialization/deserialization preserves data
         let serialized = serde_json::to_string(&original_chunk).expect("Should serialize");
-        let deserialized: CodeChunk = serde_json::from_str(&serialized).expect("Should deserialize");
+        let deserialized: CodeChunk =
+            serde_json::from_str(&serialized).expect("Should deserialize");
 
         assert_eq!(original_chunk, deserialized);
     }
@@ -183,7 +186,6 @@ mod repository_validation_tests {
 /// Test repository lifecycle management
 #[cfg(test)]
 mod repository_lifecycle_tests {
-    use super::*;
 
     #[test]
     fn test_repository_initialization() {

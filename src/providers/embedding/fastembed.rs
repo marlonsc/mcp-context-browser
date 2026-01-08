@@ -7,7 +7,7 @@ use crate::core::error::{Error, Result};
 use crate::core::types::Embedding;
 use crate::providers::EmbeddingProvider;
 use async_trait::async_trait;
-use fastembed::{TextEmbedding, InitOptions, EmbeddingModel};
+use fastembed::{EmbeddingModel, InitOptions, TextEmbedding};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -27,8 +27,9 @@ impl FastEmbedProvider {
     pub fn with_model(model: EmbeddingModel) -> Result<Self> {
         let init_options = InitOptions::new(model.clone()).with_show_download_progress(true);
 
-        let text_embedding = TextEmbedding::try_new(init_options)
-            .map_err(|e| Error::embedding(format!("Failed to initialize FastEmbed model: {}", e)))?;
+        let text_embedding = TextEmbedding::try_new(init_options).map_err(|e| {
+            Error::embedding(format!("Failed to initialize FastEmbed model: {}", e))
+        })?;
 
         let model_name = format!("{:?}", model);
 
@@ -42,8 +43,9 @@ impl FastEmbedProvider {
     pub fn with_options(init_options: InitOptions) -> Result<Self> {
         let model = init_options.model_name.clone();
 
-        let text_embedding = TextEmbedding::try_new(init_options)
-            .map_err(|e| Error::embedding(format!("Failed to initialize FastEmbed model: {}", e)))?;
+        let text_embedding = TextEmbedding::try_new(init_options).map_err(|e| {
+            Error::embedding(format!("Failed to initialize FastEmbed model: {}", e))
+        })?;
 
         let model_name = format!("{:?}", model);
 
@@ -70,9 +72,10 @@ impl FastEmbedProvider {
 impl EmbeddingProvider for FastEmbedProvider {
     async fn embed(&self, text: &str) -> Result<Embedding> {
         let embeddings = self.embed_batch(&[text.to_string()]).await?;
-        embeddings.into_iter().next().ok_or_else(|| {
-            Error::embedding("No embedding returned from FastEmbed".to_string())
-        })
+        embeddings
+            .into_iter()
+            .next()
+            .ok_or_else(|| Error::embedding("No embedding returned from FastEmbed".to_string()))
     }
 
     async fn embed_batch(&self, texts: &[String]) -> Result<Vec<Embedding>> {
@@ -83,7 +86,8 @@ impl EmbeddingProvider for FastEmbedProvider {
         let model = self.model.lock().await;
 
         // Generate embeddings
-        let embeddings_result = model.embed(text_refs, None)
+        let embeddings_result = model
+            .embed(text_refs, None)
             .map_err(|e| Error::embedding(format!("FastEmbed embedding failed: {}", e)))?;
 
         // Convert to our Embedding format

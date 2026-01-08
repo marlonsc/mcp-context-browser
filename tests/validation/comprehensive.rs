@@ -18,6 +18,11 @@ mod server_args_validation_tests {
         // Valid args should pass
         let valid_args = IndexCodebaseArgs {
             path: "/tmp/test".to_string(),
+            collection: None,
+            extensions: None,
+            ignore_patterns: None,
+            max_file_size: None,
+            follow_symlinks: None,
             token: Some("valid_token".to_string()),
         };
         assert!(valid_args.validate().is_ok());
@@ -25,6 +30,11 @@ mod server_args_validation_tests {
         // Empty path should fail
         let invalid_args = IndexCodebaseArgs {
             path: "".to_string(),
+            collection: None,
+            extensions: None,
+            ignore_patterns: None,
+            max_file_size: None,
+            follow_symlinks: None,
             token: None,
         };
         assert!(invalid_args.validate().is_err());
@@ -260,11 +270,21 @@ mod middleware_integration_tests {
         // Test that validation middleware properly validates incoming requests
         let valid_request = IndexCodebaseArgs {
             path: "/tmp/valid/path".to_string(),
+            collection: None,
+            extensions: None,
+            ignore_patterns: None,
+            max_file_size: None,
+            follow_symlinks: None,
             token: Some("valid_token".to_string()),
         };
 
         let invalid_request = IndexCodebaseArgs {
             path: "".to_string(), // Invalid
+            collection: None,
+            extensions: None,
+            ignore_patterns: None,
+            max_file_size: None,
+            follow_symlinks: None,
             token: None,
         };
 

@@ -19,7 +19,7 @@
 //! natural language queries and accelerating development team productivity.
 
 use serde::{Deserialize, Serialize};
-use validator::{Validate, ValidationError};
+use validator::Validate;
 
 /// AI Semantic Understanding Representation
 ///
@@ -53,7 +53,11 @@ pub struct CodeChunk {
     #[validate(length(min = 1, message = "ID cannot be empty"))]
     pub id: String,
     /// The actual code content
-    #[validate(length(min = 1, max = 10000, message = "Content must be between 1 and 10000 characters"))]
+    #[validate(length(
+        min = 1,
+        max = 10000,
+        message = "Content must be between 1 and 10000 characters"
+    ))]
     pub content: String,
     /// Path to the source file
     #[validate(length(min = 1, message = "File path cannot be empty"))]
@@ -164,4 +168,3 @@ pub struct VectorStoreConfig {
     pub collection: Option<String>,
     pub dimensions: Option<usize>,
 }
-

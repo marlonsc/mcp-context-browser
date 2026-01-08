@@ -14,6 +14,7 @@ Thumbs.db
 
 # Log files
 *.log
+*.txt
 
 # Environment files
 .env
@@ -21,7 +22,14 @@ Thumbs.db
 
 # Backup files
 *.bak
+*.bak?
 *.backup
+*.disabled
+*.new
+*.old
+*.broken
+*.clean
+.fastembed_cache/
 
 # Temporary files
 *.tmp
@@ -34,14 +42,11 @@ coverage/
 # Documentation build
 book/
 
-# Backup files from refactoring
-*.bak
-*.broken
-
 # Development artifacts
 .cargo/
 .coverage/
 *.lcov
+docs/plans/
 
 # CI/CD artifacts
 .github/workflows/*.log

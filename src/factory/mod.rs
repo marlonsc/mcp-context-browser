@@ -11,22 +11,18 @@ use crate::core::{
     error::{Error, Result},
     types::{EmbeddingConfig, VectorStoreConfig},
 };
-use crate::config::VectorStoreProviderConfig;
 use crate::providers::{EmbeddingProvider, VectorStoreProvider};
 
 // Internal imports - embedding providers
 use crate::providers::embedding::{
-    fastembed::FastEmbedProvider,
-    gemini::GeminiEmbeddingProvider,
-    null::NullEmbeddingProvider,
-    ollama::OllamaEmbeddingProvider,
-    openai::OpenAIEmbeddingProvider,
+    fastembed::FastEmbedProvider, gemini::GeminiEmbeddingProvider, null::NullEmbeddingProvider,
+    ollama::OllamaEmbeddingProvider, openai::OpenAIEmbeddingProvider,
     voyageai::VoyageAIEmbeddingProvider,
 };
 
 // Internal imports - vector store providers
-use crate::providers::vector_store::milvus::MilvusVectorStoreProvider;
 use crate::providers::vector_store::InMemoryVectorStoreProvider;
+use crate::providers::vector_store::milvus::MilvusVectorStoreProvider;
 
 /// Provider factory trait
 #[async_trait]
@@ -118,8 +114,12 @@ impl ProviderFactory for DefaultProviderFactory {
         match config.provider.as_str() {
             "in-memory" => Ok(Arc::new(InMemoryVectorStoreProvider::new())),
             "filesystem" => {
-                use crate::providers::vector_store::filesystem::{FilesystemVectorStore, FilesystemVectorStoreConfig};
-                let base_path = config.address.as_ref()
+                use crate::providers::vector_store::filesystem::{
+                    FilesystemVectorStore, FilesystemVectorStoreConfig,
+                };
+                let base_path = config
+                    .address
+                    .as_ref()
                     .map(|p| std::path::PathBuf::from(p))
                     .unwrap_or_else(|| std::path::PathBuf::from("./data/vectors"));
                 let fs_config = FilesystemVectorStoreConfig {
@@ -157,7 +157,12 @@ impl ProviderFactory for DefaultProviderFactory {
     }
 
     fn supported_vector_store_providers(&self) -> Vec<String> {
-        vec!["in-memory".to_string(), "filesystem".to_string(), "edgevec".to_string(), "milvus".to_string()]
+        vec![
+            "in-memory".to_string(),
+            "filesystem".to_string(),
+            "edgevec".to_string(),
+            "milvus".to_string(),
+        ]
     }
 }
 
@@ -192,7 +197,8 @@ impl ServiceProvider {
 
         // If not found, create via factory and register
         let provider = self.factory.create_embedding_provider(config).await?;
-        self.registry.register_embedding_provider(&config.provider, Arc::clone(&provider))?;
+        self.registry
+            .register_embedding_provider(&config.provider, Arc::clone(&provider))?;
 
         Ok(provider)
     }
@@ -208,7 +214,8 @@ impl ServiceProvider {
 
         // If not found, create via factory and register
         let provider = self.factory.create_vector_store_provider(config).await?;
-        self.registry.register_vector_store_provider(&config.provider, Arc::clone(&provider))?;
+        self.registry
+            .register_vector_store_provider(&config.provider, Arc::clone(&provider))?;
 
         Ok(provider)
     }

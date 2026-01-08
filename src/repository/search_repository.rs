@@ -2,7 +2,7 @@
 //!
 //! This module provides search functionality over indexed code chunks.
 
-use crate::core::error::{Error, Result};
+use crate::core::error::Result;
 use crate::core::types::SearchResult;
 use crate::providers::VectorStoreProvider;
 use async_trait::async_trait;
@@ -11,7 +11,12 @@ use std::sync::Arc;
 /// Search repository trait
 #[async_trait]
 pub trait SearchRepository {
-    async fn search(&self, collection: &str, query: &str, limit: usize) -> Result<Vec<SearchResult>>;
+    async fn search(
+        &self,
+        collection: &str,
+        query: &str,
+        limit: usize,
+    ) -> Result<Vec<SearchResult>>;
 }
 
 /// Vector store backed search repository
@@ -37,7 +42,12 @@ impl<V> SearchRepository for VectorStoreSearchRepository<V>
 where
     V: VectorStoreProvider + Send + Sync,
 {
-    async fn search(&self, collection: &str, query: &str, limit: usize) -> Result<Vec<SearchResult>> {
+    async fn search(
+        &self,
+        collection: &str,
+        query: &str,
+        limit: usize,
+    ) -> Result<Vec<SearchResult>> {
         let collection_name = self.collection_name(collection);
 
         // For now, return empty results as semantic search requires embeddings
@@ -45,7 +55,11 @@ where
         let _ = (query, limit); // Suppress unused variable warnings
 
         // Check if collection exists
-        if !self.vector_store_provider.collection_exists(&collection_name).await? {
+        if !self
+            .vector_store_provider
+            .collection_exists(&collection_name)
+            .await?
+        {
             return Ok(vec![]);
         }
 

@@ -3,8 +3,8 @@
 //! This module contains focused unit tests for individual functions and methods
 //! across all modules, ensuring comprehensive coverage of business logic.
 
-use mcp_context_browser::core::types::{CodeChunk, Language, Embedding};
 use mcp_context_browser::core::error::Error;
+use mcp_context_browser::core::types::{CodeChunk, Embedding, Language};
 
 /// Test core type constructors and basic functionality
 #[cfg(test)]
@@ -62,7 +62,7 @@ mod error_handling_unit_tests {
     fn test_error_creation() {
         let error = Error::generic("test error");
         match error {
-            Error::Generic(msg) => assert_eq!(msg, "test error"),
+            Error::Generic(msg) => assert_eq!(format!("{}", msg), "Generic error: test error"),
             _ => panic!("Expected Generic error"),
         }
     }
@@ -78,14 +78,14 @@ mod error_handling_unit_tests {
     fn test_error_context_preservation() {
         let original_error = Error::not_found("resource not found");
         // Test that error context is preserved through conversions
-        assert!(matches!(original_error, Error::NotFound(_)));
+        assert!(matches!(original_error, Error::NotFound { .. }));
     }
 }
 
 /// Test validation logic for individual components
 #[cfg(test)]
 mod validation_unit_tests {
-    use super::*;
+    
 
     #[test]
     fn test_basic_validation_rules() {
@@ -105,7 +105,7 @@ mod validation_unit_tests {
 /// Test configuration parsing and validation
 #[cfg(test)]
 mod config_unit_tests {
-    use super::*;
+    
 
     #[test]
     fn test_config_parsing() {
@@ -124,7 +124,7 @@ mod config_unit_tests {
 /// Test repository pattern implementations
 #[cfg(test)]
 mod repository_unit_tests {
-    use super::*;
+    
 
     #[test]
     fn test_repository_interface() {
@@ -143,7 +143,7 @@ mod repository_unit_tests {
 /// Test provider strategy implementations
 #[cfg(test)]
 mod provider_unit_tests {
-    use super::*;
+    
 
     #[test]
     fn test_provider_interfaces() {
@@ -161,7 +161,7 @@ mod provider_unit_tests {
 /// Test service layer business logic
 #[cfg(test)]
 mod service_unit_tests {
-    use super::*;
+    
 
     #[test]
     fn test_service_initialization() {
@@ -179,7 +179,7 @@ mod service_unit_tests {
 /// Test utility functions and helpers
 #[cfg(test)]
 mod utility_unit_tests {
-    use super::*;
+    
 
     #[test]
     fn test_helper_functions() {
@@ -197,7 +197,7 @@ mod utility_unit_tests {
 /// Performance and benchmarking tests
 #[cfg(test)]
 mod performance_unit_tests {
-    use super::*;
+    
 
     #[test]
     fn test_operation_performance() {
@@ -215,7 +215,7 @@ mod performance_unit_tests {
 /// Security and safety tests
 #[cfg(test)]
 mod security_unit_tests {
-    use super::*;
+    
 
     #[test]
     fn test_input_sanitization() {

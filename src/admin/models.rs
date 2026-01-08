@@ -25,7 +25,7 @@ pub struct UserInfo {
 }
 
 /// Provider information
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ProviderInfo {
     pub id: String,
     pub name: String,

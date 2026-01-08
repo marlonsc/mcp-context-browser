@@ -535,6 +535,9 @@ mod tests {
 
         // This should work in normal cases, but we test the error handling path
         let result = auth.authenticate("admin@context.browser", "admin");
-        assert!(result.is_ok(), "Authentication should succeed with valid credentials");
+        assert!(
+            result.is_ok(),
+            "Authentication should succeed with valid credentials"
+        );
     }
 }

@@ -67,7 +67,9 @@ impl<'a> AstTraverser<'a> {
                     };
 
                     if let Some(code) = code
-                        && code.len() >= rule.min_length && code.lines().count() >= rule.min_lines {
+                        && code.len() >= rule.min_length
+                        && code.lines().count() >= rule.min_lines
+                    {
                         let chunk_params = ChunkParams {
                             content: code,
                             file_name,
@@ -80,7 +82,8 @@ impl<'a> AstTraverser<'a> {
 
                         // Add context metadata if available
                         if let Some(context_lines) = context
-                            && let Some(metadata) = chunk.metadata.as_object_mut() {
+                            && let Some(metadata) = chunk.metadata.as_object_mut()
+                        {
                             metadata.insert(
                                 "context_lines".to_string(),
                                 serde_json::json!(context_lines),

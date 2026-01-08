@@ -1,6 +1,6 @@
 //! Unit tests for validation system components
 
-use mcp_context_browser::core::types::{CodeChunk, Language, Embedding};
+use mcp_context_browser::core::types::{CodeChunk, Embedding, Language};
 
 /// Test validation of core data structures
 #[cfg(test)]
@@ -65,7 +65,7 @@ mod data_validation_tests {
         let invalid_paths = vec![
             "", // Empty
             "../escape/attempt",
-            "/etc/passwd", // Sensitive path
+            "/etc/passwd",       // Sensitive path
             "path/with<script>", // XSS attempt
         ];
 
@@ -74,8 +74,13 @@ mod data_validation_tests {
         }
 
         for path in invalid_paths {
-            assert!(path.is_empty() || path.contains("..") || path.contains("<") || path.starts_with("/etc"),
-                   "Invalid paths should be caught by validation");
+            assert!(
+                path.is_empty()
+                    || path.contains("..")
+                    || path.contains("<")
+                    || path.starts_with("/etc"),
+                "Invalid paths should be caught by validation"
+            );
         }
     }
 }
@@ -95,17 +100,23 @@ mod business_rule_tests {
         ];
 
         let invalid_ranges = vec![
-            (0, 1),   // Start at zero
-            (5, 3),   // Start > End
-            (1, 0),   // End at zero
+            (0, 1), // Start at zero
+            (5, 3), // Start > End
+            (1, 0), // End at zero
         ];
 
         for (start, end) in valid_ranges {
-            assert!(start > 0 && end >= start, "Valid ranges should have start > 0 and end >= start");
+            assert!(
+                start > 0 && end >= start,
+                "Valid ranges should have start > 0 and end >= start"
+            );
         }
 
         for (start, end) in invalid_ranges {
-            assert!(start <= 0 || end < start, "Invalid ranges should fail validation");
+            assert!(
+                start <= 0 || end < start,
+                "Invalid ranges should fail validation"
+            );
         }
     }
 
@@ -125,9 +136,18 @@ mod business_rule_tests {
 
         for lang in supported_languages {
             // All supported languages should be valid
-            assert!(matches!(lang, Language::Rust | Language::Python | Language::JavaScript |
-                           Language::TypeScript | Language::Java | Language::Go |
-                           Language::C | Language::Cpp | Language::Unknown));
+            assert!(matches!(
+                lang,
+                Language::Rust
+                    | Language::Python
+                    | Language::JavaScript
+                    | Language::TypeScript
+                    | Language::Java
+                    | Language::Go
+                    | Language::C
+                    | Language::Cpp
+                    | Language::Unknown
+            ));
         }
     }
 
@@ -135,16 +155,18 @@ mod business_rule_tests {
     fn test_embedding_vector_consistency() {
         // Test that embedding vectors are consistent
         let test_cases = vec![
-            (vec![1.0, 2.0, 3.0], 3, true),  // Consistent
-            (vec![], 0, true),                // Empty is consistent
-            (vec![1.0, 2.0], 3, false),      // Inconsistent
+            (vec![1.0, 2.0, 3.0], 3, true),       // Consistent
+            (vec![], 0, true),                    // Empty is consistent
+            (vec![1.0, 2.0], 3, false),           // Inconsistent
             (vec![1.0, 2.0, 3.0, 4.0], 3, false), // Inconsistent
         ];
 
         for (vector, dimensions, should_be_consistent) in test_cases {
             let is_consistent = vector.len() == dimensions;
-            assert_eq!(is_consistent, should_be_consistent,
-                      "Vector length should match dimensions for consistency");
+            assert_eq!(
+                is_consistent, should_be_consistent,
+                "Vector length should match dimensions for consistency"
+            );
         }
     }
 }
@@ -166,7 +188,10 @@ mod error_handling_tests {
         // Invalid line range error
         let start_line = 10;
         let end_line = 5;
-        assert!(start_line > end_line, "Invalid line range should be detected");
+        assert!(
+            start_line > end_line,
+            "Invalid line range should be detected"
+        );
 
         // Empty file path error
         let empty_path = "";
@@ -180,8 +205,8 @@ mod error_handling_tests {
             id: "test".to_string(),
             content: "some content".to_string(),
             file_path: "".to_string(), // Invalid
-            start_line: 0, // Invalid
-            end_line: 0, // Invalid
+            start_line: 0,             // Invalid
+            end_line: 0,               // Invalid
             language: Language::Rust,
             metadata: serde_json::json!({}),
         };
@@ -220,21 +245,26 @@ mod performance_tests {
         assert!(chunk.end_line >= chunk.start_line);
 
         let elapsed = start.elapsed();
-        assert!(elapsed.as_micros() < 1000, "Validation should complete in under 1ms");
+        assert!(
+            elapsed.as_micros() < 1000,
+            "Validation should complete in under 1ms"
+        );
     }
 
     #[test]
     fn test_bulk_validation_performance() {
         // Test validation performance with multiple items
-        let chunks: Vec<CodeChunk> = (0..100).map(|i| CodeChunk {
-            id: format!("chunk_{}", i),
-            content: format!("content_{}", i),
-            file_path: format!("file_{}.rs", i),
-            start_line: 1,
-            end_line: 1,
-            language: Language::Rust,
-            metadata: serde_json::json!({}),
-        }).collect();
+        let chunks: Vec<CodeChunk> = (0..100)
+            .map(|i| CodeChunk {
+                id: format!("chunk_{}", i),
+                content: format!("content_{}", i),
+                file_path: format!("file_{}.rs", i),
+                start_line: 1,
+                end_line: 1,
+                language: Language::Rust,
+                metadata: serde_json::json!({}),
+            })
+            .collect();
 
         let start = std::time::Instant::now();
 
@@ -244,7 +274,10 @@ mod performance_tests {
         }
 
         let elapsed = start.elapsed();
-        assert!(elapsed.as_millis() < 10, "Bulk validation should complete quickly");
+        assert!(
+            elapsed.as_millis() < 10,
+            "Bulk validation should complete quickly"
+        );
     }
 }
 
@@ -293,12 +326,12 @@ mod edge_case_tests {
     fn test_minimum_valid_chunk() {
         // Test the absolute minimum valid chunk
         let min_chunk = CodeChunk {
-            id: "a".to_string(), // Minimum 1 character
-            content: "b".to_string(), // Minimum 1 character
-            file_path: "c".to_string(), // Minimum 1 character
-            start_line: 1, // Minimum 1
-            end_line: 1, // Can equal start_line
-            language: Language::Unknown, // Any language is acceptable
+            id: "a".to_string(),             // Minimum 1 character
+            content: "b".to_string(),        // Minimum 1 character
+            file_path: "c".to_string(),      // Minimum 1 character
+            start_line: 1,                   // Minimum 1
+            end_line: 1,                     // Can equal start_line
+            language: Language::Unknown,     // Any language is acceptable
             metadata: serde_json::json!({}), // Can be empty
         };
 

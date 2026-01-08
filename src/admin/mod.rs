@@ -30,8 +30,6 @@ pub struct AdminConfig {
     pub enabled: bool,
     /// Admin username
     pub username: String,
-    /// Admin password hash
-    pub password_hash: String,
     /// JWT secret for authentication
     pub jwt_secret: String,
     /// JWT expiration time in seconds
@@ -43,7 +41,6 @@ impl Default for AdminConfig {
         Self {
             enabled: true,
             username: "admin".to_string(),
-            password_hash: "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/JhJzGfjQwRrRrLrO".to_string(), // "admin"
             jwt_secret: "default-jwt-secret-change-in-production".to_string(),
             jwt_expiration: 3600, // 1 hour
         }

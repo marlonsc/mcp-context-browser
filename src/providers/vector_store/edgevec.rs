@@ -203,7 +203,8 @@ impl VectorStoreProvider for EdgeVecVectorStoreProvider {
         if let Some(collection_metadata) = metadata_store.get(name) {
             for external_id in collection_metadata.keys() {
                 if let Some(&vector_id) = id_map.get(external_id)
-                    && let Err(e) = index.soft_delete(vector_id) {
+                    && let Err(e) = index.soft_delete(vector_id)
+                {
                     tracing::warn!("Failed to remove vector {}: {}", external_id, e);
                 }
                 id_map.remove(external_id);

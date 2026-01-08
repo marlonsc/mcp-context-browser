@@ -4,7 +4,7 @@
 //! code chunks with their associated vector embeddings.
 
 use crate::core::error::{Error, Result};
-use crate::core::types::{CodeChunk, Embedding};
+use crate::core::types::CodeChunk;
 use crate::providers::{EmbeddingProvider, VectorStoreProvider};
 use async_trait::async_trait;
 use std::collections::HashMap;
@@ -59,9 +59,9 @@ where
     async fn save(&self, chunk: &CodeChunk) -> Result<String> {
         let chunks = vec![chunk.clone()];
         let ids = self.save_batch(&chunks).await?;
-        ids.into_iter().next().ok_or_else(|| {
-            Error::internal("Failed to save chunk - no ID returned".to_string())
-        })
+        ids.into_iter()
+            .next()
+            .ok_or_else(|| Error::internal("Failed to save chunk - no ID returned".to_string()))
     }
 
     async fn save_batch(&self, chunks: &[CodeChunk]) -> Result<Vec<String>> {
@@ -83,23 +83,34 @@ where
                 let mut meta = HashMap::new();
                 meta.insert("content".to_string(), serde_json::json!(chunk.content));
                 meta.insert("file_path".to_string(), serde_json::json!(chunk.file_path));
-                meta.insert("start_line".to_string(), serde_json::json!(chunk.start_line));
+                meta.insert(
+                    "start_line".to_string(),
+                    serde_json::json!(chunk.start_line),
+                );
                 meta.insert("end_line".to_string(), serde_json::json!(chunk.end_line));
-                meta.insert("language".to_string(), serde_json::json!(format!("{:?}", chunk.language)));
+                meta.insert(
+                    "language".to_string(),
+                    serde_json::json!(format!("{:?}", chunk.language)),
+                );
                 meta.insert("chunk_type".to_string(), serde_json::json!("code_chunk"));
                 meta
             })
             .collect();
 
         // Ensure collection exists
-        if !self.vector_store_provider.collection_exists(&collection_name).await? {
+        if !self
+            .vector_store_provider
+            .collection_exists(&collection_name)
+            .await?
+        {
             self.vector_store_provider
                 .create_collection(&collection_name, self.embedding_provider.dimensions())
                 .await?;
         }
 
         // Store in vector database
-        let ids = self.vector_store_provider
+        let ids = self
+            .vector_store_provider
             .insert_vectors(&collection_name, &embeddings, metadata)
             .await?;
 
@@ -111,8 +122,8 @@ where
         Ok(None)
     }
 
-    async fn find_by_collection(&self, collection: &str, limit: usize) -> Result<Vec<CodeChunk>> {
-        let collection_name = self.collection_name(collection);
+    async fn find_by_collection(&self, collection: &str, _limit: usize) -> Result<Vec<CodeChunk>> {
+        let _collection_name = self.collection_name(collection);
 
         // Get vectors from store - need to embed the query first
         // For now, return empty results as embedding is required
@@ -121,16 +132,12 @@ where
         // Convert results back to CodeChunks
         let chunks: Vec<CodeChunk> = results
             .into_iter()
-            .filter_map(|result| {
+            .filter_map(|result: crate::core::types::SearchResult| {
                 // Extract metadata to reconstruct CodeChunk
-                let content = result.metadata.get("content")?
-                    .as_str()?.to_string();
-                let file_path = result.metadata.get("file_path")?
-                    .as_str()?.to_string();
-                let start_line = result.metadata.get("start_line")?
-                    .as_u64()? as u32;
-                let end_line = result.metadata.get("end_line")?
-                    .as_u64()? as u32;
+                let content = result.metadata.get("content")?.as_str()?.to_string();
+                let file_path = result.metadata.get("file_path")?.as_str()?.to_string();
+                let start_line = result.metadata.get("start_line")?.as_u64()? as u32;
+                let end_line = result.metadata.get("end_line")?.as_u64()? as u32;
 
                 Some(CodeChunk {
                     id: format!("{}_{}", file_path, start_line), // Generate ID from file and line
@@ -149,26 +156,40 @@ where
 
     async fn delete(&self, _id: &str) -> Result<()> {
         // Not implemented for vector stores
-        Err(Error::generic("Delete by ID not implemented for vector store repository"))
+        Err(Error::generic(
+            "Delete by ID not implemented for vector store repository",
+        ))
     }
 
     async fn delete_collection(&self, collection: &str) -> Result<()> {
         let collection_name = self.collection_name(collection);
-        self.vector_store_provider.delete_collection(&collection_name).await
+        self.vector_store_provider
+            .delete_collection(&collection_name)
+            .await
     }
 
     async fn stats(&self) -> Result<RepositoryStats> {
         // Get stats from vector store if available
-        let store_stats = self.vector_store_provider
+        let store_stats = self
+            .vector_store_provider
             .get_stats("default")
             .await
             .unwrap_or_default();
 
         Ok(RepositoryStats {
-            total_chunks: store_stats.get("total_vectors").and_then(|v| v.as_u64()).unwrap_or(0),
+            total_chunks: store_stats
+                .get("total_vectors")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(0),
             total_collections: 1,
-            storage_size_bytes: store_stats.get("storage_size_bytes").and_then(|v| v.as_u64()).unwrap_or(0),
-            avg_chunk_size_bytes: store_stats.get("avg_vector_size_bytes").and_then(|v| v.as_f64()).unwrap_or(0.0),
+            storage_size_bytes: store_stats
+                .get("storage_size_bytes")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(0),
+            avg_chunk_size_bytes: store_stats
+                .get("avg_vector_size_bytes")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0),
         })
     }
 }
