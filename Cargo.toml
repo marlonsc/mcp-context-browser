@@ -78,7 +78,7 @@ shellexpand = "3.1"
 
 # Authentication
 jsonwebtoken = { version = "10.2", features = ["rust_crypto"] }
-bcrypt = "0.15"
+bcrypt = "0.17"
 base64 = "0.22"
 seahash = "4.1"
 
@@ -136,7 +136,7 @@ unicode-segmentation = "1.12"
 schemars = "1.0"
 
 # Input validation
-validator = { version = "0.16", features = ["derive"] }
+validator = { version = "0.20", features = ["derive"] }
 
 # MCP SDK
 rmcp = { version = "0.12.0", features = ["server", "client", "macros", "transport-io", "transport-child-process"] }
@@ -154,7 +154,7 @@ dashmap = "6.0"
 health = "0.2"
 
 # EdgeVec high-performance vector database
-edgevec = "0.7"
+edgevec = "0.8"
 
 # Additional dependencies
 milvus-sdk-rust = "0.1.0"
@@ -163,7 +163,7 @@ downcast-rs = "2.0.2"
 futures-util = "0.3.31"
 
 # Local embeddings without external services
-fastembed = { version = "4.4", default-features = false, features = ["default"] }
+fastembed = { version = "4.9", default-features = false, features = ["default"] }
 criterion = "0.8.1"
 moka = { version = "0.12", features = ["future"] }
 

@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use validator::Validate;
 
 /// Vector store provider configuration types
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -67,4 +68,45 @@ pub enum VectorStoreProviderConfig {
         #[serde(default)]
         memory_mapping_enabled: Option<bool>,
     },
+}
+
+impl Validate for VectorStoreProviderConfig {
+    fn validate(&self) -> std::result::Result<(), validator::ValidationErrors> {
+        let mut errors = validator::ValidationErrors::new();
+        match self {
+            VectorStoreProviderConfig::Milvus { address, .. } => {
+                if address.is_empty() {
+                    errors.add("address", validator::ValidationError::new("length"));
+                }
+            }
+            VectorStoreProviderConfig::Pinecone {
+                api_key,
+                environment,
+                index_name,
+                ..
+            } => {
+                if api_key.is_empty() {
+                    errors.add("api_key", validator::ValidationError::new("length"));
+                }
+                if environment.is_empty() {
+                    errors.add("environment", validator::ValidationError::new("length"));
+                }
+                if index_name.is_empty() {
+                    errors.add("index_name", validator::ValidationError::new("length"));
+                }
+            }
+            VectorStoreProviderConfig::Qdrant { url, .. } => {
+                if url.is_empty() {
+                    errors.add("url", validator::ValidationError::new("length"));
+                }
+            }
+            _ => {}
+        }
+
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(errors)
+        }
+    }
 }

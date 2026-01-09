@@ -17,9 +17,9 @@ use tokio::runtime::Runtime;
 /// Create real providers for benchmarking
 #[allow(dead_code)]
 fn create_benchmark_providers() -> (Arc<dyn EmbeddingProvider>, Arc<dyn VectorStoreProvider>) {
-    let embedding_provider =
+    let embedding_provider: Arc<dyn EmbeddingProvider> =
         Arc::new(mcp_context_browser::providers::embedding::null::NullEmbeddingProvider::new());
-    let vector_store_provider = Arc::new(
+    let vector_store_provider: Arc<dyn VectorStoreProvider> = Arc::new(
         mcp_context_browser::providers::vector_store::in_memory::InMemoryVectorStoreProvider::new(),
     );
     (embedding_provider, vector_store_provider)

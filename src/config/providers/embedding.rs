@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use validator::Validate;
 
 /// Embedding provider configuration types (similar to Claude Context)
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -61,4 +62,48 @@ pub enum EmbeddingProviderConfig {
         #[serde(default)]
         max_tokens: Option<usize>,
     },
+}
+
+impl Validate for EmbeddingProviderConfig {
+    fn validate(&self) -> std::result::Result<(), validator::ValidationErrors> {
+        let mut errors = validator::ValidationErrors::new();
+        match self {
+            EmbeddingProviderConfig::OpenAI { model, api_key, .. } => {
+                if model.is_empty() {
+                    errors.add("model", validator::ValidationError::new("length"));
+                }
+                if api_key.is_empty() {
+                    errors.add("api_key", validator::ValidationError::new("length"));
+                }
+            }
+            EmbeddingProviderConfig::Ollama { model, .. } => {
+                if model.is_empty() {
+                    errors.add("model", validator::ValidationError::new("length"));
+                }
+            }
+            EmbeddingProviderConfig::VoyageAI { model, api_key, .. } => {
+                if model.is_empty() {
+                    errors.add("model", validator::ValidationError::new("length"));
+                }
+                if api_key.is_empty() {
+                    errors.add("api_key", validator::ValidationError::new("length"));
+                }
+            }
+            EmbeddingProviderConfig::Gemini { model, api_key, .. } => {
+                if model.is_empty() {
+                    errors.add("model", validator::ValidationError::new("length"));
+                }
+                if api_key.is_empty() {
+                    errors.add("api_key", validator::ValidationError::new("length"));
+                }
+            }
+            _ => {}
+        }
+
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(errors)
+        }
+    }
 }

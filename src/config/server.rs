@@ -3,7 +3,9 @@ use validator::Validate;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct ServerConfig {
+    #[validate(length(min = 1))]
     pub host: String,
+    #[validate(range(min = 1))]
     pub port: u16,
 }
 

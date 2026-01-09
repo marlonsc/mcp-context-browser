@@ -151,9 +151,11 @@ pub struct IndexingStats {
 }
 
 /// Configuration for embedding providers
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct EmbeddingConfig {
+    #[validate(length(min = 1))]
     pub provider: String,
+    #[validate(length(min = 1))]
     pub model: String,
     pub api_key: Option<String>,
     pub base_url: Option<String>,
@@ -162,8 +164,9 @@ pub struct EmbeddingConfig {
 }
 
 /// Configuration for vector store providers
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct VectorStoreConfig {
+    #[validate(length(min = 1))]
     pub provider: String,
     pub address: Option<String>,
     pub token: Option<String>,

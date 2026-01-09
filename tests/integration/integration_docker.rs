@@ -3,8 +3,8 @@
 //! These tests require Docker and docker-compose to be available.
 //! Run with: make test-integration-docker
 
-use mcp_context_browser::core::types::EmbeddingConfig;
 use mcp_context_browser::core::http_client::HttpClientPool;
+use mcp_context_browser::core::types::EmbeddingConfig;
 use std::env;
 use std::sync::Arc;
 
@@ -13,7 +13,8 @@ mod tests {
     use super::*;
     use mcp_context_browser::di::factory::ServiceProviderInterface;
 
-    fn get_test_http_client() -> Arc<dyn mcp_context_browser::core::http_client::HttpClientProvider> {
+    fn get_test_http_client() -> Arc<dyn mcp_context_browser::core::http_client::HttpClientProvider>
+    {
         Arc::new(HttpClientPool::new().unwrap())
     }
 
@@ -472,7 +473,7 @@ mod tests {
             };
 
             let service_provider = mcp_context_browser::di::factory::ServiceProvider::new();
-        let http_client = get_test_http_client();
+            let http_client = get_test_http_client();
             let embedding_provider = service_provider
                 .get_embedding_provider(&config, http_client.clone())
                 .await

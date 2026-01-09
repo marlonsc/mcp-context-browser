@@ -64,7 +64,7 @@ impl ProviderFactory for DefaultProviderFactory {
                     config.model.clone(),
                     std::time::Duration::from_secs(30),
                     http_client,
-                )))
+                )) as Arc<dyn EmbeddingProvider>)
             }
             "ollama" => Ok(Arc::new(OllamaEmbeddingProvider::with_http_client(
                 config
@@ -74,7 +74,7 @@ impl ProviderFactory for DefaultProviderFactory {
                 config.model.clone(),
                 std::time::Duration::from_secs(30),
                 http_client,
-            ))),
+            )) as Arc<dyn EmbeddingProvider>),
             "voyageai" => {
                 let api_key = config
                     .api_key
@@ -85,7 +85,7 @@ impl ProviderFactory for DefaultProviderFactory {
                     config.base_url.clone(),
                     config.model.clone(),
                     http_client,
-                )))
+                )) as Arc<dyn EmbeddingProvider>)
             }
             "gemini" => {
                 let api_key = config
@@ -98,10 +98,10 @@ impl ProviderFactory for DefaultProviderFactory {
                     config.model.clone(),
                     std::time::Duration::from_secs(30),
                     http_client,
-                )))
+                )) as Arc<dyn EmbeddingProvider>)
             }
-            "fastembed" => Ok(Arc::new(FastEmbedProvider::new()?)),
-            "mock" => Ok(Arc::new(NullEmbeddingProvider::new())),
+            "fastembed" => Ok(Arc::new(FastEmbedProvider::new()?) as Arc<dyn EmbeddingProvider>),
+            "mock" => Ok(Arc::new(NullEmbeddingProvider::new()) as Arc<dyn EmbeddingProvider>),
             _ => Err(Error::config(format!(
                 "Unsupported embedding provider: {}",
                 config.provider
@@ -114,7 +114,9 @@ impl ProviderFactory for DefaultProviderFactory {
         config: &VectorStoreConfig,
     ) -> Result<Arc<dyn VectorStoreProvider>> {
         match config.provider.to_lowercase().as_str() {
-            "in-memory" => Ok(Arc::new(InMemoryVectorStoreProvider::new())),
+            "in-memory" => {
+                Ok(Arc::new(InMemoryVectorStoreProvider::new()) as Arc<dyn VectorStoreProvider>)
+            }
             "filesystem" => {
                 use crate::providers::vector_store::filesystem::{
                     FilesystemVectorStore, FilesystemVectorStoreConfig,
@@ -129,7 +131,8 @@ impl ProviderFactory for DefaultProviderFactory {
                     dimensions: config.dimensions.unwrap_or(1536),
                     ..Default::default()
                 };
-                Ok(Arc::new(FilesystemVectorStore::new(fs_config).await?))
+                Ok(Arc::new(FilesystemVectorStore::new(fs_config).await?)
+                    as Arc<dyn VectorStoreProvider>)
             }
             "milvus" => {
                 let address = config
@@ -138,7 +141,7 @@ impl ProviderFactory for DefaultProviderFactory {
                     .ok_or_else(|| Error::config("Milvus address required"))?;
                 Ok(Arc::new(
                     MilvusVectorStoreProvider::new(address.clone(), config.token.clone()).await?,
-                ))
+                ) as Arc<dyn VectorStoreProvider>)
             }
             "edgevec" => {
                 use crate::providers::vector_store::edgevec::{
@@ -148,7 +151,8 @@ impl ProviderFactory for DefaultProviderFactory {
                     dimensions: config.dimensions.unwrap_or(1536),
                     ..Default::default()
                 };
-                Ok(Arc::new(EdgeVecVectorStoreProvider::new(edgevec_config)?))
+                Ok(Arc::new(EdgeVecVectorStoreProvider::new(edgevec_config)?)
+                    as Arc<dyn VectorStoreProvider>)
             }
             _ => Err(Error::config(format!(
                 "Unsupported vector store provider: {}",

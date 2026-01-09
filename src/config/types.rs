@@ -16,33 +16,39 @@ use super::server::ServerConfig;
 pub struct GlobalConfig {
     /// Server configuration
     #[serde(default)]
-    #[validate]
+    #[validate(nested)]
     pub server: ServerConfig,
     /// Provider configurations
-    #[validate]
+    #[validate(nested)]
     pub providers: GlobalProviderConfig,
     /// Metrics configuration
     #[serde(default)]
-    #[validate]
+    #[validate(nested)]
     pub metrics: MetricsConfig,
     /// Sync configuration
     #[serde(default)]
+    #[validate(nested)]
     pub sync: SyncConfig,
     /// Daemon configuration
     #[serde(default)]
+    #[validate(nested)]
     pub daemon: DaemonConfig,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct GlobalProviderConfig {
+    #[validate(nested)]
     pub embedding: EmbeddingProviderConfig,
+    #[validate(nested)]
     pub vector_store: VectorStoreProviderConfig,
 }
 
 /// Legacy provider config (maintained for backward compatibility)
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct ProviderConfig {
+    #[validate(nested)]
     pub embedding: crate::core::types::EmbeddingConfig,
+    #[validate(nested)]
     pub vector_store: crate::core::types::VectorStoreConfig,
 }
 
@@ -82,38 +88,45 @@ pub struct Config {
     pub version: String,
     /// Server configuration (host, port, etc.)
     #[serde(default)]
-    #[validate]
+    #[validate(nested)]
     pub server: ServerConfig,
     /// AI and vector store provider configurations
     #[serde(default)]
-    #[validate]
+    #[validate(nested)]
     pub providers: ProviderConfig,
     /// Metrics and monitoring configuration
     #[serde(default)]
-    #[validate]
+    #[validate(nested)]
     pub metrics: MetricsConfig,
     /// Authentication and authorization settings
     #[serde(default)]
+    #[validate(nested)]
     pub auth: AuthConfig,
 
     /// Database configuration
     #[serde(default)]
+    #[validate(nested)]
     pub database: DatabaseConfig,
     /// Sync coordination configuration
     #[serde(default)]
+    #[validate(nested)]
     pub sync: SyncConfig,
     /// Background daemon configuration
     #[serde(default)]
+    #[validate(nested)]
     pub daemon: DaemonConfig,
 
     /// Resource limits configuration
     #[serde(default)]
+    #[validate(nested)]
     pub resource_limits: ResourceLimitsConfig,
 
     /// Advanced caching configuration
     #[serde(default)]
+    #[validate(nested)]
     pub cache: CacheConfig,
     #[serde(default)]
+    #[validate(nested)]
     pub hybrid_search: HybridSearchConfig,
 }
 

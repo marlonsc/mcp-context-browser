@@ -8,12 +8,14 @@ use validator::Validate;
 pub struct MetricsConfig {
     /// Port for metrics HTTP API
     #[serde(default = "default_metrics_port")]
+    #[validate(range(min = 1))]
     pub port: u16,
     /// Enable metrics collection
     #[serde(default = "default_metrics_enabled")]
     pub enabled: bool,
     /// Rate limiting configuration
     #[serde(default)]
+    #[validate(nested)]
     pub rate_limiting: RateLimitConfig,
 }
 

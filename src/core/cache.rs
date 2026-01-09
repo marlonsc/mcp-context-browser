@@ -20,21 +20,25 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use validator::Validate;
 
 /// Cache configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct CacheConfig {
     /// Redis connection URL
     /// If provided and not empty, Redis (Remote) mode is used.
     /// If empty, Moka (Local) mode is used.
     pub redis_url: String,
     /// Default TTL for cache entries (seconds)
+    #[validate(range(min = 1))]
     pub default_ttl_seconds: u64,
     /// Maximum cache size (number of entries) - Applies to Local Moka cache
+    #[validate(range(min = 1))]
     pub max_size: usize,
     /// Whether caching is enabled
     pub enabled: bool,
     /// Cache namespaces configuration
+    #[validate(nested)]
     pub namespaces: CacheNamespacesConfig,
 }
 
@@ -51,17 +55,22 @@ impl Default for CacheConfig {
 }
 
 /// Configuration for different cache namespaces
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct CacheNamespacesConfig {
     /// Embedding cache settings
+    #[validate(nested)]
     pub embeddings: CacheNamespaceConfig,
     /// Search results cache settings
+    #[validate(nested)]
     pub search_results: CacheNamespaceConfig,
     /// Metadata cache settings
+    #[validate(nested)]
     pub metadata: CacheNamespaceConfig,
     /// Provider responses cache settings
+    #[validate(nested)]
     pub provider_responses: CacheNamespaceConfig,
     /// Sync batches cache settings
+    #[validate(nested)]
     pub sync_batches: CacheNamespaceConfig,
 }
 
@@ -98,11 +107,13 @@ impl Default for CacheNamespacesConfig {
 }
 
 /// Configuration for a specific cache namespace
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct CacheNamespaceConfig {
     /// TTL for entries in this namespace (seconds)
+    #[validate(range(min = 1))]
     pub ttl_seconds: u64,
     /// Maximum number of entries for this namespace
+    #[validate(range(min = 1))]
     pub max_entries: usize,
     /// Whether to compress entries
     pub compression: bool,

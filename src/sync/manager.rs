@@ -14,14 +14,17 @@ use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
+use validator::Validate;
 use walkdir::WalkDir;
 
 /// Synchronization configuration
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, Validate)]
 pub struct SyncConfig {
     /// Sync interval in milliseconds (default: 15 minutes)
+    #[validate(range(min = 1))]
     pub interval_ms: u64,
     /// Minimum debounce interval between syncs per codebase (default: 60 seconds)
+    #[validate(range(min = 1))]
     pub debounce_ms: u64,
 }
 

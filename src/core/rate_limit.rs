@@ -14,9 +14,10 @@ use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tokio::task::spawn_blocking;
 use tokio::time::timeout;
+use validator::Validate;
 
 /// Rate limit configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct RateLimitConfig {
     /// Backend type: "memory" for single-node, "redis" for clustered
     pub backend: RateLimitBackend,
@@ -50,6 +51,29 @@ pub enum RateLimitBackend {
         /// Redis connection URL
         url: String,
     },
+}
+
+impl Validate for RateLimitBackend {
+    fn validate(&self) -> std::result::Result<(), validator::ValidationErrors> {
+        let mut errors = validator::ValidationErrors::new();
+        match self {
+            RateLimitBackend::Redis { url } => {
+                if url.is_empty() {
+                    errors.add("url", validator::ValidationError::new("length"));
+                }
+            }
+            RateLimitBackend::Memory { max_entries } => {
+                if *max_entries == 0 {
+                    errors.add("max_entries", validator::ValidationError::new("range"));
+                }
+            }
+        }
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(errors)
+        }
+    }
 }
 
 fn default_memory_max_entries() -> usize {

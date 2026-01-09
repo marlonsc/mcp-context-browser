@@ -15,6 +15,7 @@ use crate::core::error::{Error, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
+use validator::Validate;
 
 /// User roles with hierarchical permissions
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
@@ -104,13 +105,16 @@ pub struct User {
 }
 
 /// Authentication configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct AuthConfig {
     /// JWT secret key
+    #[validate(length(min = 1))]
     pub jwt_secret: String,
     /// JWT expiration time in seconds
+    #[validate(range(min = 1))]
     pub jwt_expiration: u64,
     /// Issuer claim for JWT
+    #[validate(length(min = 1))]
     pub jwt_issuer: String,
     /// Whether authentication is enabled
     pub enabled: bool,

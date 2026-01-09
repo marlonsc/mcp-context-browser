@@ -197,7 +197,8 @@ mod voyageai_tests {
             "test-key".to_string(),
             Some("https://api.voyageai.com/v1".to_string()),
             "voyage-code-3".to_string(),
-        ).expect("Failed to create VoyageAI provider");
+        )
+        .expect("Failed to create VoyageAI provider");
 
         assert_eq!(provider.provider_name(), "voyageai");
         assert_eq!(provider.model(), "voyage-code-3");
@@ -233,14 +234,16 @@ mod voyageai_tests {
             "test-key".to_string(),
             None,
             "voyage-code-3".to_string(),
-        ).expect("Failed to create VoyageAI provider");
+        )
+        .expect("Failed to create VoyageAI provider");
         assert_eq!(provider_no_url.base_url(), "https://api.voyageai.com/v1");
 
         let provider_with_url = VoyageAIEmbeddingProvider::new(
             "test-key".to_string(),
             Some("https://custom.voyageai.com/v1".to_string()),
             "voyage-code-3".to_string(),
-        ).expect("Failed to create VoyageAI provider");
+        )
+        .expect("Failed to create VoyageAI provider");
         assert_eq!(
             provider_with_url.base_url(),
             "https://custom.voyageai.com/v1"
@@ -389,7 +392,8 @@ mod provider_trait_tests {
             "test-key".to_string(),
             None,
             "voyage-code-3".to_string(),
-        ).unwrap();
+        )
+        .unwrap();
         let ollama_provider = OllamaEmbeddingProvider::new(
             "http://localhost:11434".to_string(),
             "nomic-embed-text".to_string(),
@@ -397,11 +401,11 @@ mod provider_trait_tests {
         .unwrap();
 
         let providers: Vec<&dyn EmbeddingProvider> = vec![
-            &null_provider,
-            &openai_provider,
-            &gemini_provider,
-            &voyageai_provider,
-            &ollama_provider,
+            &null_provider as &dyn EmbeddingProvider,
+            &openai_provider as &dyn EmbeddingProvider,
+            &gemini_provider as &dyn EmbeddingProvider,
+            &voyageai_provider as &dyn EmbeddingProvider,
+            &ollama_provider as &dyn EmbeddingProvider,
         ];
 
         // Test that all providers have non-empty names
@@ -479,14 +483,16 @@ mod provider_trait_tests {
             "test-key".to_string(),
             None,
             "voyage-code-3".to_string(),
-        ).unwrap();
+        )
+        .unwrap();
         assert_eq!(voyageai_default.base_url(), "https://api.voyageai.com/v1");
 
         let voyageai_custom = VoyageAIEmbeddingProvider::new(
             "test-key".to_string(),
             Some("https://custom.voyageai.com".to_string()),
             "voyage-code-3".to_string(),
-        ).unwrap();
+        )
+        .unwrap();
         assert_eq!(voyageai_custom.base_url(), "https://custom.voyageai.com");
     }
 
@@ -597,7 +603,8 @@ mod provider_trait_tests {
             "test-key".to_string(),
             None,
             "voyage-code-3".to_string(),
-        ).unwrap();
+        )
+        .unwrap();
         assert_eq!(voyageai_provider.max_tokens(), 16000);
 
         // Ollama
@@ -704,7 +711,8 @@ mod provider_trait_tests {
             "test-key".to_string(),
             None,
             "voyage-code-3".to_string(),
-        ).unwrap();
+        )
+        .unwrap();
         let _ollama_provider = OllamaEmbeddingProvider::new(
             "http://localhost:11434".to_string(),
             "nomic-embed-text".to_string(),
@@ -864,7 +872,8 @@ mod provider_trait_tests {
                 println!("Running VoyageAI integration test with real API...");
 
                 let provider =
-                    VoyageAIEmbeddingProvider::new(api_key, None, "voyage-code-3".to_string()).unwrap();
+                    VoyageAIEmbeddingProvider::new(api_key, None, "voyage-code-3".to_string())
+                        .unwrap();
 
                 let runtime = tokio::runtime::Runtime::new().unwrap();
 
@@ -1028,7 +1037,8 @@ mod factory_tests {
     use mcp_context_browser::core::types::EmbeddingConfig;
     use mcp_context_browser::di::factory::{DefaultProviderFactory, ProviderFactory};
 
-    fn get_test_http_client() -> Arc<dyn mcp_context_browser::core::http_client::HttpClientProvider> {
+    fn get_test_http_client() -> Arc<dyn mcp_context_browser::core::http_client::HttpClientProvider>
+    {
         Arc::new(HttpClientPool::new().unwrap())
     }
 

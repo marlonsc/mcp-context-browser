@@ -16,15 +16,19 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::time::Duration;
 use tokio::time;
+use validator::Validate;
 
 /// Background daemon configuration
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, Validate)]
 pub struct DaemonConfig {
     /// Lock cleanup interval in seconds (default: 30)
+    #[validate(range(min = 1))]
     pub cleanup_interval_secs: u64,
     /// Monitoring interval in seconds (default: 30)
+    #[validate(range(min = 1))]
     pub monitoring_interval_secs: u64,
     /// Maximum age for lock cleanup in seconds (default: 300 = 5 minutes)
+    #[validate(range(min = 1))]
     pub max_lock_age_secs: u64,
 }
 

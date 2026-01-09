@@ -16,6 +16,7 @@ use r2d2_postgres::{PostgresConnectionManager, postgres::NoTls};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::Duration;
+use validator::Validate;
 
 /// Trait for database pool operations (enables DI and testing)
 #[async_trait]
@@ -40,11 +41,13 @@ pub trait DatabasePoolProvider: Send + Sync {
 pub type SharedDatabasePool = Arc<dyn DatabasePoolProvider>;
 
 /// Database connection configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct DatabaseConfig {
     /// PostgreSQL connection URL
+    #[validate(length(min = 1))]
     pub url: String,
     /// Maximum number of connections in the pool
+    #[validate(range(min = 1))]
     pub max_connections: u32,
     /// Minimum number of idle connections
     pub min_idle: u32,

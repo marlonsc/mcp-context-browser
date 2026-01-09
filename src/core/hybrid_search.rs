@@ -10,13 +10,16 @@ use crate::core::error::Result;
 use crate::core::types::{CodeChunk, SearchResult};
 use std::collections::{HashMap, HashSet};
 use tokio::sync::{mpsc, oneshot};
+use validator::Validate;
 
 /// BM25 parameters
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Validate)]
 pub struct BM25Params {
     /// k1 parameter (term frequency saturation)
+    #[validate(range(min = 0.0))]
     pub k1: f32,
     /// b parameter (document length normalization)
+    #[validate(range(min = 0.0, max = 1.0))]
     pub b: f32,
 }
 
@@ -30,16 +33,19 @@ impl Default for BM25Params {
 }
 
 /// BM25 scorer for text-based ranking
-#[derive(Debug)]
+#[derive(Debug, Validate)]
 pub struct BM25Scorer {
     /// Document frequencies for each term
-    document_freq: HashMap<String, usize>,
+    pub document_freq: HashMap<String, usize>,
     /// Total number of documents
-    total_docs: usize,
+    #[validate(range(min = 0))]
+    pub total_docs: usize,
     /// Average document length
-    avg_doc_len: f32,
+    #[validate(range(min = 0.0))]
+    pub avg_doc_len: f32,
     /// BM25 parameters
-    params: BM25Params,
+    #[validate(nested)]
+    pub params: BM25Params,
 }
 
 impl BM25Scorer {
@@ -139,29 +145,33 @@ impl BM25Scorer {
 }
 
 /// Hybrid search result combining BM25 and semantic scores
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Validate)]
 pub struct HybridSearchResult {
     /// The original search result
     pub result: SearchResult,
     /// BM25 score (lexical relevance)
     pub bm25_score: f32,
     /// Semantic similarity score (0-1)
+    #[validate(range(min = 0.0, max = 1.0))]
     pub semantic_score: f32,
     /// Combined hybrid score
     pub hybrid_score: f32,
 }
 
 /// Hybrid search engine combining BM25 and semantic search
-#[derive(Debug)]
+#[derive(Debug, Validate)]
 pub struct HybridSearchEngine {
     /// BM25 scorer
-    bm25_scorer: Option<BM25Scorer>,
+    #[validate(nested)]
+    pub bm25_scorer: Option<BM25Scorer>,
     /// Collection of indexed documents for BM25 scoring
-    documents: Vec<CodeChunk>,
+    pub documents: Vec<CodeChunk>,
     /// Weight for BM25 score in hybrid combination (0-1)
-    bm25_weight: f32,
+    #[validate(range(min = 0.0, max = 1.0))]
+    pub bm25_weight: f32,
     /// Weight for semantic score in hybrid combination (0-1)
-    semantic_weight: f32,
+    #[validate(range(min = 0.0, max = 1.0))]
+    pub semantic_weight: f32,
 }
 
 impl HybridSearchEngine {
@@ -303,17 +313,21 @@ impl Default for HybridSearchEngine {
 }
 
 /// Hybrid search configuration
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, validator::Validate)]
 pub struct HybridSearchConfig {
     /// Enable hybrid search
     pub enabled: bool,
     /// Weight for BM25 score (0-1)
+    #[validate(range(min = 0.0, max = 1.0))]
     pub bm25_weight: f32,
     /// Weight for semantic score (0-1)
+    #[validate(range(min = 0.0, max = 1.0))]
     pub semantic_weight: f32,
     /// BM25 k1 parameter
+    #[validate(range(min = 0.0))]
     pub bm25_k1: f32,
     /// BM25 b parameter
+    #[validate(range(min = 0.0, max = 1.0))]
     pub bm25_b: f32,
 }
 
