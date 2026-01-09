@@ -5,10 +5,11 @@ use tempfile::Builder;
 
 #[tokio::test]
 async fn test_config_loader_priority() {
-    // Set some env vars
+    // Set some env vars (lowercase keys to match config structure)
+    // Note: config-rs doesn't auto-lowercase, so use lowercase key names
     unsafe {
-        env::set_var("MCP__SERVER__PORT", "4000");
-        env::set_var("MCP__METRICS__PORT", "4001");
+        env::set_var("MCP__server__port", "4000");
+        env::set_var("MCP__metrics__port", "4001");
     }
 
     // Create a temp config file with .toml extension
@@ -31,6 +32,12 @@ enabled = true
     // Load config
     let loader = ConfigLoader::new();
     let config = loader.load_with_file(file.path()).await.unwrap();
+
+    // Cleanup env vars to prevent test pollution
+    unsafe {
+        env::remove_var("MCP__server__port");
+        env::remove_var("MCP__metrics__port");
+    }
 
     assert_eq!(config.server.port, 4000); // Env priority
     assert_eq!(config.server.host, "0.0.0.0"); // File fallback

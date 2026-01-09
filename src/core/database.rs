@@ -75,7 +75,7 @@ impl Default for DatabaseConfig {
 /// Database connection pool
 #[derive(Clone)]
 pub struct DatabasePool {
-    pool: Pool<PostgresConnectionManager<NoTls>>,
+    pool: Option<Pool<PostgresConnectionManager<NoTls>>>,
     config: DatabaseConfig,
 }
 
@@ -83,7 +83,7 @@ impl DatabasePool {
     /// Create a new database connection pool
     pub fn new(config: DatabaseConfig) -> Result<Self> {
         if !config.enabled {
-            return Err(Error::generic("Database is disabled"));
+            return Ok(Self { pool: None, config });
         }
 
         let manager = PostgresConnectionManager::new(
@@ -103,20 +103,31 @@ impl DatabasePool {
             .build(manager)
             .map_err(|e| Error::generic(format!("Failed to create connection pool: {}", e)))?;
 
-        Ok(Self { pool, config })
+        Ok(Self {
+            pool: Some(pool),
+            config,
+        })
     }
 
     /// Get a connection from the pool
     pub fn get_connection(
         &self,
     ) -> Result<r2d2::PooledConnection<PostgresConnectionManager<NoTls>>> {
-        self.pool
-            .get()
+        let pool = self
+            .pool
+            .as_ref()
+            .ok_or_else(|| Error::generic("Database is disabled"))?;
+
+        pool.get()
             .map_err(|e| Error::generic(format!("Failed to get database connection: {}", e)))
     }
 
     /// Execute a health check
     pub async fn health_check(&self) -> Result<()> {
+        if !self.config.enabled {
+            return Err(Error::generic("Database is disabled"));
+        }
+
         let mut conn = self.get_connection()?;
         conn.execute("SELECT 1", &[])
             .map_err(|e| Error::generic(format!("Database health check failed: {}", e)))?;
@@ -125,12 +136,22 @@ impl DatabasePool {
 
     /// Get pool statistics
     pub fn stats(&self) -> DatabaseStats {
-        let state = self.pool.state();
-        DatabaseStats {
-            connections: state.connections,
-            idle_connections: state.idle_connections,
-            max_connections: self.config.max_connections,
-            min_idle: self.config.min_idle,
+        match &self.pool {
+            Some(pool) => {
+                let state = pool.state();
+                DatabaseStats {
+                    connections: state.connections,
+                    idle_connections: state.idle_connections,
+                    max_connections: self.config.max_connections,
+                    min_idle: self.config.min_idle,
+                }
+            }
+            None => DatabaseStats {
+                connections: 0,
+                idle_connections: 0,
+                max_connections: self.config.max_connections,
+                min_idle: self.config.min_idle,
+            },
         }
     }
 
@@ -307,7 +328,22 @@ mod tests {
             enabled: false,
             ..Default::default()
         };
-        assert!(DatabasePool::new(config).is_err());
+        let pool = DatabasePool::new(config).expect("Should be able to create disabled pool");
+        assert!(!pool.is_enabled());
+        assert!(pool.get_connection().is_err());
+    }
+
+    #[test]
+    fn test_get_or_create_global_database_pool() {
+        // This should not fail even if not initialized
+        let pool_result = get_or_create_global_database_pool();
+        assert!(
+            pool_result.is_ok(),
+            "Fallback initialization failed: {:?}",
+            pool_result.err()
+        );
+        let pool = pool_result.unwrap();
+        assert!(!pool.is_enabled());
     }
 
     #[test]

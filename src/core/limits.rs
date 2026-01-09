@@ -4,11 +4,37 @@
 //! Supports memory, CPU, disk, and concurrent operation limits.
 
 use crate::core::error::{Error, Result};
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tokio::sync::Semaphore;
+
+/// Trait for resource limits operations (enables DI and testing)
+///
+/// ## Architecture
+///
+/// This module uses dependency injection via the `ResourceLimitsProvider` trait
+/// to enable testability and flexibility. Pass `Arc<dyn ResourceLimitsProvider>`
+/// through constructors instead of using global state.
+#[async_trait]
+pub trait ResourceLimitsProvider: Send + Sync {
+    /// Check if an operation can proceed based on resource limits
+    async fn check_operation_allowed(&self, operation_type: &str) -> Result<()>;
+
+    /// Get current resource statistics
+    async fn get_stats(&self) -> Result<ResourceStats>;
+
+    /// Get the configuration
+    fn config(&self) -> &ResourceLimitsConfig;
+
+    /// Check if resource limits are enabled
+    fn is_enabled(&self) -> bool;
+}
+
+/// Type alias for shared resource limits provider
+pub type SharedResourceLimits = Arc<dyn ResourceLimitsProvider>;
 
 /// Resource limits configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -576,6 +602,26 @@ impl ResourceLimits {
     }
 }
 
+/// Implement the provider trait for ResourceLimits
+#[async_trait]
+impl ResourceLimitsProvider for ResourceLimits {
+    async fn check_operation_allowed(&self, operation_type: &str) -> Result<()> {
+        ResourceLimits::check_operation_allowed(self, operation_type).await
+    }
+
+    async fn get_stats(&self) -> Result<ResourceStats> {
+        ResourceLimits::get_stats(self).await
+    }
+
+    fn config(&self) -> &ResourceLimitsConfig {
+        ResourceLimits::config(self)
+    }
+
+    fn is_enabled(&self) -> bool {
+        ResourceLimits::is_enabled(self)
+    }
+}
+
 /// RAII guard for operation permits
 pub struct OperationPermit<'a> {
     _permit: Option<tokio::sync::SemaphorePermit<'a>>,
@@ -605,13 +651,90 @@ impl Drop for OperationPermit<'_> {
     }
 }
 
+/// Null resource limits for testing (always allows operations)
+#[derive(Clone)]
+pub struct NullResourceLimits {
+    config: ResourceLimitsConfig,
+}
+
+impl Default for NullResourceLimits {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl NullResourceLimits {
+    /// Create a new null resource limits for testing
+    pub fn new() -> Self {
+        Self {
+            config: ResourceLimitsConfig {
+                enabled: false,
+                ..Default::default()
+            },
+        }
+    }
+}
+
+#[async_trait]
+impl ResourceLimitsProvider for NullResourceLimits {
+    async fn check_operation_allowed(&self, _operation_type: &str) -> Result<()> {
+        Ok(())
+    }
+
+    async fn get_stats(&self) -> Result<ResourceStats> {
+        Ok(ResourceStats {
+            memory: MemoryStats {
+                total: 0,
+                used: 0,
+                available: 0,
+                usage_percent: 0.0,
+            },
+            cpu: CpuStats {
+                usage_percent: 0.0,
+                cores: 0,
+            },
+            disk: DiskStats {
+                total: 0,
+                used: 0,
+                available: 0,
+                usage_percent: 0.0,
+            },
+            operations: OperationStats {
+                active_indexing: 0,
+                active_search: 0,
+                active_embedding: 0,
+                queued_operations: 0,
+            },
+            timestamp: 0,
+        })
+    }
+
+    fn config(&self) -> &ResourceLimitsConfig {
+        &self.config
+    }
+
+    fn is_enabled(&self) -> bool {
+        false
+    }
+}
+
 /// Global resource limits instance
+///
+/// **DEPRECATED**: Use dependency injection with `Arc<dyn ResourceLimitsProvider>` instead.
+/// This global static will be removed in a future release.
 static RESOURCE_LIMITS: std::sync::OnceLock<ResourceLimits> = std::sync::OnceLock::new();
 
 /// Initialize global resource limits
+///
+/// **DEPRECATED**: Use `ResourceLimits::new()` and pass via DI instead.
+#[deprecated(
+    since = "0.0.5",
+    note = "Use ResourceLimits::new() and pass Arc<dyn ResourceLimitsProvider> via dependency injection"
+)]
 pub fn init_global_resource_limits(config: ResourceLimitsConfig) -> Result<()> {
     // Check if we already have resource limits
-    if get_global_resource_limits().is_some() {
+    // Use RESOURCE_LIMITS.get() directly to avoid calling deprecated get_global_resource_limits()
+    if RESOURCE_LIMITS.get().is_some() {
         return Ok(());
     }
 
@@ -629,6 +752,12 @@ pub fn init_global_resource_limits(config: ResourceLimitsConfig) -> Result<()> {
 }
 
 /// Get global resource limits
+///
+/// **DEPRECATED**: Use dependency injection with `Arc<dyn ResourceLimitsProvider>` instead.
+#[deprecated(
+    since = "0.0.5",
+    note = "Use Arc<dyn ResourceLimitsProvider> via dependency injection"
+)]
 pub fn get_global_resource_limits() -> Option<&'static ResourceLimits> {
     RESOURCE_LIMITS.get()
 }
@@ -655,30 +784,33 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_resource_limits_creation() {
+    async fn test_resource_limits_creation()
+    -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let config = ResourceLimitsConfig::default();
         let limits = ResourceLimits::new(config);
 
         assert!(limits.is_enabled());
 
         // Test stats collection
-        let stats = limits.get_stats().await.unwrap();
+        let stats = limits.get_stats().await?;
         assert!(stats.timestamp > 0);
         assert!(stats.memory.total > 0);
         assert!(stats.cpu.cores > 0);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_operation_permits() {
+    async fn test_operation_permits()
+    -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let config = ResourceLimitsConfig::default();
         let limits = ResourceLimits::new(config);
 
         // Acquire permits
-        let _permit1 = limits.acquire_operation_permit("indexing").await.unwrap();
-        let _permit2 = limits.acquire_operation_permit("search").await.unwrap();
+        let _permit1 = limits.acquire_operation_permit("indexing").await?;
+        let _permit2 = limits.acquire_operation_permit("search").await?;
 
         // Check that counters are updated
-        let stats = limits.get_stats().await.unwrap();
+        let stats = limits.get_stats().await?;
         assert_eq!(stats.operations.active_indexing, 1);
         assert_eq!(stats.operations.active_search, 1);
 
@@ -689,13 +821,15 @@ mod tests {
         // Give a moment for async cleanup
         tokio::time::sleep(Duration::from_millis(10)).await;
 
-        let stats = limits.get_stats().await.unwrap();
+        let stats = limits.get_stats().await?;
         assert_eq!(stats.operations.active_indexing, 0);
         assert_eq!(stats.operations.active_search, 0);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_disabled_limits() {
+    async fn test_disabled_limits()
+    -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let config = ResourceLimitsConfig {
             enabled: false,
             ..Default::default()
@@ -705,7 +839,36 @@ mod tests {
         assert!(!limits.is_enabled());
 
         // Should always allow operations when disabled
-        limits.check_operation_allowed("indexing").await.unwrap();
-        let _permit = limits.acquire_operation_permit("search").await.unwrap();
+        limits.check_operation_allowed("indexing").await?;
+        let _permit = limits.acquire_operation_permit("search").await?;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_resource_limits_provider_trait()
+    -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let limits = ResourceLimits::new(ResourceLimitsConfig::default());
+        let provider: &dyn ResourceLimitsProvider = &limits;
+        assert!(provider.is_enabled());
+
+        let stats = provider.get_stats().await?;
+        assert!(stats.memory.total > 0);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_null_resource_limits()
+    -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let null_limits = NullResourceLimits::new();
+        assert!(!null_limits.is_enabled());
+
+        // Should always succeed
+        null_limits.check_operation_allowed("indexing").await?;
+
+        // Stats should return zeroes
+        let stats = null_limits.get_stats().await?;
+        assert_eq!(stats.memory.total, 0);
+        assert_eq!(stats.cpu.cores, 0);
+        Ok(())
     }
 }

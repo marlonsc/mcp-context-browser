@@ -387,7 +387,7 @@ impl SyncManager {
                 let mod_time = modified
                     .duration_since(UNIX_EPOCH)
                     .unwrap_or(Duration::from_secs(0))
-                    .as_secs();
+                    .as_millis() as u64;
 
                 // Check if we have a previous modification time
                 if let Some(prev_mod_time) = self.file_mod_times.get(&path_str) {
