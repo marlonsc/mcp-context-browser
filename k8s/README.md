@@ -93,7 +93,7 @@ kubectl logs -f deployment/mcp-context-browser
 curl http://your-domain.com:3001/api/context/metrics
 ```
 
-## ⚙️ Configuração
+## ⚙️ Configuration
 
 ### Auto-scaling
 
@@ -120,11 +120,11 @@ limits:
 
 ### Health Checks
 
--   **Liveness**: `/api/health` a cada 10s
--   **Readiness**: `/api/health` a cada 5s
--   **Startup**: `/api/health` com timeout de 6 tentativas
+-   **Liveness**: `/api/health` every 10s
+-   **Readiness**: `/api/health` every 5s
+-   **Startup**: `/api/health` with timeout of 6 attempts
 
-## 📊 Monitoramento
+## 📊 Monitoring
 
 ### Prometheus Metrics
 
@@ -136,33 +136,33 @@ The ServiceMonitor exposes metrics at `/api/context/metrics`:
 -   `mcp_cache_hit_ratio`: Cache hit ratio
 -   `mcp_resource_limits_*`: Resource limits
 
-### Dashboards Grafana
+### Grafana Dashboards
 
-Importe o dashboard fornecido em `docs/diagrams/grafana-dashboard.json`.
+Import the dashboard provided in `docs/diagrams/grafana-dashboard.json`.
 
 ## 🔧 Troubleshooting
 
-### Problemas Comuns
+### Common Issues
 
 1.  **Pods don't start**: Check secrets and configmaps
 2.  **HPA doesn't scale**: Check Prometheus metrics
-3.  **Timeouts**: Ajustar resource limits
-4.  **Cache errors**: Verificar conexão Redis
+3.  **Timeouts**: Adjust resource limits
+4.  **Cache errors**: Check Redis connection
 
 ### Debug Commands
 
 ```bash
-# Ver eventos
+# View events
 kubectl get events --sort-by=.metadata.creationTimestamp
 
-# Descrever recursos
+# Describe resources
 kubectl describe deployment mcp-context-browser
 kubectl describe hpa mcp-context-browser-hpa
 
-# Ver logs com contexto
+# View logs with context
 kubectl logs -f deployment/mcp-context-browser --previous
 
-# Port-forward para debug
+# Port-forward for debug
 kubectl port-forward svc/mcp-context-browser-service 3000:80
 ```
 
@@ -181,7 +181,7 @@ kubectl set image deployment/mcp-context-browser mcp-context-browser=mcp-context
 kubectl rollout status deployment/mcp-context-browser
 ```
 
-## 🛡️ Segurança
+## 🛡️ Security
 
 -   **RBAC**: ServiceAccount with minimal permissions
 -   **NetworkPolicy**: Network traffic control
@@ -207,7 +207,7 @@ For custom metrics, add to HPA:
 
 ### Resource Optimization
 
-Ajuste os limites baseado no uso:
+Adjust limits based on usage:
 
 ```bash
 # Monitor resource usage
@@ -217,9 +217,9 @@ kubectl top pods -l app=mcp-context-browser
 kubectl edit deployment mcp-context-browser
 ```
 
-## 🤝 Suporte
+## 🤝 Support
 
-Para issues, consulte:
+For issues, consult:
 
 -   [GitHub Issues](https://github.com/mcp-context-browser/issues)
 -   [Documentation](https://docs.mcp-context-browser.com)

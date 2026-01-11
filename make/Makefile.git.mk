@@ -1,5 +1,5 @@
 # =============================================================================
-# GIT - Operações forçadas de commit e gerenciamento git
+# GIT - Forced commit operations and git management
 # =============================================================================
 
 .PHONY: git-status git-add-all git-commit-force git-push-force git-tag git-force-all sync force-commit

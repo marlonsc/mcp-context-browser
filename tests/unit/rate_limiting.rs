@@ -22,6 +22,7 @@ mod tests {
             burst_allowance: 20,
             enabled: true,
             redis_timeout_seconds: 5,
+            cache_ttl_seconds: 1,
         };
 
         let limiter = RateLimiter::new(config.clone());
@@ -88,6 +89,7 @@ mod tests {
             burst_allowance: 5,
             enabled: true,
             redis_timeout_seconds: 1, // Fast timeout for test (1 second total)
+            cache_ttl_seconds: 1,
         };
 
         let limiter = RateLimiter::new(config);

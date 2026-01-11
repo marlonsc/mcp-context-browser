@@ -49,7 +49,7 @@ async fn test_daemon_with_custom_config() {
         max_lock_age_secs: 600,
     };
 
-    let daemon = ContextDaemon::with_config(config);
+    let daemon = ContextDaemon::with_config(config, None);
     let daemon_config = daemon.config();
 
     assert_eq!(daemon_config.cleanup_interval_secs, 60);

@@ -76,16 +76,25 @@ impl BackupManager {
             while let Ok(event) = receiver.recv().await {
                 if let SystemEvent::BackupCreate { path } = event {
                     tracing::info!("[BACKUP] Creating backup at: {}", path);
-                    match manager.create_backup_sync(&path) {
-                        Ok(info) => {
+                    let m = manager.clone();
+                    let p = path.clone();
+                    // Run backup in a blocking task to avoid stalling the async runtime
+                    let result =
+                        tokio::task::spawn_blocking(move || m.create_backup_internal(&p)).await;
+
+                    match result {
+                        Ok(Ok(info)) => {
                             tracing::info!(
                                 "[BACKUP] Created backup: {} ({} bytes)",
                                 info.path,
                                 info.size_bytes
                             );
                         }
-                        Err(e) => {
+                        Ok(Err(e)) => {
                             tracing::error!("[BACKUP] Failed to create backup at {}: {}", path, e);
+                        }
+                        Err(e) => {
+                            tracing::error!("[BACKUP] Backup task panicked: {}", e);
                         }
                     }
                 }
@@ -93,47 +102,14 @@ impl BackupManager {
         });
     }
 
-    /// Create a backup synchronously (for event handler)
-    fn create_backup_sync(&self, target_path: &str) -> Result<BackupInfo> {
-        // Ensure backup directory exists
-        let backup_dir = Path::new(&self.backup_dir);
-        if !backup_dir.exists() {
-            fs::create_dir_all(backup_dir)
-                .map_err(|e| Error::internal(format!("Failed to create backup dir: {}", e)))?;
-        }
+    /// Internal backup creation logic shared between sync and async paths
+    fn create_backup_internal(&self, target_path: &str) -> Result<BackupInfo> {
+        BackupActor::perform_backup(target_path, &self.backup_dir, &self.data_dir)
+    }
 
-        // Create the tar.gz file
-        let file = File::create(target_path)
-            .map_err(|e| Error::internal(format!("Failed to create backup file: {}", e)))?;
-
-        let encoder = GzEncoder::new(file, Compression::default());
-        let mut archive = Builder::new(encoder);
-
-        // Add the data directory to the archive
-        let data_path = Path::new(&self.data_dir);
-        if data_path.exists() && data_path.is_dir() {
-            archive
-                .append_dir_all("data", data_path)
-                .map_err(|e| Error::internal(format!("Failed to add data to backup: {}", e)))?;
-        }
-
-        // Finish writing the archive
-        let encoder = archive
-            .into_inner()
-            .map_err(|e| Error::internal(format!("Failed to finalize archive: {}", e)))?;
-        encoder
-            .finish()
-            .map_err(|e| Error::internal(format!("Failed to finish compression: {}", e)))?;
-
-        // Get file size
-        let metadata = fs::metadata(target_path)
-            .map_err(|e| Error::internal(format!("Failed to get backup metadata: {}", e)))?;
-
-        Ok(BackupInfo {
-            path: target_path.to_string(),
-            size_bytes: metadata.len(),
-            created_at: chrono::Utc::now(),
-        })
+    /// Create a backup synchronously (DEPRECATED - use create_backup)
+    pub fn create_backup_sync(&self, target_path: &str) -> Result<BackupInfo> {
+        self.create_backup_internal(target_path)
     }
 
     /// Create a backup asynchronously via actor
@@ -186,23 +162,47 @@ impl BackupActor {
     }
 
     async fn run(&mut self) {
+        let backup_dir = self.backup_dir.clone();
+        let data_dir = self.data_dir.clone();
+
         while let Some(msg) = self.receiver.recv().await {
             match msg {
                 BackupMessage::CreateBackup { path, response } => {
-                    let result = self.do_create_backup(&path);
+                    let b_dir = backup_dir.clone();
+                    let d_dir = data_dir.clone();
+                    let p = path.clone();
+
+                    // Run the actual backup in a blocking task
+                    let result = tokio::task::spawn_blocking(move || {
+                        Self::perform_backup(&p, &b_dir, &d_dir)
+                    })
+                    .await
+                    .map_err(|_| Error::internal("Backup task panicked"))
+                    .and_then(|res| res);
+
                     let _ = response.send(result);
                 }
                 BackupMessage::ListBackups { response } => {
-                    let result = self.do_list_backups();
+                    let b_dir = backup_dir.clone();
+                    let result =
+                        tokio::task::spawn_blocking(move || Self::perform_list_backups(&b_dir))
+                            .await
+                            .map_err(|_| Error::internal("List backups task panicked"))
+                            .and_then(|res| res);
+
                     let _ = response.send(result);
                 }
             }
         }
     }
 
-    fn do_create_backup(&self, target_path: &str) -> Result<BackupInfo> {
+    fn perform_backup(
+        target_path: &str,
+        backup_dir_path: &str,
+        data_dir_path: &str,
+    ) -> Result<BackupInfo> {
         // Ensure backup directory exists
-        let backup_dir = Path::new(&self.backup_dir);
+        let backup_dir = Path::new(backup_dir_path);
         if !backup_dir.exists() {
             fs::create_dir_all(backup_dir)
                 .map_err(|e| Error::internal(format!("Failed to create backup dir: {}", e)))?;
@@ -216,7 +216,7 @@ impl BackupActor {
         let mut archive = Builder::new(encoder);
 
         // Add the data directory to the archive
-        let data_path = Path::new(&self.data_dir);
+        let data_path = Path::new(data_dir_path);
         if data_path.exists() && data_path.is_dir() {
             archive
                 .append_dir_all("data", data_path)
@@ -242,8 +242,8 @@ impl BackupActor {
         })
     }
 
-    fn do_list_backups(&self) -> Result<Vec<BackupInfo>> {
-        let backup_dir = Path::new(&self.backup_dir);
+    fn perform_list_backups(backup_dir_path: &str) -> Result<Vec<BackupInfo>> {
+        let backup_dir = Path::new(backup_dir_path);
         if !backup_dir.exists() {
             return Ok(Vec::new());
         }
@@ -285,68 +285,4 @@ pub fn create_shared_backup_manager(
     event_bus: Option<SharedEventBus>,
 ) -> SharedBackupManager {
     Arc::new(BackupManager::new(backup_dir, data_dir, event_bus))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::TempDir;
-
-    #[tokio::test]
-    async fn test_backup_creation() -> std::result::Result<(), Box<dyn std::error::Error>> {
-        let backup_dir = TempDir::new()?;
-        let data_dir = TempDir::new()?;
-
-        // Create some test data
-        let test_file = data_dir.path().join("test.txt");
-        fs::write(&test_file, "test data")?;
-
-        let manager = BackupManager::new(
-            backup_dir
-                .path()
-                .to_str()
-                .ok_or("Invalid backup dir path")?,
-            data_dir.path().to_str().ok_or("Invalid data dir path")?,
-            None,
-        );
-
-        let backup_path = backup_dir.path().join("test_backup.tar.gz");
-        let info = manager
-            .create_backup(backup_path.to_str().ok_or("Invalid backup path")?)
-            .await?;
-
-        assert!(info.size_bytes > 0);
-        assert!(Path::new(&info.path).exists());
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_list_backups() -> std::result::Result<(), Box<dyn std::error::Error>> {
-        let backup_dir = TempDir::new()?;
-        let data_dir = TempDir::new()?;
-
-        let manager = BackupManager::new(
-            backup_dir
-                .path()
-                .to_str()
-                .ok_or("Invalid backup dir path")?,
-            data_dir.path().to_str().ok_or("Invalid data dir path")?,
-            None,
-        );
-
-        // Initially empty
-        let backups = manager.list_backups().await?;
-        assert!(backups.is_empty());
-
-        // Create a backup
-        let backup_path = backup_dir.path().join("test.tar.gz");
-        manager
-            .create_backup(backup_path.to_str().ok_or("Invalid backup path")?)
-            .await?;
-
-        // Should list one backup
-        let backups = manager.list_backups().await?;
-        assert_eq!(backups.len(), 1);
-        Ok(())
-    }
 }

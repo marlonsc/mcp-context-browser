@@ -109,7 +109,7 @@ Built on production-grade foundations:
 
 ## Testing
 
-214 automated tests covering all critical functionality:
+564 automated tests covering all critical functionality:
 
 ```bash
 make test           # Run full test suite
@@ -174,7 +174,7 @@ First stable release - drop-in replacement for claude-context:
 -   ✅ 6 embedding providers (OpenAI, VoyageAI, Ollama, Gemini, FastEmbed, Mock)
 -   ✅ 6 vector stores (Milvus, EdgeVec, In-Memory, Filesystem, Encrypted, Null)
 -   ✅ claude-context environment variable compatibility
--   ✅ 391+ tests with comprehensive coverage
+-   ✅ 564 tests with comprehensive coverage
 -   ✅ JWT authentication and rate limiting
 -   ✅ Clean architecture with trait-based DI
 -   ✅ HTTP transport foundation

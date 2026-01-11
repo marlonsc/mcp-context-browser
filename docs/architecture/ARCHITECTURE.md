@@ -638,7 +638,7 @@ The system is organized into specialized modules, each handling distinct respons
 -   `manager`: Sync operation management and statistics
 -   `CodebaseLockManager`: Lock lifecycle management
 
-### Advanced Features (v0.0.4)
+### Advanced Features
 
 #### 🛡️ Provider Routing System (`src/providers/routing/`)
 

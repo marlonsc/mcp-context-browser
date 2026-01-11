@@ -9,7 +9,7 @@ metadata:
 # Common labels applied to all resources
 commonLabels:
   app: mcp-context-browser
-  version: v0.0.4
+  version: v0.1.0
 
 # Resources to include
 resources:
@@ -27,7 +27,7 @@ resources:
 # Image transformations
 images:
   - name: mcp-context-browser
-    newTag: v0.0.4
+    newTag: v0.1.0
 
 # ConfigMap generator for environment-specific configs
 configMapGenerator:

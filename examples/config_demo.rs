@@ -546,10 +546,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!();
     println!("🎯 This implementation addresses all gaps identified in the audit:");
-    println!("   • GAP: 'Sem validação' → ✅ Schema validation implemented");
-    println!("   • GAP: 'Env vars direto' → ✅ Global config file + env override");
-    println!("   • GAP: 'Defaults hardcoded' → ✅ Provider-specific configuration");
-    println!("   • GAP: 'Documentação mínima' → ✅ Comprehensive documentation");
+    println!("   • GAP: 'No validation' → ✅ Schema validation implemented");
+    println!("   • GAP: 'Env vars direct' → ✅ Global config file + env override");
+    println!("   • GAP: 'Hardcoded defaults' → ✅ Provider-specific configuration");
+    println!("   • GAP: 'Minimal documentation' → ✅ Comprehensive documentation");
 
     Ok(())
 }

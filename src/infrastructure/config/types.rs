@@ -102,6 +102,10 @@ pub struct Config {
     #[serde(default)]
     #[validate(nested)]
     pub metrics: MetricsConfig,
+    /// Admin interface configuration
+    #[serde(default)]
+    #[validate(nested)]
+    pub admin: crate::admin::AdminConfig,
     /// Authentication and authorization settings
     #[serde(default)]
     #[validate(nested)]
@@ -150,6 +154,7 @@ impl Default for Config {
             server: ServerConfig::default(),
             providers: ProviderConfig::default(),
             metrics: MetricsConfig::default(),
+            admin: crate::admin::AdminConfig::default(),
             auth: AuthConfig::default(),
             database: DatabaseConfig::default(),
             sync: SyncConfig::default(),

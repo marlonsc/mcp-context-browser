@@ -20,7 +20,7 @@ MCP Context Browser v0.1.0 is the first stable release, delivering a complete dr
 - **14 Programming Languages**: Comprehensive AST-based parsing with tree-sitter
 - **6 Embedding Providers**: OpenAI, VoyageAI, Ollama, Gemini, FastEmbed, Mock
 - **6 Vector Stores**: Milvus, EdgeVec, In-Memory, Filesystem, Encrypted, Null
-- **391+ Tests**: Comprehensive test suite with high coverage
+- **564 Tests**: Comprehensive test suite with high coverage
 - **Clean Architecture**: Complete refactoring with trait-based dependency injection
 
 ### New Features
@@ -77,7 +77,7 @@ Infrastructure for future HTTP/SSE transport support:
 
 | Metric | Value |
 |--------|-------|
-| Total Tests | 391+ |
+| Total Tests | 564 |
 | Language Processors | 14 |
 | Embedding Providers | 6 |
 | Vector Stores | 6 |
@@ -323,7 +323,7 @@ Complete drop-in claude-context replacement
 ├── HTTP transport foundation
 ├── Binary auto-respawn
 ├── Systemd integration
-├── 391+ tests
+├── 564 tests
 └── Clean architecture refactoring
 ```
 
@@ -376,7 +376,7 @@ Git-aware semantic search platform
 
 -   claude-context compatibility: 100%
 -   Language processors: 14 languages
--   Test coverage: 391+ tests
+-   Test coverage: 564 tests
 -   HTTP transport foundation: Complete
 -   Systemd integration: Complete
 -   Clean architecture: Complete

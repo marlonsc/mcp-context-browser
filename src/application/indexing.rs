@@ -30,26 +30,24 @@ pub struct IndexingService {
 
 impl IndexingService {
     /// Create a new indexing service
-    pub fn new(context_service: Arc<ContextService>) -> Result<Self> {
-        Ok(Self {
-            context_service,
-            snapshot_manager: SnapshotManager::new()?,
-            sync_manager: None,
-            chunker: IntelligentChunker::new(),
-        })
-    }
-
-    /// Create indexing service with sync coordination
-    pub fn with_sync_manager(
+    pub fn new(
         context_service: Arc<ContextService>,
-        sync_manager: Arc<SyncManager>,
+        sync_manager: Option<Arc<SyncManager>>,
     ) -> Result<Self> {
         Ok(Self {
             context_service,
             snapshot_manager: SnapshotManager::new()?,
-            sync_manager: Some(sync_manager),
+            sync_manager,
             chunker: IntelligentChunker::new(),
         })
+    }
+
+    /// Create indexing service with sync coordination (DEPRECATED - use new)
+    pub fn with_sync_manager(
+        context_service: Arc<ContextService>,
+        sync_manager: Arc<SyncManager>,
+    ) -> Result<Self> {
+        Self::new(context_service, Some(sync_manager))
     }
 
     /// Start listening for system events

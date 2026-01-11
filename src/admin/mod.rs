@@ -23,19 +23,43 @@ pub mod web;
 
 pub use routes::create_admin_router;
 
+use serde::{Deserialize, Serialize};
+use validator::Validate;
+
 /// Admin API server configuration
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct AdminConfig {
     /// Enable admin interface
+    #[serde(default = "default_true")]
     pub enabled: bool,
     /// Admin username
+    #[serde(default = "default_admin")]
     pub username: String,
     /// Admin password
+    #[serde(default = "default_admin")]
     pub password: String,
     /// JWT secret for authentication
+    #[serde(default = "default_jwt_secret")]
     pub jwt_secret: String,
     /// JWT expiration time in seconds
+    #[serde(default = "default_jwt_expiration")]
     pub jwt_expiration: u64,
+}
+
+fn default_true() -> bool {
+    true
+}
+
+fn default_admin() -> String {
+    "admin".to_string()
+}
+
+fn default_jwt_secret() -> String {
+    "default-jwt-secret-change-in-production".to_string()
+}
+
+fn default_jwt_expiration() -> u64 {
+    3600
 }
 
 impl Default for AdminConfig {

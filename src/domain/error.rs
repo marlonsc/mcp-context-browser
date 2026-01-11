@@ -90,7 +90,9 @@ impl Error {
 
     /// Create an I/O error
     pub fn io<S: Into<String>>(message: S) -> Self {
-        Self::Generic(message.into().into())
+        Self::Io {
+            source: std::io::Error::other(message.into()),
+        }
     }
 
     /// Create a configuration error

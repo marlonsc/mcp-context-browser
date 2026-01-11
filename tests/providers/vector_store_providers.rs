@@ -347,7 +347,7 @@ mod null_provider_tests {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "milvus"))]
 mod milvus_provider_tests {
     use super::*;
     use mcp_context_browser::adapters::providers::vector_store::MilvusVectorStoreProvider;

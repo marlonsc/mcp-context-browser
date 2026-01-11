@@ -59,7 +59,7 @@ async fn initialize_server_components(
     log_buffer: crate::infrastructure::logging::SharedLogBuffer,
 ) -> Result<
     (
-        McpServer,
+        Arc<McpServer>,
         Option<tokio::task::JoinHandle<()>>,
         Arc<ResourceLimits>,
         Arc<dyn crate::adapters::http_client::HttpClientProvider>,
@@ -151,14 +151,14 @@ async fn initialize_server_components(
         .with_resource_limits(resource_limits.clone())
         .with_http_client(Arc::clone(&http_client));
 
-    if let Some(cm) = cache_manager {
-        builder = builder.with_cache(cm);
+    if let Some(ref cm) = cache_manager {
+        builder = builder.with_cache(Arc::clone(cm));
     }
 
     let server = match builder.build().await {
         Ok(server) => {
             tracing::info!("✅ Service providers initialized successfully");
-            server
+            Arc::new(server)
         }
         Err(e) => {
             tracing::error!("❌ Failed to initialize server: {}", e);
@@ -178,20 +178,31 @@ async fn initialize_server_components(
     // Initialize metrics server if enabled
     let metrics_handle = if config.metrics.enabled {
         tracing::info!(
-            "📊 Starting metrics HTTP server on port {}",
+            "📊 Starting metrics and admin HTTP server on port {}",
             config.metrics.port
         );
-        let metrics_server = MetricsApiServer::with_limits(
+
+        // Initialize admin API server
+        let admin_api_server = crate::admin::api::AdminApiServer::new(
+            config.admin.clone(),
+            Arc::clone(&server),
+        );
+
+        let mut metrics_server = MetricsApiServer::with_limits(
             config.metrics.port,
             server.system_collector(),
             server.performance_metrics(),
             rate_limiter.clone(),
             Some(resource_limits.clone()),
+            cache_manager.clone(),
         );
+
+        // Merge admin router into metrics server
+        metrics_server = metrics_server.with_external_router(admin_api_server.create_router());
 
         Some(tokio::spawn(async move {
             if let Err(e) = metrics_server.start().await {
-                tracing::error!("💥 Metrics server failed: {}", e);
+                tracing::error!("💥 Metrics/Admin server failed: {}", e);
             }
         }))
     } else {

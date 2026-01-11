@@ -120,6 +120,8 @@ impl McpServer {
         service_provider: Arc<dyn ServiceProviderInterface>,
         config: &crate::infrastructure::config::Config,
         http_client: Arc<dyn crate::adapters::http_client::HttpClientProvider>,
+        cache_manager: Arc<CacheManager>,
+        event_bus: SharedEventBus,
     ) -> Result<
         (Arc<AuthHandler>, Arc<IndexingService>, Arc<SearchService>),
         Box<dyn std::error::Error>,
@@ -150,8 +152,16 @@ impl McpServer {
             hybrid_search_provider,
         ));
 
+        // Create sync manager if cache is available
+        let sync_manager = Arc::new(crate::sync::SyncManager::with_event_bus(
+            config.sync.clone(),
+            event_bus,
+            Some(cache_manager),
+        ));
+
         // Create services
-        let indexing_service = Arc::new(IndexingService::new(context_service.clone())?);
+        let indexing_service =
+            Arc::new(IndexingService::new(context_service.clone(), Some(sync_manager))?);
         let search_service = Arc::new(SearchService::new(context_service));
 
         Ok((auth_handler, indexing_service, search_service))
@@ -195,6 +205,8 @@ impl McpServer {
             Arc::clone(&components.service_provider),
             &current_config,
             Arc::clone(&components.http_client),
+            Arc::clone(&components.cache_manager),
+            components.event_bus.clone(),
         )
         .await?;
 

@@ -98,6 +98,66 @@ pub enum Language {
     Unknown,
 }
 
+/// System operation types for metrics and rate limiting
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub enum OperationType {
+    Indexing,
+    Search,
+    Embedding,
+    Maintenance,
+    Other(String),
+}
+
+/// Query performance metrics tracking
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
+pub struct QueryPerformanceMetrics {
+    /// Total number of queries processed
+    pub total_queries: u64,
+    /// Average query latency in milliseconds
+    pub average_latency: f64,
+    /// 99th percentile latency in milliseconds
+    pub p99_latency: f64,
+    /// Query success rate (0-100)
+    pub success_rate: f64,
+}
+
+/// Cache performance metrics tracking
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
+pub struct CacheMetrics {
+    /// Total cache hits
+    pub hits: u64,
+    /// Total cache misses
+    pub misses: u64,
+    /// Cache hit rate percentage (0-100)
+    pub hit_rate: f64,
+    /// Current cache size in bytes
+    pub size: u64,
+}
+
+impl std::fmt::Display for OperationType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            OperationType::Indexing => write!(f, "indexing"),
+            OperationType::Search => write!(f, "search"),
+            OperationType::Embedding => write!(f, "embedding"),
+            OperationType::Maintenance => write!(f, "maintenance"),
+            OperationType::Other(s) => write!(f, "{}", s),
+        }
+    }
+}
+
+impl From<&str> for OperationType {
+    fn from(s: &str) -> Self {
+        match s.to_lowercase().as_str() {
+            "indexing" => OperationType::Indexing,
+            "search" => OperationType::Search,
+            "embedding" => OperationType::Embedding,
+            "maintenance" => OperationType::Maintenance,
+            _ => OperationType::Other(s.to_string()),
+        }
+    }
+}
+
 impl Language {
     pub fn from_extension(ext: &str) -> Self {
         match ext.to_lowercase().as_str() {

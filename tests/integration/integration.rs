@@ -383,6 +383,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg(feature = "milvus")]
     async fn test_milvus_provider_connection() -> Result<(), Box<dyn std::error::Error>> {
         use mcp_context_browser::domain::ports::VectorStoreProvider;
 

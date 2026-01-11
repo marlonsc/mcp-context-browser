@@ -7,11 +7,11 @@
 
 use crate::domain::error::Result;
 use crate::domain::types::SyncBatch;
-use crate::infrastructure::cache::get_global_cache_manager;
 use crate::infrastructure::events::{SharedEventBus, SystemEvent};
 use dashmap::DashMap;
 use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
 use validator::Validate;
@@ -100,6 +100,7 @@ impl AtomicSyncStats {
 /// Synchronization manager with cross-process coordination
 pub struct SyncManager {
     config: SyncConfig,
+    cache_manager: Option<Arc<crate::infrastructure::cache::CacheManager>>,
     last_sync_times: DashMap<String, Instant>,
     file_mod_times: DashMap<String, u64>,
     stats: AtomicSyncStats,
@@ -115,13 +116,17 @@ impl Default for SyncManager {
 impl SyncManager {
     /// Create a new sync manager with default config
     pub fn new() -> Self {
-        Self::with_config(SyncConfig::from_env())
+        Self::with_config(SyncConfig::from_env(), None)
     }
 
     /// Create a new sync manager with custom config
-    pub fn with_config(config: SyncConfig) -> Self {
+    pub fn with_config(
+        config: SyncConfig,
+        cache_manager: Option<Arc<crate::infrastructure::cache::CacheManager>>,
+    ) -> Self {
         Self {
             config,
+            cache_manager,
             last_sync_times: DashMap::new(),
             file_mod_times: DashMap::new(),
             stats: AtomicSyncStats::new(),
@@ -130,9 +135,14 @@ impl SyncManager {
     }
 
     /// Create a new sync manager with event bus for publishing sync events
-    pub fn with_event_bus(config: SyncConfig, event_bus: SharedEventBus) -> Self {
+    pub fn with_event_bus(
+        config: SyncConfig,
+        event_bus: SharedEventBus,
+        cache_manager: Option<Arc<crate::infrastructure::cache::CacheManager>>,
+    ) -> Self {
         Self {
             config,
+            cache_manager,
             last_sync_times: DashMap::new(),
             file_mod_times: DashMap::new(),
             stats: AtomicSyncStats::new(),
@@ -266,9 +276,9 @@ impl SyncManager {
         };
 
         // Enqueue if cache is available
-        if let Some(cache) = get_global_cache_manager() {
+        if let Some(cache) = &self.cache_manager {
             cache
-                .enqueue_item("sync_batches", "queue", batch.clone())
+                .enqueue_item::<SyncBatch>("sync_batches", "queue", batch.clone())
                 .await?;
 
             // Check if we are head of queue
@@ -294,9 +304,9 @@ impl SyncManager {
 
     /// Release a synchronization slot in the queue
     pub async fn release_sync_slot(&self, _codebase_path: &Path, batch: SyncBatch) -> Result<()> {
-        if let Some(cache) = get_global_cache_manager() {
+        if let Some(cache) = &self.cache_manager {
             if let Err(e) = cache
-                .remove_item("sync_batches", "queue", batch.clone())
+                .remove_item::<SyncBatch>("sync_batches", "queue", batch.clone())
                 .await
             {
                 tracing::warn!("[SYNC] Failed to remove batch from queue: {}", e);
@@ -339,7 +349,7 @@ impl SyncManager {
 
     /// Clean old sync batches from queue
     pub async fn clean_old_batches(&self, max_age: Duration) {
-        if let Some(cache) = get_global_cache_manager() {
+        if let Some(cache) = &self.cache_manager {
             if let Ok(queue) = cache.get_queue::<SyncBatch>("sync_batches", "queue").await {
                 let now = SystemTime::now()
                     .duration_since(UNIX_EPOCH)

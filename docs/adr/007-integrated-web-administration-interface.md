@@ -6,7 +6,7 @@ Proposed
 
 ## Context
 
-MCP Context Browser v0.0.4 provides comprehensive system monitoring and metrics through HTTP endpoints on port 3001, but lacks a user-friendly web interface for administration, configuration, and visualization. Users currently need to interact with the system through:
+MCP Context Browser provides comprehensive system monitoring and metrics through HTTP endpoints on port 3001, but lacks a user-friendly web interface for administration, configuration, and visualization. Users currently need to interact with the system through:
 
 1.  Environment variables for configuration
 2.  MCP protocol tools for basic operations
@@ -185,7 +185,7 @@ assets/
 
 ## References
 
--   [ADR 006: Code Audit and Improvements v0.0.4](006-code-audit-and-improvements-v0.0.4.md)
+-   [ADR 006: Code Audit and Improvements](006-code-audit-and-improvements.md)
 -   [Existing HTTP Server](src/metrics/http_server.rs)
 -   [Current Dashboard](assets/dashboard.html)
 -   [Metrics API Design](docs/api-reference.md)

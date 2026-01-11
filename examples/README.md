@@ -1,6 +1,6 @@
 # Examples
 
-This directory contains example applications demonstrating MCP Context Browser v0.0.4 capabilities.
+This directory contains example applications demonstrating MCP Context Browser v0.1.0 capabilities.
 
 ## Available Examples
 

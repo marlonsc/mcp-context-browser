@@ -1,7 +1,7 @@
 # Core Architecture Fixes Plan
 
 **Created**: 2026-01-09
-**Status**: APPROVED
+**Status**: IN_PROGRESS
 **Phase**: Implementation
 **Approved**: 2026-01-09
 
@@ -13,11 +13,11 @@
 
 ## Context
 
-Análise arquitetural do módulo `src/core/` para identificar falhas, fraquezas e problemas enquanto o código ainda é pequeno.
+Architectural analysis of the `src/core/` module to identify flaws, weaknesses, and issues while the code is still small.
 
 ## Exploration Summary
 
-Arquivos analisados: 16 módulos core (auth.rs, backup.rs, cache.rs, crypto.rs, database.rs, error.rs, events.rs, http_client.rs, hybrid_search.rs, limits.rs, logging.rs, merkle.rs, mod.rs, rate_limit.rs, types.rs, validation.rs)
+Analyzed files: 16 core modules (auth.rs, backup.rs, cache.rs, crypto.rs, database.rs, error.rs, events.rs, http_client.rs, hybrid_search.rs, limits.rs, logging.rs, merkle.rs, mod.rs, rate_limit.rs, types.rs, validation.rs)
 
 ---
 

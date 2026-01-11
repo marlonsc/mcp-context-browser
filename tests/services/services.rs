@@ -213,7 +213,7 @@ mod tests {
             vector_store_provider,
             hybrid_search_provider,
         ));
-        let _indexing_service = IndexingService::new(context_service)?;
+        let _indexing_service = IndexingService::new(context_service, None)?;
 
         // Just verify it can be created
         Ok(())
@@ -228,7 +228,7 @@ mod tests {
             vector_store_provider,
             hybrid_search_provider,
         ));
-        let indexing_service = IndexingService::new(context_service)?;
+        let indexing_service = IndexingService::new(context_service, None)?;
 
         let temp_dir = tempfile::tempdir()?;
         let collection = "test-collection";
@@ -253,7 +253,7 @@ mod tests {
             vector_store_provider,
             hybrid_search_provider,
         ));
-        let indexing_service = IndexingService::new(context_service)?;
+        let indexing_service = IndexingService::new(context_service, None)?;
 
         let non_existent_path = std::path::Path::new("/non/existent/path");
         let collection = "test-collection";
@@ -381,7 +381,7 @@ mod tests {
             vector_store_provider,
             hybrid_search_provider,
         ));
-        let indexing_service = IndexingService::new(Arc::clone(&context_service))?;
+        let indexing_service = IndexingService::new(Arc::clone(&context_service), None)?;
         let search_service = SearchService::new(Arc::clone(&context_service));
 
         // Index a directory (even if empty)

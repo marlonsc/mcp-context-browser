@@ -9,7 +9,7 @@ use axum::{extract::State, http::StatusCode, response::Json, routing::get, Route
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
-use crate::infrastructure::cache::{get_global_cache_manager, CacheStats};
+use crate::infrastructure::cache::{CacheManager, CacheStats};
 use crate::infrastructure::limits::ResourceLimits;
 use crate::infrastructure::rate_limit::RateLimiter;
 // Rate limiting middleware will be added later
@@ -52,6 +52,8 @@ pub struct MetricsApiServer {
     start_time: std::time::Instant,
     _rate_limiter: Option<Arc<RateLimiter>>,
     resource_limits: Option<Arc<ResourceLimits>>,
+    cache_manager: Option<Arc<CacheManager>>,
+    external_router: Option<Router>,
 }
 
 impl MetricsApiServer {
@@ -61,7 +63,14 @@ impl MetricsApiServer {
         system_collector: Arc<dyn SystemMetricsCollectorInterface>,
         performance_metrics: Arc<dyn PerformanceMetricsInterface>,
     ) -> Self {
-        Self::with_limits(port, system_collector, performance_metrics, None, None)
+        Self::with_limits(
+            port,
+            system_collector,
+            performance_metrics,
+            None,
+            None,
+            None,
+        )
     }
 
     /// Create a new metrics API server with both rate limiting and resource limits
@@ -71,6 +80,7 @@ impl MetricsApiServer {
         performance_metrics: Arc<dyn PerformanceMetricsInterface>,
         rate_limiter: Option<Arc<RateLimiter>>,
         resource_limits: Option<Arc<ResourceLimits>>,
+        cache_manager: Option<Arc<CacheManager>>,
     ) -> Self {
         Self {
             port,
@@ -79,7 +89,15 @@ impl MetricsApiServer {
             start_time: std::time::Instant::now(),
             _rate_limiter: rate_limiter,
             resource_limits,
+            cache_manager,
+            external_router: None,
         }
+    }
+
+    /// Add an external router to be merged with the metrics router
+    pub fn with_external_router(mut self, router: Router) -> Self {
+        self.external_router = Some(router);
+        self
     }
 
     /// Start the HTTP server
@@ -103,9 +121,10 @@ impl MetricsApiServer {
             start_time: self.start_time,
             _rate_limiter: self._rate_limiter.clone(),
             resource_limits: self.resource_limits.clone(),
+            cache_manager: self.cache_manager.clone(),
         };
 
-        Router::new()
+        let mut router = Router::new()
             .route("/api/health", get(Self::health_handler))
             .route(
                 "/api/context/metrics",
@@ -127,7 +146,13 @@ impl MetricsApiServer {
             .route("/api/context/status", get(Self::status_handler))
             // .layer(axum::middleware::from_fn(request_validation_middleware))
             .layer(tower_http::cors::CorsLayer::permissive())
-            .with_state(state)
+            .with_state(state);
+
+        if let Some(external) = self.external_router.clone() {
+            router = router.merge(external);
+        }
+
+        router
     }
 
     /// Health check endpoint
@@ -187,7 +212,7 @@ impl MetricsApiServer {
         };
 
         // Get cache stats if available
-        let cache_stats = if let Some(cache_manager) = get_global_cache_manager() {
+        let cache_stats = if let Some(ref cache_manager) = state.cache_manager {
             Some(cache_manager.get_stats().await)
         } else {
             None
@@ -317,4 +342,5 @@ struct MetricsServerState {
     start_time: std::time::Instant,
     _rate_limiter: Option<Arc<RateLimiter>>,
     resource_limits: Option<Arc<ResourceLimits>>,
+    cache_manager: Option<Arc<CacheManager>>,
 }

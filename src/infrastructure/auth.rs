@@ -12,6 +12,7 @@
 //! - Enterprise-ready security controls
 
 use crate::domain::error::{Error, Result};
+use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -98,6 +99,9 @@ pub struct User {
     pub email: String,
     /// User role
     pub role: UserRole,
+    /// Bcrypt hashed password
+    #[serde(skip)]
+    pub password_hash: String,
     /// When user was created
     pub created_at: u64,
     /// When user was last active
@@ -128,20 +132,37 @@ impl Default for AuthConfig {
         let mut users = HashMap::new();
 
         // Create default admin user
+        // Default password is "admin" - in production change this via env/config
+        let admin_password = std::env::var("ADMIN_PASSWORD").unwrap_or_else(|_| {
+            // Warn if no admin password provided in production mode
+            if cfg!(not(debug_assertions)) {
+                tracing::warn!("No ADMIN_PASSWORD set! Using insecure default 'admin'");
+            }
+            "admin".to_string()
+        });
+        let password_hash = bcrypt::hash(admin_password, 10).unwrap_or_else(|_| {
+            // Fallback if hash fails - this is a known bcrypt hash for "admin"
+            "$2b$10$7CJMei/BYSIj2KaM2dLq.9YSD5qv3wofVoaHiMf2vWxjGfbFPV3W".to_string()
+        });
+
         let admin_user = User {
             id: "admin".to_string(),
             email: "admin@context.browser".to_string(),
             role: UserRole::Admin,
+            password_hash,
             created_at: SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap_or_default()
                 .as_secs(),
             last_active: 0,
         };
-        users.insert("admin".to_string(), admin_user);
+        // Use email as key for easier lookup in authenticate
+        users.insert("admin@context.browser".to_string(), admin_user);
 
         Self {
-            jwt_secret: "local-development-secret".to_string(),
+            jwt_secret: std::env::var("JWT_SECRET").unwrap_or_else(|_| {
+                "local-development-secret-change-this-in-production".to_string()
+            }),
             jwt_expiration: 86400, // 24 hours
             jwt_issuer: "mcp-context-browser".to_string(),
             // Default: disabled for local/MCP stdio usage
@@ -191,83 +212,46 @@ impl AuthService {
     /// Authenticate user with email and password
     ///
     /// Performs user authentication and returns a JWT token on success.
-    /// This is a simplified implementation for demonstration purposes.
-    ///
-    /// # Arguments
-    ///
-    /// * `email` - User email address
-    /// * `password` - User password (plaintext for demo)
-    ///
-    /// # Returns
-    ///
-    /// Returns a JWT token string on successful authentication.
-    ///
-    /// # Security Note
-    ///
-    /// In production, passwords should be hashed and compared using secure
-    /// password hashing algorithms like Argon2, bcrypt, or scrypt.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if:
-    /// - Authentication is disabled
-    /// - Invalid credentials provided
-    /// - User not found
-    /// - Token generation fails
+    /// Uses bcrypt for secure password verification.
     pub fn authenticate(&self, email: &str, password: &str) -> Result<String> {
         if !self.config.enabled {
             return Err(Error::generic("Authentication is disabled"));
         }
 
-        // Simplified authentication - in production, verify password hash
-        if email == "admin@context.browser" && password == "admin" {
-            let user = self
-                .config
-                .users
-                .get("admin")
-                .ok_or_else(|| Error::generic("User not found"))?;
+        // Find user by email
+        let user = self
+            .config
+            .users
+            .get(email)
+            .ok_or_else(|| Error::generic("Invalid credentials"))?;
 
-            // Generate JWT token
-            self.generate_token(user)
-        } else {
-            Err(Error::generic("Invalid credentials"))
+        // Verify password hash
+        match bcrypt::verify(password, &user.password_hash) {
+            Ok(true) => self.generate_token(user),
+            _ => Err(Error::generic("Invalid credentials")),
         }
     }
 
     /// Validate JWT token and extract claims
     ///
-    /// Parses and validates a JWT token, checking its signature, expiration,
-    /// and extracting the claims payload.
-    ///
-    /// # Arguments
-    ///
-    /// * `token` - JWT token string to validate
-    ///
-    /// # Returns
-    ///
-    /// Returns the token claims if validation succeeds.
-    ///
-    /// # Security Note
-    ///
-    /// This is a simplified implementation for demonstration.
-    /// In production, use a proper JWT library like `jsonwebtoken` crate
-    /// with proper signature verification.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if:
-    /// - Authentication is disabled
-    /// - Token format is invalid
-    /// - Token is expired
-    /// - Token signature is invalid
+    /// Parses and validates a JWT token using HMAC-SHA256, checking its signature,
+    /// expiration, and extracting the claims payload.
     pub fn validate_token(&self, token: &str) -> Result<Claims> {
         if !self.config.enabled {
             return Err(Error::generic("Authentication is disabled"));
         }
 
-        // In a real implementation, you'd use a JWT library like jsonwebtoken
-        // For this demo, we'll do a simplified validation
-        self.decode_token(token)
+        let mut validation = Validation::new(jsonwebtoken::Algorithm::HS256);
+        validation.set_issuer(&[&self.config.jwt_issuer]);
+
+        let token_data = decode::<Claims>(
+            token,
+            &DecodingKey::from_secret(self.config.jwt_secret.as_bytes()),
+            &validation,
+        )
+        .map_err(|e| Error::generic(format!("Invalid token: {}", e)))?;
+
+        Ok(token_data.claims)
     }
 
     /// Check if user has permission
@@ -291,60 +275,22 @@ impl AuthService {
             iss: self.config.jwt_issuer.clone(),
         };
 
-        // Simplified token generation - in production, use proper JWT library
-        self.encode_token(&claims)
+        encode(
+            &Header::default(),
+            &claims,
+            &EncodingKey::from_secret(self.config.jwt_secret.as_bytes()),
+        )
+        .map_err(|e| Error::generic(format!("Token generation failed: {}", e)))
     }
 
-    /// Simplified token encoding (for demo - use proper JWT library in production)
-    fn encode_token(&self, claims: &Claims) -> Result<String> {
-        use base64::{engine::general_purpose, Engine as _};
-
-        let claims_json = serde_json::to_string(claims)?;
-        let claims_b64 = general_purpose::URL_SAFE_NO_PAD.encode(claims_json.as_bytes());
-
-        // Create simplified JWT structure (header.payload.signature)
-        let header = r#"{"alg":"HS256","typ":"JWT"}"#;
-        let header_b64 = general_purpose::URL_SAFE_NO_PAD.encode(header.as_bytes());
-
-        // Simplified signature (not cryptographically secure - use proper JWT library!)
-        let message = format!("{}.{}", header_b64, claims_b64);
-        let signature = format!("{:x}", seahash::hash(message.as_bytes()));
-        let signature_b64 = general_purpose::URL_SAFE_NO_PAD.encode(signature.as_bytes());
-
-        Ok(format!("{}.{}.{}", header_b64, claims_b64, signature_b64))
+    /// Get user by ID (Note: current implementation uses email as key in map)
+    pub fn get_user(&self, email: &str) -> Option<&User> {
+        self.config.users.get(email)
     }
 
-    /// Simplified token decoding (for demo - use proper JWT library in production)
-    fn decode_token(&self, token: &str) -> Result<Claims> {
-        use base64::{engine::general_purpose, Engine as _};
-
-        let parts: Vec<&str> = token.split('.').collect();
-        if parts.len() != 3 {
-            return Err(Error::generic("Invalid token format"));
-        }
-
-        // Decode payload (claims)
-        let claims_b64 = parts[1];
-        let claims_bytes = general_purpose::URL_SAFE_NO_PAD.decode(claims_b64)?;
-        let claims_json = String::from_utf8(claims_bytes)?;
-        let claims: Claims = serde_json::from_str(&claims_json)?;
-
-        // Check expiration
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs();
-
-        if claims.exp < now {
-            return Err(Error::generic("Token expired"));
-        }
-
-        Ok(claims)
-    }
-
-    /// Get user by ID
-    pub fn get_user(&self, user_id: &str) -> Option<&User> {
-        self.config.users.get(user_id)
+    /// Alias for get_user for semantic clarity when using emails
+    pub fn get_user_by_email(&self, email: &str) -> Option<&User> {
+        self.get_user(email)
     }
 
     /// Check if authentication is enabled

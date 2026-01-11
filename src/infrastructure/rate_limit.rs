@@ -32,6 +32,13 @@ pub struct RateLimitConfig {
     /// Connection timeout in seconds for Redis operations
     #[serde(default = "default_redis_timeout")]
     pub redis_timeout_seconds: u64,
+    /// Cache TTL in seconds for rate limit results (default: 1)
+    #[serde(default = "default_cache_ttl")]
+    pub cache_ttl_seconds: u64,
+}
+
+fn default_cache_ttl() -> u64 {
+    1
 }
 
 /// Rate limiting backend types
@@ -95,6 +102,7 @@ impl Default for RateLimitConfig {
             burst_allowance: 20,
             enabled: true,
             redis_timeout_seconds: default_redis_timeout(),
+            cache_ttl_seconds: default_cache_ttl(),
         }
     }
 }
@@ -285,14 +293,14 @@ impl RateLimiter {
         let cache_key = key.to_string();
         if let Some(entry) = self.memory_cache.get(&cache_key) {
             let (cached_at, result) = entry.value();
-            if cached_at.elapsed() < Duration::from_secs(1) {
+            if cached_at.elapsed() < Duration::from_secs(self.config.cache_ttl_seconds) {
                 return Ok(result.clone());
             }
         }
 
         let result = self.check_storage_rate_limit(key).await?;
 
-        // Cache result for 1 second
+        // Cache result
         self.memory_cache
             .insert(cache_key, (Instant::now(), result.clone()));
 
@@ -332,14 +340,36 @@ impl RateLimiter {
 
         // Clean up old entries to prevent memory leaks if we exceeded max_entries
         if windows.len() > max_entries {
-            // Very simple cleanup: remove about half
-            let keys_to_remove: Vec<_> = windows
-                .iter()
-                .take(max_entries / 2)
-                .map(|r| r.key().clone())
-                .collect();
-            for key in keys_to_remove {
-                windows.remove(&key);
+            // Remove entries that have no requests in the current window
+            windows.retain(|_, window| {
+                while let Some(&(timestamp, _)) = window.front() {
+                    if timestamp < window_start {
+                        window.pop_front();
+                    } else {
+                        break;
+                    }
+                }
+                !window.is_empty()
+            });
+
+            // If still too many, remove oldest entries based on the first timestamp in their window
+            if windows.len() > max_entries {
+                let mut entries: Vec<_> = windows
+                    .iter()
+                    .map(|r| {
+                        let first_ts = r.value().front().map(|(ts, _)| *ts).unwrap_or(0);
+                        (r.key().clone(), first_ts)
+                    })
+                    .collect();
+
+                // Sort by oldest first timestamp
+                entries.sort_by_key(|(_, ts)| *ts);
+
+                // Remove enough to get under the limit
+                let to_remove = windows.len().saturating_sub(max_entries);
+                for (key, _) in entries.iter().take(to_remove) {
+                    windows.remove(key);
+                }
             }
         }
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =============================================================================
-# Documentation Automation Script - v0.0.4 Documentation Excellence
+# Documentation Automation Script - v0.1.0 First Stable Release
 # =============================================================================
 #
 # This script orchestrates existing documentation tools for automated
@@ -84,7 +84,7 @@ mdbook_command() {
             log_info "Initializing mdbook documentation..."
             mkdir -p "${PROJECT_ROOT}/docs/book"
             cd "${PROJECT_ROOT}/docs/book"
-            mdbook init --title "MCP Context Browser - Documentation Excellence v0.0.4"
+            mdbook init --title "MCP Context Browser - v0.1.0"
             log_success "mdbook initialized"
             ;;
         "build")
@@ -689,7 +689,7 @@ EOF
     echo "## API Stability" >> "${MODULES_DIR}/api-surface.md"
     echo "" >> "${MODULES_DIR}/api-surface.md"
     echo "### Current Status" >> "${MODULES_DIR}/api-surface.md"
-    echo "- **Version**: 0.0.4 (Documentation Excellence)" >> "${MODULES_DIR}/api-surface.md"
+    echo "- **Version**: 0.1.0 (First Stable Release)" >> "${MODULES_DIR}/api-surface.md"
     echo "- **Stability**: Experimental - APIs may change" >> "${MODULES_DIR}/api-surface.md"
     echo "- **Compatibility**: Breaking changes expected until 1.0.0" >> "${MODULES_DIR}/api-surface.md"
     echo "" >> "${MODULES_DIR}/api-surface.md"
@@ -765,7 +765,7 @@ This document provides an overview of the public API surface of the MCP Context 
 ## API Stability
 
 ### Current Status
-- **Version**: 0.0.4 (Documentation Excellence)
+- **Version**: 0.1.0 (First Stable Release)
 - **Stability**: Experimental - APIs may change
 - **Compatibility**: Breaking changes expected until 1.0.0
 

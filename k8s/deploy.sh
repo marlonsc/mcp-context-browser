@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # MCP Context Browser Kubernetes Deployment Script
-# Version: 0.0.4
+# Version: 0.1.0
 
 set -e
 
 NAMESPACE=${NAMESPACE:-default}
 APP_NAME="mcp-context-browser"
-VERSION="v0.0.4"
+VERSION="v0.1.0"
 
 echo "🚀 Deploying MCP Context Browser $VERSION to namespace: $NAMESPACE"
 

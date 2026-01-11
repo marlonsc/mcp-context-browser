@@ -8,7 +8,7 @@
 
 mod actor;
 mod bm25;
-mod config;
+pub mod config;
 mod engine;
 
 // Re-export public types

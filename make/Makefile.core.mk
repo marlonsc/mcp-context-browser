@@ -1,5 +1,5 @@
 # =============================================================================
-# CORE - Operações básicas de build, teste e limpeza
+# CORE - Basic build, test and clean operations
 # =============================================================================
 
 .PHONY: build test clean run
@@ -13,13 +13,15 @@ build-release: ## Build project in release mode
 
 # Tests
 test: ## Run all tests
-	cargo test
+	cargo test --all-targets --all-features
+
+test-all: test ## Alias for test
 
 test-quiet: ## Run tests quietly
-	cargo test --quiet
+	cargo test --quiet --all-targets --all-features
 
 test-unit: ## Run only unit tests
-	cargo test --lib
+	cargo test --lib --all-features
 
 test-integration: ## Run only integration tests
 	cargo test --test '*'

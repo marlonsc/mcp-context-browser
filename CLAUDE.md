@@ -7,7 +7,7 @@ MCP server for semantic code search using vector embeddings. **v0.1.0 production
 ```bash
 # Development
 make build          # Compile
-make test           # Run 391+ tests
+make test           # Run 549+ tests
 make lint           # Clippy
 make fmt            # Format
 make quality        # Full check (fmt + lint + test + audit)
@@ -111,7 +111,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 - 14 programming languages with AST parsing
 - 6 embedding providers
 - 6 vector stores
-- 391+ tests
+- 549+ tests
 - HTTP transport foundation
 - Systemd integration
 

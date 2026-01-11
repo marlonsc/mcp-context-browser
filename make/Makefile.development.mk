@@ -1,5 +1,5 @@
 # =============================================================================
-# DEVELOPMENT - Fluxos de desenvolvimento e configuração
+# DEVELOPMENT - Development and configuration workflows
 # =============================================================================
 
 .PHONY: dev dev-metrics dev-sync setup ci dev-cycle dev-ready dev-deploy docker-up docker-down docker-logs test-integration-docker test-docker-full docker-status

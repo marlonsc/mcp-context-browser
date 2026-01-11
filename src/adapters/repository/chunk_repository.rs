@@ -158,31 +158,32 @@ where
                 let file_path = if !result.file_path.is_empty() {
                     result.file_path.clone()
                 } else {
-                    result
-                        .metadata
-                        .get("file_path")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string()
+                    let Some(fp) = result.metadata.get("file_path").and_then(|v| v.as_str()) else {
+                        continue; // Skip if file_path is missing
+                    };
+                    fp.to_string()
                 };
-                let start_line = result
-                    .metadata
-                    .get("start_line")
-                    .and_then(|v| v.as_u64())
-                    .unwrap_or(result.line_number as u64) as u32;
+
+                let Some(start_line_val) =
+                    result.metadata.get("start_line").and_then(|v| v.as_u64())
+                else {
+                    continue; // Skip if start_line is missing
+                };
+                let start_line = start_line_val as u32;
+
                 let generated_id = format!("{}_{}", file_path, start_line);
 
                 if generated_id == id {
                     let content = if !result.content.is_empty() {
                         result.content.clone()
                     } else {
-                        result
-                            .metadata
-                            .get("content")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("")
-                            .to_string()
+                        let Some(c) = result.metadata.get("content").and_then(|v| v.as_str())
+                        else {
+                            continue; // Skip if content is missing
+                        };
+                        c.to_string()
                     };
+
                     let end_line = result
                         .metadata
                         .get("end_line")
@@ -234,11 +235,14 @@ where
                 } else {
                     result.metadata.get("file_path")?.as_str()?.to_string()
                 };
-                let start_line = result
-                    .metadata
-                    .get("start_line")
-                    .and_then(|v| v.as_u64())
-                    .unwrap_or(result.line_number as u64) as u32;
+
+                let start_line =
+                    if let Some(sl) = result.metadata.get("start_line").and_then(|v| v.as_u64()) {
+                        sl as u32
+                    } else {
+                        result.line_number
+                    };
+
                 let end_line = result
                     .metadata
                     .get("end_line")

@@ -1,5 +1,5 @@
 # =============================================================================
-# DOCUMENTATION - Automação usando ferramentas existentes
+# DOCUMENTATION - Automation using existing tools
 # =============================================================================
 
 .PHONY: docs docs-generate docs-validate docs-quality docs-check-adr docs-setup rust-docs adr-new adr-list adr-generate adr-status

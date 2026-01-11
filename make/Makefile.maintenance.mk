@@ -1,5 +1,5 @@
 # =============================================================================
-# MAINTENANCE - Verificações de saúde, atualizações e monitoramento
+# MAINTENANCE - Health checks, updates and monitoring
 # =============================================================================
 
 .PHONY: update audit health maintain verify env-check status metrics metrics-test sync-test daemon-test dashboard

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =============================================================================
-# MdBook Integration Script - v0.0.4 Documentation Excellence
+# MdBook Integration Script - v0.1.0 First Stable Release
 # =============================================================================
 #
 # This script integrates automatically generated documentation with mdbook

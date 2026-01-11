@@ -7,10 +7,6 @@ use std::collections::VecDeque;
 use std::time::{Duration, Instant};
 use tokio::sync::{mpsc, oneshot};
 
-/// Global performance metrics handle
-pub static PERFORMANCE_METRICS: once_cell::sync::Lazy<PerformanceMetrics> =
-    once_cell::sync::Lazy::new(PerformanceMetrics::new);
-
 /// Performance metrics messages
 pub enum PerformanceMessage {
     RecordQuery { latency: Duration, success: bool },

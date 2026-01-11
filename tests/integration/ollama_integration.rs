@@ -272,7 +272,7 @@ mod ollama_indexing_tests {
         ));
 
         // Create indexing service
-        let indexing_service = IndexingService::new(context_service.clone())?;
+        let indexing_service = IndexingService::new(context_service.clone(), None)?;
 
         // Create temporary directory with test files
         let temp_dir = tempdir()?;

@@ -1,5 +1,5 @@
 # =============================================================================
-# RELEASE - Construção, empacotamento e publicação de releases
+# RELEASE - Build, packaging and release publishing
 # =============================================================================
 
 .PHONY: release package github-release version-bump version-tag version-push version-all

@@ -461,15 +461,12 @@ impl FilesystemVectorStore {
 
     /// Calculate cosine similarity between two vectors
     fn cosine_similarity(&self, a: &[f32], b: &[f32]) -> f32 {
-        let mut dot_product = 0.0;
-        let mut norm_a = 0.0;
-        let mut norm_b = 0.0;
-
-        for i in 0..a.len().min(b.len()) {
-            dot_product += a[i] * b[i];
-            norm_a += a[i] * a[i];
-            norm_b += b[i] * b[i];
-        }
+        let (dot_product, norm_a, norm_b) = a
+            .iter()
+            .zip(b.iter())
+            .fold((0.0, 0.0, 0.0), |(dot, na, nb), (&x, &y)| {
+                (dot + x * y, na + x * x, nb + y * y)
+            });
 
         if norm_a == 0.0 || norm_b == 0.0 {
             0.0

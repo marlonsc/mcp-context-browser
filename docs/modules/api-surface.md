@@ -5,59 +5,56 @@ This document provides an overview of the public API surface of the MCP Context 
 ## Public Modules
 
 ### Core Library Modules
-- chunking (text processing utilities)
-- config (configuration management)
-- core (core types and utilities)
-- providers (AI provider abstractions)
-- services (business logic layer)
-- server (MCP protocol server)
-- metrics (monitoring and observability)
-- sync (cross-process coordination)
-- daemon (background services)
-- snapshot (change tracking)
+
+- adapters
+- admin
+- application
+- chunking
+- config_example
+- daemon
+- domain
+- infrastructure
+- server
+- snapshot
+- sync
 
 ### Public Re-exports
-- Rate limiting system (core::rate_limit)
-- Resource limits system (core::limits)
-- Advanced caching system (core::cache)
-- Hybrid search system (core::hybrid_search)
-- Multi-provider routing (providers::routing)
+
+- domain::error::{Error, Result}
+- domain::types::*
+- server::builder::McpServerBuilder
+- server::init::run_server
+- server::mcp_server::McpServer
 
 ## Public Functions
-
-### Core Types
-- Error handling and conversion functions
-- Configuration validation functions
-- Cache management operations
-
-### Provider Interfaces
-- EmbeddingProvider trait methods
-- VectorStoreProvider trait methods
-- Provider factory functions
-
-### Service Interfaces
-- ContextService::embed_text()
-- IndexingService::index_codebase()
-- SearchService::search()
 
 ## Public Types
 
 ### Data Structures
-- Embedding (vector representation)
-- CodeChunk (processed code segment)
-- SearchResult (search response)
-- ContextConfig (service configuration)
-- ProviderConfig (provider settings)
+
+- NodeExtractionRule 
+- LanguageConfig 
+- NodeExtractionRuleBuilder 
+- IntelligentChunker;
+- GenericFallbackChunker<'a> 
+- RustProcessor 
+- ".to_string(),
+- PythonProcessor 
+- JavaScriptProcessor 
+- JavaProcessor 
 
 ### Enums
-- Error (comprehensive error types)
-- ProviderType (available providers)
-- IndexStatus (indexing progress)
+
+- McpError 
+- CompatibilityResult 
+- SessionState 
+- SessionError 
+- TransportMode 
 
 ## API Stability
 
 ### Current Status
-- **Version**: 0.0.4 (Documentation Excellence)
+- **Version**: 0.1.0 (First Stable Release)
 - **Stability**: Experimental - APIs may change
 - **Compatibility**: Breaking changes expected until 1.0.0
 
@@ -66,4 +63,4 @@ This document provides an overview of the public API surface of the MCP Context 
 - Core semantic search functionality
 - Provider abstraction interfaces
 
-*Generated automatically on: 2026-01-07 21:25:37 UTC*
+*Generated automatically from source code analysis on: 2026-01-11 21:51:55 UTC*

@@ -1,4 +1,4 @@
-# ADR 006: Code Audit and Architecture Improvements v0.0.4
+# ADR 006: Code Audit and Architecture Improvements
 
 ## Status
 
@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-The MCP Context Browser codebase has grown organically and accumulated several anti-patterns and technical debt that impact maintainability, reliability, and development velocity. A comprehensive code audit identified critical issues that need addressing before v0.0.4 release.
+The MCP Context Browser codebase has grown organically and accumulated several anti-patterns and technical debt that impact maintainability, reliability, and development velocity. A comprehensive code audit identified critical issues that need addressing before stable release.
 
 Key problems identified:
 
@@ -28,7 +28,7 @@ Current state analysis:
 
 ## Decision
 
-Implement comprehensive architectural improvements following SOLID principles, modern Rust best practices, and established design patterns to eliminate anti-patterns and establish a maintainable codebase foundation for v0.0.4.
+Implement comprehensive architectural improvements following SOLID principles, modern Rust best practices, and established design patterns to eliminate anti-patterns and establish a maintainable codebase foundation.
 
 Key architectural decisions:
 

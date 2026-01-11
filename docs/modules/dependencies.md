@@ -45,4 +45,4 @@ Key dependency patterns:
 - **HTTP server** depends on all major components
 - **Core modules** have minimal dependencies
 
-*Generated automatically on: 2026-01-07 21:25:37 UTC*
+*Generated automatically on: 2026-01-11 21:51:42 UTC*

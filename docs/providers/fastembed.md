@@ -1,28 +1,28 @@
 # FastEmbed Provider
 
-O FastEmbed Provider oferece embeddings locais de alta qualidade sem dependências externas de APIs.
+The FastEmbed Provider offers high-quality local embeddings without external API dependencies.
 
-## Visão Geral
+## Overview
 
--   **Tipo**: Embedding Provider Local
--   **Modelo**: AllMiniLML6V2 (384 dimensões)
--   **Dependências**: Zero APIs externas
--   **Performance**: ONNX inference otimizada
--   **Download**: Modelo baixado automaticamente na primeira execução
+-   **Type**: Local Embedding Provider
+-   **Model**: AllMiniLML6V2 (384 dimensions)
+-   **Dependencies**: Zero external APIs
+-   **Performance**: Optimized ONNX inference
+-   **Download**: Model downloaded automatically on first execution
 
-## Configuração
+## Configuration
 
-### Configuração Básica
+### Basic Configuration
 
 ```yaml
 embedding:
   provider: "fastembed"
-  model: "AllMiniLML6V2"  # opcional, padrão já é este
-  dimensions: 384         # opcional, padrão é 384
-  max_tokens: 512         # opcional, padrão é 512
+  model: "AllMiniLML6V2"  # optional, default is this
+  dimensions: 384         # optional, default is 384
+  max_tokens: 512         # optional, default is 512
 ```
 
-### Configuração Completa
+### Full Configuration
 
 ```yaml
 embedding:
@@ -32,60 +32,60 @@ embedding:
   max_tokens: 512
 ```
 
-## Características
+## Features
 
-### Vantagens
+### Advantages
 
-✅ **Completamente Local**: Não requer APIs externas ou chaves de API
-✅ **Alta Performance**: Usa ONNX inference otimizada
-✅ **Modelos de Qualidade**: Baseado em sentence-transformers
-✅ **Cache Inteligente**: Modelo baixado uma vez e cacheado
-✅ **Compatibilidade**: Mesmo formato de saída que OpenAI/Gemini
+✅ **Completely Local**: No external APIs or API keys required
+✅ **High Performance**: Uses optimized ONNX inference
+✅ **Quality Models**: Based on sentence-transformers
+✅ **Intelligent Cache**: Model downloaded once and cached
+✅ **Compatibility**: Same output format as OpenAI/Gemini
 
-### Limitações
+### Limitations
 
-⚠️ **Download Inicial**: Requer internet para baixar o modelo na primeira execução (~23MB)
-⚠️ **Memória**: Modelo carregado em memória RAM
-⚠️ **CPU**: Inference em CPU (não GPU)
+⚠️ **Initial Download**: Requires internet to download the model on first execution (~23MB)
+⚠️ **Memory**: Model loaded in RAM
+⚠️ **CPU**: Inference on CPU (not GPU)
 
-## Modelos Suportados
+## Supported Models
 
-| Modelo | Dimensões | Descrição |
+| Model | Dimensions | Description |
 |--------|-----------|-----------|
-| AllMiniLML6V2 | 384 | Modelo padrão, bom equilíbrio qualidade/performance |
-| AllMiniLML12V2 | 384 | Versão maior com melhor qualidade |
-| AllMpnetBaseV2 | 768 | Modelo de alta qualidade |
-| BGE Models | Variado | Família de modelos otimizados |
+| AllMiniLML6V2 | 384 | Default model, good balance of quality/performance |
+| AllMiniLML12V2 | 384 | Larger version with better quality |
+| AllMpnetBaseV2 | 768 | High-quality model |
+| BGE Models | Varied | Family of optimized models |
 
-## Uso Programático
+## Programmatic Usage
 
 ```rust
 use mcp_context_browser::providers::embedding::FastEmbedProvider;
 
-// Criar provider com modelo padrão
+// Create provider with default model
 let provider = FastEmbedProvider::new()?;
 
-// Ou especificar modelo
+// Or specify model
 let provider = FastEmbedProvider::with_model(fastembed::EmbeddingModel::AllMiniLML12V2)?;
 
-// Gerar embedding
-let embedding = provider.embed("Seu texto aqui").await?;
-println!("Dimensões: {}", embedding.dimensions);
-println!("Modelo: {}", embedding.model);
+// Generate embedding
+let embedding = provider.embed("Your text here").await?;
+println!("Dimensions: {}", embedding.dimensions);
+println!("Model: {}", embedding.model);
 
-// Gerar embeddings em lote
-let texts = vec!["Texto 1".to_string(), "Texto 2".to_string()];
+// Generate embeddings in batch
+let texts = vec!["Text 1".to_string(), "Text 2".to_string()];
 let embeddings = provider.embed_batch(&texts).await?;
 ```
 
 ## Performance
 
-### Benchmarks Esperados
+### Expected Benchmarks
 
--   **Inicialização**: ~2-5 segundos (download do modelo)
--   **Embedding único**: ~10-50ms
--   **Batch de 100**: ~100-500ms
--   **Memória**: ~100-500MB (dependendo do modelo)
+-   **Initialization**: ~2-5 seconds (model download)
+-   **Single embedding**: ~10-50ms
+-   **Batch of 100**: ~100-500ms
+-   **Memory**: ~100-500MB (depending on model)
 
 ### Optimization
 
@@ -97,44 +97,44 @@ For better performance:
 
 ## Troubleshooting
 
-### Problema: "Failed to initialize FastEmbed model"
+### Problem: "Failed to initialize FastEmbed model"
 
-**Solução**: Verifique conexão com internet para download do modelo na primeira execução.
+**Solution**: Check internet connection for model download on first execution.
 
-### Problema: "Out of memory"
+### Problem: "Out of memory"
 
-**Solução**: Use um modelo menor ou aumente a memória disponível.
+**Solution**: Use a smaller model or increase available memory.
 
-### Problema: "Model download failed"
+### Problem: "Model download failed"
 
-**Solução**:
+**Solution**:
 
-1.  Verifique conexão com internet
-2.  Verifique permissões de escrita no diretório de cache
-3.  Tente novamente (downloads são retomáveis)
+1.  Check internet connection
+2.  Check write permissions in cache directory
+3.  Try again (downloads are resumable)
 
-## Comparação com Outros Providers
+## Comparison with Other Providers
 
-| Provider | Local | API Key | Performance | Qualidade |
+| Provider | Local | API Key | Performance | Quality |
 |----------|-------|---------|-------------|-----------|
-| FastEmbed | ✅ | ❌ | Alta | Alta |
-| Ollama | ✅ | ❌ | Média | Alta |
-| OpenAI | ❌ | ✅ | Muito Alta | Muito Alta |
-| Mock | ✅ | ❌ | Muito Alta | Baixa |
+| FastEmbed | ✅ | ❌ | High | High |
+| Ollama | ✅ | ❌ | Medium | High |
+| OpenAI | ❌ | ✅ | Very High | Very High |
+| Mock | ✅ | ❌ | Very High | Low |
 
-## Arquitetura Técnica
+## Technical Architecture
 
-O FastEmbed Provider:
+The FastEmbed Provider:
 
-1.  Usa a biblioteca `fastembed` para inference ONNX
-2.  Carrega modelos sentence-transformers otimizados
-3.  Implementa o trait `EmbeddingProvider` do MCP Context Browser
-4.  Fornece interface consistente com outros providers
-5.  Gerencia cache automático de modelos
+1.  Uses the `fastembed` library for ONNX inference
+2.  Loads optimized sentence-transformers models
+3.  Implements the `EmbeddingProvider` trait of MCP Context Browser
+4.  Provides a consistent interface with other providers
+5.  Manages automatic model cache
 
-## Próximos Passos
+## Next Steps
 
--   Suporte a mais modelos FastEmbed
--   Configuração de execution providers (CPU/GPU)
--   Quantização automática para reduzir uso de memória
--   Cache de embeddings para textos frequentes
+-   Support for more FastEmbed models
+-   Configuration of execution providers (CPU/GPU)
+-   Automatic quantization to reduce memory usage
+-   Embedding cache for frequent texts

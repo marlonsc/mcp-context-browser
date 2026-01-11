@@ -134,4 +134,5 @@ pub struct AdminState {
     pub admin_api: std::sync::Arc<super::AdminApi>,
     pub admin_service: std::sync::Arc<dyn super::service::AdminService>,
     pub mcp_server: std::sync::Arc<crate::server::McpServer>,
+    pub templates: std::sync::Arc<tera::Tera>,
 }

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # MCP Context Browser - Initialize mdbook Documentation
-# Creates basic mdbook structure for Documentation Excellence v0.0.4
+# Creates basic mdbook structure for v0.1.0
 
 set -e
 
@@ -38,7 +38,7 @@ create_mdbook_structure() {
     # Create book.toml
     cat > "$book_dir/book.toml" << 'EOF'
 [book]
-title = "MCP Context Browser - Documentation Excellence v0.0.4"
+title = "MCP Context Browser - v0.1.0"
 author = "Marlon Carvalho"
 description = "Interactive documentation for the MCP Context Browser project"
 
@@ -66,7 +66,7 @@ EOF
     cat > "$book_dir/src/SUMMARY.md" << 'EOF'
 # Summary
 
-# 📖 MCP Context Browser v0.0.4
+# 📖 MCP Context Browser v0.1.0
 
 - [🏠 Introduction](introduction.md)
 - [🚀 Getting Started](getting-started.md)
@@ -79,7 +79,7 @@ EOF
   - [ADR 001: Provider Pattern Architecture](adr/001-provider-pattern-architecture.md)
   - [ADR 002: Async-First Architecture](adr/002-async-first-architecture.md)
   - [ADR 003: C4 Model Documentation](adr/003-c4-model-documentation.md)
-  - [ADR 005: Documentation Excellence v0.0.4](adr/005-documentation-excellence-v0.0.4.md)
+  - [ADR 005: Documentation Excellence](adr/005-documentation-excellence.md)
 - [📊 System Context](architecture/system-context.md)
 - [🏛️ Container Architecture](architecture/container-architecture.md)
 
@@ -116,11 +116,11 @@ EOF
 
     # Create introduction.md
     cat > "$book_dir/src/introduction.md" << 'EOF'
-# MCP Context Browser - Documentation Excellence v0.0.4
+# MCP Context Browser - v0.1.0
 
 Welcome to the **MCP Context Browser** project! This is a comprehensive Model Context Protocol (MCP) server implementation that provides semantic code analysis using advanced vector embeddings and intelligent chunking.
 
-## 🎯 What is Documentation Excellence v0.0.4?
+## 🎯 What is MCP Context Browser v0.1.0?
 
 This version establishes the project as a **reference implementation for automated, self-documenting systems**.
 
@@ -173,7 +173,7 @@ EOF
 
 ## Prerequisites
 
-- Rust 1.70+ (MSRV updated for v0.0.4)
+- Rust 1.70+
 - Docker (for testing)
 - Git
 

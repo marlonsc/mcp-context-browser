@@ -1,4 +1,4 @@
-# ADR 005: Documentation Excellence v0.0.4
+# ADR 005: Documentation Excellence
 
 ## Status
 
@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-The MCP Context Browser project has established a SOLID technical foundation in v0.0.3 with production-ready reliability features, comprehensive observability, and enterprise-grade architecture. However, the documentation remains manually maintained with custom bash scripts, creating a maintenance burden and limiting the project's ability to serve as a reference implementation for documentation excellence in the Rust ecosystem.
+The MCP Context Browser project has established a SOLID technical foundation with production-ready reliability features, comprehensive observability, and enterprise-grade architecture. However, the documentation remains manually maintained with custom bash scripts, creating a maintenance burden and limiting the project's ability to serve as a reference implementation for documentation excellence in the Rust ecosystem.
 
 Current documentation challenges:
 
@@ -21,7 +21,7 @@ The project needs to evolve from a technically excellent codebase to a **documen
 
 ## Decision
 
-Implement v0.0.4 "Documentation Excellence" as a focused release establishing the project as a reference implementation for automated documentation in Rust projects. Replace all custom documentation scripts with established open-source tools and implement ADR-driven development with automated compliance validation.
+Implement "Documentation Excellence" as a focused initiative establishing the project as a reference implementation for automated documentation in Rust projects. Replace all custom documentation scripts with established open-source tools and implement ADR-driven development with automated compliance validation.
 
 Key architectural decisions:
 

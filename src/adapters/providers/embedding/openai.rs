@@ -3,7 +3,7 @@
 use crate::domain::error::{Error, Result};
 use crate::domain::ports::EmbeddingProvider;
 use crate::domain::types::Embedding;
-use crate::infrastructure::cache::{get_global_cache_manager, CacheResult};
+use crate::infrastructure::cache::{CacheManager, CacheResult};
 use async_trait::async_trait;
 use std::sync::Arc;
 use std::time::Duration;
@@ -15,6 +15,7 @@ pub struct OpenAIEmbeddingProvider {
     model: String,
     timeout: Duration,
     http_client: Arc<dyn crate::adapters::http_client::HttpClientProvider>,
+    cache_manager: Option<Arc<CacheManager>>,
 }
 
 impl OpenAIEmbeddingProvider {
@@ -40,6 +41,7 @@ impl OpenAIEmbeddingProvider {
             model,
             timeout,
             http_client,
+            cache_manager: None,
         })
     }
 
@@ -60,7 +62,14 @@ impl OpenAIEmbeddingProvider {
             model,
             timeout,
             http_client,
+            cache_manager: None,
         }
+    }
+
+    /// Set the cache manager for this provider
+    pub fn with_cache(mut self, cache_manager: Arc<CacheManager>) -> Self {
+        self.cache_manager = Some(cache_manager);
+        self
     }
 
     /// Get the effective base URL
@@ -199,7 +208,7 @@ impl EmbeddingProvider for OpenAIEmbeddingProvider {
         let mut uncached_texts = Vec::new();
         let mut uncached_indices = Vec::new();
 
-        if let Some(cache_manager) = get_global_cache_manager() {
+        if let Some(cache_manager) = &self.cache_manager {
             for (i, text) in texts.iter().enumerate() {
                 let cache_key = self.generate_cache_key(text);
                 let cache_result: CacheResult<Vec<f32>> =
@@ -234,7 +243,7 @@ impl EmbeddingProvider for OpenAIEmbeddingProvider {
             new_embeddings = self.fetch_embeddings_from_api(&uncached_texts).await?;
 
             // Cache the new embeddings
-            if let Some(cache_manager) = get_global_cache_manager() {
+            if let Some(cache_manager) = &self.cache_manager {
                 for (i, embedding) in new_embeddings.iter().enumerate() {
                     let text = &uncached_texts[i];
                     let cache_key = self.generate_cache_key(text);

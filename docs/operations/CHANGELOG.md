@@ -58,13 +58,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Clean Architecture**: Complete refactoring with trait-based dependency injection
-- **Test Suite**: Expanded from 150+ to 391+ comprehensive tests
+- **Test Suite**: Expanded from 150+ to 564 comprehensive tests
 - **Configuration**: Modular configuration with cache and limits separated
 - **Server Operations**: Extracted operations to dedicated module (`src/server/operations.rs`)
 - **Metrics**: Dedicated metrics module (`src/server/metrics.rs`)
 
 ### Technical Metrics
-- **Total Tests**: 391+ (100% pass rate)
+- **Total Tests**: 564 (100% pass rate)
 - **Language Processors**: 14 (from 13)
 - **Source Files**: 100+ enterprise-grade files
 - **Lines of Code**: ~25,000 lines of production code
@@ -82,7 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Memory Usage**: Native efficiency (reduced by ~60% vs Node.js)
 - **Provider Support**: 6 embedding providers, 6 vector stores
 - **Language Support**: 14 languages with AST parsing (from 13)
-- **Test Coverage**: 391+ tests (from 150+)
+- **Test Coverage**: 564 tests (from 150+)
 
 ---
 
