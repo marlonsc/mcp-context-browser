@@ -451,12 +451,11 @@ mod tests {
                 );
                 // Generic chunking should have chunk_type: "generic"
                 if let Some(chunk_type) = metadata.get("chunk_type") {
-                    let chunk_type_str = chunk_type.as_str().ok_or_else(|| {
-                        format!("chunk_type is not a string for {:?}", language)
-                    })?;
+                    let chunk_type_str = chunk_type
+                        .as_str()
+                        .ok_or_else(|| format!("chunk_type is not a string for {:?}", language))?;
                     assert_eq!(
-                        chunk_type_str,
-                        "generic",
+                        chunk_type_str, "generic",
                         "Should use generic chunking for {:?}",
                         language
                     );

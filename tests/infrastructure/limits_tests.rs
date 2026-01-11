@@ -65,8 +65,8 @@ async fn test_operation_permits(
 }
 
 #[tokio::test]
-async fn test_disabled_limits(
-) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn test_disabled_limits() -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>>
+{
     let config = ResourceLimitsConfig {
         enabled: false,
         ..Default::default()

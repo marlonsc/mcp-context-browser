@@ -13,8 +13,10 @@ mod tests {
     use super::*;
     use mcp_context_browser::infrastructure::di::factory::ServiceProviderInterface;
 
-    fn get_test_http_client(
-    ) -> Result<Arc<dyn mcp_context_browser::adapters::http_client::HttpClientProvider>, Box<dyn std::error::Error>> {
+    fn get_test_http_client() -> Result<
+        Arc<dyn mcp_context_browser::adapters::http_client::HttpClientProvider>,
+        Box<dyn std::error::Error>,
+    > {
         let pool = HttpClientPool::new().map_err(|e| e as Box<dyn std::error::Error>)?;
         Ok(Arc::new(pool))
     }
@@ -55,9 +57,7 @@ mod tests {
             .await?;
 
         let test_text = "This is a test text for embedding";
-        let embedding = embedding_provider
-            .embed(test_text)
-            .await?;
+        let embedding = embedding_provider.embed(test_text).await?;
 
         assert_eq!(embedding.model, "null");
         assert_eq!(embedding.dimensions, 1);
@@ -90,9 +90,7 @@ mod tests {
             "Third test text".to_string(),
         ];
 
-        let embeddings = embedding_provider
-            .embed_batch(&test_texts)
-            .await?;
+        let embeddings = embedding_provider.embed_batch(&test_texts).await?;
 
         assert_eq!(embeddings.len(), 3);
         for embedding in &embeddings {
@@ -115,9 +113,7 @@ mod tests {
             .await?;
 
         let test_text = "This is a test text for Ollama embedding";
-        let embedding = embedding_provider
-            .embed(test_text)
-            .await?;
+        let embedding = embedding_provider.embed(test_text).await?;
 
         assert_eq!(embedding.model, "nomic-embed-text");
         assert_eq!(embedding.dimensions, 768);
@@ -133,14 +129,13 @@ mod tests {
             token: None,
             collection: Some("test_integration_collection".to_string()),
             dimensions: Some(768),
+            timeout_secs: None,
         };
         let service_provider =
             mcp_context_browser::infrastructure::di::factory::ServiceProvider::new();
         let http_client = get_test_http_client()?;
 
-        let vector_store_provider = service_provider
-            .get_vector_store_provider(&config)
-            .await?;
+        let vector_store_provider = service_provider.get_vector_store_provider(&config).await?;
 
         let collection_name = "test_integration_collection";
         let dimensions = 768;
@@ -167,9 +162,7 @@ mod tests {
             "Another piece of code for testing".to_string(),
         ];
 
-        let embeddings = embedding_provider
-            .embed_batch(&test_texts)
-            .await?;
+        let embeddings = embedding_provider.embed_batch(&test_texts).await?;
 
         // Create metadata for the embeddings
         let metadata: Vec<std::collections::HashMap<String, serde_json::Value>> = vec![
@@ -225,9 +218,7 @@ mod tests {
         assert!(search_results[0].score >= 0.0);
 
         // Test stats
-        let stats = vector_store_provider
-            .get_stats(collection_name)
-            .await?;
+        let stats = vector_store_provider.get_stats(collection_name).await?;
         assert!(stats.contains_key("vectors_count"));
 
         // Test collection deletion
@@ -258,6 +249,7 @@ mod tests {
             token: None,
             collection: Some("test_pipeline_collection".to_string()),
             dimensions: Some(384),
+            timeout_secs: None,
         };
         let service_provider =
             mcp_context_browser::infrastructure::di::factory::ServiceProvider::new();
@@ -285,9 +277,7 @@ mod tests {
             "impl User { pub fn new(name: String) -> Self { User { name, age: 0 } } }".to_string(),
         ];
 
-        let embeddings = embedding_provider
-            .embed_batch(&code_samples)
-            .await?;
+        let embeddings = embedding_provider.embed_batch(&code_samples).await?;
 
         // Create metadata
         let metadata: Vec<std::collections::HashMap<String, serde_json::Value>> = code_samples
@@ -324,9 +314,7 @@ mod tests {
 
         // Search for similar code
         let query_text = "struct with name field";
-        let query_embedding = embedding_provider
-            .embed(query_text)
-            .await?;
+        let query_embedding = embedding_provider.embed(query_text).await?;
 
         let results = vector_store_provider
             .search_similar(collection_name, &query_embedding.vector, 2, None)
@@ -381,9 +369,7 @@ mod tests {
             .await?;
 
         let test_text = "This is a test text for real Ollama embedding generation";
-        let embedding = embedding_provider
-            .embed(test_text)
-            .await?;
+        let embedding = embedding_provider.embed(test_text).await?;
 
         assert_eq!(embedding.model, "nomic-embed-text");
         assert_eq!(embedding.dimensions, 768);
@@ -399,7 +385,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_ollama_real_batch_embedding_integration() -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_ollama_real_batch_embedding_integration() -> Result<(), Box<dyn std::error::Error>>
+    {
         let config = get_ollama_config();
         let service_provider =
             mcp_context_browser::infrastructure::di::factory::ServiceProvider::new();
@@ -415,9 +402,7 @@ mod tests {
             "Third test text with different content".to_string(),
         ];
 
-        let embeddings = embedding_provider
-            .embed_batch(&test_texts)
-            .await?;
+        let embeddings = embedding_provider.embed_batch(&test_texts).await?;
 
         assert_eq!(embeddings.len(), 3);
         for (i, embedding) in embeddings.iter().enumerate() {
@@ -469,9 +454,7 @@ mod tests {
                 .await?;
 
             let test_text = &format!("Test text for model {}", model);
-            let embedding = embedding_provider
-                .embed(test_text)
-                .await?;
+            let embedding = embedding_provider.embed(test_text).await?;
 
             assert_eq!(embedding.model, model);
             assert!(!embedding.vector.is_empty());
@@ -498,9 +481,7 @@ mod tests {
             .await?;
 
         let empty_texts: Vec<String> = vec![];
-        let embeddings = embedding_provider
-            .embed_batch(&empty_texts)
-            .await?;
+        let embeddings = embedding_provider.embed_batch(&empty_texts).await?;
 
         assert!(embeddings.is_empty());
         Ok(())
@@ -544,9 +525,7 @@ mod tests {
         // Create a moderately sized text that should work within token limits
         let large_text = "This is a test text for embedding. ".repeat(20); // ~840 characters
 
-        let embedding = embedding_provider
-            .embed(&large_text)
-            .await?;
+        let embedding = embedding_provider.embed(&large_text).await?;
 
         assert_eq!(embedding.model, "nomic-embed-text");
         assert_eq!(embedding.dimensions, 768);

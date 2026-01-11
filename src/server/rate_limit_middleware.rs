@@ -70,19 +70,3 @@ pub fn add_rate_limit_headers(
             .unwrap_or_else(|_| axum::http::HeaderValue::from_static("0")),
     );
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_rate_limit_middleware_functions_exist() {
-        // Test that functions exist and can be called
-        let rate_limiter: Option<Arc<RateLimiter>> = None;
-        let addr = ConnectInfo(std::net::SocketAddr::from(([127, 0, 0, 1], 8080)));
-
-        // Should succeed with no rate limiter
-        let result = check_rate_limit_for_ip(&rate_limiter, &addr).await;
-        assert!(result.is_ok());
-    }
-}

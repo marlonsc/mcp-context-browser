@@ -2,9 +2,7 @@
 //!
 //! Tests migrated from src/infrastructure/events.rs
 
-use mcp_context_browser::infrastructure::events::{
-    create_shared_event_bus, EventBus, SystemEvent,
-};
+use mcp_context_browser::infrastructure::events::{create_shared_event_bus, EventBus, SystemEvent};
 use std::sync::Arc;
 use tokio::time::{timeout, Duration};
 

@@ -177,39 +177,3 @@ pub async fn start_signal_handlers(event_bus: SharedEventBus) -> Result<SignalHa
     handler.start().await?;
     Ok(handler)
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::infrastructure::events::EventBus;
-
-    #[tokio::test]
-    async fn test_signal_handler_creation() {
-        let event_bus = Arc::new(EventBus::default());
-        let handler = SignalHandler::with_defaults(event_bus);
-        assert!(!handler.is_running());
-    }
-
-    #[tokio::test]
-    async fn test_signal_config_defaults() {
-        let config = SignalConfig::default();
-        assert!(config.handle_sighup);
-        assert!(config.handle_sigusr1);
-        assert!(config.handle_sigterm);
-    }
-
-    #[tokio::test]
-    async fn test_signal_handler_start_stop() -> Result<(), Box<dyn std::error::Error>> {
-        let event_bus = Arc::new(EventBus::default());
-        let handler = SignalHandler::with_defaults(event_bus);
-
-        handler.start().await?;
-        assert!(handler.is_running());
-
-        handler.stop();
-        // Give the background task time to notice the stop
-        tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
-        assert!(!handler.is_running());
-        Ok(())
-    }
-}

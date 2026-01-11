@@ -302,7 +302,10 @@ mod tests {
         fs::write(&test_file, "test data")?;
 
         let manager = BackupManager::new(
-            backup_dir.path().to_str().ok_or("Invalid backup dir path")?,
+            backup_dir
+                .path()
+                .to_str()
+                .ok_or("Invalid backup dir path")?,
             data_dir.path().to_str().ok_or("Invalid data dir path")?,
             None,
         );
@@ -323,7 +326,10 @@ mod tests {
         let data_dir = TempDir::new()?;
 
         let manager = BackupManager::new(
-            backup_dir.path().to_str().ok_or("Invalid backup dir path")?,
+            backup_dir
+                .path()
+                .to_str()
+                .ok_or("Invalid backup dir path")?,
             data_dir.path().to_str().ok_or("Invalid data dir path")?,
             None,
         );

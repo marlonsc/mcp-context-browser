@@ -228,7 +228,10 @@ mod tests {
         let capabilities = &info.capabilities;
 
         // Tools capability should be enabled
-        let tools_capability = capabilities.tools.as_ref().ok_or("Missing tools capability")?;
+        let tools_capability = capabilities
+            .tools
+            .as_ref()
+            .ok_or("Missing tools capability")?;
         assert!(
             tools_capability.list_changed.is_none(),
             "List changed should be None for basic implementation"
@@ -268,7 +271,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_server_initialization_with_dependencies() -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_server_initialization_with_dependencies() -> Result<(), Box<dyn std::error::Error>>
+    {
         // This test ensures the server can be created with all its dependencies
         // In a real scenario, this would involve mock providers
         let _server = McpServer::new(None).await?;
@@ -384,7 +388,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_instructions_contain_essential_information() -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_instructions_contain_essential_information(
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let server = McpServer::new(None).await?;
         let info = server.get_info();
         let instructions = info.instructions.as_ref().ok_or("Missing instructions")?;
@@ -453,15 +458,15 @@ mod tests {
         let serialized = serde_json::to_string(&info)?;
 
         // Test that it can be deserialized back
-        let deserialized: rmcp::model::ServerInfo =
-            serde_json::from_str(&serialized)?;
+        let deserialized: rmcp::model::ServerInfo = serde_json::from_str(&serialized)?;
         assert_eq!(deserialized.protocol_version, info.protocol_version);
         assert_eq!(deserialized.server_info.name, info.server_info.name);
         Ok(())
     }
 
     #[tokio::test]
-    async fn test_server_supports_required_mcp_features() -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_server_supports_required_mcp_features() -> Result<(), Box<dyn std::error::Error>>
+    {
         let server = McpServer::new(None).await?;
         let info = server.get_info();
 
@@ -474,7 +479,11 @@ mod tests {
 
         // Should have instructions for clients
         assert!(info.instructions.is_some());
-        assert!(!info.instructions.as_ref().ok_or("Missing instructions")?.is_empty());
+        assert!(!info
+            .instructions
+            .as_ref()
+            .ok_or("Missing instructions")?
+            .is_empty());
         Ok(())
     }
 }

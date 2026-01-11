@@ -14,7 +14,7 @@ mod limits_tests;
 mod logging_tests;
 mod merkle_tests;
 mod performance_tests;
-mod rate_limit_tests;
+// rate_limit_tests removed - duplicates tests/unit/rate_limiting.rs
 mod respawn_tests;
 mod signals_tests;
 mod utils_tests;

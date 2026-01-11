@@ -68,15 +68,15 @@ mod tests {
     async fn test_context_service_creation() {
         let (embedding_provider, vector_store_provider, hybrid_search_provider) =
             create_test_providers();
-        let _service = ContextService::new(
+        let service = ContextService::new(
             embedding_provider,
             vector_store_provider,
             hybrid_search_provider,
         );
 
-        // ContextService constructor doesn't return Result, it's infallible
-        // Just verify it can be created
-        assert!(true);
+        // Verify service is properly initialized with expected embedding dimensions
+        // NullEmbeddingProvider returns dimension=1
+        assert_eq!(service.embedding_dimensions(), 1);
     }
 
     #[tokio::test]
@@ -181,7 +181,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_context_service_search_with_zero_limit() -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_context_service_search_with_zero_limit() -> Result<(), Box<dyn std::error::Error>>
+    {
         let (_ep, _vs, _hsp) = create_test_providers();
         let (embedding_provider, vector_store_provider, hybrid_search_provider) =
             create_test_providers();
@@ -243,7 +244,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_indexing_service_index_nonexistent_directory() -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_indexing_service_index_nonexistent_directory(
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let (embedding_provider, vector_store_provider, hybrid_search_provider) =
             create_test_providers();
         let context_service = Arc::new(ContextService::new(

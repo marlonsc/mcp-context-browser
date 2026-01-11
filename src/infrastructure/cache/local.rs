@@ -28,7 +28,11 @@ impl CacheManager {
     }
 
     /// Set a value in the local Moka cache
-    pub(crate) async fn set_in_local(&self, full_key: &str, value: serde_json::Value) -> Result<()> {
+    pub(crate) async fn set_in_local(
+        &self,
+        full_key: &str,
+        value: serde_json::Value,
+    ) -> Result<()> {
         let namespace = full_key.split(':').next().unwrap_or("");
         let cache = self.get_cache(namespace);
         cache.insert(full_key.to_string(), value).await;
@@ -54,7 +58,11 @@ impl CacheManager {
     }
 
     /// Enqueue an item to a list in the local cache
-    pub(crate) async fn enqueue_local(&self, full_key: &str, value: serde_json::Value) -> Result<()> {
+    pub(crate) async fn enqueue_local(
+        &self,
+        full_key: &str,
+        value: serde_json::Value,
+    ) -> Result<()> {
         let namespace = full_key.split(':').next().unwrap_or("");
         let cache = self.get_cache(namespace);
 
@@ -76,7 +84,11 @@ impl CacheManager {
     }
 
     /// Remove an item from a list in the local cache
-    pub(crate) async fn remove_from_local(&self, full_key: &str, value: &serde_json::Value) -> Result<()> {
+    pub(crate) async fn remove_from_local(
+        &self,
+        full_key: &str,
+        value: &serde_json::Value,
+    ) -> Result<()> {
         let namespace = full_key.split(':').next().unwrap_or("");
         let cache = self.get_cache(namespace);
 

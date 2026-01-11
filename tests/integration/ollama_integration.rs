@@ -140,17 +140,14 @@ mod ollama_in_memory_tests {
         // Setup test data
         let collection = "ollama_in_memory_test";
         let vector_store: Arc<dyn VectorStoreProvider> = in_memory_store.clone();
-        test_utils::setup_test_data(&vector_store, &ollama_provider, collection, 5)
-            .await?;
+        test_utils::setup_test_data(&vector_store, &ollama_provider, collection, 5).await?;
 
         // Create search service
         let search_service = SearchService::new(context_service);
 
         // Test search
         let query = "test content";
-        let results = search_service
-            .search(collection, query, 3)
-            .await?;
+        let results = search_service.search(collection, query, 3).await?;
 
         assert!(!results.is_empty(), "Should find some results");
         assert!(results.len() <= 3, "Should not exceed limit");
@@ -167,7 +164,6 @@ mod ollama_in_memory_tests {
             );
         }
 
-        println!("✅ Ollama + InMemory integration test passed");
         Ok(())
     }
 }
@@ -214,8 +210,7 @@ mod ollama_filesystem_tests {
         let collection = "ollama_filesystem_test";
         let vector_store: Arc<dyn VectorStoreProvider> = filesystem_store.clone();
         println!("📝 Setting up test data for filesystem store...");
-        test_utils::setup_test_data(&vector_store, &ollama_provider, collection, 5)
-            .await?;
+        test_utils::setup_test_data(&vector_store, &ollama_provider, collection, 5).await?;
         println!("✅ Test data setup complete");
 
         // Create search service
@@ -226,9 +221,7 @@ mod ollama_filesystem_tests {
 
         for query in queries {
             println!("🔍 Searching for: {}", query);
-            let results = search_service
-                .search(collection, query, 3)
-                .await?;
+            let results = search_service.search(collection, query, 3).await?;
 
             println!("📊 Found {} results for '{}'", results.len(), query);
 
@@ -240,9 +233,7 @@ mod ollama_filesystem_tests {
 
         // If we get here, try one more time with the original query
         let query = "test content";
-        let results = search_service
-            .search(collection, query, 3)
-            .await?;
+        let results = search_service.search(collection, query, 3).await?;
 
         println!("📊 Final search found {} results", results.len());
         assert!(!results.is_empty(), "Should find some results");
@@ -255,7 +246,6 @@ mod ollama_filesystem_tests {
             );
         }
 
-        println!("✅ Ollama + Filesystem integration test passed");
         Ok(())
     }
 }
@@ -340,9 +330,7 @@ impl TestStruct {
         let queries = vec!["struct definition", "main function", "field", "println"];
 
         for query in queries {
-            let results = search_service
-                .search(collection, query, 3)
-                .await?;
+            let results = search_service.search(collection, query, 3).await?;
             assert!(
                 !results.is_empty(),
                 "Should find results for query: {}",
@@ -350,7 +338,6 @@ impl TestStruct {
             );
         }
 
-        println!("✅ Ollama full indexing workflow test passed");
         Ok(())
     }
 }

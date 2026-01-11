@@ -12,7 +12,7 @@
 //!
 //! ## Quick Start
 //!
-//! ```rust,ignore
+//! ```rust,no_run
 //! use mcp_context_browser::run_server;
 //!
 //! #[tokio::main]
@@ -51,6 +51,7 @@ pub mod adapters;
 pub mod admin;
 pub mod application;
 pub mod chunking;
+pub mod config_example;
 pub mod daemon;
 pub mod domain;
 pub mod infrastructure;

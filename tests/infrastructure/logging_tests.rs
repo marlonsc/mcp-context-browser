@@ -2,9 +2,7 @@
 //!
 //! Tests migrated from src/infrastructure/logging.rs
 
-use mcp_context_browser::infrastructure::logging::{
-    create_shared_log_buffer, LogBuffer, LogEntry,
-};
+use mcp_context_browser::infrastructure::logging::{create_shared_log_buffer, LogBuffer, LogEntry};
 use std::time::Duration;
 use tracing::Level;
 

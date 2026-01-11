@@ -1,8 +1,12 @@
 //! Integration tests for the MCP Context Browser
 //!
 //! This module tests the full application flow including MCP protocol handling.
+//!
+//! IMPORTANT: Tests that spawn the server binary must use `#[serial(mcp_binary)]`
+//! because the server binds to fixed ports (3001, 3002).
 
 use serde_json::json;
+use serial_test::serial;
 
 #[cfg(test)]
 mod tests {
@@ -13,15 +17,12 @@ mod tests {
     /// Get or create a shared test server instance
     async fn get_test_server() -> Result<McpServer, Box<dyn std::error::Error>> {
         McpServer::new(None).await.map_err(|e| {
-            Box::new(std::io::Error::other(e.to_string()))
-                as Box<dyn std::error::Error>
+            Box::new(std::io::Error::other(e.to_string())) as Box<dyn std::error::Error>
         })
     }
 
     /// Process an MCP JSON-RPC message using the actual server
-    async fn run_mcp_command_test(
-        json_input: &str,
-    ) -> Result<String, Box<dyn std::error::Error>> {
+    async fn run_mcp_command_test(json_input: &str) -> Result<String, Box<dyn std::error::Error>> {
         // Parse the JSON-RPC message
         let message: serde_json::Value =
             serde_json::from_str(json_input).map_err(|e| format!("Invalid JSON: {}", e))?;
@@ -169,7 +170,9 @@ mod tests {
             response["result"]["tools"].is_array(),
             "Should have tools array"
         );
-        let tools = response["result"]["tools"].as_array().ok_or("Missing tools array")?;
+        let tools = response["result"]["tools"]
+            .as_array()
+            .ok_or("Missing tools array")?;
         assert!(!tools.is_empty(), "Should have at least one tool");
         Ok(())
     }
@@ -407,6 +410,7 @@ mod tests {
             mcp_context_browser::adapters::providers::vector_store::MilvusVectorStoreProvider::new(
                 milvus_address.to_string(),
                 None,
+                None,
             )
             .await?;
 
@@ -427,13 +431,16 @@ mod tests {
         Ok(())
     }
 
+    /// Test MCP server stdio communication using the binary.
+    /// Uses `#[serial(mcp_binary)]` because server binds to fixed ports.
     #[tokio::test]
+    #[serial(mcp_binary)]
     async fn test_mcp_server_stdio_communication() -> Result<(), Box<dyn std::error::Error>> {
-        // Skip test if binary doesn't exist
-        if !std::path::Path::new("./target/debug/mcp-context-browser").exists() {
-            println!("Skipping MCP server stdio test - binary not found");
-            return Ok(());
-        }
+        // Fail fast if binary doesn't exist - user should run 'cargo build' first
+        assert!(
+            std::path::Path::new("./target/debug/mcp-context-browser").exists(),
+            "MCP server binary not found. Run 'cargo build' first."
+        );
 
         use rmcp::{model::CallToolRequestParam, transport::TokioChildProcess, ServiceExt};
         use tokio::process::Command;

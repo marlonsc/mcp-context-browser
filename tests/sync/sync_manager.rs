@@ -4,10 +4,13 @@
 //! - File change detection
 //! - Modification time tracking
 //! - Event publishing on sync completion
+//!
+//! Includes tests migrated from src/sync/manager.rs inline tests.
 
 use mcp_context_browser::sync::manager::{SyncConfig, SyncManager};
 use std::fs;
 use std::path::PathBuf;
+use std::time::Duration;
 use tempfile::TempDir;
 
 /// Helper to create a test directory with files
@@ -37,10 +40,7 @@ async fn test_sync_detects_new_files() -> Result<(), Box<dyn std::error::Error>>
 
     // Then: Sync should succeed and detect files
     assert!(result.is_ok(), "Sync should succeed");
-    assert!(
-        result?,
-        "First sync should return true (files detected)"
-    );
+    assert!(result?, "First sync should return true (files detected)");
 
     // And: Stats should show file count
     let stats = manager.get_stats();
@@ -219,5 +219,71 @@ async fn test_sync_filters_by_extension() -> Result<(), Box<dyn std::error::Erro
     // Then: Should only track relevant file types
     // (Exact count depends on implementation - at minimum should track .rs files)
     assert!(tracked >= 1, "Should track at least the .rs file");
+    Ok(())
+}
+
+// ===== Tests migrated from src/sync/manager.rs =====
+
+#[test]
+fn test_sync_config_default() {
+    let config = SyncConfig::default();
+    assert_eq!(config.interval_ms, 15 * 60 * 1000);
+    assert_eq!(config.debounce_ms, 60 * 1000);
+}
+
+#[tokio::test]
+async fn test_sync_manager_creation() {
+    let manager = SyncManager::new();
+    assert_eq!(manager.config().interval_ms, 15 * 60 * 1000); // 15 minutes
+    assert_eq!(manager.config().debounce_ms, 60 * 1000); // 60 seconds
+}
+
+#[tokio::test]
+async fn test_sync_config_from_env() {
+    // Test default config
+    let config = SyncConfig::from_env();
+    assert_eq!(config.interval_ms, 15 * 60 * 1000);
+    assert_eq!(config.debounce_ms, 60 * 1000);
+}
+
+#[tokio::test]
+async fn test_sync_stats_initialization() {
+    let manager = SyncManager::new();
+    let stats = manager.get_stats();
+
+    assert_eq!(stats.total_attempts, 0);
+    assert_eq!(stats.successful, 0);
+    assert_eq!(stats.skipped, 0);
+    assert_eq!(stats.failed, 0);
+    assert_eq!(stats.skipped_rate, 0.0);
+}
+
+#[tokio::test]
+async fn test_sync_intervals() {
+    let manager = SyncManager::new();
+
+    assert_eq!(
+        manager.sync_interval(),
+        Duration::from_millis(15 * 60 * 1000)
+    );
+    assert_eq!(
+        manager.debounce_interval(),
+        Duration::from_millis(60 * 1000)
+    );
+}
+
+#[tokio::test]
+async fn test_should_debounce_from_inline() -> Result<(), Box<dyn std::error::Error>> {
+    let manager = SyncManager::new();
+    let path = PathBuf::from("/tmp/test");
+
+    // First call should not debounce
+    assert!(!manager.should_debounce(&path).await?);
+
+    // Update last sync time
+    manager.update_last_sync(&path).await;
+
+    // Second call should debounce (within 60 seconds)
+    assert!(manager.should_debounce(&path).await?);
     Ok(())
 }

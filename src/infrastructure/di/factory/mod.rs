@@ -137,7 +137,12 @@ impl ProviderFactory for DefaultProviderFactory {
                     .as_ref()
                     .ok_or_else(|| Error::config("Milvus address required"))?;
                 Ok(Arc::new(
-                    MilvusVectorStoreProvider::new(address.clone(), config.token.clone()).await?,
+                    MilvusVectorStoreProvider::new(
+                        address.clone(),
+                        config.token.clone(),
+                        config.timeout_secs,
+                    )
+                    .await?,
                 ) as Arc<dyn VectorStoreProvider>)
             }
             "edgevec" => {

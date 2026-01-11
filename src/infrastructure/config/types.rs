@@ -72,6 +72,7 @@ impl Default for ProviderConfig {
                 token: None,
                 collection: None,
                 dimensions: Some(768),
+                timeout_secs: None, // Default: 10 seconds (set in provider)
             },
         }
     }

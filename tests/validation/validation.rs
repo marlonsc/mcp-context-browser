@@ -14,7 +14,8 @@ mod tests {
     // ===== STRING VALIDATION TESTS =====
 
     #[test]
-    fn test_string_validator_not_empty_should_pass_for_non_empty_string() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_string_validator_not_empty_should_pass_for_non_empty_string(
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let validator = StringValidator::not_empty();
         let result = validator.validate("hello");
         assert!(result.is_ok());
@@ -41,7 +42,8 @@ mod tests {
     }
 
     #[test]
-    fn test_string_validator_min_length_should_pass_when_above_minimum() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_string_validator_min_length_should_pass_when_above_minimum(
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let validator = StringValidator::min_length(3);
         let result = validator.validate("hello");
         assert!(result.is_ok());
@@ -59,7 +61,8 @@ mod tests {
     }
 
     #[test]
-    fn test_string_validator_max_length_should_pass_when_below_maximum() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_string_validator_max_length_should_pass_when_below_maximum(
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let validator = StringValidator::max_length(5);
         let result = validator.validate("hello");
         assert!(result.is_ok());
@@ -77,7 +80,8 @@ mod tests {
     }
 
     #[test]
-    fn test_string_validator_contains_should_pass_for_matching_substring() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_string_validator_contains_should_pass_for_matching_substring(
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let validator = StringValidator::contains("test");
         let result = validator.validate("this is a test");
         assert!(result.is_ok());
@@ -120,15 +124,14 @@ mod tests {
         let result = validator.validate("this_is_too_long");
         assert!(result.is_err());
         let err = result.expect_err("Expected TooLong error for long string");
-        assert!(matches!(err,
-            ValidationError::TooLong { .. }
-        ));
+        assert!(matches!(err, ValidationError::TooLong { .. }));
     }
 
     // ===== NUMBER VALIDATION TESTS =====
 
     #[test]
-    fn test_number_validator_range_should_pass_within_bounds() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_number_validator_range_should_pass_within_bounds(
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let validator = NumberValidator::range(10, 100);
         let result = validator.validate(&50);
         assert!(result.is_ok());
@@ -155,7 +158,8 @@ mod tests {
     }
 
     #[test]
-    fn test_number_validator_positive_should_pass_for_positive_number() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_number_validator_positive_should_pass_for_positive_number(
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let validator = NumberValidator::positive();
         let result = validator.validate(&42);
         assert!(result.is_ok());

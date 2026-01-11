@@ -41,7 +41,12 @@ impl IndexCodebaseHandler {
     /// Handle the index_codebase tool request
     pub async fn handle(
         &self,
-        Parameters(IndexCodebaseArgs { path, token, .. }): Parameters<IndexCodebaseArgs>,
+        Parameters(IndexCodebaseArgs {
+            path,
+            token,
+            collection,
+            ..
+        }): Parameters<IndexCodebaseArgs>,
     ) -> Result<CallToolResult, McpError> {
         let start_time = Instant::now();
 
@@ -92,7 +97,8 @@ impl IndexCodebaseHandler {
             ));
         }
 
-        let collection = "default";
+        // Use collection from args, or default to "default"
+        let collection = collection.as_deref().unwrap_or("default");
         tracing::info!("Starting codebase indexing for path: {}", path.display());
 
         // Add timeout for long-running indexing operations

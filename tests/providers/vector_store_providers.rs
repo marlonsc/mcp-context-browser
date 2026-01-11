@@ -354,7 +354,7 @@ mod milvus_provider_tests {
 
     // Test helper to check if Milvus is available
     async fn is_milvus_available() -> bool {
-        MilvusVectorStoreProvider::new("http://localhost:19531".to_string(), None)
+        MilvusVectorStoreProvider::new("http://localhost:19531".to_string(), None, None)
             .await
             .is_ok()
     }
@@ -362,7 +362,8 @@ mod milvus_provider_tests {
     #[tokio::test]
     async fn test_provider_creation_invalid_address() {
         // Test with invalid address should fail gracefully
-        let result = MilvusVectorStoreProvider::new("invalid_address:9999".to_string(), None).await;
+        let result =
+            MilvusVectorStoreProvider::new("invalid_address:9999".to_string(), None, None).await;
         assert!(result.is_err()); // Should fail to connect to invalid address
     }
 
@@ -383,8 +384,9 @@ mod milvus_provider_tests {
             return Ok(());
         }
 
-        let provider = MilvusVectorStoreProvider::new("http://localhost:19531".to_string(), None)
-            .await?;
+        let provider =
+            MilvusVectorStoreProvider::new("http://localhost:19531".to_string(), None, None)
+                .await?;
         let collection = "test_milvus_basic";
         let dimensions = 128;
 
@@ -416,8 +418,9 @@ mod milvus_provider_tests {
             return Ok(());
         }
 
-        let provider = MilvusVectorStoreProvider::new("http://localhost:19531".to_string(), None)
-            .await?;
+        let provider =
+            MilvusVectorStoreProvider::new("http://localhost:19531".to_string(), None, None)
+                .await?;
         let collection = "test_milvus_vectors";
         let dimensions = 128;
 
@@ -484,8 +487,9 @@ mod milvus_provider_tests {
             return Ok(());
         }
 
-        let provider = MilvusVectorStoreProvider::new("http://localhost:19531".to_string(), None)
-            .await?;
+        let provider =
+            MilvusVectorStoreProvider::new("http://localhost:19531".to_string(), None, None)
+                .await?;
         let collection = "test_milvus_limits";
         let dimensions = 128;
 
@@ -535,8 +539,9 @@ mod milvus_provider_tests {
             return Ok(());
         }
 
-        let provider = MilvusVectorStoreProvider::new("http://localhost:19531".to_string(), None)
-            .await?;
+        let provider =
+            MilvusVectorStoreProvider::new("http://localhost:19531".to_string(), None, None)
+                .await?;
         let collection = "test_milvus_empty";
 
         // Clean up and setup
@@ -559,14 +564,16 @@ mod milvus_provider_tests {
     }
 
     #[tokio::test]
-    async fn test_milvus_integration_multiple_collections() -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_milvus_integration_multiple_collections() -> Result<(), Box<dyn std::error::Error>>
+    {
         if !is_milvus_available().await {
             println!("Milvus not available, skipping integration test");
             return Ok(());
         }
 
-        let provider = MilvusVectorStoreProvider::new("http://localhost:19531".to_string(), None)
-            .await?;
+        let provider =
+            MilvusVectorStoreProvider::new("http://localhost:19531".to_string(), None, None)
+                .await?;
         let collections = vec!["test_milvus_multi_1", "test_milvus_multi_2"];
         let dimensions = 128;
 

@@ -2,9 +2,7 @@
 //!
 //! Tests migrated from src/infrastructure/auth.rs
 
-use mcp_context_browser::infrastructure::auth::{
-    AuthConfig, AuthService, Permission, UserRole,
-};
+use mcp_context_browser::infrastructure::auth::{AuthConfig, AuthService, Permission, UserRole};
 
 #[test]
 fn test_user_roles() {
@@ -109,7 +107,8 @@ async fn test_disabled_auth() {
 }
 
 #[test]
-fn test_auth_service_handles_disabled_auth_errors() -> std::result::Result<(), Box<dyn std::error::Error>> {
+fn test_auth_service_handles_disabled_auth_errors(
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let config = AuthConfig {
         enabled: false,
         ..Default::default()
@@ -125,7 +124,8 @@ fn test_auth_service_handles_disabled_auth_errors() -> std::result::Result<(), B
 }
 
 #[test]
-fn test_auth_service_handles_invalid_credentials_errors() -> std::result::Result<(), Box<dyn std::error::Error>> {
+fn test_auth_service_handles_invalid_credentials_errors(
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let auth = enabled_auth_service();
 
     // Should return proper error instead of panicking
@@ -137,7 +137,8 @@ fn test_auth_service_handles_invalid_credentials_errors() -> std::result::Result
 }
 
 #[test]
-fn test_auth_service_handles_token_validation_errors() -> std::result::Result<(), Box<dyn std::error::Error>> {
+fn test_auth_service_handles_token_validation_errors(
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let auth = enabled_auth_service();
 
     // Should return proper error for invalid tokens instead of panicking

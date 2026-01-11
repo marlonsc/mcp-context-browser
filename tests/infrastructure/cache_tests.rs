@@ -43,9 +43,7 @@ async fn test_local_cache_operations() -> std::result::Result<(), Box<dyn std::e
     let manager = CacheManager::new(config, None).await?;
 
     // Test set and get
-    manager
-        .set("test", "key1", "value1".to_string())
-        .await?;
+    manager.set("test", "key1", "value1".to_string()).await?;
 
     let result: CacheResult<String> = manager.get("test", "key1").await;
     assert!(result.is_hit());
@@ -83,12 +81,8 @@ async fn test_namespace_operations() -> std::result::Result<(), Box<dyn std::err
     let manager = CacheManager::new(config, None).await?;
 
     // Set values in different namespaces
-    manager
-        .set("ns1", "key1", "value1".to_string())
-        .await?;
-    manager
-        .set("ns2", "key1", "value2".to_string())
-        .await?;
+    manager.set("ns1", "key1", "value1".to_string()).await?;
+    manager.set("ns2", "key1", "value2".to_string()).await?;
 
     // Get values
     let result1: CacheResult<String> = manager.get("ns1", "key1").await;
@@ -131,7 +125,8 @@ async fn test_cache_manager_fail_invalid_redis() {
 }
 
 #[tokio::test]
-async fn test_cache_manager_handles_disabled_cache_operations() -> std::result::Result<(), Box<dyn std::error::Error>> {
+async fn test_cache_manager_handles_disabled_cache_operations(
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let config = CacheConfig {
         redis_url: "".to_string(),
         default_ttl_seconds: 300,
@@ -152,7 +147,8 @@ async fn test_cache_manager_handles_disabled_cache_operations() -> std::result::
 }
 
 #[tokio::test]
-async fn test_cache_manager_handles_large_data_operations() -> std::result::Result<(), Box<dyn std::error::Error>> {
+async fn test_cache_manager_handles_large_data_operations(
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let config = CacheConfig::default(); // Local mode
     let manager = CacheManager::new(config, None).await?;
 

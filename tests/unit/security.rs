@@ -106,9 +106,7 @@ mod tests {
             .layer(axum::middleware::from_fn(request_validation_middleware));
 
         // Test URI with null byte - should be rejected
-        let request = Request::builder()
-            .uri("/test%00")
-            .body(Body::empty())?;
+        let request = Request::builder().uri("/test%00").body(Body::empty())?;
 
         let response = app.oneshot(request).await?;
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);

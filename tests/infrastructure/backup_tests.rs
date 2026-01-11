@@ -17,7 +17,10 @@ async fn test_backup_creation() -> std::result::Result<(), Box<dyn std::error::E
     fs::write(&test_file, "test data")?;
 
     let manager = BackupManager::new(
-        backup_dir.path().to_str().ok_or("Invalid backup dir path")?,
+        backup_dir
+            .path()
+            .to_str()
+            .ok_or("Invalid backup dir path")?,
         data_dir.path().to_str().ok_or("Invalid data dir path")?,
         None,
     );
@@ -38,7 +41,10 @@ async fn test_list_backups() -> std::result::Result<(), Box<dyn std::error::Erro
     let data_dir = TempDir::new()?;
 
     let manager = BackupManager::new(
-        backup_dir.path().to_str().ok_or("Invalid backup dir path")?,
+        backup_dir
+            .path()
+            .to_str()
+            .ok_or("Invalid backup dir path")?,
         data_dir.path().to_str().ok_or("Invalid data dir path")?,
         None,
     );

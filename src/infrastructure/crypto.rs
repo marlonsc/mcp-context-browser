@@ -269,7 +269,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_encrypt_decrypt_roundtrip() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    async fn test_encrypt_decrypt_roundtrip() -> std::result::Result<(), Box<dyn std::error::Error>>
+    {
         let temp_dir = tempdir()?;
         let key_path = temp_dir
             .path()

@@ -31,10 +31,11 @@ mod test_utils {
             .ok_or("Failed to get parent dir")?
             .join("../../../target/debug/mcp-context-browser");
 
-        if !binary_path.exists() {
-            println!("⚠️  Binary not found, skipping stdio integration test");
-            return Ok(());
-        }
+        assert!(
+            binary_path.exists(),
+            "MCP server binary not found at {:?}. Run 'cargo build' first.",
+            binary_path
+        );
 
         // Create test codebase
         let _temp_dir = create_test_codebase().await?;
@@ -252,9 +253,9 @@ mod mcp_server_tests {
     }
 
     /// Test full MCP protocol integration via stdio transport.
-    /// Uses `#[serial]` because the server binary binds to fixed ports.
+    /// Uses `#[serial(mcp_binary)]` because the server binary binds to fixed ports.
     #[tokio::test]
-    #[serial]
+    #[serial(mcp_binary)]
     async fn test_mcp_stdio_integration() -> Result<(), Box<dyn std::error::Error>> {
         test_utils::run_stdio_integration_test().await
     }

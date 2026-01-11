@@ -1,3 +1,10 @@
 //! Tests for the server module
+//!
+//! Contains tests for:
+//! - Transport layer (HTTP, sessions, versioning, config)
+//! - Security middleware
+//! - Rate limiting middleware
 
-// Tests will be added here as the server functionality is implemented
+mod rate_limit_middleware;
+mod security;
+mod transport;

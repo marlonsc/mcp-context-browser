@@ -1,10 +1,13 @@
-#![allow(clippy::assertions_on_constants)]
 //! Unit tests for configuration system components
+//!
+//! Tests configuration data structures, validation, and loading.
 
-/// Test configuration data structure integrity
+use mcp_context_browser::infrastructure::config::Config;
+use validator::Validate;
+
 #[cfg(test)]
 mod config_structure_tests {
-    use mcp_context_browser::infrastructure::config::Config;
+    use super::*;
 
     #[test]
     fn test_config_field_access() {
@@ -20,20 +23,20 @@ mod config_structure_tests {
     }
 
     #[test]
-    fn test_config_serialization_safety() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_config_serialization_roundtrip() -> Result<(), Box<dyn std::error::Error>> {
         let config = Config::default();
         let serialized = serde_json::to_string(&config)?;
         let deserialized: Config = serde_json::from_str(&serialized)?;
         assert_eq!(config.name, deserialized.name);
+        assert_eq!(config.server.host, deserialized.server.host);
+        assert_eq!(config.server.port, deserialized.server.port);
         Ok(())
     }
 }
 
-/// Test configuration validation rules
 #[cfg(test)]
 mod config_validation_tests {
-    use mcp_context_browser::infrastructure::config::Config;
-    use validator::Validate;
+    use super::*;
 
     #[test]
     fn test_config_required_fields() {
@@ -51,150 +54,6 @@ mod config_validation_tests {
     fn test_config_cross_field_validation() {
         let config = Config::default();
         assert!(!config.server.host.is_empty());
-    }
-}
-
-/// Test configuration loading mechanisms
-#[cfg(test)]
-mod config_loading_tests {
-    use mcp_context_browser::infrastructure::config::Config;
-
-    #[test]
-    fn test_config_file_parsing() {
-        let config = Config::default();
-        assert_eq!(config.server.port, 3000);
-    }
-
-    #[test]
-    fn test_environment_variable_override() {
-        unsafe {
-            std::env::set_var("MCP__SERVER__PORT", "4000");
-        }
-        // This is a unit test of the structure, loading is tested in loader.rs
-        assert!(true);
-        unsafe {
-            std::env::remove_var("MCP__SERVER__PORT");
-        }
-    }
-
-    #[test]
-    fn test_config_merge_priority() {
-        // Basic priority test placeholder
-        assert!(true);
-    }
-}
-
-/// Test configuration builder pattern
-#[cfg(test)]
-mod config_builder_tests {
-
-    #[test]
-    fn test_builder_pattern_usage() {
-        // Test that builder pattern works correctly
-        assert!(true);
-    }
-
-    #[test]
-    fn test_builder_validation() {
-        // Test that builder validates configurations
-        assert!(true);
-    }
-
-    #[test]
-    fn test_builder_default_fallbacks() {
-        // Test builder default value fallbacks
-        assert!(true);
-    }
-}
-
-/// Test configuration error handling
-#[cfg(test)]
-mod config_error_tests {
-
-    #[test]
-    fn test_invalid_config_handling() {
-        // Test handling of invalid configurations
-        assert!(true);
-    }
-
-    #[test]
-    fn test_config_error_messages() {
-        // Test that configuration errors provide clear messages
-        assert!(true);
-    }
-
-    #[test]
-    fn test_config_recovery_mechanisms() {
-        // Test configuration recovery from errors
-        assert!(true);
-    }
-}
-
-/// Test configuration performance
-#[cfg(test)]
-mod config_performance_tests {
-
-    #[test]
-    fn test_config_loading_speed() {
-        // Test that configuration loads quickly
-        assert!(true);
-    }
-
-    #[test]
-    fn test_config_validation_speed() {
-        // Test that configuration validation is fast
-        assert!(true);
-    }
-
-    #[test]
-    fn test_config_memory_usage() {
-        // Test configuration memory efficiency
-        assert!(true);
-    }
-}
-
-/// Test configuration security
-#[cfg(test)]
-mod config_security_tests {
-
-    #[test]
-    fn test_sensitive_data_handling() {
-        // Test that sensitive configuration data is handled securely
-        assert!(true);
-    }
-
-    #[test]
-    fn test_config_input_sanitization() {
-        // Test that configuration inputs are sanitized
-        assert!(true);
-    }
-
-    #[test]
-    fn test_config_access_control() {
-        // Test configuration access controls
-        assert!(true);
-    }
-}
-
-/// Test configuration compatibility
-#[cfg(test)]
-mod config_compatibility_tests {
-
-    #[test]
-    fn test_backward_compatibility() {
-        // Test that configurations remain backward compatible
-        assert!(true);
-    }
-
-    #[test]
-    fn test_version_compatibility() {
-        // Test configuration version compatibility
-        assert!(true);
-    }
-
-    #[test]
-    fn test_migration_handling() {
-        // Test configuration migration handling
-        assert!(true);
+        assert!(!config.name.is_empty());
     }
 }

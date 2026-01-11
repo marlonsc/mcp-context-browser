@@ -172,6 +172,8 @@ pub struct VectorStoreConfig {
     pub token: Option<String>,
     pub collection: Option<String>,
     pub dimensions: Option<usize>,
+    /// Connection timeout in seconds (default: 10)
+    pub timeout_secs: Option<u64>,
 }
 
 /// Sync batch for queue processing

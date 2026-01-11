@@ -136,7 +136,11 @@ impl CacheManager {
     }
 
     /// Remove an item from a Redis list
-    pub(crate) async fn remove_from_redis(&self, key: &str, value: &serde_json::Value) -> Result<()> {
+    pub(crate) async fn remove_from_redis(
+        &self,
+        key: &str,
+        value: &serde_json::Value,
+    ) -> Result<()> {
         if let Some(ref client) = self.redis_client {
             let mut conn = client.get_multiplexed_async_connection().await?;
             let json_str = serde_json::to_string(value)?;

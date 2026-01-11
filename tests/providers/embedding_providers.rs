@@ -101,8 +101,7 @@ mod openai_tests {
             "text-embedding-3-small".to_string(),
         )?;
 
-        let result = tokio::runtime::Runtime::new()?
-            .block_on(provider.embed("Hello, world!"))?;
+        let result = tokio::runtime::Runtime::new()?.block_on(provider.embed("Hello, world!"))?;
 
         assert_eq!(result.model, "text-embedding-3-small");
         assert_eq!(result.dimensions, 1536);
@@ -338,8 +337,7 @@ mod provider_trait_tests {
         assert_eq!(provider.dimensions(), 1);
 
         // Test embed single
-        let result = tokio::runtime::Runtime::new()?
-            .block_on(provider.embed("test"))?;
+        let result = tokio::runtime::Runtime::new()?.block_on(provider.embed("test"))?;
         assert_eq!(result.model, "null");
         assert_eq!(result.dimensions, 1);
         assert!(!result.vector.is_empty());
@@ -355,8 +353,7 @@ mod provider_trait_tests {
         }
 
         // Test empty batch
-        let result = tokio::runtime::Runtime::new()?
-            .block_on(provider.embed_batch(&[]))?;
+        let result = tokio::runtime::Runtime::new()?.block_on(provider.embed_batch(&[]))?;
         assert!(result.is_empty());
         Ok(())
     }
@@ -415,8 +412,7 @@ mod provider_trait_tests {
 
         // Test embed_batch with empty input (should return empty vec)
         for provider in &providers {
-            let result = tokio::runtime::Runtime::new()?
-                .block_on(provider.embed_batch(&[]))?;
+            let result = tokio::runtime::Runtime::new()?.block_on(provider.embed_batch(&[]))?;
             assert!(result.is_empty(), "Empty batch should return empty result");
         }
         Ok(())
@@ -597,25 +593,18 @@ mod provider_trait_tests {
         let null_provider = NullEmbeddingProvider::new();
 
         // Test empty text (should work for null provider)
-        let result = tokio::runtime::Runtime::new()?
-            .block_on(null_provider.embed(""));
+        let result = tokio::runtime::Runtime::new()?.block_on(null_provider.embed(""));
         assert!(result.is_ok(), "Null provider should handle empty text");
 
         // Test very long text
         let long_text = "word ".repeat(10000);
-        let result = tokio::runtime::Runtime::new()?
-            .block_on(null_provider.embed(&long_text));
+        let result = tokio::runtime::Runtime::new()?.block_on(null_provider.embed(&long_text));
         assert!(result.is_ok(), "Null provider should handle long text");
 
         // Test batch with mixed empty/non-empty texts
         let texts = vec!["".to_string(), "short".to_string(), "a ".repeat(1000)];
-        let result = tokio::runtime::Runtime::new()?
-            .block_on(null_provider.embed_batch(&texts))?;
-        assert_eq!(
-            result.len(),
-            3,
-            "Should return embeddings for all inputs"
-        );
+        let result = tokio::runtime::Runtime::new()?.block_on(null_provider.embed_batch(&texts))?;
+        assert_eq!(result.len(), 3, "Should return embeddings for all inputs");
         Ok(())
     }
 
@@ -687,8 +676,8 @@ mod provider_trait_tests {
 
         // Test with very large batch
         let large_batch: Vec<String> = (0..1000).map(|i| format!("text {}", i)).collect();
-        let embeddings = tokio::runtime::Runtime::new()?
-            .block_on(provider.embed_batch(&large_batch))?;
+        let embeddings =
+            tokio::runtime::Runtime::new()?.block_on(provider.embed_batch(&large_batch))?;
 
         assert_eq!(
             embeddings.len(),
@@ -765,7 +754,7 @@ mod provider_trait_tests {
                 assert_eq!(embedding.vector.len(), 1536);
             }
 
-            println!("OpenAI integration test passed!");
+            // Test succeeded - assertions above verify correctness
             Ok(())
         }
 
@@ -807,7 +796,7 @@ mod provider_trait_tests {
                 assert_eq!(embedding.vector.len(), 768);
             }
 
-            println!("Gemini integration test passed!");
+            // Test succeeded
             Ok(())
         }
 
@@ -849,7 +838,7 @@ mod provider_trait_tests {
                 assert_eq!(embedding.vector.len(), 1024);
             }
 
-            println!("VoyageAI integration test passed!");
+            // Test succeeded
             Ok(())
         }
 
@@ -890,7 +879,7 @@ mod provider_trait_tests {
                 assert_eq!(embedding.vector.len(), 768);
             }
 
-            println!("Ollama integration test passed!");
+            // Test succeeded
             Ok(())
         }
 
@@ -964,7 +953,7 @@ mod provider_trait_tests {
                 }
             }
 
-            println!("Performance comparison completed!");
+            // Performance comparison completed
             Ok(())
         }
     }
@@ -978,8 +967,10 @@ mod factory_tests {
         DefaultProviderFactory, ProviderFactory,
     };
 
-    fn get_test_http_client(
-    ) -> Result<Arc<dyn mcp_context_browser::adapters::http_client::HttpClientProvider>, Box<dyn std::error::Error>> {
+    fn get_test_http_client() -> Result<
+        Arc<dyn mcp_context_browser::adapters::http_client::HttpClientProvider>,
+        Box<dyn std::error::Error>,
+    > {
         let pool = HttpClientPool::new().map_err(|e| e as Box<dyn std::error::Error>)?;
         Ok(Arc::new(pool))
     }

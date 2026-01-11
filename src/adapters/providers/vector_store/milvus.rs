@@ -13,9 +13,21 @@ pub struct MilvusVectorStoreProvider {
     client: Client,
 }
 
+/// Default connection timeout in seconds
+const DEFAULT_TIMEOUT_SECS: u64 = 10;
+
 impl MilvusVectorStoreProvider {
     /// Create a new Milvus vector store provider
-    pub async fn new(address: String, _token: Option<String>) -> Result<Self> {
+    ///
+    /// # Arguments
+    /// * `address` - Milvus server address (e.g., "http://localhost:19530")
+    /// * `token` - Optional authentication token
+    /// * `timeout_secs` - Connection timeout in seconds (default: 10)
+    pub async fn new(
+        address: String,
+        _token: Option<String>,
+        timeout_secs: Option<u64>,
+    ) -> Result<Self> {
         // Extract host and port from URL for Milvus client
         let endpoint = if let Some(stripped) = address.strip_prefix("http://") {
             stripped.to_string()
@@ -25,10 +37,16 @@ impl MilvusVectorStoreProvider {
             address
         };
 
-        let timeout_duration = std::time::Duration::from_secs(2);
+        let timeout = timeout_secs.unwrap_or(DEFAULT_TIMEOUT_SECS);
+        let timeout_duration = std::time::Duration::from_secs(timeout);
         let client = tokio::time::timeout(timeout_duration, Client::new(endpoint))
             .await
-            .map_err(|_| Error::vector_db("Milvus connection timed out".to_string()))?
+            .map_err(|_| {
+                Error::vector_db(format!(
+                    "Milvus connection timed out after {} seconds",
+                    timeout
+                ))
+            })?
             .map_err(|e| Error::vector_db(format!("Failed to connect to Milvus: {}", e)))?;
 
         Ok(Self { client })

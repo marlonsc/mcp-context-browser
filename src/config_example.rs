@@ -4,7 +4,6 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fs;
 use std::path::PathBuf;
 
 /// Embedding provider configuration types (similar to Claude Context)
@@ -104,8 +103,7 @@ pub struct ConfigManager {
 impl ConfigManager {
     /// Create new configuration manager
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
-        let home_dir = dirs::home_dir()
-            .ok_or("Cannot determine home directory")?;
+        let home_dir = dirs::home_dir().ok_or("Cannot determine home directory")?;
 
         Ok(Self {
             global_config_path: home_dir.join(".context").join("config.toml"),
@@ -140,47 +138,73 @@ impl ConfigManager {
 
     /// Load configuration from environment variables
     fn load_env_config(&self) -> Result<GlobalConfig, Box<dyn std::error::Error>> {
-        let embedding_provider = self.env_config
+        let embedding_provider = self
+            .env_config
             .get("EMBEDDING_PROVIDER")
             .unwrap_or(&"openai".to_string())
             .clone();
 
         let embedding_config = match embedding_provider.as_str() {
             "openai" => EmbeddingProviderConfig::OpenAI {
-                model: self.env_config.get("EMBEDDING_MODEL")
-                    .unwrap_or(&"text-embedding-3-small".to_string()).clone(),
-                api_key: self.env_config.get("OPENAI_API_KEY")
-                    .ok_or("OPENAI_API_KEY required")?.clone(),
+                model: self
+                    .env_config
+                    .get("EMBEDDING_MODEL")
+                    .unwrap_or(&"text-embedding-3-small".to_string())
+                    .clone(),
+                api_key: self
+                    .env_config
+                    .get("OPENAI_API_KEY")
+                    .ok_or("OPENAI_API_KEY required")?
+                    .clone(),
                 base_url: self.env_config.get("OPENAI_BASE_URL").cloned(),
                 dimensions: Some(1536),
                 max_tokens: Some(8191),
             },
             "voyageai" => EmbeddingProviderConfig::VoyageAI {
-                model: self.env_config.get("EMBEDDING_MODEL")
-                    .unwrap_or(&"voyage-code-3".to_string()).clone(),
+                model: self
+                    .env_config
+                    .get("EMBEDDING_MODEL")
+                    .unwrap_or(&"voyage-code-3".to_string())
+                    .clone(),
                 // Accept both VOYAGE_API_KEY (claude-context) and VOYAGEAI_API_KEY
-                api_key: self.env_config.get("VOYAGE_API_KEY")
+                api_key: self
+                    .env_config
+                    .get("VOYAGE_API_KEY")
                     .or(self.env_config.get("VOYAGEAI_API_KEY"))
-                    .ok_or("VOYAGE_API_KEY or VOYAGEAI_API_KEY required")?.clone(),
+                    .ok_or("VOYAGE_API_KEY or VOYAGEAI_API_KEY required")?
+                    .clone(),
                 dimensions: Some(1024),
                 max_tokens: Some(32000),
             },
             "ollama" => EmbeddingProviderConfig::OpenAI {
-                model: self.env_config.get("EMBEDDING_MODEL")
-                    .unwrap_or(&"nomic-embed-text".to_string()).clone(),
+                model: self
+                    .env_config
+                    .get("EMBEDDING_MODEL")
+                    .unwrap_or(&"nomic-embed-text".to_string())
+                    .clone(),
                 api_key: "ollama".to_string(), // Ollama doesn't require an API key
                 // Accept both OLLAMA_BASE_URL (claude-context) and OLLAMA_HOST
-                base_url: Some(self.env_config.get("OLLAMA_BASE_URL")
-                    .or(self.env_config.get("OLLAMA_HOST"))
-                    .unwrap_or(&"http://localhost:11434/v1".to_string()).clone()),
+                base_url: Some(
+                    self.env_config
+                        .get("OLLAMA_BASE_URL")
+                        .or(self.env_config.get("OLLAMA_HOST"))
+                        .unwrap_or(&"http://localhost:11434/v1".to_string())
+                        .clone(),
+                ),
                 dimensions: Some(768),
                 max_tokens: Some(8192),
             },
             "gemini" => EmbeddingProviderConfig::OpenAI {
-                model: self.env_config.get("EMBEDDING_MODEL")
-                    .unwrap_or(&"text-embedding-004".to_string()).clone(),
-                api_key: self.env_config.get("GEMINI_API_KEY")
-                    .ok_or("GEMINI_API_KEY required")?.clone(),
+                model: self
+                    .env_config
+                    .get("EMBEDDING_MODEL")
+                    .unwrap_or(&"text-embedding-004".to_string())
+                    .clone(),
+                api_key: self
+                    .env_config
+                    .get("GEMINI_API_KEY")
+                    .ok_or("GEMINI_API_KEY required")?
+                    .clone(),
                 base_url: Some("https://generativelanguage.googleapis.com/v1beta".to_string()),
                 dimensions: Some(768),
                 max_tokens: Some(2048),
@@ -192,38 +216,61 @@ impl ConfigManager {
             _ => return Err(format!("Unknown embedding provider: {}", embedding_provider).into()),
         };
 
-        let vector_store_provider = self.env_config
+        let vector_store_provider = self
+            .env_config
             .get("VECTOR_STORE_PROVIDER")
             .unwrap_or(&"milvus".to_string())
             .clone();
 
         let vector_config = match vector_store_provider.as_str() {
             "milvus" => VectorStoreProviderConfig::Milvus {
-                address: self.env_config.get("MILVUS_ADDRESS")
-                    .unwrap_or(&"http://localhost:19530".to_string()).clone(),
+                address: self
+                    .env_config
+                    .get("MILVUS_ADDRESS")
+                    .unwrap_or(&"http://localhost:19530".to_string())
+                    .clone(),
                 token: self.env_config.get("MILVUS_TOKEN").cloned(),
                 collection: Some("mcp_context".to_string()),
                 dimensions: Some(1536),
             },
             "pinecone" => VectorStoreProviderConfig::Pinecone {
-                api_key: self.env_config.get("PINECONE_API_KEY")
-                    .ok_or("PINECONE_API_KEY required")?.clone(),
-                environment: self.env_config.get("PINECONE_ENVIRONMENT")
-                    .ok_or("PINECONE_ENVIRONMENT required")?.clone(),
-                index_name: self.env_config.get("PINECONE_INDEX")
-                    .unwrap_or(&"mcp-context".to_string()).clone(),
+                api_key: self
+                    .env_config
+                    .get("PINECONE_API_KEY")
+                    .ok_or("PINECONE_API_KEY required")?
+                    .clone(),
+                environment: self
+                    .env_config
+                    .get("PINECONE_ENVIRONMENT")
+                    .ok_or("PINECONE_ENVIRONMENT required")?
+                    .clone(),
+                index_name: self
+                    .env_config
+                    .get("PINECONE_INDEX")
+                    .unwrap_or(&"mcp-context".to_string())
+                    .clone(),
                 dimensions: Some(1536),
             },
-            _ => return Err(format!("Unknown vector store provider: {}", vector_store_provider).into()),
+            _ => {
+                return Err(
+                    format!("Unknown vector store provider: {}", vector_store_provider).into(),
+                )
+            }
         };
 
         let config = GlobalConfig {
             server: ServerConfigExample {
-                host: self.env_config.get("MCP_HOST")
-                    .unwrap_or(&"127.0.0.1".to_string()).clone(),
-                port: self.env_config.get("MCP_PORT")
+                host: self
+                    .env_config
+                    .get("MCP_HOST")
+                    .unwrap_or(&"127.0.0.1".to_string())
+                    .clone(),
+                port: self
+                    .env_config
+                    .get("MCP_PORT")
                     .unwrap_or(&"3000".to_string())
-                    .parse().unwrap_or(3000),
+                    .parse()
+                    .unwrap_or(3000),
             },
             providers: GlobalProviderConfig {
                 embedding: embedding_config,
@@ -236,7 +283,7 @@ impl ConfigManager {
     }
 
     /// Validate configuration schema (equivalent to Claude Context's convict.js)
-    fn validate_config(&self, config: &GlobalConfig) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn validate_config(&self, config: &GlobalConfig) -> Result<(), Box<dyn std::error::Error>> {
         // Validate server config
         if config.server.port == 0 {
             return Err("Server port cannot be zero".into());
@@ -269,7 +316,12 @@ impl ConfigManager {
                     return Err("Milvus address cannot be empty".into());
                 }
             }
-            VectorStoreProviderConfig::Pinecone { api_key, environment, index_name, .. } => {
+            VectorStoreProviderConfig::Pinecone {
+                api_key,
+                environment,
+                index_name,
+                ..
+            } => {
                 if api_key.is_empty() {
                     return Err("Pinecone API key cannot be empty".into());
                 }
@@ -287,7 +339,9 @@ impl ConfigManager {
 
     /// Create example configuration file at ~/.context/config.toml
     pub async fn create_example_config(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let config_dir = self.global_config_path.parent()
+        let config_dir = self
+            .global_config_path
+            .parent()
             .ok_or("Cannot determine config directory")?;
 
         // Create ~/.context directory if it doesn't exist
@@ -346,7 +400,10 @@ dimensions = 1536
 "#;
 
         tokio::fs::write(&self.global_config_path, example_config).await?;
-        println!("✅ Example configuration created: {}", self.global_config_path.display());
+        println!(
+            "✅ Example configuration created: {}",
+            self.global_config_path.display()
+        );
         println!("📝 Edit this file with your actual API keys and settings");
 
         Ok(())
@@ -362,10 +419,23 @@ dimensions = 1536
         println!();
         println!("🧠 Embedding Provider:");
         match &config.providers.embedding {
-            EmbeddingProviderConfig::OpenAI { model, api_key, base_url, dimensions, max_tokens } => {
+            EmbeddingProviderConfig::OpenAI {
+                model,
+                api_key,
+                base_url,
+                dimensions,
+                max_tokens,
+            } => {
                 println!("   Provider: OpenAI");
                 println!("   Model: {}", model);
-                println!("   API Key: {}", if api_key.is_empty() { "❌ Missing" } else { "✅ Configured" });
+                println!(
+                    "   API Key: {}",
+                    if api_key.is_empty() {
+                        "❌ Missing"
+                    } else {
+                        "✅ Configured"
+                    }
+                );
                 if let Some(url) = base_url {
                     println!("   Base URL: {}", url);
                 }
@@ -376,10 +446,22 @@ dimensions = 1536
                     println!("   Max Tokens: {}", tokens);
                 }
             }
-            EmbeddingProviderConfig::VoyageAI { model, api_key, dimensions, max_tokens } => {
+            EmbeddingProviderConfig::VoyageAI {
+                model,
+                api_key,
+                dimensions,
+                max_tokens,
+            } => {
                 println!("   Provider: VoyageAI");
                 println!("   Model: {}", model);
-                println!("   API Key: {}", if api_key.is_empty() { "❌ Missing" } else { "✅ Configured" });
+                println!(
+                    "   API Key: {}",
+                    if api_key.is_empty() {
+                        "❌ Missing"
+                    } else {
+                        "✅ Configured"
+                    }
+                );
                 if let Some(dim) = dimensions {
                     println!("   Dimensions: {}", dim);
                 }
@@ -387,7 +469,10 @@ dimensions = 1536
                     println!("   Max Tokens: {}", tokens);
                 }
             }
-            EmbeddingProviderConfig::Mock { dimensions, max_tokens } => {
+            EmbeddingProviderConfig::Mock {
+                dimensions,
+                max_tokens,
+            } => {
                 println!("   Provider: Mock (Development)");
                 if let Some(dim) = dimensions {
                     println!("   Dimensions: {}", dim);
@@ -401,10 +486,21 @@ dimensions = 1536
         println!();
         println!("🗄️  Vector Store:");
         match &config.providers.vector_store {
-            VectorStoreProviderConfig::Milvus { address, token, collection, dimensions } => {
+            VectorStoreProviderConfig::Milvus {
+                address,
+                token,
+                collection,
+                dimensions,
+            } => {
                 println!("   Provider: Milvus");
                 println!("   Address: {}", address);
-                println!("   Token: {}", token.as_ref().map(|_| "✅ Configured").unwrap_or("Optional"));
+                println!(
+                    "   Token: {}",
+                    token
+                        .as_ref()
+                        .map(|_| "✅ Configured")
+                        .unwrap_or("Optional")
+                );
                 if let Some(coll) = collection {
                     println!("   Collection: {}", coll);
                 }
@@ -412,11 +508,23 @@ dimensions = 1536
                     println!("   Dimensions: {}", dim);
                 }
             }
-            VectorStoreProviderConfig::Pinecone { api_key, environment, index_name, dimensions } => {
+            VectorStoreProviderConfig::Pinecone {
+                api_key,
+                environment,
+                index_name,
+                dimensions,
+            } => {
                 println!("   Provider: Pinecone");
                 println!("   Environment: {}", environment);
                 println!("   Index: {}", index_name);
-                println!("   API Key: {}", if api_key.is_empty() { "❌ Missing" } else { "✅ Configured" });
+                println!(
+                    "   API Key: {}",
+                    if api_key.is_empty() {
+                        "❌ Missing"
+                    } else {
+                        "✅ Configured"
+                    }
+                );
                 if let Some(dim) = dimensions {
                     println!("   Dimensions: {}", dim);
                 }
@@ -511,61 +619,4 @@ pub async fn demonstrate_professional_config() -> Result<(), Box<dyn std::error:
     }
 
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_config_validation_openai() -> Result<(), Box<dyn std::error::Error>> {
-        let config = GlobalConfig {
-            server: ServerConfigExample::default(),
-            providers: GlobalProviderConfig {
-                embedding: EmbeddingProviderConfig::OpenAI {
-                    model: "text-embedding-3-small".to_string(),
-                    api_key: "sk-test".to_string(),
-                    base_url: None,
-                    dimensions: Some(1536),
-                    max_tokens: Some(8191),
-                },
-                vector_store: VectorStoreProviderConfig::Milvus {
-                    address: "http://localhost:19530".to_string(),
-                    token: None,
-                    collection: Some("test".to_string()),
-                    dimensions: Some(1536),
-                },
-            },
-        };
-
-        let manager = ConfigManager::new()?;
-        assert!(manager.validate_config(&config).is_ok());
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_config_validation_missing_api_key() -> Result<(), Box<dyn std::error::Error>> {
-        let config = GlobalConfig {
-            server: ServerConfigExample::default(),
-            providers: GlobalProviderConfig {
-                embedding: EmbeddingProviderConfig::OpenAI {
-                    model: "text-embedding-3-small".to_string(),
-                    api_key: "".to_string(), // Empty API key
-                    base_url: None,
-                    dimensions: Some(1536),
-                    max_tokens: Some(8191),
-                },
-                vector_store: VectorStoreProviderConfig::Milvus {
-                    address: "http://localhost:19530".to_string(),
-                    token: None,
-                    collection: Some("test".to_string()),
-                    dimensions: Some(1536),
-                },
-            },
-        };
-
-        let manager = ConfigManager::new()?;
-        assert!(manager.validate_config(&config).is_err());
-        Ok(())
-    }
 }
