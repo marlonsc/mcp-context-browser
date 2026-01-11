@@ -261,11 +261,11 @@ mod integration_property_tests {
             for (op_type, value) in operations {
                 match op_type {
                     "set_line" => {
-                        if let Ok(line) = value.parse::<u32>()
-                            && line > 0
-                        {
-                            chunk.start_line = line;
-                            chunk.end_line = chunk.end_line.max(line);
+                        if let Ok(line) = value.parse::<u32>() {
+                            if line > 0 {
+                                chunk.start_line = line;
+                                chunk.end_line = chunk.end_line.max(line);
+                            }
                         }
                     },
                     "set_content" => {

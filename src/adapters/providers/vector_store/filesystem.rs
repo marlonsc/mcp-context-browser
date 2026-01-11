@@ -12,8 +12,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::{Read, Seek, Write};
 use std::path::PathBuf;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::Arc;
 
 /// Filesystem vector store configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]

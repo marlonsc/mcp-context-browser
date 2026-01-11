@@ -47,8 +47,9 @@ impl BinaryWatcher {
     pub fn new(event_bus: SharedEventBus, config: BinaryWatcherConfig) -> Result<Self> {
         let binary_path = match &config.binary_path {
             Some(p) => p.clone(),
-            None => std::fs::read_link("/proc/self/exe")
-                .context("Failed to read /proc/self/exe")?,
+            None => {
+                std::fs::read_link("/proc/self/exe").context("Failed to read /proc/self/exe")?
+            }
         };
 
         info!("Binary watcher initialized for: {}", binary_path.display());
@@ -132,10 +133,7 @@ async fn run_watcher_loop(
     )?;
 
     // Watch the parent directory (binary might be replaced via rename)
-    let watch_path = binary_path
-        .parent()
-        .unwrap_or(&binary_path)
-        .to_path_buf();
+    let watch_path = binary_path.parent().unwrap_or(&binary_path).to_path_buf();
 
     watcher.watch(&watch_path, RecursiveMode::NonRecursive)?;
     debug!("Watching directory: {}", watch_path.display());
@@ -234,10 +232,7 @@ async fn is_binary_stable(path: &PathBuf) -> bool {
     }
 
     // Try to open the file to verify it's not being written
-    match tokio::fs::File::open(path).await {
-        Ok(_) => true,
-        Err(_) => false,
-    }
+    tokio::fs::File::open(path).await.is_ok()
 }
 
 #[cfg(test)]
@@ -273,10 +268,14 @@ mod tests {
 
     #[tokio::test]
     async fn test_is_update_event() {
-        assert!(is_update_event(&EventKind::Create(notify::event::CreateKind::File)));
-        assert!(is_update_event(&EventKind::Modify(notify::event::ModifyKind::Data(
-            notify::event::DataChange::Content
-        ))));
-        assert!(!is_update_event(&EventKind::Access(notify::event::AccessKind::Read)));
+        assert!(is_update_event(&EventKind::Create(
+            notify::event::CreateKind::File
+        )));
+        assert!(is_update_event(&EventKind::Modify(
+            notify::event::ModifyKind::Data(notify::event::DataChange::Content)
+        )));
+        assert!(!is_update_event(&EventKind::Access(
+            notify::event::AccessKind::Read
+        )));
     }
 }

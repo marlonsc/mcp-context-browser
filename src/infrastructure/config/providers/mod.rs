@@ -123,17 +123,19 @@ impl ProviderConfigManager {
                 max_tokens,
                 ..
             } => {
-                if let Some(req_dims) = requirements.min_dimensions
-                    && let Some(cfg_dims) = dimensions
-                    && *cfg_dims < req_dims
-                {
-                    return false;
+                if let Some(req_dims) = requirements.min_dimensions {
+                    if let Some(cfg_dims) = dimensions {
+                        if *cfg_dims < req_dims {
+                            return false;
+                        }
+                    }
                 }
-                if let Some(req_tokens) = requirements.max_tokens
-                    && let Some(cfg_tokens) = max_tokens
-                    && *cfg_tokens < req_tokens
-                {
-                    return false;
+                if let Some(req_tokens) = requirements.max_tokens {
+                    if let Some(cfg_tokens) = max_tokens {
+                        if *cfg_tokens < req_tokens {
+                            return false;
+                        }
+                    }
                 }
                 true
             }
@@ -143,17 +145,19 @@ impl ProviderConfigManager {
                 ..
             } => {
                 // Similar checks for Ollama
-                if let Some(req_dims) = requirements.min_dimensions
-                    && let Some(cfg_dims) = dimensions
-                    && *cfg_dims < req_dims
-                {
-                    return false;
+                if let Some(req_dims) = requirements.min_dimensions {
+                    if let Some(cfg_dims) = dimensions {
+                        if *cfg_dims < req_dims {
+                            return false;
+                        }
+                    }
                 }
-                if let Some(req_tokens) = requirements.max_tokens
-                    && let Some(cfg_tokens) = max_tokens
-                    && *cfg_tokens < req_tokens
-                {
-                    return false;
+                if let Some(req_tokens) = requirements.max_tokens {
+                    if let Some(cfg_tokens) = max_tokens {
+                        if *cfg_tokens < req_tokens {
+                            return false;
+                        }
+                    }
                 }
                 true
             }
@@ -162,17 +166,19 @@ impl ProviderConfigManager {
                 max_tokens,
                 ..
             } => {
-                if let Some(req_dims) = requirements.min_dimensions
-                    && let Some(cfg_dims) = dimensions
-                    && *cfg_dims < req_dims
-                {
-                    return false;
+                if let Some(req_dims) = requirements.min_dimensions {
+                    if let Some(cfg_dims) = dimensions {
+                        if *cfg_dims < req_dims {
+                            return false;
+                        }
+                    }
                 }
-                if let Some(req_tokens) = requirements.max_tokens
-                    && let Some(cfg_tokens) = max_tokens
-                    && *cfg_tokens < req_tokens
-                {
-                    return false;
+                if let Some(req_tokens) = requirements.max_tokens {
+                    if let Some(cfg_tokens) = max_tokens {
+                        if *cfg_tokens < req_tokens {
+                            return false;
+                        }
+                    }
                 }
                 true
             }
@@ -181,17 +187,19 @@ impl ProviderConfigManager {
                 max_tokens,
                 ..
             } => {
-                if let Some(req_dims) = requirements.min_dimensions
-                    && let Some(cfg_dims) = dimensions
-                    && *cfg_dims < req_dims
-                {
-                    return false;
+                if let Some(req_dims) = requirements.min_dimensions {
+                    if let Some(cfg_dims) = dimensions {
+                        if *cfg_dims < req_dims {
+                            return false;
+                        }
+                    }
                 }
-                if let Some(req_tokens) = requirements.max_tokens
-                    && let Some(cfg_tokens) = max_tokens
-                    && *cfg_tokens < req_tokens
-                {
-                    return false;
+                if let Some(req_tokens) = requirements.max_tokens {
+                    if let Some(cfg_tokens) = max_tokens {
+                        if *cfg_tokens < req_tokens {
+                            return false;
+                        }
+                    }
                 }
                 true
             }

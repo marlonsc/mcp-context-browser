@@ -1,13 +1,13 @@
 # MCP Context Browser - Claude Code Guide
 
-MCP server for semantic code search using vector embeddings. v0.0.4 production-ready.
+MCP server for semantic code search using vector embeddings. **v0.1.0 production-ready.**
 
 ## Quick Reference
 
 ```bash
 # Development
 make build          # Compile
-make test           # Run 214 tests
+make test           # Run 391+ tests
 make lint           # Clippy
 make fmt            # Format
 make quality        # Full check (fmt + lint + test + audit)
@@ -34,11 +34,11 @@ Use `make` commands, never raw Cargo/git:
 
 ### Code Standards
 
-1.  **No unwrap/expect** - Use `?` operator with proper error types
-2.  **File size < 500 lines** - Split large files
-3.  **Trait-based DI** - Use `Arc<dyn Trait>`, not `Arc<ConcreteType>`
-4.  **Async-first** - All I/O operations async with Tokio
-5.  **Error handling** - Custom types with `thiserror`, context with `anyhow`
+1. **No unwrap/expect** - Use `?` operator with proper error types
+2. **File size < 500 lines** - Split large files
+3. **Trait-based DI** - Use `Arc<dyn Trait>`, not `Arc<ConcreteType>`
+4. **Async-first** - All I/O operations async with Tokio
+5. **Error handling** - Custom types with `thiserror`, context with `anyhow`
 
 ### Architecture Patterns
 
@@ -64,7 +64,7 @@ src/
 ├── adapters/       # Infrastructure implementations (providers, db, repositories)
 ├── infrastructure/ # Shared systems (cache, auth, config, metrics, events)
 ├── server/         # MCP protocol implementation
-├── chunking/       # Code chunking logic
+├── chunking/       # Code chunking logic (14 language processors)
 ├── daemon/         # Background processes
 ├── snapshot/       # Snapshot management
 └── sync/           # Codebase synchronization
@@ -80,14 +80,6 @@ make lint           # Must be clean
 ```
 
 Test categories: core_types, services, protocol, integration, providers, routing, security.
-
-## Known Anti-patterns to Fix
-
-From code audit (tracked in ADR-006):
-
--   157 `unwrap/expect` calls to eliminate
--   `config.rs` and `server/mod.rs` exceed 500 lines
--   McpServer has 9+ Arc dependencies (god object)
 
 ## Error Handling Pattern
 
@@ -108,10 +100,31 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 ## Security
 
--   JWT authentication for API access
--   Rate limiting on all endpoints
--   AES-GCM encryption at rest
--   3 known dependency vulnerabilities (tracked, non-blocking)
+- JWT authentication for API access
+- Rate limiting on all endpoints
+- AES-GCM encryption at rest
+
+## Current Version: v0.1.0
+
+**First stable release** - Drop-in replacement for claude-context:
+
+- 14 programming languages with AST parsing
+- 6 embedding providers
+- 6 vector stores
+- 391+ tests
+- HTTP transport foundation
+- Systemd integration
+
+## Next Version: v0.2.0 (Planned)
+
+**Git-Aware Semantic Indexing** - See [ADR-008](docs/adr/008-git-aware-semantic-indexing-v0.2.0.md):
+
+- Project-relative indexing (portable)
+- Multi-branch indexing
+- Commit history search
+- Submodule support
+- Monorepo detection
+- Impact analysis
 
 ## Troubleshooting
 
@@ -123,16 +136,18 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 ## Documentation
 
--   Architecture: `docs/architecture/ARCHITECTURE.md`
--   ADRs: `docs/architecture/adr/`
--   Detailed project info: `.claude/rules/custom/project.md`
+- Architecture: `docs/architecture/ARCHITECTURE.md`
+- ADRs: `docs/adr/README.md`
+- Roadmap: `docs/developer/ROADMAP.md`
+- Version History: `docs/VERSION_HISTORY.md`
+- Detailed project info: `.claude/rules/custom/project.md`
 
 ## Quality Gates
 
 Before any commit:
 
--   [ ] `make test` - 0 failures
--   [ ] `make lint` - clean output
--   [ ] `make fmt` - no changes
--   [ ] No new `unwrap/expect`
--   [ ] Files < 500 lines
+- [ ] `make test` - 0 failures
+- [ ] `make lint` - clean output
+- [ ] `make fmt` - no changes
+- [ ] No new `unwrap/expect`
+- [ ] Files < 500 lines

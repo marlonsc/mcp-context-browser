@@ -1,6 +1,6 @@
 # Quickstart Guide
 
-Get mcp-context-browser running in 5 minutes.
+Get MCP Context Browser v0.1.0 running in 5 minutes.
 
 ## 1. Download
 
@@ -93,9 +93,9 @@ Claude will use `search_code` to find relevant code.
 | `get_indexing_status` | Check indexing progress |
 | `clear_index` | Remove indexed data |
 
-## Supported Languages
+## Supported Languages (14)
 
-Rust, Python, JavaScript, TypeScript, Go, Java, C, C++, C#, Ruby, PHP, Swift, Kotlin
+Rust, Python, JavaScript, TypeScript, Go, Java, C, C++, C#, Ruby, PHP, Swift, Kotlin, Scala, Haskell
 
 ## Vector Store Options
 
@@ -146,4 +146,6 @@ curl http://localhost:19530/v1/vector/health  # Milvus
 
 - [Migration Guide](../migration/FROM_CLAUDE_CONTEXT.md) - If coming from claude-context
 - [Architecture](../architecture/ARCHITECTURE.md) - Understanding the system
-- [API Reference](../api-reference.md) - Full API documentation
+- [ADR Index](../adr/README.md) - Architectural decisions
+- [Version History](../VERSION_HISTORY.md) - Complete version history
+- [Roadmap](../developer/ROADMAP.md) - Upcoming features including v0.2.0 Git-Aware Indexing

@@ -23,9 +23,18 @@ pub use config::{
 use crate::domain::error::{Error, Result};
 use crate::infrastructure::events::{SharedEventBus, SystemEvent};
 use moka::future::Cache;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+/// Convert Redis errors to domain errors in the infrastructure layer
+impl From<redis::RedisError> for Error {
+    fn from(err: redis::RedisError) -> Self {
+        Self::Cache {
+            message: err.to_string(),
+        }
+    }
+}
 
 /// Advanced distributed cache manager
 #[derive(Clone)]
@@ -419,17 +428,17 @@ impl CacheManager {
         }
 
         // Local Mode (Moka)
-        if let Some(data_array) = self.get_from_local(&full_key).await?
-            && let Some(array) = data_array.as_array()
-        {
-            let mut result = Vec::new();
-            for item in array {
-                match serde_json::from_value(item.clone()) {
-                    Ok(deserialized) => result.push(deserialized),
-                    Err(e) => tracing::warn!("Failed to deserialize local queue item: {}", e),
+        if let Some(data_array) = self.get_from_local(&full_key).await? {
+            if let Some(array) = data_array.as_array() {
+                let mut result = Vec::new();
+                for item in array {
+                    match serde_json::from_value(item.clone()) {
+                        Ok(deserialized) => result.push(deserialized),
+                        Err(e) => tracing::warn!("Failed to deserialize local queue item: {}", e),
+                    }
                 }
+                return Ok(result);
             }
-            return Ok(result);
         }
 
         Ok(Vec::new())
@@ -611,15 +620,15 @@ impl CacheManager {
         let namespace = full_key.split(':').next().unwrap_or("");
         let cache = self.get_cache(namespace);
 
-        if let Some(existing) = cache.get(full_key).await
-            && let Some(arr) = existing.as_array()
-        {
-            // Remove all occurrences that match
-            let new_list: Vec<serde_json::Value> =
-                arr.iter().filter(|v| *v != value).cloned().collect();
-            cache
-                .insert(full_key.to_string(), serde_json::Value::Array(new_list))
-                .await;
+        if let Some(existing) = cache.get(full_key).await {
+            if let Some(arr) = existing.as_array() {
+                // Remove all occurrences that match
+                let new_list: Vec<serde_json::Value> =
+                    arr.iter().filter(|v| *v != value).cloned().collect();
+                cache
+                    .insert(full_key.to_string(), serde_json::Value::Array(new_list))
+                    .await;
+            }
         }
         Ok(())
     }

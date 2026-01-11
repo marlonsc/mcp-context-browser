@@ -7,3 +7,5 @@
 * [ADR 004: Multi-Provider Strategy](004-multi-provider-strategy.md)
 * [ADR 005: Documentation Excellence v0.0.4](005-documentation-excellence-v0.0.4.md)
 * [ADR 006: Code Audit and Architecture Improvements v0.0.4](006-code-audit-and-improvements-v0.0.4.md)
+* [ADR 007: Integrated Web Administration Interface](007-integrated-web-administration-interface.md)
+* [ADR 008: Git-Aware Semantic Indexing v0.2.0](008-git-aware-semantic-indexing-v0.2.0.md)

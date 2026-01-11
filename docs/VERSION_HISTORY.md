@@ -6,6 +6,98 @@ This document provides a comprehensive history of MCP Context Browser releases, 
 
 ---
 
+## v0.1.0 "First Stable Release" - 2026-01-11 RELEASED
+
+**Status**: Production-Ready | **Achievement**: Drop-in claude-context Replacement
+
+### Overview
+
+MCP Context Browser v0.1.0 is the first stable release, delivering a complete drop-in replacement for claude-context with superior performance, expanded language support, and enterprise-grade architecture.
+
+### Major Achievements
+
+- **Full claude-context Compatibility**: Same environment variables, same MCP tools
+- **14 Programming Languages**: Comprehensive AST-based parsing with tree-sitter
+- **6 Embedding Providers**: OpenAI, VoyageAI, Ollama, Gemini, FastEmbed, Mock
+- **6 Vector Stores**: Milvus, EdgeVec, In-Memory, Filesystem, Encrypted, Null
+- **391+ Tests**: Comprehensive test suite with high coverage
+- **Clean Architecture**: Complete refactoring with trait-based dependency injection
+
+### New Features
+
+#### Language Processor Refactoring
+
+Per-language file organization with modular architecture:
+
+| Language | File | Status |
+|----------|------|--------|
+| Rust | `src/chunking/languages/rust.rs` | ✅ Complete |
+| Python | `src/chunking/languages/python.rs` | ✅ Complete |
+| JavaScript | `src/chunking/languages/javascript.rs` | ✅ Complete |
+| TypeScript | `src/chunking/languages/javascript.rs` | ✅ Complete |
+| Go | `src/chunking/languages/go.rs` | ✅ Complete |
+| Java | `src/chunking/languages/java.rs` | ✅ Complete |
+| C | `src/chunking/languages/c.rs` | ✅ Complete |
+| C++ | `src/chunking/languages/cpp.rs` | ✅ Complete |
+| C# | `src/chunking/languages/csharp.rs` | ✅ Complete |
+| Ruby | `src/chunking/languages/ruby.rs` | ✅ Complete |
+| PHP | `src/chunking/languages/php.rs` | ✅ Complete |
+| Swift | `src/chunking/languages/swift.rs` | ✅ Complete |
+| Kotlin | `src/chunking/languages/kotlin.rs` | ✅ Complete |
+
+#### HTTP Transport Foundation
+
+Infrastructure for future HTTP/SSE transport support:
+
+- `src/server/transport/mod.rs` - Transport layer abstraction
+- `src/server/transport/http.rs` - HTTP transport implementation
+- `src/server/transport/session.rs` - Session management
+- `src/server/transport/config.rs` - Transport configuration
+- `src/server/transport/versioning.rs` - Protocol versioning
+
+#### Infrastructure Enhancements
+
+- **Binary Watcher**: `src/infrastructure/binary_watcher.rs` - Auto-respawn on binary update
+- **Connection Tracker**: `src/infrastructure/connection_tracker.rs` - Graceful drain support
+- **Signal Handling**: `src/infrastructure/signals.rs` - SIGHUP, SIGUSR2, SIGTERM handlers
+- **Respawn Mechanism**: `src/infrastructure/respawn.rs` - Zero-downtime binary updates
+
+#### Systemd Integration
+
+- User-level service file: `systemd/mcp-context-browser.service`
+- Installation script: `scripts/install-user-service.sh`
+- Uninstallation script: `scripts/uninstall-user-service.sh`
+
+#### Documentation
+
+- Migration guide: `docs/migration/FROM_CLAUDE_CONTEXT.md`
+- Quick start guide: `docs/user-guide/QUICKSTART.md`
+
+### Technical Metrics
+
+| Metric | Value |
+|--------|-------|
+| Total Tests | 391+ |
+| Language Processors | 14 |
+| Embedding Providers | 6 |
+| Vector Stores | 6 |
+| Source Files | 100+ |
+| LOC | ~25K |
+
+### Breaking Changes from v0.0.4
+
+- None - fully backward compatible
+
+### Migration from claude-context
+
+See [Migration Guide](migration/FROM_CLAUDE_CONTEXT.md) for detailed instructions. Summary:
+
+1. Replace `npx @anthropics/claude-context` with `mcp-context-browser` binary
+2. Same environment variables work unchanged
+3. Same MCP tools available
+
+---
+
 ## v0.0.4 "Documentation Excellence" - 2026-01-08 RELEASED
 
 **Status**: Production-Ready | **Achievement**: Documentation Excellence Implementation
@@ -175,6 +267,8 @@ Delivered working MCP server with core semantic search capabilities.
 | v0.0.2 | 2026-01-06 | Released | Infrastructure and Documentation | 100% |
 | v0.0.3 | 2026-01-07 | Released | Production Foundation | 100% |
 | v0.0.4 | 2026-01-08 | Released | Documentation Excellence | 100% |
+| v0.1.0 | 2026-01-11 | **Released** | First Stable Release | 100% |
+| v0.2.0 | Planned | **Planned** | Git-Aware Semantic Indexing | 0% |
 
 ---
 
@@ -221,6 +315,30 @@ Self-documenting, ADR-driven development
 └── Quality gates
 ```
 
+### v0.1.0: First Stable Release
+
+```text
+Complete drop-in claude-context replacement
+├── 14 language processors (modular)
+├── HTTP transport foundation
+├── Binary auto-respawn
+├── Systemd integration
+├── 391+ tests
+└── Clean architecture refactoring
+```
+
+### v0.2.0: Git-Aware Indexing (Planned)
+
+```text
+Git-aware semantic search platform
+├── Repository ID (portable indexing)
+├── Multi-branch indexing
+├── Commit history search
+├── Submodule support
+├── Monorepo project detection
+└── Change impact analysis
+```
+
 ---
 
 ## Success Metrics by Version
@@ -254,18 +372,28 @@ Self-documenting, ADR-driven development
 -   Interactive platform: 100%
 -   Zero manual maintenance: 100%
 
+### v0.1.0: First Stable Release
+
+-   claude-context compatibility: 100%
+-   Language processors: 14 languages
+-   Test coverage: 391+ tests
+-   HTTP transport foundation: Complete
+-   Systemd integration: Complete
+-   Clean architecture: Complete
+
 ---
 
 ## Project Evolution Metrics
 
-| Metric | v0.0.1 | v0.0.2 | v0.0.3 | v0.0.4 |
-|--------|--------|--------|--------|--------|
-| Lines of Code | ~2K | ~10K | ~16K | ~18K |
-| Test Coverage | 60% | 80% | 90%+ | 95%+ |
-| Documentation | Basic | Professional | Complete | Self-documenting |
-| Architecture | Simple | Modular | Enterprise | Automated |
-| Deployment | Manual | Docker | Kubernetes | Cloud-native |
-| Monitoring | None | Basic | Enterprise | Intelligent |
+| Metric | v0.0.1 | v0.0.2 | v0.0.3 | v0.0.4 | v0.1.0 |
+|--------|--------|--------|--------|--------|--------|
+| Lines of Code | ~2K | ~10K | ~16K | ~18K | ~25K |
+| Test Coverage | 60% | 80% | 90%+ | 95%+ | 95%+ |
+| Documentation | Basic | Professional | Complete | Self-documenting | Production |
+| Architecture | Simple | Modular | Enterprise | Automated | Clean DI |
+| Deployment | Manual | Docker | Kubernetes | Cloud-native | Systemd |
+| Monitoring | None | Basic | Enterprise | Intelligent | Complete |
+| Languages | 0 | 4 | 8 | 13 | 14 |
 
 ---
 
@@ -279,9 +407,29 @@ Self-documenting, ADR-driven development
 
 ### From v0.0.3 to v0.0.4
 
--   **Breaking Changes**: None anticipated
+-   **Breaking Changes**: None
 -   **Migration Required**: Documentation tooling adoption
 -   **Benefits**: Zero maintenance documentation, ADR automation
+
+### From v0.0.4 to v0.1.0
+
+-   **Breaking Changes**: None
+-   **Migration Required**: None (fully backward compatible)
+-   **Benefits**: Modular language processors, HTTP transport foundation, systemd integration
+
+### From claude-context to v0.1.0
+
+-   **Breaking Changes**: None - drop-in replacement
+-   **Migration Required**: Replace npm package with native binary
+-   **Benefits**: Better performance, more languages, no Node.js dependency
+-   **Guide**: [FROM_CLAUDE_CONTEXT.md](migration/FROM_CLAUDE_CONTEXT.md)
+
+### From v0.1.0 to v0.2.0 (Planned)
+
+-   **Breaking Changes**: TBD - likely metadata schema changes
+-   **Migration Required**: Re-indexing with git metadata
+-   **Benefits**: Git awareness, multi-branch search, impact analysis
+-   **ADR**: [008-git-aware-semantic-indexing-v0.2.0](adr/008-git-aware-semantic-indexing-v0.2.0.md)
 
 ---
 

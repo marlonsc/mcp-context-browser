@@ -19,7 +19,7 @@ pub enum TransportMode {
 }
 
 /// Main transport configuration
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, Validate)]
 pub struct TransportConfig {
     /// Transport mode
     #[serde(default)]
@@ -39,17 +39,6 @@ pub struct TransportConfig {
     #[serde(default)]
     #[validate(nested)]
     pub versioning: VersionConfig,
-}
-
-impl Default for TransportConfig {
-    fn default() -> Self {
-        Self {
-            mode: TransportMode::default(),
-            http: HttpTransportConfig::default(),
-            session: SessionConfig::default(),
-            versioning: VersionConfig::default(),
-        }
-    }
 }
 
 /// HTTP transport configuration

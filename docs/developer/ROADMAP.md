@@ -1,382 +1,180 @@
 # Development Roadmap
 
-## 🗺️ Development Roadmap
+## Overview
 
-This roadmap outlines the incremental development of MCP Context Browser, focusing on achievable milestones with realistic timelines and clear success criteria.
-
-## Current Status (v0.0.4 Released)
-
-**Production-Ready Architecture** - COMPLETE
-
--   Enterprise-grade reliability with circuit breaker pattern
--   Comprehensive observability and health monitoring
--   Advanced routing with multi-provider failover
--   Professional metrics and structured logging
--   Multi-provider support (OpenAI, Ollama, Gemini, VoyageAI)
--   Production storage backends (Milvus, encrypted storage)
--   Complete CI/CD pipeline with quality gates
-
-**Documentation Excellence** - COMPLETE (v0.0.4)
-
--   Self-documenting codebase (95%+ auto-generated)
--   ADR-driven development with automated validation
--   Interactive documentation platform
--   Quality assurance gates preventing drift
--   Industry reference implementation
--   214 tests with 100% pass rate
+This roadmap outlines the development of MCP Context Browser, a drop-in replacement for claude-context with enhanced capabilities for semantic code search.
 
 ---
 
-## 🚀 Phase 1: Core Functionality (2-4 weeks)
+## Current Status
 
-### v0.1.0 - Working MCP Tools
+### v0.1.0 - First Stable Release ✅ RELEASED
 
-**Timeline**: 1-2 weeks
-**Priority**: Critical
-**Effort**: 20-30 hours
+**Status**: Production-Ready
+**Release Date**: January 2026
 
-#### Objectives
+MCP Context Browser v0.1.0 is the first stable release, providing a complete drop-in replacement for claude-context with superior performance and expanded capabilities.
 
--   Implement functional `index_codebase` MCP tool
--   Implement functional `search_code` MCP tool
--   Add basic configuration file support
--   Connect existing services to MCP tools
+#### Achievements
 
-#### Deliverables
-
--   [ ] Complete `index_codebase` tool with file processing
--   [ ] Complete `search_code` tool with vector search
--   [ ] Basic TOML configuration loading
--   [ ] Integration tests for MCP protocol
--   [ ] Documentation for tool usage
-
-#### Success Criteria
-
--   MCP server accepts and processes tool calls correctly
--   `index_codebase` processes files and stores embeddings
--   `search_code` returns relevant results from indexed content
--   Configuration can be loaded from `config.toml`
--   Basic integration tests pass
-
-### v0.2.0 - Enhanced Providers and Storage
-
-**Timeline**: 2-3 weeks
-**Priority**: High
-**Effort**: 30-40 hours
-
-#### Objectives
-
--   Implement real embedding providers (OpenAI/Ollama)
--   Add Milvus vector database integration
--   Improve file parsing and chunking
--   Add basic caching and performance optimizations
-
-#### Deliverables
-
--   [ ] OpenAI embedding provider implementation
--   [ ] Ollama embedding provider implementation
--   [ ] Milvus database integration
--   [ ] Improved text chunking with language awareness
--   [ ] Basic caching layer for embeddings
--   [ ] Performance benchmarks and optimization
-
-#### Success Criteria
-
--   Successful API calls to OpenAI and Ollama
--   Milvus database stores and retrieves vectors correctly
--   Improved search relevance with real embeddings
--   Handles larger codebases (1000+ files)
--   Measurable performance improvements
+- ✅ Full MCP protocol implementation (4 tools)
+- ✅ 14 languages with AST parsing (Rust, Python, JS/TS, Go, Java, C, C++, C#, Ruby, PHP, Swift, Kotlin, Scala, Haskell)
+- ✅ 6 embedding providers (OpenAI, VoyageAI, Ollama, Gemini, FastEmbed, Mock)
+- ✅ 6 vector stores (Milvus, EdgeVec, In-Memory, Filesystem, Encrypted, Null)
+- ✅ claude-context environment variable compatibility
+- ✅ 391+ tests with comprehensive coverage
+- ✅ JWT authentication and rate limiting
+- ✅ Clean architecture with trait-based dependency injection
+- ✅ HTTP transport foundation for future enhancements
+- ✅ Systemd service integration
+- ✅ Binary auto-respawn mechanism
 
 ---
 
-## 📚 Phase 1.5: Documentation Excellence (2-3 weeks)
+## Upcoming Releases
 
-### v0.0.4 - "Documentation Excellence"
+### v0.2.0 - Git-Aware Semantic Indexing 🚧 PLANNED
 
-**Timeline**: 2-3 weeks
+**Status**: Planning Complete (ADR-008)
 **Priority**: High
-**Effort**: 25-35 hours
-**Status**: Planning Complete ✅
+**Estimated Effort**: 10 phases
 
 #### Vision
 
-**MCP Context Browser v0.0.4** establishes the project as a **reference implementation** for documentation excellence in Rust projects. This release transforms documentation from an afterthought into a **core engineering discipline** that drives development quality and maintainability.
+Transform MCP Context Browser from a filesystem-based indexer to a git-aware semantic search platform supporting monorepos, multiple branches, commit history, and change impact analysis.
 
 #### Objectives
 
--   **Self-Documenting Codebase**: 95%+ documentation auto-generated from source code
--   **ADR-Driven Development**: Automated validation ensuring architectural decisions match implementation
--   **Interactive Documentation**: Professional docs with search, dependency graphs, and code analysis
--   **Quality Assurance Gates**: Automated validation preventing documentation drift
--   **Industry Reference**: Serve as example for Rust documentation best practices
+1. **Project-Relative Indexing**: Indexes remain valid even if directory is moved
+2. **Git Monorepo Support**: Multiple projects, submodules, branches, remotes
+3. **Change Impact Understanding**: Automatic analysis of changes between commits/branches
 
-#### Deliverables
+#### New Capabilities
 
--   [ ] Professional ADR management with `adrs` tool
--   [ ] Automated documentation generation using `cargo-modules`
--   [ ] Interactive documentation platform with `mdbook`
--   [ ] ADR validation framework for compliance checking
--   [ ] Quality gates (spellcheck, link validation) with `cargo-spellcheck` and `cargo-deadlinks`
--   [ ] CI/CD integration with documentation validation
+| Capability | Description |
+|------------|-------------|
+| Repository ID | Portable identification via root commit hash |
+| Multi-Branch Indexing | Index main, HEAD, and current branch (configurable) |
+| Commit History | Last 50 commits indexed by default |
+| Submodule Support | Recursive indexing as separate projects |
+| Project Detection | Auto-detect Cargo, npm, Python, Go, Maven projects in monorepos |
+| Impact Analysis | Semantic analysis of change impact between refs |
 
-#### Success Criteria
+#### New MCP Tools
 
--   **95%+ documentation auto-generated** from source code analysis
--   **100% ADR compliance validation** automated
--   **A+ documentation quality score** across all metrics
--   **80% reduction** in manual documentation maintenance time
--   **Professional documentation experience** rivaling industry leaders
+| Tool | Purpose |
+|------|---------|
+| `index_git_repository` | Index repository with branch awareness |
+| `search_branch` | Search within specific branch |
+| `compare_branches` | Compare code between branches |
+| `analyze_impact` | Analyze change impact between refs |
+| `list_repositories` | List indexed repositories |
 
-#### Impact Metrics
+#### Technical Details
 
-| Metric | v0.0.3 Baseline | v0.0.4 Target | Improvement |
-|--------|----------------|---------------|-------------|
-| Auto-generated docs | 30% | 95%+ | +216% |
-| ADR compliance validation | Manual | 100% automated | ∞ |
-| Documentation quality score | B | A+ | +2 grades |
-| Manual maintenance time | 4-6 hours/week | <30 min/week | -90% |
-| Documentation update lag | Days | <1 minute | -99.9% |
+- **New Dependency**: git2 (libgit2 bindings)
+- **New Files**: ~12 source files
+- **Estimated LOC**: ~2500
+- **ADR**: [008-git-aware-semantic-indexing-v0.2.0](../adr/008-git-aware-semantic-indexing-v0.2.0.md)
+
+#### Configuration Defaults
+
+| Setting | Default | Override |
+|---------|---------|----------|
+| Branches | main, HEAD, current | Per-repo via `.mcp-context.toml` |
+| History depth | 50 commits | Per-repo |
+| Submodules | Recursive indexing | Per-repo |
 
 ---
 
-## 🎯 Phase 2: Enhanced Capabilities (4-6 weeks)
+### v0.3.0 - Advanced Code Intelligence 📋 FUTURE
 
-### v0.3.0 - Advanced File Processing
-
-**Timeline**: 2-3 weeks
-**Priority**: High
-**Effort**: 25-35 hours
-
-#### Objectives
-
--   Implement AST-based parsing for multiple languages
--   Add intelligent code chunking strategies
--   Implement incremental indexing
--   Add file metadata extraction and filtering
-
-#### Deliverables
-
--   [ ] AST parsing for Rust using tree-sitter
--   [ ] Support for Python, JavaScript, and TypeScript
--   [ ] Context-aware text chunking algorithms
--   [ ] Incremental update detection
--   [ ] File metadata extraction (language, size, etc.)
--   [ ] Ignore patterns and filtering
-
-#### Success Criteria
-
--   Accurate parsing of Rust code structures
--   Support for 4+ programming languages
--   Better search results with semantic chunking
--   Faster indexing with incremental updates
--   Proper handling of large and complex codebases
-
-### v0.4.0 - Production Readiness
-
-**Timeline**: 3-4 weeks
-**Priority**: High
-**Effort**: 35-45 hours
-
-#### Objectives
-
--   Add comprehensive error handling and recovery
--   Implement logging and monitoring
--   Add health checks and metrics
--   Create Docker containerization
--   Add configuration validation
-
-#### Deliverables
-
--   [ ] Structured logging with configurable levels
--   [ ] Health check endpoints
--   [ ] Basic metrics collection (Prometheus format)
--   [ ] Docker container with multi-stage build
--   [ ] Configuration validation and error reporting
--   [ ] Graceful shutdown and recovery mechanisms
-
-#### Success Criteria
-
--   Comprehensive error handling with actionable messages
--   Observable system with proper logging and metrics
--   Docker container runs in various environments
--   Configuration errors caught at startup
--   System recovers gracefully from common failures
-
----
-
-## 🚀 Phase 3: Ecosystem Integration (6-8 weeks)
-
-### v0.5.0 - Multi-Provider Ecosystem
-
-**Timeline**: 4-5 weeks
+**Status**: Conceptual
 **Priority**: Medium
-**Effort**: 40-50 hours
 
 #### Objectives
 
--   Add support for additional vector databases
--   Implement more embedding providers
--   Create provider management and switching
--   Add cost tracking and optimization
--   Implement provider health monitoring
+- Symbol extraction and cross-referencing
+- Call graph analysis
+- Dependency impact mapping
+- Code similarity detection
+- Refactoring suggestions
 
-#### Deliverables
+---
 
--   [ ] Pinecone vector database integration
--   [ ] Anthropic Claude embeddings
--   [ ] Provider management CLI/API
--   [ ] Cost tracking and alerts
--   [ ] Automatic provider failover
+### v0.4.0 - Enterprise Features 📋 FUTURE
 
-#### Success Criteria
+**Status**: Conceptual
+**Priority**: Medium
 
--   3+ vector database backends supported
--   4+ embedding providers available
--   Seamless provider switching based on configuration
--   Cost monitoring prevents budget overruns
--   System continues operating during provider outages
+#### Objectives
 
-### v1.0.0 - Enterprise Features
+- Multi-tenant support
+- Advanced RBAC with team permissions
+- SSO integration (SAML, OIDC)
+- Audit logging enhancements
+- Cost tracking and optimization
 
-**Timeline**: 5-6 weeks
+---
+
+### v1.0.0 - Production Enterprise 📋 FUTURE
+
+**Status**: Conceptual
 **Priority**: High
-**Effort**: 50-60 hours
 
 #### Objectives
 
--   Implement basic multi-user support
--   Add authentication and basic authorization
--   Create REST API alongside MCP
--   Add comprehensive monitoring and alerting
--   Implement automated backups
-
-#### Deliverables
-
--   [ ] User management and isolation
--   [ ] JWT-based authentication
--   [ ] REST API with OpenAPI documentation
--   [ ] Advanced monitoring with alerting
--   [ ] Automated backup and recovery
--   [ ] Enterprise documentation and compliance
-
-#### Success Criteria
-
--   Multiple users can work simultaneously
--   Secure authentication and authorization
--   REST API provides full functionality
--   Comprehensive monitoring and alerting
--   Automated backup/restore procedures work
--   Enterprise security requirements met
+- Full enterprise feature set
+- SLA guarantees
+- Professional support model
+- Compliance certifications (SOC 2, ISO 27001)
+- High availability clustering
 
 ---
 
-## 🛠️ Infrastructure Development
+## Version History
 
-### Testing Infrastructure (Ongoing)
-
-#### Unit Testing
-
--   [ ] Comprehensive unit test coverage (>90%)
--   [ ] Property-based testing for critical functions
--   [ ] Mock implementations for external dependencies
--   [ ] Test utilities and helpers
-
-#### Integration Testing
-
--   [ ] MCP protocol integration tests
--   [ ] Provider integration tests
--   [ ] End-to-end workflow tests
--   [ ] Performance regression tests
-
-#### CI/CD Pipeline
-
--   [ ] GitHub Actions workflow
--   [ ] Automated testing on PRs
--   [ ] Release automation
--   [ ] Security scanning integration
--   [ ] Performance benchmarking
-
-### Documentation Infrastructure
-
-#### API Documentation
-
--   [ ] OpenAPI specifications for REST APIs
--   [ ] MCP tool documentation
--   [ ] Provider interface documentation
--   [ ] Configuration reference
-
-#### User Documentation
-
--   [ ] Installation guides for different platforms
--   [ ] Configuration tutorials
--   [ ] Troubleshooting guides
--   [ ] Best practices and recipes
+| Version | Status | Key Features |
+|---------|--------|--------------|
+| v0.0.1 | Released | Initial prototype |
+| v0.0.2 | Released | Core architecture |
+| v0.0.3 | Released | Production foundation |
+| v0.0.4 | Released | Documentation excellence, clean architecture |
+| v0.1.0 | **Released** | First stable release, claude-context replacement |
+| v0.2.0 | **Planned** | Git-aware semantic indexing |
+| v0.3.0 | Future | Advanced code intelligence |
+| v0.4.0 | Future | Enterprise features |
+| v1.0.0 | Future | Production enterprise |
 
 ---
 
-## 📋 Implementation Principles
+## Implementation Principles
 
 ### Development Practices
 
-1.  **Incremental Delivery**: Each version delivers working, testable functionality
-2.  **Test-Driven Development**: Core functionality developed with tests first
-3.  **Clean Architecture**: Maintain separation of concerns and SOLID principles
-4.  **Documentation First**: Documentation updated with each code change
-5.  **Security by Design**: Security considerations in every component
+1. **ADR-Driven Development**: Architectural decisions documented before implementation
+2. **Test-First**: Core functionality developed with comprehensive tests
+3. **Clean Architecture**: Separation of concerns with trait-based DI
+4. **Documentation First**: Documentation updated with each code change
+5. **Security by Design**: Security considerations in every component
 
 ### Quality Gates
 
-#### Code Quality
+All releases must pass:
 
--   [ ] All tests pass (unit, integration, e2e)
--   [ ] Code coverage meets targets
--   [ ] Linting and formatting standards met
--   [ ] Security scanning passes
--   [ ] Performance benchmarks maintained
-
-#### Documentation Quality
-
--   [ ] Code documentation complete and accurate
--   [ ] User documentation updated
--   [ ] API documentation current
--   [ ] Configuration documented
-
-#### Operational Quality
-
--   [ ] Monitoring and logging in place
--   [ ] Health checks implemented
--   [ ] Backup and recovery tested
--   [ ] Deployment process documented
-
-### Risk Management
-
-#### Technical Risks
-
--   **Provider Dependencies**: API rate limits, service outages
-    -   *Mitigation*: Multiple providers, caching, graceful degradation
--   **Performance Scaling**: Large codebase handling
-    -   *Mitigation*: Incremental processing, streaming, optimization
--   **Security Vulnerabilities**: External dependency issues
-    -   *Mitigation*: Regular audits, dependency scanning, updates
-
-#### Operational Risks
-
--   **Deployment Complexity**: Multi-provider configurations
-    -   *Mitigation*: Automated deployment, configuration validation
--   **Monitoring Gaps**: Insufficient observability
-    -   *Mitigation*: Comprehensive metrics, alerting, dashboards
--   **User Adoption**: Complex setup and configuration
-    -   *Mitigation*: Simplified defaults, clear documentation, examples
-
-This roadmap provides a realistic development path that balances innovation with practical implementation, ensuring each milestone delivers measurable value while maintaining code quality and operational reliability.
+- [ ] All tests pass (unit, integration, e2e)
+- [ ] Code coverage meets targets (>85%)
+- [ ] Clippy lint clean
+- [ ] Security audit clean
+- [ ] Performance benchmarks maintained
+- [ ] Documentation complete and accurate
 
 ---
 
 ## Cross-References
 
--   **Architecture**: [ARCHITECTURE.md](../architecture/ARCHITECTURE.md)
--   **Contributing**: [CONTRIBUTING.md](./CONTRIBUTING.md)
--   **Changelog**: [CHANGELOG.md](../operations/CHANGELOG.md)
--   **Deployment**: [DEPLOYMENT.md](../operations/DEPLOYMENT.md)
--   **Module Documentation**: [docs/modules/](../modules/)
+- **Architecture**: [ARCHITECTURE.md](../architecture/ARCHITECTURE.md)
+- **Contributing**: [CONTRIBUTING.md](./CONTRIBUTING.md)
+- **ADR Index**: [docs/adr/README.md](../adr/README.md)
+- **Version History**: [VERSION_HISTORY.md](../VERSION_HISTORY.md)
+- **Deployment**: [DEPLOYMENT.md](../operations/DEPLOYMENT.md)

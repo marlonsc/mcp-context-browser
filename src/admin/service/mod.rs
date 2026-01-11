@@ -337,30 +337,31 @@ impl AdminService for AdminServiceImpl {
         for (path, value) in updates {
             match path.as_str() {
                 "metrics.collection_interval" => {
-                    if let Some(interval) = value.as_u64()
-                        && interval < 5
-                    {
-                        warnings.push(
-                            "Collection interval below 5 seconds may impact performance"
-                                .to_string(),
-                        );
+                    if let Some(interval) = value.as_u64() {
+                        if interval < 5 {
+                            warnings.push(
+                                "Collection interval below 5 seconds may impact performance"
+                                    .to_string(),
+                            );
+                        }
                     }
                 }
                 "cache.max_size" => {
-                    if let Some(size) = value.as_u64()
-                        && size > 10 * 1024 * 1024 * 1024
-                    {
-                        warnings.push("Cache size above 10GB may cause memory issues".to_string());
+                    if let Some(size) = value.as_u64() {
+                        if size > 10 * 1024 * 1024 * 1024 {
+                            warnings
+                                .push("Cache size above 10GB may cause memory issues".to_string());
+                        }
                     }
                 }
                 "database.pool_size" => {
-                    if let Some(pool_size) = value.as_u64()
-                        && pool_size > 100
-                    {
-                        warnings.push(
-                            "Database pool size above 100 may cause resource exhaustion"
-                                .to_string(),
-                        );
+                    if let Some(pool_size) = value.as_u64() {
+                        if pool_size > 100 {
+                            warnings.push(
+                                "Database pool size above 100 may cause resource exhaustion"
+                                    .to_string(),
+                            );
+                        }
                     }
                 }
                 _ => {}
@@ -740,23 +741,24 @@ impl AdminService for AdminServiceImpl {
 
         for entry in entries.flatten() {
             let path = entry.path();
-            if path.extension().is_some_and(|e| e == "gz")
-                && let Some(filename) = path.file_stem().and_then(|s| s.to_str())
-                && let Ok(metadata) = entry.metadata()
-            {
-                let created_at = metadata
-                    .created()
-                    .or_else(|_| metadata.modified())
-                    .map(chrono::DateTime::<chrono::Utc>::from)
-                    .unwrap_or_else(|_| chrono::Utc::now());
+            if path.extension().is_some_and(|e| e == "gz") {
+                if let Some(filename) = path.file_stem().and_then(|s| s.to_str()) {
+                    if let Ok(metadata) = entry.metadata() {
+                        let created_at = metadata
+                            .created()
+                            .or_else(|_| metadata.modified())
+                            .map(chrono::DateTime::<chrono::Utc>::from)
+                            .unwrap_or_else(|_| chrono::Utc::now());
 
-                backups.push(BackupInfo {
-                    id: filename.to_string(),
-                    name: filename.replace("_", " ").replace(".tar", ""),
-                    created_at,
-                    size_bytes: metadata.len(),
-                    status: "completed".to_string(),
-                });
+                        backups.push(BackupInfo {
+                            id: filename.to_string(),
+                            name: filename.replace("_", " ").replace(".tar", ""),
+                            created_at,
+                            size_bytes: metadata.len(),
+                            status: "completed".to_string(),
+                        });
+                    }
+                }
             }
         }
 

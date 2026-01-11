@@ -54,7 +54,11 @@ impl SemVer {
         let minor = parts[1].parse().ok()?;
         let patch = parts.get(2).and_then(|p| p.parse().ok()).unwrap_or(0);
 
-        Some(Self { major, minor, patch })
+        Some(Self {
+            major,
+            minor,
+            patch,
+        })
     }
 
     /// Calculate the "distance" between two versions in minor versions
@@ -83,8 +87,8 @@ pub struct VersionChecker {
 impl VersionChecker {
     /// Create a new version checker
     pub fn new(config: VersionConfig) -> Self {
-        let current_version = SemVer::parse(env!("CARGO_PKG_VERSION"))
-            .expect("Invalid CARGO_PKG_VERSION");
+        let current_version =
+            SemVer::parse(env!("CARGO_PKG_VERSION")).expect("Invalid CARGO_PKG_VERSION");
 
         Self {
             current_version,
@@ -281,7 +285,10 @@ mod tests {
 
     #[test]
     fn test_compatibility_result_header() {
-        assert_eq!(CompatibilityResult::Compatible.as_header_value(), "compatible");
+        assert_eq!(
+            CompatibilityResult::Compatible.as_header_value(),
+            "compatible"
+        );
         assert_eq!(
             CompatibilityResult::Warning {
                 message: "test".to_string()

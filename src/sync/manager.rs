@@ -212,14 +212,14 @@ impl SyncManager {
 
             // Update modification times for changed files (using millis for precision)
             for file_path in &changed_files {
-                if let Ok(metadata) = std::fs::metadata(file_path)
-                    && let Ok(modified) = metadata.modified()
-                {
-                    let mod_time = modified
-                        .duration_since(UNIX_EPOCH)
-                        .unwrap_or(Duration::from_secs(0))
-                        .as_millis() as u64;
-                    self.file_mod_times.insert(file_path.clone(), mod_time);
+                if let Ok(metadata) = std::fs::metadata(file_path) {
+                    if let Ok(modified) = metadata.modified() {
+                        let mod_time = modified
+                            .duration_since(UNIX_EPOCH)
+                            .unwrap_or(Duration::from_secs(0))
+                            .as_millis() as u64;
+                        self.file_mod_times.insert(file_path.clone(), mod_time);
+                    }
                 }
             }
         } else {
@@ -278,12 +278,12 @@ impl SyncManager {
             let path_batches: Vec<&SyncBatch> =
                 queue.iter().filter(|b| b.path == batch.path).collect();
 
-            if let Some(first) = path_batches.first()
-                && first.id != batch.id
-            {
-                // We are not first, so skip
-                tracing::info!("[SYNC] Queued behind batch {}", first.id);
-                return Ok(None);
+            if let Some(first) = path_batches.first() {
+                if first.id != batch.id {
+                    // We are not first, so skip
+                    tracing::info!("[SYNC] Queued behind batch {}", first.id);
+                    return Ok(None);
+                }
             }
             Ok(Some(batch))
         } else {
@@ -294,13 +294,14 @@ impl SyncManager {
 
     /// Release a synchronization slot in the queue
     pub async fn release_sync_slot(&self, _codebase_path: &Path, batch: SyncBatch) -> Result<()> {
-        if let Some(cache) = get_global_cache_manager()
-            && let Err(e) = cache
+        if let Some(cache) = get_global_cache_manager() {
+            if let Err(e) = cache
                 .remove_item("sync_batches", "queue", batch.clone())
                 .await
-        {
-            tracing::warn!("[SYNC] Failed to remove batch from queue: {}", e);
-            return Err(e);
+            {
+                tracing::warn!("[SYNC] Failed to remove batch from queue: {}", e);
+                return Err(e);
+            }
         }
         Ok(())
     }
@@ -338,18 +339,18 @@ impl SyncManager {
 
     /// Clean old sync batches from queue
     pub async fn clean_old_batches(&self, max_age: Duration) {
-        if let Some(cache) = get_global_cache_manager()
-            && let Ok(queue) = cache.get_queue::<SyncBatch>("sync_batches", "queue").await
-        {
-            let now = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap_or(Duration::from_secs(0))
-                .as_secs();
+        if let Some(cache) = get_global_cache_manager() {
+            if let Ok(queue) = cache.get_queue::<SyncBatch>("sync_batches", "queue").await {
+                let now = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap_or(Duration::from_secs(0))
+                    .as_secs();
 
-            for batch in queue {
-                if now.saturating_sub(batch.created_at) > max_age.as_secs() {
-                    tracing::info!("[SYNC] Removing stale batch {}", batch.id);
-                    let _ = cache.remove_item("sync_batches", "queue", batch).await;
+                for batch in queue {
+                    if now.saturating_sub(batch.created_at) > max_age.as_secs() {
+                        tracing::info!("[SYNC] Removing stale batch {}", batch.id);
+                        let _ = cache.remove_item("sync_batches", "queue", batch).await;
+                    }
                 }
             }
         }
@@ -384,22 +385,22 @@ impl SyncManager {
             let path_str = path.to_string_lossy().to_string();
 
             // Check if file has been modified since last sync
-            if let Ok(metadata) = std::fs::metadata(path)
-                && let Ok(modified) = metadata.modified()
-            {
-                let mod_time = modified
-                    .duration_since(UNIX_EPOCH)
-                    .unwrap_or(Duration::from_secs(0))
-                    .as_millis() as u64;
+            if let Ok(metadata) = std::fs::metadata(path) {
+                if let Ok(modified) = metadata.modified() {
+                    let mod_time = modified
+                        .duration_since(UNIX_EPOCH)
+                        .unwrap_or(Duration::from_secs(0))
+                        .as_millis() as u64;
 
-                // Check if we have a previous modification time
-                if let Some(prev_mod_time) = self.file_mod_times.get(&path_str) {
-                    if mod_time > *prev_mod_time {
+                    // Check if we have a previous modification time
+                    if let Some(prev_mod_time) = self.file_mod_times.get(&path_str) {
+                        if mod_time > *prev_mod_time {
+                            changed_files.push(path_str);
+                        }
+                    } else {
+                        // New file, not seen before
                         changed_files.push(path_str);
                     }
-                } else {
-                    // New file, not seen before
-                    changed_files.push(path_str);
                 }
             }
         }

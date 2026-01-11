@@ -15,9 +15,9 @@ use crate::server::transport::{
     VersionChecker,
 };
 use crate::server::McpServer;
+use rmcp::transport::stdio;
 use rmcp::ServerHandler;
 use rmcp::ServiceExt;
-use rmcp::transport::stdio;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tracing_subscriber::{self, EnvFilter};

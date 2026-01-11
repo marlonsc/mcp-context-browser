@@ -175,14 +175,15 @@ impl CostTrackerTrait for CostTracker {
         );
 
         // Check budget
-        if self.config.enable_budget_limits
-            && let Some(budget) = self.budgets.get(provider_id)
-            && metrics.current_period_cost > *budget
-        {
-            warn!(
-                "Budget exceeded for provider {}: current={}, limit={}",
-                provider_id, metrics.current_period_cost, *budget
-            );
+        if self.config.enable_budget_limits {
+            if let Some(budget) = self.budgets.get(provider_id) {
+                if metrics.current_period_cost > *budget {
+                    warn!(
+                        "Budget exceeded for provider {}: current={}, limit={}",
+                        provider_id, metrics.current_period_cost, *budget
+                    );
+                }
+            }
         }
 
         Ok(cost)

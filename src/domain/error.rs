@@ -50,11 +50,8 @@ pub enum Error {
     #[error("Internal error: {message}")]
     Internal { message: String },
 
-    #[error("Redis error: {source}")]
-    Redis {
-        #[from]
-        source: redis::RedisError,
-    },
+    #[error("Cache error: {message}")]
+    Cache { message: String },
 }
 
 impl Error {
@@ -106,6 +103,13 @@ impl Error {
     /// Create an internal error
     pub fn internal<S: Into<String>>(message: S) -> Self {
         Self::Internal {
+            message: message.into(),
+        }
+    }
+
+    /// Create a cache error
+    pub fn cache<S: Into<String>>(message: S) -> Self {
+        Self::Cache {
             message: message.into(),
         }
     }

@@ -267,7 +267,7 @@ mod mcp_server_tests {
 mod stdio_transport_tests {
     use super::*;
     use std::process::Stdio;
-    use tokio::time::{Duration, timeout};
+    use tokio::time::{timeout, Duration};
 
     #[tokio::test]
     async fn test_stdio_transport_basic() {

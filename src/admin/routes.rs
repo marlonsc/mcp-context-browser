@@ -1,8 +1,9 @@
 //! Admin API routes configuration
 
 use axum::{
-    Router, middleware,
+    middleware,
     routing::{delete, get, post, put},
+    Router,
 };
 use tower_http::cors::CorsLayer;
 

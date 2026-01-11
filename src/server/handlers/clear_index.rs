@@ -4,9 +4,9 @@
 //! It validates inputs, prevents accidental clearing of critical collections,
 //! and performs the actual clearing operation through the IndexingService.
 
-use rmcp::ErrorData as McpError;
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::CallToolResult;
+use rmcp::ErrorData as McpError;
 use std::sync::Arc;
 use std::time::Instant;
 

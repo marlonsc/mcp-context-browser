@@ -3,7 +3,7 @@
 //! These tests measure the performance characteristics of key operations
 //! to ensure they meet performance requirements.
 
-use criterion::{Criterion, criterion_group, criterion_main};
+use criterion::{criterion_group, criterion_main, Criterion};
 use mcp_context_browser::adapters::repository::{RepositoryStats, SearchStats};
 use mcp_context_browser::application::ContextService;
 use mcp_context_browser::domain::ports::{EmbeddingProvider, VectorStoreProvider};

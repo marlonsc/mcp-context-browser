@@ -323,12 +323,10 @@ mod null_provider_tests {
         let dimensions = 128;
 
         // All operations should succeed but do nothing
-        assert!(
-            provider
-                .create_collection(collection, dimensions)
-                .await
-                .is_ok()
-        );
+        assert!(provider
+            .create_collection(collection, dimensions)
+            .await
+            .is_ok());
         assert!(provider.collection_exists(collection).await.is_ok());
         assert!(provider.delete_collection(collection).await.is_ok());
     }

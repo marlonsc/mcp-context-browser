@@ -1,6 +1,6 @@
 //! Basic web interface for admin operations
 
-use axum::{Router, routing::get};
+use axum::{routing::get, Router};
 
 /// Web interface manager
 pub struct WebInterface;

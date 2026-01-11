@@ -12,8 +12,8 @@ pub use crate::sync::manager::{SyncConfig, SyncManager, SyncStats};
 use crate::domain::error::{Error, Result};
 use crate::domain::types::SyncBatch;
 use crate::infrastructure::cache::get_global_cache_manager;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
+use std::sync::Arc;
 use std::time::Duration;
 use tokio::time;
 use validator::Validate;
@@ -240,22 +240,22 @@ impl ContextDaemon {
     /// Run a single cleanup cycle
     async fn run_cleanup_cycle(stats: &Arc<AtomicDaemonStats>, max_age_secs: u64) -> Result<()> {
         let mut cleaned_count = 0;
-        if let Some(cache) = get_global_cache_manager()
-            && let Ok(queue) = cache.get_queue::<SyncBatch>("sync_batches", "queue").await
-        {
-            let now = std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap_or(Duration::from_secs(0))
-                .as_secs();
+        if let Some(cache) = get_global_cache_manager() {
+            if let Ok(queue) = cache.get_queue::<SyncBatch>("sync_batches", "queue").await {
+                let now = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or(Duration::from_secs(0))
+                    .as_secs();
 
-            for batch in queue {
-                if now.saturating_sub(batch.created_at) > max_age_secs
-                    && cache
-                        .remove_item("sync_batches", "queue", batch)
-                        .await
-                        .is_ok()
-                {
-                    cleaned_count += 1;
+                for batch in queue {
+                    if now.saturating_sub(batch.created_at) > max_age_secs
+                        && cache
+                            .remove_item("sync_batches", "queue", batch)
+                            .await
+                            .is_ok()
+                    {
+                        cleaned_count += 1;
+                    }
                 }
             }
         }
@@ -280,10 +280,10 @@ impl ContextDaemon {
     /// Run a single monitoring cycle
     async fn run_monitoring_cycle(stats: &Arc<AtomicDaemonStats>) -> Result<()> {
         let mut queue_size = 0;
-        if let Some(cache) = get_global_cache_manager()
-            && let Ok(queue) = cache.get_queue::<SyncBatch>("sync_batches", "queue").await
-        {
-            queue_size = queue.len();
+        if let Some(cache) = get_global_cache_manager() {
+            if let Ok(queue) = cache.get_queue::<SyncBatch>("sync_batches", "queue").await {
+                queue_size = queue.len();
+            }
         }
 
         stats.monitoring_cycles.fetch_add(1, Ordering::Relaxed);

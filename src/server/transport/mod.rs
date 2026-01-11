@@ -17,12 +17,12 @@ pub mod session;
 pub mod versioning;
 
 // Re-exports for convenience
-pub use config::{HttpTransportConfig, SessionConfig, TransportConfig, TransportMode, VersionConfig};
+pub use config::{
+    HttpTransportConfig, SessionConfig, TransportConfig, TransportMode, VersionConfig,
+};
 pub use http::{create_mcp_router, HttpTransportState, McpError};
 pub use session::{
     create_shared_session_manager, BufferedMessage, McpSession, SessionError, SessionManager,
     SessionState, SharedSessionManager,
 };
-pub use versioning::{
-    headers, CompatibilityResult, SemVer, VersionChecker, VersionInfo,
-};
+pub use versioning::{headers, CompatibilityResult, SemVer, VersionChecker, VersionInfo};

@@ -40,8 +40,9 @@ impl RespawnManager {
     pub fn new(config: RespawnConfig) -> Result<Self> {
         let binary_path = match &config.binary_path {
             Some(p) => p.clone(),
-            None => std::fs::read_link("/proc/self/exe")
-                .context("Failed to read /proc/self/exe")?,
+            None => {
+                std::fs::read_link("/proc/self/exe").context("Failed to read /proc/self/exe")?
+            }
         };
 
         Ok(Self {
@@ -74,7 +75,10 @@ impl RespawnManager {
 
     /// Respawn using exec() - replaces current process
     fn exec_respawn(&self) -> Result<()> {
-        info!("Executing respawn via exec(): {}", self.binary_path.display());
+        info!(
+            "Executing respawn via exec(): {}",
+            self.binary_path.display()
+        );
 
         // Get current arguments
         let args: Vec<CString> = std::env::args()
@@ -168,7 +172,10 @@ mod tests {
         // This test may fail in some environments without /proc
         if can_respawn() {
             let manager = RespawnManager::with_defaults().unwrap();
-            assert!(manager.binary_path().exists() || manager.binary_path().to_str().unwrap().contains("target"));
+            assert!(
+                manager.binary_path().exists()
+                    || manager.binary_path().to_str().unwrap().contains("target")
+            );
         }
     }
 

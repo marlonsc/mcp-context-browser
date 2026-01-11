@@ -100,7 +100,7 @@ pub fn create_shared_event_bus() -> SharedEventBus {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tokio::time::{Duration, timeout};
+    use tokio::time::{timeout, Duration};
 
     #[tokio::test]
     async fn test_event_bus_publish_subscribe() {

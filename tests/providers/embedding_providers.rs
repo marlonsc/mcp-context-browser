@@ -989,40 +989,41 @@ mod provider_trait_tests {
             );
 
             // Test with real providers if available
-            if let Ok(api_key) = std::env::var("OPENAI_API_KEY")
-                && let Ok(openai_provider) = OpenAIEmbeddingProvider::new(
+            if let Ok(api_key) = std::env::var("OPENAI_API_KEY") {
+                if let Ok(openai_provider) = OpenAIEmbeddingProvider::new(
                     api_key,
                     None,
                     "text-embedding-3-small".to_string(),
-                )
-            {
-                let start = std::time::Instant::now();
-                let result = runtime.block_on(openai_provider.embed_batch(&test_texts));
-                let openai_duration = start.elapsed();
+                ) {
+                    let start = std::time::Instant::now();
+                    let result = runtime.block_on(openai_provider.embed_batch(&test_texts));
+                    let openai_duration = start.elapsed();
 
-                if result.is_ok() {
-                    println!("  OpenAI API: {:?}", openai_duration);
-                    println!(
-                        "  OpenAI Throughput: {:.2} embeddings/sec",
-                        test_texts.len() as f64 / openai_duration.as_secs_f64()
-                    );
+                    if result.is_ok() {
+                        println!("  OpenAI API: {:?}", openai_duration);
+                        println!(
+                            "  OpenAI Throughput: {:.2} embeddings/sec",
+                            test_texts.len() as f64 / openai_duration.as_secs_f64()
+                        );
+                    }
                 }
             }
 
-            if let Ok(api_key) = std::env::var("GEMINI_API_KEY")
-                && let Ok(gemini_provider) =
+            if let Ok(api_key) = std::env::var("GEMINI_API_KEY") {
+                if let Ok(gemini_provider) =
                     GeminiEmbeddingProvider::new(api_key, None, "gemini-embedding-001".to_string())
-            {
-                let start = std::time::Instant::now();
-                let result = runtime.block_on(gemini_provider.embed_batch(&test_texts));
-                let gemini_duration = start.elapsed();
+                {
+                    let start = std::time::Instant::now();
+                    let result = runtime.block_on(gemini_provider.embed_batch(&test_texts));
+                    let gemini_duration = start.elapsed();
 
-                if result.is_ok() {
-                    println!("  Gemini API: {:?}", gemini_duration);
-                    println!(
-                        "  Gemini Throughput: {:.2} embeddings/sec",
-                        test_texts.len() as f64 / gemini_duration.as_secs_f64()
-                    );
+                    if result.is_ok() {
+                        println!("  Gemini API: {:?}", gemini_duration);
+                        println!(
+                            "  Gemini Throughput: {:.2} embeddings/sec",
+                            test_texts.len() as f64 / gemini_duration.as_secs_f64()
+                        );
+                    }
                 }
             }
 
@@ -1039,8 +1040,8 @@ mod factory_tests {
         DefaultProviderFactory, ProviderFactory,
     };
 
-    fn get_test_http_client()
-    -> Arc<dyn mcp_context_browser::adapters::http_client::HttpClientProvider> {
+    fn get_test_http_client(
+    ) -> Arc<dyn mcp_context_browser::adapters::http_client::HttpClientProvider> {
         Arc::new(HttpClientPool::new().unwrap())
     }
 

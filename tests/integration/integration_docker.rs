@@ -13,8 +13,8 @@ mod tests {
     use super::*;
     use mcp_context_browser::infrastructure::di::factory::ServiceProviderInterface;
 
-    fn get_test_http_client()
-    -> Arc<dyn mcp_context_browser::adapters::http_client::HttpClientProvider> {
+    fn get_test_http_client(
+    ) -> Arc<dyn mcp_context_browser::adapters::http_client::HttpClientProvider> {
         Arc::new(HttpClientPool::new().unwrap())
     }
 

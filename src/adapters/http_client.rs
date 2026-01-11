@@ -221,8 +221,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_http_client_pool_via_trait()
-    -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_http_client_pool_via_trait(
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let config = HttpClientConfig::default();
         let pool = HttpClientPool::with_config(config)?;
         let client = pool.client();

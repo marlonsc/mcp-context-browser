@@ -95,7 +95,10 @@ impl ConnectionTracker {
 
         // Set draining flag to reject new requests
         self.draining.store(true, Ordering::SeqCst);
-        info!("Starting graceful drain with {}s timeout", timeout.as_secs());
+        info!(
+            "Starting graceful drain with {}s timeout",
+            timeout.as_secs()
+        );
 
         // Wait for active requests to complete
         loop {
@@ -215,9 +218,8 @@ mod tests {
 
         // Start draining in background
         let tracker_clone = tracker.clone();
-        let drain_handle = tokio::spawn(async move {
-            tracker_clone.drain(Some(Duration::from_secs(5))).await
-        });
+        let drain_handle =
+            tokio::spawn(async move { tracker_clone.drain(Some(Duration::from_secs(5))).await });
 
         // New requests should be rejected during drain
         tokio::time::sleep(Duration::from_millis(50)).await;

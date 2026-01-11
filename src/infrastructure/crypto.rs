@@ -7,10 +7,10 @@
 
 use crate::domain::error::{Error, Result};
 use aes_gcm::{
-    Aes256Gcm, Key,
     aead::{Aead, KeyInit},
+    Aes256Gcm, Key,
 };
-use rand::{Rng, rng};
+use rand::{rng, Rng};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 

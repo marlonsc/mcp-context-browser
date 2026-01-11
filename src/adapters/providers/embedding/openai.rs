@@ -3,7 +3,7 @@
 use crate::domain::error::{Error, Result};
 use crate::domain::ports::EmbeddingProvider;
 use crate::domain::types::Embedding;
-use crate::infrastructure::cache::{CacheResult, get_global_cache_manager};
+use crate::infrastructure::cache::{get_global_cache_manager, CacheResult};
 use async_trait::async_trait;
 use std::sync::Arc;
 use std::time::Duration;

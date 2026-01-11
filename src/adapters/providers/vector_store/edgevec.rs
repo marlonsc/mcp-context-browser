@@ -425,31 +425,31 @@ impl EdgeVecActor {
                                         }
                                     });
 
-                                    if let Some(ext_id) = external_id
-                                        && let Some(meta_val) = collection_metadata.get(&ext_id)
-                                    {
-                                        let meta =
-                                            meta_val.as_object().cloned().unwrap_or_default();
-                                        final_results.push(SearchResult {
-                                            id: ext_id,
-                                            file_path: meta
-                                                .get("file_path")
-                                                .and_then(|v| v.as_str())
-                                                .unwrap_or("unknown")
-                                                .to_string(),
-                                            line_number: meta
-                                                .get("line_number")
-                                                .and_then(|v| v.as_u64())
-                                                .unwrap_or(0)
-                                                as u32,
-                                            content: meta
-                                                .get("content")
-                                                .and_then(|v| v.as_str())
-                                                .unwrap_or("")
-                                                .to_string(),
-                                            score: res.distance,
-                                            metadata: serde_json::json!(meta),
-                                        });
+                                    if let Some(ext_id) = external_id {
+                                        if let Some(meta_val) = collection_metadata.get(&ext_id) {
+                                            let meta =
+                                                meta_val.as_object().cloned().unwrap_or_default();
+                                            final_results.push(SearchResult {
+                                                id: ext_id,
+                                                file_path: meta
+                                                    .get("file_path")
+                                                    .and_then(|v| v.as_str())
+                                                    .unwrap_or("unknown")
+                                                    .to_string(),
+                                                line_number: meta
+                                                    .get("line_number")
+                                                    .and_then(|v| v.as_u64())
+                                                    .unwrap_or(0)
+                                                    as u32,
+                                                content: meta
+                                                    .get("content")
+                                                    .and_then(|v| v.as_str())
+                                                    .unwrap_or("")
+                                                    .to_string(),
+                                                score: res.distance,
+                                                metadata: serde_json::json!(meta),
+                                            });
+                                        }
                                     }
                                 }
                             }
@@ -519,12 +519,10 @@ mod tests {
         let config = EdgeVecConfig::default();
         let provider = EdgeVecVectorStoreProvider::new(config).unwrap();
 
-        assert!(
-            provider
-                .create_collection("test_collection", 1536)
-                .await
-                .is_ok()
-        );
+        assert!(provider
+            .create_collection("test_collection", 1536)
+            .await
+            .is_ok());
         assert!(provider.collection_exists("test_collection").await.unwrap());
         let stats = provider.get_stats("test_collection").await.unwrap();
         assert_eq!(stats.get("collection").unwrap(), "test_collection");

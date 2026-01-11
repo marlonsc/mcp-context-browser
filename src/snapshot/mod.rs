@@ -206,10 +206,10 @@ impl SnapshotManager {
             let path = entry.path();
 
             // Skip hidden files and directories
-            if let Some(file_name) = path.file_name()
-                && file_name.to_string_lossy().starts_with('.')
-            {
-                continue;
+            if let Some(file_name) = path.file_name() {
+                if file_name.to_string_lossy().starts_with('.') {
+                    continue;
+                }
             }
 
             let metadata = entry

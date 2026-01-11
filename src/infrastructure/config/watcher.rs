@@ -31,10 +31,10 @@ impl ConfigWatcher {
 
         let mut watcher = RecommendedWatcher::new(
             move |res: notify::Result<Event>| {
-                if let Ok(event) = res
-                    && (event.kind.is_modify() || event.kind.is_create())
-                {
-                    let _ = tx.blocking_send(());
+                if let Ok(event) = res {
+                    if event.kind.is_modify() || event.kind.is_create() {
+                        let _ = tx.blocking_send(());
+                    }
                 }
             },
             NotifyConfig::default(),
@@ -45,12 +45,14 @@ impl ConfigWatcher {
             watcher
                 .watch(&path, RecursiveMode::NonRecursive)
                 .map_err(|e| Error::config(format!("Failed to watch config file: {}", e)))?;
-        } else if let Some(parent) = path.parent()
-            && parent.exists()
-        {
-            watcher
-                .watch(parent, RecursiveMode::NonRecursive)
-                .map_err(|e| Error::config(format!("Failed to watch config directory: {}", e)))?;
+        } else if let Some(parent) = path.parent() {
+            if parent.exists() {
+                watcher
+                    .watch(parent, RecursiveMode::NonRecursive)
+                    .map_err(|e| {
+                        Error::config(format!("Failed to watch config directory: {}", e))
+                    })?;
+            }
         }
 
         info!("Watching configuration file: {:?}", path_for_watcher);

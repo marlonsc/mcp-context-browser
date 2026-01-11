@@ -162,11 +162,7 @@ impl SessionManager {
     }
 
     /// Buffer a message for resumption
-    pub fn buffer_message(
-        &self,
-        session_id: &str,
-        message: serde_json::Value,
-    ) -> Option<String> {
+    pub fn buffer_message(&self, session_id: &str, message: serde_json::Value) -> Option<String> {
         if !self.config.resumption_enabled {
             return None;
         }
@@ -193,7 +189,11 @@ impl SessionManager {
     }
 
     /// Get buffered messages after a given event ID (for resumption)
-    pub fn get_messages_after(&self, session_id: &str, last_event_id: &str) -> Vec<BufferedMessage> {
+    pub fn get_messages_after(
+        &self,
+        session_id: &str,
+        last_event_id: &str,
+    ) -> Vec<BufferedMessage> {
         if let Some(session) = self.sessions.get(session_id) {
             let mut found = false;
             session

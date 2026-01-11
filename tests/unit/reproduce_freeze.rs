@@ -4,7 +4,7 @@ mod reproduction_test {
         CacheConfig, CacheManager, CacheNamespacesConfig,
     };
     use std::sync::Arc;
-    use tokio::time::{Duration, timeout};
+    use tokio::time::{timeout, Duration};
 
     #[tokio::test]
     async fn test_concurrent_access_freeze() {

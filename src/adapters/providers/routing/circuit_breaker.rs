@@ -140,10 +140,10 @@ impl CircuitBreaker {
         let mut actor = CircuitBreakerActor::new(id.clone(), rx, config.clone(), persistence_dir);
 
         // Try to load persisted state if enabled
-        if config.persistence_enabled
-            && let Ok(Some(snapshot)) = actor.load_snapshot().await
-        {
-            actor.apply_snapshot(snapshot);
+        if config.persistence_enabled {
+            if let Ok(Some(snapshot)) = actor.load_snapshot().await {
+                actor.apply_snapshot(snapshot);
+            }
         }
 
         tokio::spawn(async move {
@@ -324,12 +324,12 @@ impl CircuitBreakerActor {
     }
 
     fn check_state_transition(&mut self) {
-        if let CircuitBreakerState::Open { opened_at } = self.state
-            && opened_at.elapsed() >= self.config.recovery_timeout
-        {
-            info!("Circuit breaker {} transitioning to Half-Open", self.id);
-            self.state = CircuitBreakerState::HalfOpen;
-            self.half_open_request_count = 0;
+        if let CircuitBreakerState::Open { opened_at } = self.state {
+            if opened_at.elapsed() >= self.config.recovery_timeout {
+                info!("Circuit breaker {} transitioning to Half-Open", self.id);
+                self.state = CircuitBreakerState::HalfOpen;
+                self.half_open_request_count = 0;
+            }
         }
     }
 

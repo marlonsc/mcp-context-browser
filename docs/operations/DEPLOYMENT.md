@@ -116,7 +116,7 @@ free -h  # Memory
 
 -   Check existing [GitHub Issues](https://github.com/marlonsc/mcp-context-browser/issues)
 -   Review the [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) for technical details
--   See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup
+-   See [CONTRIBUTING.md](../developer/CONTRIBUTING.md) for development setup
 
 ## 🚀 Future Deployment Options
 

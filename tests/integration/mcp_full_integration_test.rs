@@ -7,8 +7,8 @@
 //! - Perform semantic text search
 //! - Verify results and cleanup
 
-use mcp_context_browser::server::McpServer;
 use mcp_context_browser::server::args::{IndexCodebaseArgs, SearchCodeArgs};
+use mcp_context_browser::server::McpServer;
 use rmcp::handler::server::wrapper::Parameters;
 use tempfile::tempdir;
 

@@ -4,8 +4,8 @@
 //! user-friendly way. It handles the presentation of search results, indexing status,
 //! and error messages.
 
-use rmcp::ErrorData as McpError;
 use rmcp::model::{CallToolResult, Content};
+use rmcp::ErrorData as McpError;
 use std::path::Path;
 
 /// Response formatter for MCP server tools

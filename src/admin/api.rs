@@ -3,7 +3,7 @@
 use axum::Router;
 use std::sync::Arc;
 
-use crate::admin::{AdminApi, AdminConfig, models::AdminState, routes::create_admin_router};
+use crate::admin::{models::AdminState, routes::create_admin_router, AdminApi, AdminConfig};
 
 /// Admin API server
 pub struct AdminApiServer {

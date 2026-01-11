@@ -8,8 +8,8 @@ use crate::domain::error::Result;
 use crate::domain::ports::VectorStoreProvider;
 use crate::domain::types::{CodeChunk, SearchResult};
 use async_trait::async_trait;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
 use tokio::sync::RwLock;
 
 /// Vector store backed search repository with hybrid search support

@@ -133,10 +133,10 @@ impl MerkleTree {
                 let entry_path = entry.path();
 
                 // Skip hidden files and directories
-                if let Some(file_name) = entry_path.file_name()
-                    && file_name.to_string_lossy().starts_with('.')
-                {
-                    continue;
+                if let Some(file_name) = entry_path.file_name() {
+                    if file_name.to_string_lossy().starts_with('.') {
+                        continue;
+                    }
                 }
 
                 // Skip common non-source files

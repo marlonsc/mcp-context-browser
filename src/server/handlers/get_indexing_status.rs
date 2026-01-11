@@ -3,9 +3,9 @@
 //! This handler provides comprehensive information about the current state
 //! of indexed collections, system health, and available search capabilities.
 
-use rmcp::ErrorData as McpError;
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::CallToolResult;
+use rmcp::ErrorData as McpError;
 use std::sync::Arc;
 
 use crate::admin::service::{
@@ -19,11 +19,12 @@ async fn get_memory_usage() -> u64 {
     // On Linux, read /proc/self/statm
     #[cfg(target_os = "linux")]
     {
-        if let Ok(statm) = tokio::fs::read_to_string("/proc/self/statm").await
-            && let Some(size_kb) = statm.split_whitespace().next()
-            && let Ok(size) = size_kb.parse::<u64>()
-        {
-            return size;
+        if let Ok(statm) = tokio::fs::read_to_string("/proc/self/statm").await {
+            if let Some(size_kb) = statm.split_whitespace().next() {
+                if let Ok(size) = size_kb.parse::<u64>() {
+                    return size;
+                }
+            }
         }
     }
 

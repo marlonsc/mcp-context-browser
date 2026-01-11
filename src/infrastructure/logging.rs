@@ -11,8 +11,8 @@ use std::collections::VecDeque;
 use std::sync::Arc;
 use tokio::sync::{mpsc, oneshot};
 use tracing::{Event, Level, Subscriber};
-use tracing_subscriber::Layer;
 use tracing_subscriber::layer::Context;
+use tracing_subscriber::Layer;
 
 /// A single log entry stored in the ring buffer
 #[derive(Debug, Clone, Serialize, Deserialize)]

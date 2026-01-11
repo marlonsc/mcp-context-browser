@@ -1,6 +1,6 @@
 # MCP Context Browser - Comprehensive Architecture Documentation
 
-[![Version](https://img.shields.io/badge/version-0.0.4-blue)](https://github.com/marlonsc/mcp-context-browser/releases)
+[![Version](https://img.shields.io/badge/version-0.1.0-blue)](https://github.com/marlonsc/mcp-context-browser/releases)
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange)](https://www.rust-lang.org/)
 [![MCP](https://img.shields.io/badge/MCP-2024--11--05-blue)](https://modelcontextprotocol.io/)
 
@@ -49,7 +49,7 @@ MCP Context Browser is a high-performance, extensible Model Context Protocol (MC
 
 ### Current Status
 
-**Version**: 0.0.4 (Production Ready)
+**Version**: 0.1.0 (First Stable Release)
 **Architecture Maturity**: ✅ **100% Complete DI Implementation**
 **DI Status**: ✅ Provider Registry, ✅ Service Factory, ✅ Provider Router, ✅ Runtime Configuration
 **Deployment Options**: Local development, Docker, Kubernetes, hybrid cloud-edge
@@ -1961,4 +1961,4 @@ impl BackupManager {
 
 This comprehensive architecture documentation provides a SOLID foundation for understanding, maintaining, and evolving the MCP Context Browser system. The modular, extensible design ensures long-term maintainability while supporting the ambitious roadmap of features and integrations.
 
-For questions or contributions, please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) guide or open an issue on GitHub.
+For questions or contributions, please refer to the [CONTRIBUTING.md](../developer/CONTRIBUTING.md) guide or open an issue on GitHub.

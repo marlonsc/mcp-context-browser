@@ -16,8 +16,8 @@ pub use types::{
 
 use crate::domain::error::{Error, Result};
 use async_trait::async_trait;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 use tokio::sync::Semaphore;
 
 /// Trait for resource limits operations (enables DI and testing)
@@ -218,23 +218,23 @@ impl ResourceLimits {
         let mut violations = Vec::new();
 
         // Check memory
-        if let Ok(memory_stats) = self.get_memory_stats().await
-            && memory_stats.usage_percent >= self.config.memory.max_usage_percent
-        {
-            violations.push(ResourceViolation::MemoryLimitExceeded {
-                current_percent: memory_stats.usage_percent,
-                limit_percent: self.config.memory.max_usage_percent,
-            });
+        if let Ok(memory_stats) = self.get_memory_stats().await {
+            if memory_stats.usage_percent >= self.config.memory.max_usage_percent {
+                violations.push(ResourceViolation::MemoryLimitExceeded {
+                    current_percent: memory_stats.usage_percent,
+                    limit_percent: self.config.memory.max_usage_percent,
+                });
+            }
         }
 
         // Check CPU
-        if let Ok(cpu_stats) = self.get_cpu_stats().await
-            && cpu_stats.usage_percent >= self.config.cpu.max_usage_percent
-        {
-            violations.push(ResourceViolation::CpuLimitExceeded {
-                current_percent: cpu_stats.usage_percent,
-                limit_percent: self.config.cpu.max_usage_percent,
-            });
+        if let Ok(cpu_stats) = self.get_cpu_stats().await {
+            if cpu_stats.usage_percent >= self.config.cpu.max_usage_percent {
+                violations.push(ResourceViolation::CpuLimitExceeded {
+                    current_percent: cpu_stats.usage_percent,
+                    limit_percent: self.config.cpu.max_usage_percent,
+                });
+            }
         }
 
         // Check disk
@@ -550,8 +550,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_resource_limits_creation()
-    -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_resource_limits_creation(
+    ) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let config = ResourceLimitsConfig::default();
         let limits = ResourceLimits::new(config);
 
@@ -565,8 +565,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_operation_permits()
-    -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_operation_permits(
+    ) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let config = ResourceLimitsConfig::default();
         let limits = ResourceLimits::new(config);
 
@@ -589,8 +589,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_disabled_limits()
-    -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_disabled_limits(
+    ) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let config = ResourceLimitsConfig {
             enabled: false,
             ..Default::default()
@@ -605,8 +605,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_resource_limits_provider_trait()
-    -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_resource_limits_provider_trait(
+    ) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let limits = ResourceLimits::new(ResourceLimitsConfig::default());
         let provider: &dyn ResourceLimitsProvider = &limits;
         assert!(provider.is_enabled());
@@ -617,8 +617,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_null_resource_limits()
-    -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_null_resource_limits(
+    ) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let null_limits = NullResourceLimits::new();
         assert!(!null_limits.is_enabled());
 

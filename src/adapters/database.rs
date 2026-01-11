@@ -12,7 +12,7 @@
 use crate::domain::error::{Error, Result};
 use async_trait::async_trait;
 use r2d2::Pool;
-use r2d2_postgres::{PostgresConnectionManager, postgres::NoTls};
+use r2d2_postgres::{postgres::NoTls, PostgresConnectionManager};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::Duration;

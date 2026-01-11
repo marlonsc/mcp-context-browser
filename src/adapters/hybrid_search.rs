@@ -579,9 +579,11 @@ impl HybridSearchActor {
                     );
                     stats.insert(
                         "total_indexed_documents".to_string(),
-                        serde_json::json!(
-                            self.indexed_docs.values().map(|v| v.len()).sum::<usize>()
-                        ),
+                        serde_json::json!(self
+                            .indexed_docs
+                            .values()
+                            .map(|v| v.len())
+                            .sum::<usize>()),
                     );
 
                     let _ = respond_to.send(stats);

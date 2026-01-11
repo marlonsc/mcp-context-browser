@@ -165,20 +165,33 @@ Test coverage:
 -   Multi-language support (Rust, Python, JavaScript, etc.)
 -   Security compliance with audit trails
 
-## Current Status: v0.1.0
+## Current Status: v0.1.0 ✅ RELEASED
 
 First stable release - drop-in replacement for claude-context:
 
 -   ✅ Full MCP protocol implementation (4 tools)
--   ✅ 13 languages with AST parsing (Rust, Python, JS/TS, Go, Java, C, C++, C#, Ruby, PHP, Swift, Kotlin)
+-   ✅ 14 languages with AST parsing (Rust, Python, JS/TS, Go, Java, C, C++, C#, Ruby, PHP, Swift, Kotlin, Scala, Haskell)
 -   ✅ 6 embedding providers (OpenAI, VoyageAI, Ollama, Gemini, FastEmbed, Mock)
 -   ✅ 6 vector stores (Milvus, EdgeVec, In-Memory, Filesystem, Encrypted, Null)
 -   ✅ claude-context environment variable compatibility
--   ✅ 150+ tests with 100% pass rate
+-   ✅ 391+ tests with comprehensive coverage
 -   ✅ JWT authentication and rate limiting
 -   ✅ Clean architecture with trait-based DI
+-   ✅ HTTP transport foundation
+-   ✅ Systemd service integration
 
 **Migrating from claude-context?** See [Migration Guide](docs/migration/FROM_CLAUDE_CONTEXT.md)
+
+## Coming in v0.2.0: Git-Aware Semantic Indexing
+
+Planning complete ([ADR-008](docs/adr/008-git-aware-semantic-indexing-v0.2.0.md)):
+
+-   🚧 **Project-relative indexing**: Indexes remain valid if directory moves
+-   🚧 **Multi-branch support**: Search specific branches or across all branches
+-   🚧 **Commit history**: Index last 50 commits (configurable)
+-   🚧 **Submodule support**: Recursive indexing as separate projects
+-   🚧 **Monorepo detection**: Auto-detect Cargo, npm, Python, Go projects
+-   🚧 **Impact analysis**: Understand change impact between commits/branches
 
 ## Contributing
 

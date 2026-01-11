@@ -6,13 +6,13 @@
 //! workflow from query understanding to result delivery.
 
 use arc_swap::ArcSwap;
-use rmcp::ErrorData as McpError;
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::{
     CallToolResult, Implementation, ListToolsResult, PaginatedRequestParam, ProtocolVersion,
     ServerCapabilities, ServerInfo, Tool,
 };
-use rmcp::{ServerHandler, tool};
+use rmcp::ErrorData as McpError;
+use rmcp::{tool, ServerHandler};
 use std::sync::Arc;
 
 use crate::application::{IndexingService, SearchService};

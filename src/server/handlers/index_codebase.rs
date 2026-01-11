@@ -4,9 +4,9 @@
 //! It validates inputs, checks permissions, manages resources, and coordinates
 //! the indexing process.
 
-use rmcp::ErrorData as McpError;
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::CallToolResult;
+use rmcp::ErrorData as McpError;
 use std::sync::Arc;
 use std::time::Instant;
 
