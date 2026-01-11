@@ -416,7 +416,7 @@ mod tests {
     use crate::adapters::providers::routing::health::{HealthCheckResult, ProviderHealthStatus};
 
     #[tokio::test]
-    async fn test_priority_based_failover() {
+    async fn test_priority_based_failover() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let registry = Arc::new(ProviderRegistry::new());
         let health_monitor = Arc::new(HealthMonitor::with_registry(registry));
 
@@ -451,11 +451,11 @@ mod tests {
         }
 
         let context = FailoverContext::default();
-        let result = manager.select_provider(&candidates, &context).await;
+        let result = manager.select_provider(&candidates, &context).await?;
 
         // Should succeed since providers are registered as healthy
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), "primary");
+        assert_eq!(result, "primary");
+        Ok(())
     }
 
     #[tokio::test]

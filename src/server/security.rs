@@ -400,10 +400,13 @@ mod tests {
     }
 
     #[test]
-    fn test_uri_validation() {
+    fn test_uri_validation() -> std::result::Result<(), Box<dyn std::error::Error>> {
         // Valid URIs
-        assert!(validate_uri(&"/api/health".parse().unwrap()).is_ok());
-        assert!(validate_uri(&"/api/search?q=test".parse().unwrap()).is_ok());
+        let health_uri: Uri = "/api/health".parse()?;
+        assert!(validate_uri(&health_uri).is_ok());
+
+        let search_uri: Uri = "/api/search?q=test".parse()?;
+        assert!(validate_uri(&search_uri).is_ok());
 
         // Invalid URIs - create URI manually since parsing might reject very long paths
         let long_path = "/api/".to_owned() + &"test/".repeat(600); // Create a long but valid path
@@ -415,16 +418,21 @@ mod tests {
                 Uri::builder()
                     .path_and_query("/api/very/long/path")
                     .build()
-                    .unwrap()
+                    .unwrap_or_default()
             });
         // Note: This test may not fail if the URI parsing itself limits length
         // The important thing is that our validation catches suspicious patterns
         let _ = validate_uri(&uri); // Just ensure it doesn't panic
-        assert!(validate_uri(&"/api/%00test".parse().unwrap()).is_err()); // Encoded null
+
+        // Encoded null
+        let null_uri: Uri = "/api/%00test".parse()?;
+        assert!(validate_uri(&null_uri).is_err());
 
         // Test XSS attempt - use a URI that contains suspicious characters but is technically valid
-        let uri: axum::http::Uri = "/api/test%3Cscript%3E".parse().unwrap(); // URL encoded <script>
-        assert!(validate_uri(&uri).is_err()); // XSS attempt
+        let xss_uri: Uri = "/api/test%3Cscript%3E".parse()?; // URL encoded <script>
+        assert!(validate_uri(&xss_uri).is_err()); // XSS attempt
+
+        Ok(())
     }
 
     #[test]

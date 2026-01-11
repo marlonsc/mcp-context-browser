@@ -253,7 +253,7 @@ mod tests {
     }
 
     #[test]
-    fn test_cost_tracking() {
+    fn test_cost_tracking() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let tracker = CostTracker::new();
         let cost_info = ProviderCost {
             provider_id: "test".to_string(),
@@ -265,12 +265,15 @@ mod tests {
         };
 
         tracker.register_provider_cost(cost_info);
-        let cost = tracker.record_usage("test", 100).unwrap();
+        let cost = tracker.record_usage("test", 100)?;
         assert_eq!(cost, 1.0);
 
-        let metrics = tracker.get_usage_metrics("test").unwrap();
+        let metrics = tracker
+            .get_usage_metrics("test")
+            .ok_or("Usage metrics not found")?;
         assert_eq!(metrics.total_units, 100);
         assert_eq!(metrics.total_cost, 1.0);
+        Ok(())
     }
 
     #[test]
@@ -319,7 +322,7 @@ mod tests {
     }
 
     #[test]
-    fn test_budget_utilization() {
+    fn test_budget_utilization() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let tracker = CostTracker::new();
         tracker.set_budget("test", 10.0);
 
@@ -334,7 +337,10 @@ mod tests {
         tracker.register_provider_cost(cost_info);
 
         let _ = tracker.record_usage("test", 7);
-        let score = tracker.get_efficiency_score("test").unwrap();
+        let score = tracker
+            .get_efficiency_score("test")
+            .ok_or("Efficiency score not found")?;
         assert!(score >= 0.0);
+        Ok(())
     }
 }

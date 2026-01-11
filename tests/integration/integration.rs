@@ -120,7 +120,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_mcp_initialize_message_handling() {
+    async fn test_mcp_initialize_message_handling() -> Result<(), Box<dyn std::error::Error>> {
         // Test that initialize message is handled correctly
         let initialize_message = json!({
             "jsonrpc": "2.0",
@@ -136,23 +136,23 @@ mod tests {
             }
         });
 
-        let message_json = serde_json::to_string(&initialize_message).unwrap();
-        let result = run_mcp_command_test(&message_json).await;
+        let message_json = serde_json::to_string(&initialize_message)?;
+        let result = run_mcp_command_test(&message_json).await?;
 
-        assert!(result.is_ok(), "Initialize should succeed");
-        let response: serde_json::Value = serde_json::from_str(&result.unwrap()).unwrap();
+        let response: serde_json::Value = serde_json::from_str(&result)?;
         assert!(response["result"].is_object(), "Should have result");
         assert!(
             response["result"]["serverInfo"]["name"]
                 .as_str()
-                .unwrap()
+                .ok_or("Missing server name")?
                 .contains("MCP Context Browser"),
             "Server name should be MCP Context Browser"
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_mcp_tools_list_message_handling() {
+    async fn test_mcp_tools_list_message_handling() -> Result<(), Box<dyn std::error::Error>> {
         // Test that tools/list message is handled correctly
         let tools_list_message = json!({
             "jsonrpc": "2.0",
@@ -161,23 +161,23 @@ mod tests {
             "params": {}
         });
 
-        let message_json = serde_json::to_string(&tools_list_message).unwrap();
-        let result = run_mcp_command_test(&message_json).await;
+        let message_json = serde_json::to_string(&tools_list_message)?;
+        let result = run_mcp_command_test(&message_json).await?;
 
-        assert!(result.is_ok(), "tools/list should succeed");
-        let response: serde_json::Value = serde_json::from_str(&result.unwrap()).unwrap();
+        let response: serde_json::Value = serde_json::from_str(&result)?;
         assert!(
             response["result"]["tools"].is_array(),
             "Should have tools array"
         );
-        let tools = response["result"]["tools"].as_array().unwrap();
+        let tools = response["result"]["tools"].as_array().ok_or("Missing tools array")?;
         assert!(!tools.is_empty(), "Should have at least one tool");
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_mcp_tools_call_index_codebase() {
+    async fn test_mcp_tools_call_index_codebase() -> Result<(), Box<dyn std::error::Error>> {
         // Test tools/call for index_codebase
-        let temp_dir = tempfile::tempdir().unwrap();
+        let temp_dir = tempfile::tempdir()?;
         let tools_call_message = json!({
             "jsonrpc": "2.0",
             "id": 3,
@@ -185,25 +185,25 @@ mod tests {
             "params": {
                 "name": "index_codebase",
                 "arguments": {
-                    "path": temp_dir.path().to_str().unwrap()
+                    "path": temp_dir.path().to_str().ok_or("Invalid path")?
                 }
             }
         });
 
-        let message_json = serde_json::to_string(&tools_call_message).unwrap();
-        let result = run_mcp_command_test(&message_json).await;
+        let message_json = serde_json::to_string(&tools_call_message)?;
+        let result = run_mcp_command_test(&message_json).await?;
 
-        assert!(result.is_ok(), "tools/call should succeed");
-        let response: serde_json::Value = serde_json::from_str(&result.unwrap()).unwrap();
+        let response: serde_json::Value = serde_json::from_str(&result)?;
         // May succeed or fail depending on path validation, but should return valid JSON-RPC
         assert!(
             response["result"].is_object() || response["error"].is_object(),
             "Should have result or error"
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_mcp_tools_call_search_code() {
+    async fn test_mcp_tools_call_search_code() -> Result<(), Box<dyn std::error::Error>> {
         // Test tools/call for search_code
         let tools_call_message = json!({
             "jsonrpc": "2.0",
@@ -218,20 +218,20 @@ mod tests {
             }
         });
 
-        let message_json = serde_json::to_string(&tools_call_message).unwrap();
-        let result = run_mcp_command_test(&message_json).await;
+        let message_json = serde_json::to_string(&tools_call_message)?;
+        let result = run_mcp_command_test(&message_json).await?;
 
-        assert!(result.is_ok(), "tools/call should succeed");
-        let response: serde_json::Value = serde_json::from_str(&result.unwrap()).unwrap();
+        let response: serde_json::Value = serde_json::from_str(&result)?;
         // Search should work (may return empty results if no index)
         assert!(
             response["result"].is_object() || response["error"].is_object(),
             "Should have result or error"
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_mcp_unknown_method_handling() {
+    async fn test_mcp_unknown_method_handling() -> Result<(), Box<dyn std::error::Error>> {
         // Test that unknown methods return proper error
         let unknown_method_message = json!({
             "jsonrpc": "2.0",
@@ -240,11 +240,10 @@ mod tests {
             "params": {}
         });
 
-        let message_json = serde_json::to_string(&unknown_method_message).unwrap();
-        let result = run_mcp_command_test(&message_json).await;
+        let message_json = serde_json::to_string(&unknown_method_message)?;
+        let result = run_mcp_command_test(&message_json).await?;
 
-        assert!(result.is_ok(), "Should return valid response");
-        let response: serde_json::Value = serde_json::from_str(&result.unwrap()).unwrap();
+        let response: serde_json::Value = serde_json::from_str(&result)?;
         assert!(
             response["error"].is_object(),
             "Should have error for unknown method"
@@ -253,6 +252,7 @@ mod tests {
             response["error"]["code"], -32601,
             "Should be method not found error code"
         );
+        Ok(())
     }
 
     #[tokio::test]
@@ -271,7 +271,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_mcp_tools_call_missing_arguments() {
+    async fn test_mcp_tools_call_missing_arguments() -> Result<(), Box<dyn std::error::Error>> {
         // Test tools/call with missing arguments
         let tools_call_message = json!({
             "jsonrpc": "2.0",
@@ -283,20 +283,20 @@ mod tests {
             }
         });
 
-        let message_json = serde_json::to_string(&tools_call_message).unwrap();
-        let result = run_mcp_command_test(&message_json).await;
+        let message_json = serde_json::to_string(&tools_call_message)?;
+        let result = run_mcp_command_test(&message_json).await?;
 
-        assert!(result.is_ok(), "Should return valid JSON-RPC response");
-        let response: serde_json::Value = serde_json::from_str(&result.unwrap()).unwrap();
+        let response: serde_json::Value = serde_json::from_str(&result)?;
         // May succeed with default path or return error - both are valid
         assert!(
             response["result"].is_object() || response["error"].is_object(),
             "Should have result or error"
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_mcp_tools_call_unknown_tool() {
+    async fn test_mcp_tools_call_unknown_tool() -> Result<(), Box<dyn std::error::Error>> {
         // Test tools/call with unknown tool name
         let tools_call_message = json!({
             "jsonrpc": "2.0",
@@ -308,19 +308,19 @@ mod tests {
             }
         });
 
-        let message_json = serde_json::to_string(&tools_call_message).unwrap();
-        let result = run_mcp_command_test(&message_json).await;
+        let message_json = serde_json::to_string(&tools_call_message)?;
+        let result = run_mcp_command_test(&message_json).await?;
 
-        assert!(result.is_ok(), "Should return valid response");
-        let response: serde_json::Value = serde_json::from_str(&result.unwrap()).unwrap();
+        let response: serde_json::Value = serde_json::from_str(&result)?;
         assert!(
             response["error"].is_object(),
             "Should have error for unknown tool"
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_mcp_tools_call_search_with_limit() {
+    async fn test_mcp_tools_call_search_with_limit() -> Result<(), Box<dyn std::error::Error>> {
         // Test search_code with various limits
         let limits = vec![0, 1, 5, 10, 50];
 
@@ -338,17 +338,17 @@ mod tests {
                 }
             });
 
-            let message_json = serde_json::to_string(&tools_call_message).unwrap();
-            let result = run_mcp_command_test(&message_json).await;
+            let message_json = serde_json::to_string(&tools_call_message)?;
+            let result = run_mcp_command_test(&message_json).await?;
 
-            assert!(result.is_ok(), "Failed for limit {}", limit);
-            let response: serde_json::Value = serde_json::from_str(&result.unwrap()).unwrap();
+            let response: serde_json::Value = serde_json::from_str(&result)?;
             assert!(
                 response["result"].is_object() || response["error"].is_object(),
                 "Should have result or error for limit {}",
                 limit
             );
         }
+        Ok(())
     }
 
     #[test]
@@ -380,7 +380,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_milvus_provider_connection() {
+    async fn test_milvus_provider_connection() -> Result<(), Box<dyn std::error::Error>> {
         use mcp_context_browser::domain::ports::VectorStoreProvider;
 
         // Test that we can create a Milvus provider and connect to the local instance
@@ -399,24 +399,16 @@ mod tests {
             .unwrap_or(true)
         {
             println!("Milvus not available at {}, skipping test", milvus_address);
-            return;
+            return Ok(());
         }
 
         // Create Milvus provider
-        let provider_result =
+        let provider =
             mcp_context_browser::adapters::providers::vector_store::MilvusVectorStoreProvider::new(
                 milvus_address.to_string(),
                 None,
             )
-            .await;
-
-        assert!(
-            provider_result.is_ok(),
-            "Failed to create Milvus provider: {:?}",
-            provider_result.err()
-        );
-
-        let provider = provider_result.unwrap();
+            .await?;
 
         // Test that provider name is correct
         assert_eq!(provider.provider_name(), "milvus");
@@ -425,28 +417,14 @@ mod tests {
         let collection_name = "test_collection";
 
         // Create collection
-        let create_result = provider.create_collection(collection_name, 128).await;
-        assert!(
-            create_result.is_ok(),
-            "Failed to create collection: {:?}",
-            create_result.err()
-        );
+        provider.create_collection(collection_name, 128).await?;
 
         // Check if collection exists
-        let exists_result = provider.collection_exists(collection_name).await;
-        assert!(
-            exists_result.is_ok(),
-            "Failed to check collection existence: {:?}",
-            exists_result.err()
-        );
+        let _exists = provider.collection_exists(collection_name).await?;
 
         // Clean up - delete collection
-        let delete_result = provider.delete_collection(collection_name).await;
-        assert!(
-            delete_result.is_ok(),
-            "Failed to delete collection: {:?}",
-            delete_result.err()
-        );
+        provider.delete_collection(collection_name).await?;
+        Ok(())
     }
 
     #[tokio::test]
@@ -480,7 +458,7 @@ mod tests {
             "Server should provide info after initialization"
         );
 
-        let info = server_info.unwrap();
+        let info = server_info.ok_or("Server info not available")?;
         assert_eq!(
             info.protocol_version,
             rmcp::model::ProtocolVersion::V_2024_11_05

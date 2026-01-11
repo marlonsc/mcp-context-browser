@@ -250,20 +250,21 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_binary_watcher_creation() {
+    async fn test_binary_watcher_creation() -> Result<(), Box<dyn std::error::Error>> {
         let event_bus = Arc::new(EventBus::default());
-        let dir = tempdir().unwrap();
+        let dir = tempdir()?;
         let binary_path = dir.path().join("test_binary");
-        std::fs::write(&binary_path, "test").unwrap();
+        std::fs::write(&binary_path, "test")?;
 
         let config = BinaryWatcherConfig {
             binary_path: Some(binary_path.clone()),
             ..Default::default()
         };
 
-        let watcher = BinaryWatcher::new(event_bus, config).unwrap();
+        let watcher = BinaryWatcher::new(event_bus, config)?;
         assert_eq!(watcher.binary_path(), &binary_path);
         assert!(!watcher.is_running());
+        Ok(())
     }
 
     #[tokio::test]

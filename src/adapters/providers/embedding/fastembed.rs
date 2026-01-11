@@ -175,32 +175,31 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_fastembed_provider_dimensions() {
-        let provider = FastEmbedProvider::new().unwrap();
+    async fn test_fastembed_provider_dimensions(
+    ) -> std::result::Result<(), Box<dyn std::error::Error>> {
+        let provider = FastEmbedProvider::new()?;
         assert_eq!(provider.dimensions(), 384);
         assert_eq!(provider.provider_name(), "fastembed");
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_fastembed_provider_embed() {
-        let provider = FastEmbedProvider::new().unwrap();
-        let result = provider.embed("test text").await;
-        assert!(result.is_ok());
-
-        let embedding = result.unwrap();
+    async fn test_fastembed_provider_embed() -> std::result::Result<(), Box<dyn std::error::Error>>
+    {
+        let provider = FastEmbedProvider::new()?;
+        let embedding = provider.embed("test text").await?;
         assert_eq!(embedding.dimensions, 384);
         assert_eq!(embedding.model, "AllMiniLML6V2");
         assert_eq!(embedding.vector.len(), 384);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_fastembed_provider_embed_batch() {
-        let provider = FastEmbedProvider::new().unwrap();
+    async fn test_fastembed_provider_embed_batch(
+    ) -> std::result::Result<(), Box<dyn std::error::Error>> {
+        let provider = FastEmbedProvider::new()?;
         let texts = vec!["test text 1".to_string(), "test text 2".to_string()];
-        let result = provider.embed_batch(&texts).await;
-        assert!(result.is_ok());
-
-        let embeddings = result.unwrap();
+        let embeddings = provider.embed_batch(&texts).await?;
         assert_eq!(embeddings.len(), 2);
 
         for embedding in embeddings {
@@ -208,12 +207,14 @@ mod tests {
             assert_eq!(embedding.model, "AllMiniLML6V2");
             assert_eq!(embedding.vector.len(), 384);
         }
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_fastembed_provider_health_check() {
-        let provider = FastEmbedProvider::new().unwrap();
-        let result = provider.health_check().await;
-        assert!(result.is_ok());
+    async fn test_fastembed_provider_health_check(
+    ) -> std::result::Result<(), Box<dyn std::error::Error>> {
+        let provider = FastEmbedProvider::new()?;
+        provider.health_check().await?;
+        Ok(())
     }
 }

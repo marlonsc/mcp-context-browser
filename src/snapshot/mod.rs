@@ -374,20 +374,22 @@ mod tests {
     use tempfile::TempDir;
 
     #[tokio::test]
-    async fn test_snapshot_manager_creation() {
-        let manager = SnapshotManager::new().unwrap();
+    async fn test_snapshot_manager_creation() -> std::result::Result<(), Box<dyn std::error::Error>> {
+        let manager = SnapshotManager::new()?;
         assert!(manager.snapshot_dir.exists());
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_empty_directory_snapshot() {
-        let temp_dir = TempDir::new().unwrap();
-        let manager = SnapshotManager::new().unwrap();
+    async fn test_empty_directory_snapshot() -> std::result::Result<(), Box<dyn std::error::Error>> {
+        let temp_dir = TempDir::new()?;
+        let manager = SnapshotManager::new()?;
 
-        let snapshot = manager.create_snapshot(temp_dir.path()).await.unwrap();
+        let snapshot = manager.create_snapshot(temp_dir.path()).await?;
         assert_eq!(snapshot.file_count, 0);
         assert_eq!(snapshot.total_size, 0);
         assert!(snapshot.files.is_empty());
+        Ok(())
     }
 
     #[tokio::test]
@@ -404,9 +406,9 @@ mod tests {
     }
 
     #[test]
-    fn test_should_skip_file() {
-        let manager = SnapshotManager::new().unwrap();
-        let temp_dir = TempDir::new().unwrap();
+    fn test_should_skip_file() -> std::result::Result<(), Box<dyn std::error::Error>> {
+        let manager = SnapshotManager::new()?;
+        let temp_dir = TempDir::new()?;
 
         // Should skip log files
         assert!(manager.should_skip_file(&temp_dir.path().join("debug.log")));
@@ -419,5 +421,6 @@ mod tests {
 
         // Should not skip source files
         assert!(!manager.should_skip_file(&temp_dir.path().join("src/main.rs")));
+        Ok(())
     }
 }

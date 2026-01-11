@@ -332,59 +332,70 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_session_creation() {
+    fn test_session_creation() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let manager = SessionManager::with_defaults();
-        let session = manager.create_session().unwrap();
+        let session = manager.create_session()?;
 
         assert!(session.id.starts_with("mcp_"));
         assert_eq!(session.state, SessionState::Initializing);
+        Ok(())
     }
 
     #[test]
-    fn test_session_activation() {
+    fn test_session_activation() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let manager = SessionManager::with_defaults();
-        let session = manager.create_session().unwrap();
+        let session = manager.create_session()?;
 
-        manager.activate_session(&session.id).unwrap();
+        manager.activate_session(&session.id)?;
 
-        let updated = manager.get_session(&session.id).unwrap();
+        let updated = manager
+            .get_session(&session.id)
+            .ok_or("Session not found")?;
         assert_eq!(updated.state, SessionState::Active);
+        Ok(())
     }
 
     #[test]
-    fn test_session_touch() {
+    fn test_session_touch() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let manager = SessionManager::with_defaults();
-        let session = manager.create_session().unwrap();
+        let session = manager.create_session()?;
 
         std::thread::sleep(std::time::Duration::from_millis(10));
 
         assert!(manager.touch_session(&session.id));
 
-        let updated = manager.get_session(&session.id).unwrap();
+        let updated = manager
+            .get_session(&session.id)
+            .ok_or("Session not found")?;
         assert!(updated.last_activity > session.last_activity);
+        Ok(())
     }
 
     #[test]
-    fn test_message_buffering() {
+    fn test_message_buffering() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let manager = SessionManager::with_defaults();
-        let session = manager.create_session().unwrap();
+        let session = manager.create_session()?;
 
         let msg = serde_json::json!({"test": "message"});
         let event_id = manager.buffer_message(&session.id, msg.clone());
 
         assert!(event_id.is_some());
 
-        let updated = manager.get_session(&session.id).unwrap();
+        let updated = manager
+            .get_session(&session.id)
+            .ok_or("Session not found")?;
         assert_eq!(updated.message_buffer.len(), 1);
         assert_eq!(updated.message_buffer[0].message, msg);
+        Ok(())
     }
 
     #[test]
-    fn test_session_termination() {
+    fn test_session_termination() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let manager = SessionManager::with_defaults();
-        let session = manager.create_session().unwrap();
+        let session = manager.create_session()?;
 
         assert!(manager.terminate_session(&session.id));
         assert!(manager.get_session(&session.id).is_none());
+        Ok(())
     }
 }

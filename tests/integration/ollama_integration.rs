@@ -122,10 +122,10 @@ mod ollama_in_memory_tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_ollama_with_in_memory_store() {
+    async fn test_ollama_with_in_memory_store() -> Result<(), Box<dyn std::error::Error>> {
         let ollama_provider = test_utils::create_ollama_provider()
             .await
-            .expect("Ollama provider should be available for integration tests");
+            .ok_or("Ollama provider should be available for integration tests")?;
 
         let in_memory_store =
             Arc::new(mcp_context_browser::adapters::providers::InMemoryVectorStoreProvider::new());
@@ -141,8 +141,7 @@ mod ollama_in_memory_tests {
         let collection = "ollama_in_memory_test";
         let vector_store: Arc<dyn VectorStoreProvider> = in_memory_store.clone();
         test_utils::setup_test_data(&vector_store, &ollama_provider, collection, 5)
-            .await
-            .expect("Failed to setup test data");
+            .await?;
 
         // Create search service
         let search_service = SearchService::new(context_service);
@@ -151,8 +150,7 @@ mod ollama_in_memory_tests {
         let query = "test content";
         let results = search_service
             .search(collection, query, 3)
-            .await
-            .expect("Search failed");
+            .await?;
 
         assert!(!results.is_empty(), "Should find some results");
         assert!(results.len() <= 3, "Should not exceed limit");
@@ -170,6 +168,7 @@ mod ollama_in_memory_tests {
         }
 
         println!("✅ Ollama + InMemory integration test passed");
+        Ok(())
     }
 }
 
@@ -179,13 +178,13 @@ mod ollama_filesystem_tests {
     use tempfile::tempdir;
 
     #[tokio::test]
-    async fn test_ollama_with_filesystem_store() {
+    async fn test_ollama_with_filesystem_store() -> Result<(), Box<dyn std::error::Error>> {
         let ollama_provider = test_utils::create_ollama_provider()
             .await
-            .expect("Ollama provider should be available for integration tests");
+            .ok_or("Ollama provider should be available for integration tests")?;
 
         // Create temporary directory for filesystem store
-        let temp_dir = tempdir().expect("Failed to create temp dir");
+        let temp_dir = tempdir()?;
         let _temp_path = temp_dir.path().to_string_lossy().to_string();
 
         let config =
@@ -201,8 +200,7 @@ mod ollama_filesystem_tests {
             mcp_context_browser::adapters::providers::vector_store::FilesystemVectorStore::new(
                 config,
             )
-            .await
-            .expect("Failed to create filesystem provider"),
+            .await?,
         );
 
         // Create context service
@@ -217,8 +215,7 @@ mod ollama_filesystem_tests {
         let vector_store: Arc<dyn VectorStoreProvider> = filesystem_store.clone();
         println!("📝 Setting up test data for filesystem store...");
         test_utils::setup_test_data(&vector_store, &ollama_provider, collection, 5)
-            .await
-            .expect("Failed to setup test data");
+            .await?;
         println!("✅ Test data setup complete");
 
         // Create search service
@@ -231,8 +228,7 @@ mod ollama_filesystem_tests {
             println!("🔍 Searching for: {}", query);
             let results = search_service
                 .search(collection, query, 3)
-                .await
-                .expect("Search failed");
+                .await?;
 
             println!("📊 Found {} results for '{}'", results.len(), query);
 
@@ -246,8 +242,7 @@ mod ollama_filesystem_tests {
         let query = "test content";
         let results = search_service
             .search(collection, query, 3)
-            .await
-            .expect("Search failed");
+            .await?;
 
         println!("📊 Final search found {} results", results.len());
         assert!(!results.is_empty(), "Should find some results");
@@ -261,6 +256,7 @@ mod ollama_filesystem_tests {
         }
 
         println!("✅ Ollama + Filesystem integration test passed");
+        Ok(())
     }
 }
 
@@ -270,10 +266,10 @@ mod ollama_indexing_tests {
     use tempfile::tempdir;
 
     #[tokio::test]
-    async fn test_ollama_full_indexing_workflow() {
+    async fn test_ollama_full_indexing_workflow() -> Result<(), Box<dyn std::error::Error>> {
         let ollama_provider = test_utils::create_ollama_provider()
             .await
-            .expect("Ollama provider should be available for integration tests");
+            .ok_or("Ollama provider should be available for integration tests")?;
 
         let in_memory_store =
             Arc::new(mcp_context_browser::adapters::providers::InMemoryVectorStoreProvider::new());
@@ -286,11 +282,10 @@ mod ollama_indexing_tests {
         ));
 
         // Create indexing service
-        let indexing_service = IndexingService::new(context_service.clone())
-            .expect("Failed to create indexing service");
+        let indexing_service = IndexingService::new(context_service.clone())?;
 
         // Create temporary directory with test files
-        let temp_dir = tempdir().expect("Failed to create temp dir");
+        let temp_dir = tempdir()?;
 
         // Clean any existing snapshots to ensure clean test
         let _ = std::fs::remove_dir_all(".snapshots");
@@ -321,15 +316,14 @@ impl TestStruct {
 }
 "#;
         // Write the test file to disk
-        std::fs::write(&test_file_path, content).expect("Failed to write test file");
+        std::fs::write(&test_file_path, content)?;
         println!("📝 Created test file at: {}", test_file_path.display());
 
         // Index the directory
         let collection = "ollama_indexing_test";
         let chunk_count = indexing_service
             .index_directory(temp_dir.path(), collection)
-            .await
-            .expect("Indexing failed");
+            .await?;
 
         assert!(chunk_count > 0, "Should have indexed some chunks");
 
@@ -338,8 +332,7 @@ impl TestStruct {
 
         let results = search_service
             .search(collection, "calculate function", 5)
-            .await
-            .expect("Search failed");
+            .await?;
 
         assert!(!results.is_empty(), "Should find function definition");
 
@@ -349,8 +342,7 @@ impl TestStruct {
         for query in queries {
             let results = search_service
                 .search(collection, query, 3)
-                .await
-                .expect("Search failed");
+                .await?;
             assert!(
                 !results.is_empty(),
                 "Should find results for query: {}",
@@ -359,5 +351,6 @@ impl TestStruct {
         }
 
         println!("✅ Ollama full indexing workflow test passed");
+        Ok(())
     }
 }

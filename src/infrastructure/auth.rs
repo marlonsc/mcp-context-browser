@@ -141,10 +141,12 @@ impl Default for AuthConfig {
         users.insert("admin".to_string(), admin_user);
 
         Self {
-            jwt_secret: "your-secret-key-change-in-production".to_string(),
-            jwt_expiration: 3600, // 1 hour
+            jwt_secret: "local-development-secret".to_string(),
+            jwt_expiration: 86400, // 24 hours
             jwt_issuer: "mcp-context-browser".to_string(),
-            enabled: true,
+            // Default: disabled for local/MCP stdio usage
+            // Enable explicitly in config for production/HTTP deployments
+            enabled: false,
             users,
         }
     }
@@ -433,46 +435,70 @@ mod tests {
         let config = AuthConfig::default();
         let auth = AuthService::new(config);
 
-        assert!(auth.is_enabled());
+        // Default is disabled for local/MCP usage
+        assert!(!auth.is_enabled());
         assert!(auth.get_user("admin").is_some());
     }
 
     #[tokio::test]
-    async fn test_authentication() {
-        let auth = AuthService::default();
+    async fn test_auth_service_creation_with_enabled() {
+        let config = AuthConfig {
+            enabled: true,
+            ..Default::default()
+        };
+        let auth = AuthService::new(config);
+
+        assert!(auth.is_enabled());
+        assert!(auth.get_user("admin").is_some());
+    }
+
+    /// Helper to create an auth service with auth explicitly enabled (for testing)
+    fn enabled_auth_service() -> AuthService {
+        AuthService::new(AuthConfig {
+            enabled: true,
+            ..Default::default()
+        })
+    }
+
+    #[tokio::test]
+    async fn test_authentication() -> std::result::Result<(), Box<dyn std::error::Error>> {
+        let auth = enabled_auth_service();
 
         // Test valid credentials
-        let token = auth.authenticate("admin@context.browser", "admin").unwrap();
+        let token = auth.authenticate("admin@context.browser", "admin")?;
         assert!(!token.is_empty());
 
         // Test invalid credentials
         assert!(auth.authenticate("invalid", "invalid").is_err());
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_token_validation() {
-        let auth = AuthService::default();
+    async fn test_token_validation() -> std::result::Result<(), Box<dyn std::error::Error>> {
+        let auth = enabled_auth_service();
 
         // Generate token
-        let token = auth.authenticate("admin@context.browser", "admin").unwrap();
+        let token = auth.authenticate("admin@context.browser", "admin")?;
 
         // Validate token
-        let claims = auth.validate_token(&token).unwrap();
+        let claims = auth.validate_token(&token)?;
         assert_eq!(claims.email, "admin@context.browser");
         assert_eq!(claims.role, UserRole::Admin);
         assert_eq!(claims.iss, "mcp-context-browser");
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_permission_checking() {
-        let auth = AuthService::default();
-        let token = auth.authenticate("admin@context.browser", "admin").unwrap();
-        let claims = auth.validate_token(&token).unwrap();
+    async fn test_permission_checking() -> std::result::Result<(), Box<dyn std::error::Error>> {
+        let auth = enabled_auth_service();
+        let token = auth.authenticate("admin@context.browser", "admin")?;
+        let claims = auth.validate_token(&token)?;
 
         assert!(auth.check_permission(&claims, &Permission::ManageUsers));
         assert!(auth.check_permission(&claims, &Permission::IndexCodebase));
         assert!(auth.check_permission(&claims, &Permission::SearchCodebase));
         assert!(auth.check_permission(&claims, &Permission::ViewMetrics));
+        Ok(())
     }
 
     #[tokio::test]
@@ -489,7 +515,7 @@ mod tests {
     }
 
     #[test]
-    fn test_auth_service_handles_disabled_auth_errors() {
+    fn test_auth_service_handles_disabled_auth_errors() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let config = AuthConfig {
             enabled: false,
             ..Default::default()
@@ -499,29 +525,31 @@ mod tests {
         // Should return proper error instead of panicking
         let result = auth.authenticate("user", "pass");
         assert!(result.is_err());
-        let error_message = result.unwrap_err().to_string();
+        let error_message = result.err().ok_or("Expected error")?.to_string();
         assert!(error_message.contains("Authentication is disabled"));
+        Ok(())
     }
 
     #[test]
-    fn test_auth_service_handles_invalid_credentials_errors() {
-        let auth = AuthService::default();
+    fn test_auth_service_handles_invalid_credentials_errors() -> std::result::Result<(), Box<dyn std::error::Error>> {
+        let auth = enabled_auth_service();
 
         // Should return proper error instead of panicking
         let result = auth.authenticate("invalid@email.com", "wrongpass");
         assert!(result.is_err());
-        let error_message = result.unwrap_err().to_string();
+        let error_message = result.err().ok_or("Expected error")?.to_string();
         assert!(error_message.contains("Invalid credentials"));
+        Ok(())
     }
 
     #[test]
-    fn test_auth_service_handles_token_validation_errors() {
-        let auth = AuthService::default();
+    fn test_auth_service_handles_token_validation_errors() -> std::result::Result<(), Box<dyn std::error::Error>> {
+        let auth = enabled_auth_service();
 
         // Should return proper error for invalid tokens instead of panicking
         let result = auth.validate_token("invalid.jwt.token");
         assert!(result.is_err()); // Should return some kind of error for invalid tokens
-        let err_msg = result.unwrap_err().to_string();
+        let err_msg = result.err().ok_or("Expected error")?.to_string();
         assert!(
             err_msg.contains("Invalid token format")
                 || err_msg.contains("Base64 decode error")
@@ -531,6 +559,7 @@ mod tests {
         // Should return proper error for malformed tokens instead of panicking
         let result = auth.validate_token("malformed.token");
         assert!(result.is_err()); // Should return some kind of error for malformed tokens
+        Ok(())
     }
 
     #[test]

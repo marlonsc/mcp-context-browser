@@ -29,19 +29,17 @@ mod full_integration_tests {
     ///
     /// This test ensures the core business functionality works correctly.
     #[tokio::test]
-    async fn test_complete_mcp_workflow_with_ollama_milvus() {
+    async fn test_complete_mcp_workflow_with_ollama_milvus() -> Result<(), Box<dyn std::error::Error>> {
         // Setup test environment
-        let temp_dir = tempdir().expect("Failed to create temp dir");
+        let temp_dir = tempdir()?;
 
         // Create test codebase
         create_test_codebase(&temp_dir.path().join("test_repo"))
-            .await
-            .expect("Failed to create test codebase");
+            .await?;
 
         // Start MCP server with Ollama and Milvus configuration
         let server = create_mcp_server_with_providers()
-            .await
-            .expect("Failed to create MCP server");
+            .await?;
 
         // Test 1: Index the codebase
         let index_args = IndexCodebaseArgs {
@@ -60,8 +58,7 @@ mod full_integration_tests {
 
         let index_result = server
             .index_codebase(Parameters(index_args))
-            .await
-            .expect("Indexing should succeed");
+            .await?;
 
         // Verify indexing completed (check that we have content, not error)
         assert!(
@@ -96,8 +93,7 @@ mod full_integration_tests {
 
         let search_result = server
             .search_code(Parameters(search_args))
-            .await
-            .expect("Search should succeed");
+            .await?;
 
         assert!(
             !search_result.content.is_empty(),
@@ -137,6 +133,7 @@ mod full_integration_tests {
         // Cleanup - ensure temp directory is removed
         drop(temp_dir); // This will cleanup the temp directory
         println!("✅ Full MCP integration test completed successfully");
+        Ok(())
     }
 
     /// Helper function to create MCP server with Ollama and Milvus providers

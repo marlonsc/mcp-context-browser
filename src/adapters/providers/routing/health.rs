@@ -379,17 +379,16 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_real_provider_health_checker() {
+    async fn test_real_provider_health_checker() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let registry = Arc::new(crate::infrastructure::di::registry::ProviderRegistry::new());
         let mock_provider =
             Arc::new(crate::adapters::providers::embedding::null::NullEmbeddingProvider::new());
-        registry
-            .register_embedding_provider("mock".to_string(), mock_provider)
-            .unwrap();
+        registry.register_embedding_provider("mock".to_string(), mock_provider)?;
 
         let checker = RealProviderHealthChecker::new(registry);
-        let result = checker.check_health("mock").await.unwrap();
+        let result = checker.check_health("mock").await?;
         assert_eq!(result.status, ProviderHealthStatus::Healthy);
         assert_eq!(result.provider_id, "mock");
+        Ok(())
     }
 }

@@ -150,49 +150,45 @@ mod tests {
     use crate::adapters::providers::vector_store::InMemoryVectorStoreProvider;
 
     #[tokio::test]
-    async fn test_encrypted_vector_store_creation() {
+    async fn test_encrypted_vector_store_creation(
+    ) -> std::result::Result<(), Box<dyn std::error::Error>> {
         let inner = InMemoryVectorStoreProvider::new();
         let config = EncryptionConfig::default();
 
-        let encrypted_store = EncryptedVectorStoreProvider::new(inner, config)
-            .await
-            .unwrap();
+        let encrypted_store = EncryptedVectorStoreProvider::new(inner, config).await?;
         assert_eq!(encrypted_store.provider_name(), "encrypted");
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_encrypted_vector_store_disabled() {
+    async fn test_encrypted_vector_store_disabled(
+    ) -> std::result::Result<(), Box<dyn std::error::Error>> {
         let inner = InMemoryVectorStoreProvider::new();
         let config = EncryptionConfig {
             enabled: false,
             ..Default::default()
         };
 
-        let encrypted_store = EncryptedVectorStoreProvider::new(inner, config)
-            .await
-            .unwrap();
+        let encrypted_store = EncryptedVectorStoreProvider::new(inner, config).await?;
         assert_eq!(encrypted_store.provider_name(), "encrypted");
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_encrypted_search_returns_empty() {
+    async fn test_encrypted_search_returns_empty(
+    ) -> std::result::Result<(), Box<dyn std::error::Error>> {
         // Test that encrypted search returns empty results (as implemented)
         let inner = InMemoryVectorStoreProvider::new();
         let config = EncryptionConfig::default();
-        let encrypted_store = EncryptedVectorStoreProvider::new(inner, config)
-            .await
-            .unwrap();
+        let encrypted_store = EncryptedVectorStoreProvider::new(inner, config).await?;
 
         // Create collection
-        encrypted_store
-            .create_collection("test", 128)
-            .await
-            .unwrap();
+        encrypted_store.create_collection("test", 128).await?;
 
         let results = encrypted_store
             .search_similar("test", &[1.0, 2.0, 3.0], 10, None)
-            .await
-            .unwrap();
+            .await?;
         assert!(results.is_empty());
+        Ok(())
     }
 }

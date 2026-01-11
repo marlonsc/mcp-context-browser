@@ -156,10 +156,11 @@ impl NullHttpClientPool {
     /// Create a new null HTTP client pool for testing
     pub fn new() -> Self {
         // Create a minimal client for the null implementation
+        // Using default Client if builder fails (should never happen with these basic options)
         let client = Client::builder()
             .timeout(Duration::from_millis(1))
             .build()
-            .unwrap_or_else(|_| Client::new());
+            .unwrap_or_default();
 
         Self {
             config: HttpClientConfig::default(),

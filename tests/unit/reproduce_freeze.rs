@@ -7,7 +7,7 @@ mod reproduction_test {
     use tokio::time::{timeout, Duration};
 
     #[tokio::test]
-    async fn test_concurrent_access_freeze() {
+    async fn test_concurrent_access_freeze() -> Result<(), Box<dyn std::error::Error>> {
         let config = CacheConfig {
             enabled: true,
             redis_url: "".to_string(), // Local only
@@ -16,7 +16,7 @@ mod reproduction_test {
             namespaces: CacheNamespacesConfig::default(),
         };
 
-        let manager = Arc::new(CacheManager::new(config, None).await.unwrap());
+        let manager = Arc::new(CacheManager::new(config, None).await?);
         let mut handles = vec![];
 
         // Spawn 100 concurrent readers/writers
@@ -37,13 +37,16 @@ mod reproduction_test {
         // Should finish quickly, but if it locks up, timeout will catch it
         let result = timeout(Duration::from_secs(5), async {
             for h in handles {
-                h.await.unwrap();
+                h.await?;
             }
+            Ok::<(), tokio::task::JoinError>(())
         })
         .await;
 
-        if result.is_err() {
-            panic!("Test timed out - likely deadlock or extreme contention");
+        match result {
+            Ok(Ok(())) => Ok(()),
+            Ok(Err(e)) => Err(e.into()),
+            Err(_) => Err("Test timed out - likely deadlock or extreme contention".into()),
         }
     }
 }

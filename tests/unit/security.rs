@@ -83,7 +83,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_request_validation_middleware() {
+    async fn test_request_validation_middleware() -> Result<(), Box<dyn std::error::Error>> {
         let app = Router::new()
             .route("/test", get(|| async { "OK" }))
             .layer(axum::middleware::from_fn(request_validation_middleware));
@@ -92,15 +92,15 @@ mod tests {
         let request = Request::builder()
             .uri("/test")
             .method(Method::TRACE)
-            .body(Body::empty())
-            .unwrap();
+            .body(Body::empty())?;
 
-        let response = app.oneshot(request).await.unwrap();
+        let response = app.oneshot(request).await?;
         assert_eq!(response.status(), StatusCode::METHOD_NOT_ALLOWED);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_uri_validation() {
+    async fn test_uri_validation() -> Result<(), Box<dyn std::error::Error>> {
         let app = Router::new()
             .route("/test", get(|| async { "OK" }))
             .layer(axum::middleware::from_fn(request_validation_middleware));
@@ -108,11 +108,11 @@ mod tests {
         // Test URI with null byte - should be rejected
         let request = Request::builder()
             .uri("/test%00")
-            .body(Body::empty())
-            .unwrap();
+            .body(Body::empty())?;
 
-        let response = app.oneshot(request).await.unwrap();
+        let response = app.oneshot(request).await?;
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        Ok(())
     }
 
     #[tokio::test]

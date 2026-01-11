@@ -14,8 +14,8 @@ mod tests {
     use mcp_context_browser::infrastructure::di::factory::ServiceProviderInterface;
 
     fn get_test_http_client(
-    ) -> Arc<dyn mcp_context_browser::adapters::http_client::HttpClientProvider> {
-        Arc::new(HttpClientPool::new().unwrap())
+    ) -> Result<Arc<dyn mcp_context_browser::adapters::http_client::HttpClientProvider>, Box<dyn std::error::Error>> {
+        Ok(Arc::new(HttpClientPool::new()?))
     }
 
     fn get_ollama_config() -> EmbeddingConfig {
@@ -35,7 +35,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_openai_mock_embedding() {
+    async fn test_openai_mock_embedding() -> Result<(), Box<dyn std::error::Error>> {
         // Use null provider for testing instead of external mock server
         let config = mcp_context_browser::domain::types::EmbeddingConfig {
             provider: "mock".to_string(),
@@ -47,26 +47,25 @@ mod tests {
         };
         let service_provider =
             mcp_context_browser::infrastructure::di::factory::ServiceProvider::new();
-        let http_client = get_test_http_client();
+        let http_client = get_test_http_client()?;
 
         let embedding_provider = service_provider
             .get_embedding_provider(&config, http_client.clone())
-            .await
-            .expect("Failed to create mock embedding provider");
+            .await?;
 
         let test_text = "This is a test text for embedding";
         let embedding = embedding_provider
             .embed(test_text)
-            .await
-            .expect("Failed to get embedding from mock provider");
+            .await?;
 
         assert_eq!(embedding.model, "null");
         assert_eq!(embedding.dimensions, 1);
         assert!(!embedding.vector.is_empty());
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_openai_mock_batch_embedding() {
+    async fn test_openai_mock_batch_embedding() -> Result<(), Box<dyn std::error::Error>> {
         // Use null provider for testing instead of external mock server
         let config = mcp_context_browser::domain::types::EmbeddingConfig {
             provider: "mock".to_string(),
@@ -78,12 +77,11 @@ mod tests {
         };
         let service_provider =
             mcp_context_browser::infrastructure::di::factory::ServiceProvider::new();
-        let http_client = get_test_http_client();
+        let http_client = get_test_http_client()?;
 
         let embedding_provider = service_provider
             .get_embedding_provider(&config, http_client.clone())
-            .await
-            .expect("Failed to create mock embedding provider");
+            .await?;
 
         let test_texts = vec![
             "First test text".to_string(),
@@ -93,8 +91,7 @@ mod tests {
 
         let embeddings = embedding_provider
             .embed_batch(&test_texts)
-            .await
-            .expect("Failed to get batch embeddings from mock provider");
+            .await?;
 
         assert_eq!(embeddings.len(), 3);
         for embedding in &embeddings {
@@ -102,33 +99,33 @@ mod tests {
             assert_eq!(embedding.dimensions, 1);
             assert!(!embedding.vector.is_empty());
         }
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_ollama_embedding() {
+    async fn test_ollama_embedding() -> Result<(), Box<dyn std::error::Error>> {
         let config = get_ollama_config();
         let service_provider =
             mcp_context_browser::infrastructure::di::factory::ServiceProvider::new();
-        let http_client = get_test_http_client();
+        let http_client = get_test_http_client()?;
 
         let embedding_provider = service_provider
             .get_embedding_provider(&config, http_client.clone())
-            .await
-            .expect("Failed to create Ollama embedding provider");
+            .await?;
 
         let test_text = "This is a test text for Ollama embedding";
         let embedding = embedding_provider
             .embed(test_text)
-            .await
-            .expect("Failed to get embedding from Ollama");
+            .await?;
 
         assert_eq!(embedding.model, "nomic-embed-text");
         assert_eq!(embedding.dimensions, 768);
         assert!(!embedding.vector.is_empty());
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_milvus_vector_store_operations() {
+    async fn test_milvus_vector_store_operations() -> Result<(), Box<dyn std::error::Error>> {
         let config = mcp_context_browser::domain::types::VectorStoreConfig {
             provider: "in-memory".to_string(),
             address: None,
@@ -138,12 +135,11 @@ mod tests {
         };
         let service_provider =
             mcp_context_browser::infrastructure::di::factory::ServiceProvider::new();
-        let http_client = get_test_http_client();
+        let http_client = get_test_http_client()?;
 
         let vector_store_provider = service_provider
             .get_vector_store_provider(&config)
-            .await
-            .expect("Failed to create in-memory vector store provider");
+            .await?;
 
         let collection_name = "test_integration_collection";
         let dimensions = 768;
@@ -151,22 +147,19 @@ mod tests {
         // Test collection creation
         vector_store_provider
             .create_collection(collection_name, dimensions)
-            .await
-            .expect("Failed to create collection");
+            .await?;
 
         // Test collection exists
         let exists = vector_store_provider
             .collection_exists(collection_name)
-            .await
-            .expect("Failed to check collection existence");
+            .await?;
         assert!(exists);
 
         // Test embedding provider for sample data
         let embedding_config = get_ollama_config();
         let embedding_provider = service_provider
             .get_embedding_provider(&embedding_config, http_client.clone())
-            .await
-            .expect("Failed to create embedding provider");
+            .await?;
 
         let test_texts = vec![
             "This is a sample Rust function".to_string(),
@@ -175,8 +168,7 @@ mod tests {
 
         let embeddings = embedding_provider
             .embed_batch(&test_texts)
-            .await
-            .expect("Failed to get embeddings for test data");
+            .await?;
 
         // Create metadata for the embeddings
         let metadata: Vec<std::collections::HashMap<String, serde_json::Value>> = vec![
@@ -219,16 +211,14 @@ mod tests {
         // Test vector insertion
         let ids = vector_store_provider
             .insert_vectors(collection_name, &embeddings, metadata)
-            .await
-            .expect("Failed to insert vectors");
+            .await?;
         assert_eq!(ids.len(), 2);
 
         // Test search
         let query_embedding = &embeddings[0];
         let search_results = vector_store_provider
             .search_similar(collection_name, &query_embedding.vector, 5, None)
-            .await
-            .expect("Failed to search similar vectors");
+            .await?;
 
         assert!(!search_results.is_empty());
         assert!(search_results[0].score >= 0.0);
@@ -236,25 +226,23 @@ mod tests {
         // Test stats
         let stats = vector_store_provider
             .get_stats(collection_name)
-            .await
-            .expect("Failed to get collection stats");
+            .await?;
         assert!(stats.contains_key("vectors_count"));
 
         // Test collection deletion
         vector_store_provider
             .delete_collection(collection_name)
-            .await
-            .expect("Failed to delete collection");
+            .await?;
 
         let exists_after_delete = vector_store_provider
             .collection_exists(collection_name)
-            .await
-            .expect("Failed to check collection existence after delete");
+            .await?;
         assert!(!exists_after_delete);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_full_pipeline_openai_milvus() {
+    async fn test_full_pipeline_openai_milvus() -> Result<(), Box<dyn std::error::Error>> {
         let embedding_config = mcp_context_browser::domain::types::EmbeddingConfig {
             provider: "mock".to_string(),
             model: "test-model".to_string(),
@@ -272,25 +260,22 @@ mod tests {
         };
         let service_provider =
             mcp_context_browser::infrastructure::di::factory::ServiceProvider::new();
-        let http_client = get_test_http_client();
+        let http_client = get_test_http_client()?;
 
         let embedding_provider = service_provider
             .get_embedding_provider(&embedding_config, http_client.clone())
-            .await
-            .expect("Failed to create mock embedding provider");
+            .await?;
 
         let vector_store_provider = service_provider
             .get_vector_store_provider(&vector_config)
-            .await
-            .expect("Failed to create in-memory vector store provider");
+            .await?;
 
         let collection_name = "test_pipeline_collection";
 
         // Create collection
         vector_store_provider
             .create_collection(collection_name, 1536)
-            .await
-            .expect("Failed to create collection");
+            .await?;
 
         // Generate embeddings
         let code_samples = vec![
@@ -301,8 +286,7 @@ mod tests {
 
         let embeddings = embedding_provider
             .embed_batch(&code_samples)
-            .await
-            .expect("Failed to generate embeddings");
+            .await?;
 
         // Create metadata
         let metadata: Vec<std::collections::HashMap<String, serde_json::Value>> = code_samples
@@ -333,8 +317,7 @@ mod tests {
         // Insert into vector store
         let ids = vector_store_provider
             .insert_vectors(collection_name, &embeddings, metadata)
-            .await
-            .expect("Failed to insert vectors");
+            .await?;
 
         assert_eq!(ids.len(), 3);
 
@@ -342,13 +325,11 @@ mod tests {
         let query_text = "struct with name field";
         let query_embedding = embedding_provider
             .embed(query_text)
-            .await
-            .expect("Failed to embed query");
+            .await?;
 
         let results = vector_store_provider
             .search_similar(collection_name, &query_embedding.vector, 2, None)
-            .await
-            .expect("Failed to search");
+            .await?;
 
         assert!(!results.is_empty());
         assert!(results[0].score > 0.0);
@@ -356,12 +337,12 @@ mod tests {
         // Cleanup
         vector_store_provider
             .delete_collection(collection_name)
-            .await
-            .expect("Failed to cleanup collection");
+            .await?;
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_provider_error_handling() {
+    async fn test_provider_error_handling() -> Result<(), Box<dyn std::error::Error>> {
         // Test with invalid OpenAI configuration
         let invalid_config = EmbeddingConfig {
             provider: "openai".to_string(),
@@ -374,35 +355,34 @@ mod tests {
 
         let service_provider =
             mcp_context_browser::infrastructure::di::factory::ServiceProvider::new();
-        let http_client = get_test_http_client();
+        let http_client = get_test_http_client()?;
 
         let result = service_provider
             .get_embedding_provider(&invalid_config, http_client.clone())
             .await;
         assert!(result.is_ok()); // Provider creation should succeed
 
-        let provider = result.unwrap();
+        let provider = result?;
         let embedding_result = provider.embed("test").await;
         assert!(embedding_result.is_err()); // But embedding should fail with invalid key
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_ollama_real_provider_integration() {
+    async fn test_ollama_real_provider_integration() -> Result<(), Box<dyn std::error::Error>> {
         let config = get_ollama_config();
         let service_provider =
             mcp_context_browser::infrastructure::di::factory::ServiceProvider::new();
-        let http_client = get_test_http_client();
+        let http_client = get_test_http_client()?;
 
         let embedding_provider = service_provider
             .get_embedding_provider(&config, http_client.clone())
-            .await
-            .expect("Failed to create Ollama embedding provider");
+            .await?;
 
         let test_text = "This is a test text for real Ollama embedding generation";
         let embedding = embedding_provider
             .embed(test_text)
-            .await
-            .expect("Failed to get embedding from real Ollama");
+            .await?;
 
         assert_eq!(embedding.model, "nomic-embed-text");
         assert_eq!(embedding.dimensions, 768);
@@ -414,19 +394,19 @@ mod tests {
             assert!(value.is_finite(), "Embedding value should be finite");
             assert!(!value.is_nan(), "Embedding value should not be NaN");
         }
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_ollama_real_batch_embedding_integration() {
+    async fn test_ollama_real_batch_embedding_integration() -> Result<(), Box<dyn std::error::Error>> {
         let config = get_ollama_config();
         let service_provider =
             mcp_context_browser::infrastructure::di::factory::ServiceProvider::new();
-        let http_client = get_test_http_client();
+        let http_client = get_test_http_client()?;
 
         let embedding_provider = service_provider
             .get_embedding_provider(&config, http_client.clone())
-            .await
-            .expect("Failed to create Ollama embedding provider");
+            .await?;
 
         let test_texts = vec![
             "First test text for batch processing".to_string(),
@@ -436,8 +416,7 @@ mod tests {
 
         let embeddings = embedding_provider
             .embed_batch(&test_texts)
-            .await
-            .expect("Failed to get batch embeddings from real Ollama");
+            .await?;
 
         assert_eq!(embeddings.len(), 3);
         for (i, embedding) in embeddings.iter().enumerate() {
@@ -460,10 +439,11 @@ mod tests {
                 );
             }
         }
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_ollama_real_different_models() {
+    async fn test_ollama_real_different_models() -> Result<(), Box<dyn std::error::Error>> {
         // Test with different models if available
         let models_to_test = vec!["nomic-embed-text"];
 
@@ -482,17 +462,15 @@ mod tests {
 
             let service_provider =
                 mcp_context_browser::infrastructure::di::factory::ServiceProvider::new();
-            let http_client = get_test_http_client();
+            let http_client = get_test_http_client()?;
             let embedding_provider = service_provider
                 .get_embedding_provider(&config, http_client.clone())
-                .await
-                .unwrap_or_else(|_| panic!("Failed to create Ollama provider for model {}", model));
+                .await?;
 
             let test_text = &format!("Test text for model {}", model);
             let embedding = embedding_provider
                 .embed(test_text)
-                .await
-                .unwrap_or_else(|_| panic!("Failed to get embedding for model {}", model));
+                .await?;
 
             assert_eq!(embedding.model, model);
             assert!(!embedding.vector.is_empty());
@@ -504,31 +482,31 @@ mod tests {
                 assert!(!value.is_nan());
             }
         }
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_ollama_real_empty_batch() {
+    async fn test_ollama_real_empty_batch() -> Result<(), Box<dyn std::error::Error>> {
         let config = get_ollama_config();
         let service_provider =
             mcp_context_browser::infrastructure::di::factory::ServiceProvider::new();
-        let http_client = get_test_http_client();
+        let http_client = get_test_http_client()?;
 
         let embedding_provider = service_provider
             .get_embedding_provider(&config, http_client.clone())
-            .await
-            .expect("Failed to create Ollama embedding provider");
+            .await?;
 
         let empty_texts: Vec<String> = vec![];
         let embeddings = embedding_provider
             .embed_batch(&empty_texts)
-            .await
-            .expect("Failed to handle empty batch");
+            .await?;
 
         assert!(embeddings.is_empty());
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_ollama_real_error_handling() {
+    async fn test_ollama_real_error_handling() -> Result<(), Box<dyn std::error::Error>> {
         // Test with invalid Ollama URL
         let invalid_config = EmbeddingConfig {
             provider: "ollama".to_string(),
@@ -541,55 +519,54 @@ mod tests {
 
         let service_provider =
             mcp_context_browser::infrastructure::di::factory::ServiceProvider::new();
-        let http_client = get_test_http_client();
+        let http_client = get_test_http_client()?;
         let embedding_provider = service_provider
             .get_embedding_provider(&invalid_config, http_client.clone())
-            .await
-            .expect("Provider creation should succeed");
+            .await?;
 
         let embedding_result = embedding_provider.embed("test").await;
         assert!(embedding_result.is_err(), "Should fail with invalid host");
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_ollama_real_large_text() {
+    async fn test_ollama_real_large_text() -> Result<(), Box<dyn std::error::Error>> {
         let config = get_ollama_config();
         let service_provider =
             mcp_context_browser::infrastructure::di::factory::ServiceProvider::new();
-        let http_client = get_test_http_client();
+        let http_client = get_test_http_client()?;
 
         let embedding_provider = service_provider
             .get_embedding_provider(&config, http_client.clone())
-            .await
-            .expect("Failed to create Ollama embedding provider");
+            .await?;
 
         // Create a moderately sized text that should work within token limits
         let large_text = "This is a test text for embedding. ".repeat(20); // ~840 characters
 
         let embedding = embedding_provider
             .embed(&large_text)
-            .await
-            .expect("Failed to embed large text");
+            .await?;
 
         assert_eq!(embedding.model, "nomic-embed-text");
         assert_eq!(embedding.dimensions, 768);
         assert!(!embedding.vector.is_empty());
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_ollama_real_provider_metadata() {
+    async fn test_ollama_real_provider_metadata() -> Result<(), Box<dyn std::error::Error>> {
         let config = get_ollama_config();
         let service_provider =
             mcp_context_browser::infrastructure::di::factory::ServiceProvider::new();
-        let http_client = get_test_http_client();
+        let http_client = get_test_http_client()?;
 
         let embedding_provider = service_provider
             .get_embedding_provider(&config, http_client.clone())
-            .await
-            .expect("Failed to create Ollama embedding provider");
+            .await?;
 
         // Test provider metadata
         assert_eq!(embedding_provider.provider_name(), "ollama");
         assert_eq!(embedding_provider.dimensions(), 768); // nomic-embed-text dimensions
+        Ok(())
     }
 }

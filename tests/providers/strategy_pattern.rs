@@ -43,7 +43,7 @@ mod generic_context_service_tests {
     }
 
     #[test]
-    fn test_generic_context_service_operations() {
+    fn test_generic_context_service_operations() -> Result<(), Box<dyn std::error::Error>> {
         let embedding_provider = Arc::new(MockEmbeddingProvider::new());
         let vector_store_provider = Arc::new(InMemoryVectorStoreProvider::new());
 
@@ -55,13 +55,13 @@ mod generic_context_service_tests {
 
         // Test that we can embed text
         let text = "fn hello() { println!(\"Hello, world!\"); }";
-        let result = tokio::runtime::Runtime::new()
-            .unwrap()
+        let result = tokio::runtime::Runtime::new()?
             .block_on(async { context_service.embed_text(text).await });
 
         assert!(result.is_ok());
-        let embedding = result.unwrap();
+        let embedding = result?;
         assert_eq!(embedding.vector.len(), 384);
+        Ok(())
     }
 
     #[test]
@@ -173,7 +173,7 @@ mod integration_tests {
     use super::*;
 
     #[test]
-    fn test_full_strategy_pattern_workflow() {
+    fn test_full_strategy_pattern_workflow() -> Result<(), Box<dyn std::error::Error>> {
         // Test a complete workflow using the strategy pattern:
         // 1. Create providers (strategies)
         // 2. Compose them into a service
@@ -193,11 +193,11 @@ mod integration_tests {
         assert_eq!(context_service.embedding_dimensions(), 384);
 
         // Test that the service can be used in async context
-        let result = tokio::runtime::Runtime::new()
-            .unwrap()
+        let result = tokio::runtime::Runtime::new()?
             .block_on(async { context_service.embed_text("test code").await });
 
         assert!(result.is_ok());
+        Ok(())
     }
 
     #[test]

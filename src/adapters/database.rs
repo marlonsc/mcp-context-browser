@@ -268,31 +268,28 @@ mod tests {
     }
 
     #[test]
-    fn test_database_pool_disabled() {
+    fn test_database_pool_disabled() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let config = DatabaseConfig {
             enabled: false,
             ..Default::default()
         };
-        let pool = DatabasePool::new(config).expect("Should be able to create disabled pool");
+        let pool = DatabasePool::new(config)?;
         assert!(!pool.is_enabled());
         assert!(pool.get_connection().is_err());
+        Ok(())
     }
 
     #[test]
-    fn test_database_pool_disabled_creation() {
+    fn test_database_pool_disabled_creation() -> std::result::Result<(), Box<dyn std::error::Error>>
+    {
         // Test creating a disabled database pool (new pattern)
         let config = DatabaseConfig {
             enabled: false,
             ..Default::default()
         };
-        let pool_result = DatabasePool::new(config);
-        assert!(
-            pool_result.is_ok(),
-            "Disabled pool creation failed: {:?}",
-            pool_result.err()
-        );
-        let pool = pool_result.unwrap();
+        let pool = DatabasePool::new(config)?;
         assert!(!pool.is_enabled());
+        Ok(())
     }
 
     #[test]

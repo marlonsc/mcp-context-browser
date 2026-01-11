@@ -515,22 +515,26 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_edgevec_collection_management() {
+    async fn test_edgevec_collection_management() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let config = EdgeVecConfig::default();
-        let provider = EdgeVecVectorStoreProvider::new(config).unwrap();
+        let provider = EdgeVecVectorStoreProvider::new(config)?;
 
-        assert!(provider
-            .create_collection("test_collection", 1536)
-            .await
-            .is_ok());
-        assert!(provider.collection_exists("test_collection").await.unwrap());
-        let stats = provider.get_stats("test_collection").await.unwrap();
-        assert_eq!(stats.get("collection").unwrap(), "test_collection");
-        assert_eq!(stats.get("vector_count").unwrap(), &serde_json::json!(0));
+        provider.create_collection("test_collection", 1536).await?;
+        assert!(provider.collection_exists("test_collection").await?);
+        let stats = provider.get_stats("test_collection").await?;
+        assert_eq!(
+            stats.get("collection").ok_or("collection not found")?,
+            "test_collection"
+        );
+        assert_eq!(
+            stats.get("vector_count").ok_or("vector_count not found")?,
+            &serde_json::json!(0)
+        );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_edgevec_vector_operations() {
+    async fn test_edgevec_vector_operations() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let config = EdgeVecConfig {
             dimensions: 3,
             hnsw_config: HnswConfig::default(),
@@ -539,8 +543,8 @@ mod tests {
             quantizer_config: Default::default(),
         };
 
-        let provider = EdgeVecVectorStoreProvider::new(config).unwrap();
-        provider.create_collection("test", 3).await.unwrap();
+        let provider = EdgeVecVectorStoreProvider::new(config)?;
+        provider.create_collection("test", 3).await?;
 
         let vectors = vec![
             Embedding {
@@ -578,21 +582,19 @@ mod tests {
             ]),
         ];
 
-        let ids = provider
-            .insert_vectors("test", &vectors, metadata)
-            .await
-            .unwrap();
+        let ids = provider.insert_vectors("test", &vectors, metadata).await?;
         assert_eq!(ids.len(), 3);
 
         let query = vec![1.0, 0.1, 0.1];
-        let results = provider
-            .search_similar("test", &query, 2, None)
-            .await
-            .unwrap();
+        let results = provider.search_similar("test", &query, 2, None).await?;
         assert_eq!(results.len(), 2);
 
-        provider.delete_vectors("test", &ids[..1]).await.unwrap();
-        let stats = provider.get_stats("test").await.unwrap();
-        assert_eq!(stats.get("vector_count").unwrap(), &serde_json::json!(2));
+        provider.delete_vectors("test", &ids[..1]).await?;
+        let stats = provider.get_stats("test").await?;
+        assert_eq!(
+            stats.get("vector_count").ok_or("vector_count not found")?,
+            &serde_json::json!(2)
+        );
+        Ok(())
     }
 }

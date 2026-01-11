@@ -554,27 +554,27 @@ mod tests {
     use crate::infrastructure::di::registry::ProviderRegistry;
 
     #[tokio::test]
-    async fn test_provider_router_creation() {
+    async fn test_provider_router_creation() -> std::result::Result<(), Box<dyn std::error::Error>>
+    {
         let registry = Arc::new(ProviderRegistry::new());
-        let router = ProviderRouter::with_defaults(Arc::clone(&registry))
-            .await
-            .unwrap();
+        let router = ProviderRouter::with_defaults(Arc::clone(&registry)).await?;
 
         let stats = router.get_statistics().await;
         assert_eq!(stats.total_providers, 0);
         assert_eq!(stats.healthy_providers, 0);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_provider_selection_with_no_providers() {
+    async fn test_provider_selection_with_no_providers(
+    ) -> std::result::Result<(), Box<dyn std::error::Error>> {
         let registry = Arc::new(ProviderRegistry::new());
-        let router = ProviderRouter::with_defaults(Arc::clone(&registry))
-            .await
-            .unwrap();
+        let router = ProviderRouter::with_defaults(Arc::clone(&registry)).await?;
 
         let context = ProviderContext::default();
         let result = router.select_embedding_provider(&context).await;
         assert!(result.is_err());
+        Ok(())
     }
 
     #[tokio::test]

@@ -458,7 +458,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_circuit_breaker_successful_operations() {
+    async fn test_circuit_breaker_successful_operations() -> std::result::Result<(), Box<dyn std::error::Error>>
+    {
         let id = format!("test_success_{}", uuid::Uuid::new_v4());
         let config = CircuitBreakerConfig {
             persistence_enabled: false,
@@ -466,9 +467,11 @@ mod tests {
         };
         let cb = CircuitBreaker::with_config(id, config).await;
         let result: Result<i32> = cb.call(|| async { Ok(42) }).await;
-        assert_eq!(result.unwrap(), 42);
+        let value = result?;
+        assert_eq!(value, 42);
         assert_eq!(cb.state().await, CircuitBreakerState::Closed);
         assert_eq!(cb.metrics().await.successful_requests, 1);
+        Ok(())
     }
 
     #[tokio::test]
@@ -499,7 +502,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_circuit_breaker_reset() {
+    async fn test_circuit_breaker_reset() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let id = format!("test_reset_{}", uuid::Uuid::new_v4());
         let config = CircuitBreakerConfig {
             failure_threshold: 1,
@@ -524,11 +527,13 @@ mod tests {
         // Should transition to half-open and then close on success
         let result: Result<i32> = cb.call(|| async { Ok(42) }).await;
         assert!(result.is_ok(), "Call should succeed in half-open state");
-        assert_eq!(result.unwrap(), 42);
+        let value = result?;
+        assert_eq!(value, 42);
 
         // Give the actor time to process the success message
         tokio::time::sleep(Duration::from_millis(50)).await;
 
         assert_eq!(cb.state().await, CircuitBreakerState::Closed);
+        Ok(())
     }
 }

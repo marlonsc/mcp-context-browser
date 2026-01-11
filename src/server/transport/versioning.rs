@@ -86,9 +86,15 @@ pub struct VersionChecker {
 
 impl VersionChecker {
     /// Create a new version checker
+    ///
+    /// Falls back to version 0.0.0 if CARGO_PKG_VERSION cannot be parsed
+    /// (should never happen since Cargo validates version format)
     pub fn new(config: VersionConfig) -> Self {
-        let current_version =
-            SemVer::parse(env!("CARGO_PKG_VERSION")).expect("Invalid CARGO_PKG_VERSION");
+        let current_version = SemVer::parse(env!("CARGO_PKG_VERSION")).unwrap_or(SemVer {
+            major: 0,
+            minor: 0,
+            patch: 0,
+        });
 
         Self {
             current_version,
@@ -208,32 +214,36 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_semver_parse() {
-        let v = SemVer::parse("0.1.0").unwrap();
+    fn test_semver_parse() -> std::result::Result<(), Box<dyn std::error::Error>> {
+        let v = SemVer::parse("0.1.0").ok_or("Failed to parse version 0.1.0")?;
         assert_eq!(v.major, 0);
         assert_eq!(v.minor, 1);
         assert_eq!(v.patch, 0);
 
-        let v = SemVer::parse("v1.2.3").unwrap();
+        let v = SemVer::parse("v1.2.3").ok_or("Failed to parse version v1.2.3")?;
         assert_eq!(v.major, 1);
         assert_eq!(v.minor, 2);
         assert_eq!(v.patch, 3);
 
-        let v = SemVer::parse("2.5").unwrap();
+        let v = SemVer::parse("2.5").ok_or("Failed to parse version 2.5")?;
         assert_eq!(v.major, 2);
         assert_eq!(v.minor, 5);
         assert_eq!(v.patch, 0);
+
+        Ok(())
     }
 
     #[test]
-    fn test_minor_distance() {
-        let v1 = SemVer::parse("1.2.0").unwrap();
-        let v2 = SemVer::parse("1.3.0").unwrap();
-        let v3 = SemVer::parse("2.2.0").unwrap();
+    fn test_minor_distance() -> std::result::Result<(), Box<dyn std::error::Error>> {
+        let v1 = SemVer::parse("1.2.0").ok_or("Failed to parse version 1.2.0")?;
+        let v2 = SemVer::parse("1.3.0").ok_or("Failed to parse version 1.3.0")?;
+        let v3 = SemVer::parse("2.2.0").ok_or("Failed to parse version 2.2.0")?;
 
         assert_eq!(v1.minor_distance(&v2), Some(1));
         assert_eq!(v2.minor_distance(&v1), Some(1));
         assert_eq!(v1.minor_distance(&v3), None); // Different major
+
+        Ok(())
     }
 
     #[test]

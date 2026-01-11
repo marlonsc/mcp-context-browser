@@ -31,7 +31,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_rate_limiter_disabled() {
+    async fn test_rate_limiter_disabled() -> Result<(), Box<dyn std::error::Error>> {
         let config = RateLimitConfig {
             enabled: false,
             ..Default::default()
@@ -40,10 +40,11 @@ mod tests {
         let limiter = RateLimiter::new(config);
         let key = RateLimitKey::Ip("127.0.0.1".to_string());
 
-        let result = limiter.check_rate_limit(&key).await.unwrap();
+        let result = limiter.check_rate_limit(&key).await?;
         assert!(result.allowed);
         assert_eq!(result.remaining, u32::MAX);
         assert_eq!(result.reset_in_seconds, 0);
+        Ok(())
     }
 
     #[tokio::test]
@@ -121,7 +122,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_rate_limiter_memory_cache() {
+    async fn test_rate_limiter_memory_cache() -> Result<(), Box<dyn std::error::Error>> {
         let config = RateLimitConfig {
             enabled: false, // Disable to avoid Redis dependency
             ..Default::default()
@@ -131,13 +132,14 @@ mod tests {
         let key = RateLimitKey::Ip("127.0.0.1".to_string());
 
         // First call
-        let result1 = limiter.check_rate_limit(&key).await.unwrap();
+        let result1 = limiter.check_rate_limit(&key).await?;
 
         // Second call (should use cache)
-        let result2 = limiter.check_rate_limit(&key).await.unwrap();
+        let result2 = limiter.check_rate_limit(&key).await?;
 
         assert_eq!(result1.allowed, result2.allowed);
         assert_eq!(result1.remaining, result2.remaining);
+        Ok(())
     }
 }
 
@@ -146,7 +148,7 @@ mod integration_tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_http_middleware_integration() {
+    async fn test_http_middleware_integration() -> Result<(), Box<dyn std::error::Error>> {
         let config = RateLimitConfig {
             enabled: false, // Disable Redis dependency for test
             ..Default::default()
@@ -155,12 +157,13 @@ mod integration_tests {
 
         // Test basic rate limiting functionality instead of HTTP integration
         let key = RateLimitKey::Ip("127.0.0.1".to_string());
-        let result = limiter.check_rate_limit(&key).await.unwrap();
+        let result = limiter.check_rate_limit(&key).await?;
         assert!(result.allowed);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_http_rate_limit_headers() {
+    async fn test_http_rate_limit_headers() -> Result<(), Box<dyn std::error::Error>> {
         let config = RateLimitConfig {
             enabled: false, // Disable Redis dependency
             max_requests_per_window: 10,
@@ -171,8 +174,9 @@ mod integration_tests {
 
         // Test basic rate limiting functionality
         let key = RateLimitKey::Ip("127.0.0.1".to_string());
-        let result = limiter.check_rate_limit(&key).await.unwrap();
+        let result = limiter.check_rate_limit(&key).await?;
         assert!(result.allowed);
         assert_eq!(result.limit, 15); // 10 + 5 burst allowance
+        Ok(())
     }
 }

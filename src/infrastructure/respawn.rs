@@ -82,12 +82,12 @@ impl RespawnManager {
 
         // Get current arguments
         let args: Vec<CString> = std::env::args()
-            .map(|s| CString::new(s).expect("Argument contains null byte"))
+            .filter_map(|s| CString::new(s).ok())
             .collect();
 
         // Get current environment
         let env: Vec<CString> = std::env::vars()
-            .map(|(k, v)| CString::new(format!("{}={}", k, v)).expect("Env var contains null byte"))
+            .filter_map(|(k, v)| CString::new(format!("{}={}", k, v)).ok())
             .collect();
 
         // Convert binary path to CString
@@ -168,15 +168,17 @@ mod tests {
     }
 
     #[test]
-    fn test_respawn_manager_creation() {
+    fn test_respawn_manager_creation() -> Result<(), Box<dyn std::error::Error>> {
         // This test may fail in some environments without /proc
         if can_respawn() {
-            let manager = RespawnManager::with_defaults().unwrap();
+            let manager = RespawnManager::with_defaults()?;
+            let path_str = manager.binary_path().to_string_lossy();
             assert!(
                 manager.binary_path().exists()
-                    || manager.binary_path().to_str().unwrap().contains("target")
+                    || path_str.contains("target")
             );
         }
+        Ok(())
     }
 
     #[test]
@@ -189,11 +191,12 @@ mod tests {
     }
 
     #[test]
-    fn test_get_binary_path() {
+    fn test_get_binary_path() -> Result<(), Box<dyn std::error::Error>> {
         if can_respawn() {
-            let path = get_binary_path().unwrap();
+            let path = get_binary_path()?;
             // The path should exist or at least be a valid path
             assert!(!path.to_string_lossy().is_empty());
         }
+        Ok(())
     }
 }

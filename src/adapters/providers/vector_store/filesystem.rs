@@ -679,16 +679,16 @@ mod tests {
     use tempfile::TempDir;
 
     #[tokio::test]
-    async fn test_filesystem_vector_store() {
-        let temp_dir = TempDir::new().unwrap();
+    async fn test_filesystem_vector_store() -> std::result::Result<(), Box<dyn std::error::Error>> {
+        let temp_dir = TempDir::new()?;
         let config = FilesystemVectorStoreConfig {
             base_path: temp_dir.path().to_path_buf(),
             dimensions: 3,
             ..Default::default()
         };
 
-        let store = FilesystemVectorStore::new(config).await.unwrap();
-        store.create_collection("test", 3).await.unwrap();
+        let store = FilesystemVectorStore::new(config).await?;
+        store.create_collection("test", 3).await?;
 
         // Insert vectors
         let vectors = vec![Embedding {
@@ -705,46 +705,53 @@ mod tests {
             meta
         }];
 
-        let ids = store
-            .insert_vectors("test", &vectors, metadata)
-            .await
-            .unwrap();
+        let ids = store.insert_vectors("test", &vectors, metadata).await?;
         assert_eq!(ids.len(), 1);
 
         // Search similar
         let query = vec![1.0, 0.0, 0.0];
-        let results = store.search_similar("test", &query, 5, None).await.unwrap();
+        let results = store.search_similar("test", &query, 5, None).await?;
         assert!(!results.is_empty());
         assert_eq!(results[0].file_path, "test.rs");
 
         // Check stats
-        let stats = store.get_stats("test").await.unwrap();
-        assert_eq!(stats.get("total_vectors").unwrap().as_u64().unwrap(), 1);
+        let stats = store.get_stats("test").await?;
+        let total_vectors = stats
+            .get("total_vectors")
+            .and_then(|v| v.as_u64())
+            .ok_or("total_vectors not found")?;
+        assert_eq!(total_vectors, 1);
 
         // Delete vectors
-        store.delete_vectors("test", &ids).await.unwrap();
+        store.delete_vectors("test", &ids).await?;
 
         // Check stats after deletion
-        let stats = store.get_stats("test").await.unwrap();
-        assert_eq!(stats.get("total_vectors").unwrap().as_u64().unwrap(), 0);
+        let stats = store.get_stats("test").await?;
+        let total_vectors = stats
+            .get("total_vectors")
+            .and_then(|v| v.as_u64())
+            .ok_or("total_vectors not found")?;
+        assert_eq!(total_vectors, 0);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_collection_management() {
-        let temp_dir = TempDir::new().unwrap();
+    async fn test_collection_management() -> std::result::Result<(), Box<dyn std::error::Error>> {
+        let temp_dir = TempDir::new()?;
         let config = FilesystemVectorStoreConfig {
             base_path: temp_dir.path().to_path_buf(),
             ..Default::default()
         };
 
-        let store = FilesystemVectorStore::new(config).await.unwrap();
+        let store = FilesystemVectorStore::new(config).await?;
 
         // Create collection
-        store.create_collection("test1", 3).await.unwrap();
-        assert!(store.collection_exists("test1").await.unwrap());
+        store.create_collection("test1", 3).await?;
+        assert!(store.collection_exists("test1").await?);
 
         // Delete collection
-        store.delete_collection("test1").await.unwrap();
-        assert!(!store.collection_exists("test1").await.unwrap());
+        store.delete_collection("test1").await?;
+        assert!(!store.collection_exists("test1").await?);
+        Ok(())
     }
 }

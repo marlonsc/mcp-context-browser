@@ -24,7 +24,7 @@ mod test_utils {
         // We'll skip this test if the binary doesn't exist
         let binary_path = std::env::current_exe()?
             .parent()
-            .expect("Failed to get parent dir")
+            .ok_or("Failed to get parent dir")?
             .join("../../../target/debug/mcp-context-browser");
 
         if !binary_path.exists() {
@@ -42,8 +42,8 @@ mod test_utils {
             .stderr(std::process::Stdio::piped())
             .spawn()?;
 
-        let stdin = child.stdin.take().expect("Failed to get stdin");
-        let stdout = child.stdout.take().expect("Failed to get stdout");
+        let stdin = child.stdin.take().ok_or("Failed to get stdin")?;
+        let stdout = child.stdout.take().ok_or("Failed to get stdout")?;
 
         let mut stdin_writer = tokio::io::BufWriter::new(stdin);
         let mut stdout_reader = BufReader::new(stdout).lines();
@@ -232,10 +232,9 @@ mod mcp_server_tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_mcp_server_initialization() {
+    async fn test_mcp_server_initialization() -> Result<(), Box<dyn std::error::Error>> {
         let server = test_utils::create_test_server()
-            .await
-            .expect("Failed to create MCP server");
+            .await?;
 
         // Test that server info is available
         let server_info = server.get_info();
@@ -250,16 +249,17 @@ mod mcp_server_tests {
         );
 
         println!("✅ MCP server initialization test passed");
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_mcp_stdio_integration() {
+    async fn test_mcp_stdio_integration() -> Result<(), Box<dyn std::error::Error>> {
         // Test the full MCP protocol integration via stdio transport
         test_utils::run_stdio_integration_test()
-            .await
-            .expect("Stdio integration test failed");
+            .await?;
 
         println!("✅ MCP stdio integration test passed");
+        Ok(())
     }
 }
 
@@ -270,18 +270,17 @@ mod stdio_transport_tests {
     use tokio::time::{timeout, Duration};
 
     #[tokio::test]
-    async fn test_stdio_transport_basic() {
+    async fn test_stdio_transport_basic() -> Result<(), Box<dyn std::error::Error>> {
         // This test requires the binary to be built
         // We'll skip if binary doesn't exist
-        let binary_path = std::env::current_exe()
-            .expect("Failed to get current exe path")
+        let binary_path = std::env::current_exe()?
             .parent()
-            .expect("Failed to get parent dir")
+            .ok_or("Failed to get parent dir")?
             .join("../../../target/debug/mcp-context-browser");
 
         if !binary_path.exists() {
             println!("⚠️  Binary not found, skipping stdio transport test");
-            return;
+            return Ok(());
         }
 
         // Start the MCP server process
@@ -289,12 +288,11 @@ mod stdio_transport_tests {
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
-            .spawn()
-            .expect("Failed to start MCP server");
+            .spawn()?;
 
         // Get handles to stdin/stdout
-        let stdin = child.stdin.take().expect("Failed to get stdin");
-        let stdout = child.stdout.take().expect("Failed to get stdout");
+        let stdin = child.stdin.take().ok_or("Failed to get stdin")?;
+        let stdout = child.stdout.take().ok_or("Failed to get stdout")?;
 
         // Initialize MCP protocol - using newline-delimited JSON (NDJSON) format
         let init_message = r#"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test-client","version":"1.0.0"}}}"#;
@@ -305,16 +303,13 @@ mod stdio_transport_tests {
         // Send initialize request as NDJSON (JSON followed by newline)
         stdin_writer
             .write_all(format!("{}\n", init_message).as_bytes())
-            .await
-            .expect("Failed to send initialize request");
-        stdin_writer.flush().await.expect("Failed to flush");
+            .await?;
+        stdin_writer.flush().await?;
 
         // Read response with timeout (NDJSON)
         let response = timeout(Duration::from_secs(15), stdout_reader.next_line())
-            .await
-            .expect("Initialize response timeout")
-            .expect("Failed to read initialize response")
-            .expect("Empty response");
+            .await??
+            .ok_or("Empty response")?;
 
         // Should get a valid JSON-RPC response
         println!("DEBUG: Stdio test response: {}", response);
@@ -333,5 +328,6 @@ mod stdio_transport_tests {
         let _ = child.kill().await;
 
         println!("✅ MCP stdio transport test passed");
+        Ok(())
     }
 }

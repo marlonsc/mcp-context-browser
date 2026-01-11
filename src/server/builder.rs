@@ -134,9 +134,15 @@ impl McpServerBuilder {
         };
 
         // Initialize HTTP client if not provided
-        let http_client = self.http_client.unwrap_or_else(|| {
-            Arc::new(crate::adapters::http_client::HttpClientPool::new().unwrap())
-        });
+        let http_client = match self.http_client {
+            Some(client) => client,
+            None => {
+                Arc::new(
+                    crate::adapters::http_client::HttpClientPool::new()
+                        .map_err(|e| anyhow::anyhow!("Failed to create HTTP client pool: {}", e))?,
+                )
+            }
+        };
 
         // Initialize cache manager if not provided
         let cache_manager = match self.cache_manager {

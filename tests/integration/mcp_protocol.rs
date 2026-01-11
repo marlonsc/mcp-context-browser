@@ -14,14 +14,14 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_mcp_server_creation() {
-        let result = McpServer::new(None).await;
-        assert!(result.is_ok(), "MCP server should be created successfully");
+    async fn test_mcp_server_creation() -> Result<(), Box<dyn std::error::Error>> {
+        let _server = McpServer::new(None).await?;
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_server_info_structure() {
-        let server = McpServer::new(None).await.unwrap();
+    async fn test_server_info_structure() -> Result<(), Box<dyn std::error::Error>> {
+        let server = McpServer::new(None).await?;
         let info = server.get_info();
 
         // Check protocol version
@@ -53,7 +53,7 @@ mod tests {
             info.instructions.is_some(),
             "Server should provide instructions"
         );
-        let instructions = info.instructions.as_ref().unwrap();
+        let instructions = info.instructions.as_ref().ok_or("Missing instructions")?;
         assert!(
             instructions.contains("MCP Context Browser"),
             "Instructions should mention the server name"
@@ -66,13 +66,14 @@ mod tests {
             instructions.contains("search_code"),
             "Instructions should mention available tools"
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_server_instructions_comprehensive() {
-        let server = McpServer::new(None).await.unwrap();
+    async fn test_server_instructions_comprehensive() -> Result<(), Box<dyn std::error::Error>> {
+        let server = McpServer::new(None).await?;
         let info = server.get_info();
-        let instructions = info.instructions.as_ref().unwrap();
+        let instructions = info.instructions.as_ref().ok_or("Missing instructions")?;
 
         // Check that instructions cover all major aspects
         assert!(
@@ -100,6 +101,7 @@ mod tests {
             instructions.contains("Architecture"),
             "Should describe architecture"
         );
+        Ok(())
     }
 
     #[test]
@@ -157,7 +159,7 @@ mod tests {
     }
 
     #[test]
-    fn test_search_code_with_filters_validation() {
+    fn test_search_code_with_filters_validation() -> Result<(), Box<dyn std::error::Error>> {
         // Test that SearchCodeArgs can include filters
         let args = SearchCodeArgs {
             query: "function".to_string(),
@@ -178,7 +180,7 @@ mod tests {
         assert_eq!(args.limit, 10);
         assert!(args.filters.is_some());
 
-        let filters = args.filters.unwrap();
+        let filters = args.filters.ok_or("Missing filters")?;
         assert_eq!(
             filters.file_extensions,
             Some(vec!["rs".to_string(), "py".to_string()])
@@ -186,6 +188,7 @@ mod tests {
         assert_eq!(filters.languages, Some(vec!["rust".to_string()]));
         assert_eq!(filters.exclude_patterns, Some(vec!["test_*".to_string()]));
         assert_eq!(filters.min_score, Some(0.5));
+        Ok(())
     }
 
     #[test]
@@ -219,13 +222,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_server_capabilities_structure() {
-        let server = McpServer::new(None).await.unwrap();
+    async fn test_server_capabilities_structure() -> Result<(), Box<dyn std::error::Error>> {
+        let server = McpServer::new(None).await?;
         let info = server.get_info();
         let capabilities = &info.capabilities;
 
         // Tools capability should be enabled
-        let tools_capability = capabilities.tools.as_ref().unwrap();
+        let tools_capability = capabilities.tools.as_ref().ok_or("Missing tools capability")?;
         assert!(
             tools_capability.list_changed.is_none(),
             "List changed should be None for basic implementation"
@@ -244,11 +247,12 @@ mod tests {
             capabilities.logging.is_none(),
             "Logging should not be implemented yet"
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_server_implementation_info() {
-        let server = McpServer::new(None).await.unwrap();
+    async fn test_server_implementation_info() -> Result<(), Box<dyn std::error::Error>> {
+        let server = McpServer::new(None).await?;
         let info = server.get_info();
         let implementation = &info.server_info;
 
@@ -260,19 +264,21 @@ mod tests {
         assert!(implementation.icons.is_none());
         assert!(implementation.title.is_none());
         assert!(implementation.website_url.is_none());
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_server_initialization_with_dependencies() {
+    async fn test_server_initialization_with_dependencies() -> Result<(), Box<dyn std::error::Error>> {
         // This test ensures the server can be created with all its dependencies
         // In a real scenario, this would involve mock providers
-        let _server = McpServer::new(None).await.unwrap();
+        let _server = McpServer::new(None).await?;
 
         // Server creation succeeded - this is expected with mock/default providers
         assert!(
             _server.get_info().server_info.name == "MCP Context Browser",
             "Server should initialize successfully with correct name"
         );
+        Ok(())
     }
 
     #[tokio::test]
@@ -308,9 +314,9 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_server_tool_router_initialization() {
+    async fn test_server_tool_router_initialization() -> Result<(), Box<dyn std::error::Error>> {
         // Test that the server properly initializes its tool router
-        let _server = McpServer::new(None).await.unwrap();
+        let _server = McpServer::new(None).await?;
 
         // The server should have a tool router (internal implementation detail)
         // We can't directly test the router, but we can verify the server structure
@@ -318,13 +324,14 @@ mod tests {
             !_server.get_info().server_info.name.is_empty(),
             "Server with tool router initialized successfully"
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_server_instructions_formatting() {
-        let server = McpServer::new(None).await.unwrap();
+    async fn test_server_instructions_formatting() -> Result<(), Box<dyn std::error::Error>> {
+        let server = McpServer::new(None).await?;
         let info = server.get_info();
-        let instructions = info.instructions.as_ref().unwrap();
+        let instructions = info.instructions.as_ref().ok_or("Missing instructions")?;
 
         // Test that instructions are properly formatted for MCP clients
         assert!(
@@ -343,11 +350,12 @@ mod tests {
             instructions.contains("---"),
             "Should have proper section separation"
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_server_capabilities_compliance() {
-        let server = McpServer::new(None).await.unwrap();
+    async fn test_server_capabilities_compliance() -> Result<(), Box<dyn std::error::Error>> {
+        let server = McpServer::new(None).await?;
         let info = server.get_info();
 
         // Verify MCP protocol compliance
@@ -372,13 +380,14 @@ mod tests {
             info.instructions.is_some(),
             "Should provide usage instructions"
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_instructions_contain_essential_information() {
-        let server = McpServer::new(None).await.unwrap();
+    async fn test_instructions_contain_essential_information() -> Result<(), Box<dyn std::error::Error>> {
+        let server = McpServer::new(None).await?;
         let info = server.get_info();
-        let instructions = info.instructions.as_ref().unwrap();
+        let instructions = info.instructions.as_ref().ok_or("Missing instructions")?;
 
         // Essential information that should be in instructions
         let essential_phrases = vec![
@@ -404,13 +413,14 @@ mod tests {
             "Instructions should contain at least 4 essential phrases, found {}",
             found_count
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_instructions_provide_usage_guidance() {
-        let server = McpServer::new(None).await.unwrap();
+    async fn test_instructions_provide_usage_guidance() -> Result<(), Box<dyn std::error::Error>> {
+        let server = McpServer::new(None).await?;
         let info = server.get_info();
-        let instructions = info.instructions.as_ref().unwrap();
+        let instructions = info.instructions.as_ref().ok_or("Missing instructions")?;
 
         // Check for usage guidance
         assert!(
@@ -431,27 +441,28 @@ mod tests {
                 || instructions.contains("\"find"),
             "Instructions should provide usage examples"
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_server_info_serialization() {
-        let server = McpServer::new(None).await.unwrap();
+    async fn test_server_info_serialization() -> Result<(), Box<dyn std::error::Error>> {
+        let server = McpServer::new(None).await?;
         let info = server.get_info();
 
         // Test that the server info can be serialized (required for MCP protocol)
-        let serialized = serde_json::to_string(&info);
-        assert!(serialized.is_ok(), "ServerInfo should be serializable");
+        let serialized = serde_json::to_string(&info)?;
 
         // Test that it can be deserialized back
         let deserialized: rmcp::model::ServerInfo =
-            serde_json::from_str(&serialized.unwrap()).unwrap();
+            serde_json::from_str(&serialized)?;
         assert_eq!(deserialized.protocol_version, info.protocol_version);
         assert_eq!(deserialized.server_info.name, info.server_info.name);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_server_supports_required_mcp_features() {
-        let server = McpServer::new(None).await.unwrap();
+    async fn test_server_supports_required_mcp_features() -> Result<(), Box<dyn std::error::Error>> {
+        let server = McpServer::new(None).await?;
         let info = server.get_info();
 
         // Must support MCP protocol version 2024-11-05
@@ -463,6 +474,7 @@ mod tests {
 
         // Should have instructions for clients
         assert!(info.instructions.is_some());
-        assert!(!info.instructions.as_ref().unwrap().is_empty());
+        assert!(!info.instructions.as_ref().ok_or("Missing instructions")?.is_empty());
+        Ok(())
     }
 }

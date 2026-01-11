@@ -239,26 +239,23 @@ mod repository_unit_tests {
     }
 
     #[tokio::test]
-    async fn test_in_memory_collection_operations() {
+    async fn test_in_memory_collection_operations() -> Result<(), Box<dyn std::error::Error>> {
         let provider = InMemoryVectorStoreProvider::new();
 
         // Collection should not exist initially
-        let exists = provider.collection_exists("test_collection").await;
-        assert!(exists.is_ok());
-        assert!(!exists.unwrap());
+        let exists = provider.collection_exists("test_collection").await?;
+        assert!(!exists);
 
         // Create collection
-        let create_result = provider.create_collection("test_collection", 128).await;
-        assert!(create_result.is_ok());
+        provider.create_collection("test_collection", 128).await?;
 
         // Collection should exist now
-        let exists = provider.collection_exists("test_collection").await;
-        assert!(exists.is_ok());
-        assert!(exists.unwrap());
+        let exists = provider.collection_exists("test_collection").await?;
+        assert!(exists);
 
         // Delete collection
-        let delete_result = provider.delete_collection("test_collection").await;
-        assert!(delete_result.is_ok());
+        provider.delete_collection("test_collection").await?;
+        Ok(())
     }
 }
 
@@ -278,34 +275,30 @@ mod provider_unit_tests {
     }
 
     #[tokio::test]
-    async fn test_mock_embedding_provider_embed() {
+    async fn test_mock_embedding_provider_embed() -> Result<(), Box<dyn std::error::Error>> {
         let provider = MockEmbeddingProvider::new();
-        let result = provider.embed("test text").await;
-        assert!(result.is_ok());
-
-        let embedding = result.unwrap();
+        let embedding = provider.embed("test text").await?;
         // NullEmbeddingProvider returns dimension=1 for minimal test vectors
         assert_eq!(embedding.dimensions, 1);
         assert_eq!(embedding.vector.len(), 1);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_mock_embedding_provider_batch_embed() {
+    async fn test_mock_embedding_provider_batch_embed() -> Result<(), Box<dyn std::error::Error>> {
         let provider = MockEmbeddingProvider::new();
         let texts = vec![
             "text1".to_string(),
             "text2".to_string(),
             "text3".to_string(),
         ];
-        let result = provider.embed_batch(&texts).await;
-        assert!(result.is_ok());
-
-        let embeddings = result.unwrap();
+        let embeddings = provider.embed_batch(&texts).await?;
         assert_eq!(embeddings.len(), 3);
         for emb in embeddings {
             // NullEmbeddingProvider returns dimension=1 for minimal test vectors
             assert_eq!(emb.dimensions, 1);
         }
+        Ok(())
     }
 
     #[test]
@@ -357,7 +350,7 @@ mod service_unit_tests {
     }
 
     #[tokio::test]
-    async fn test_context_service_embed_text() {
+    async fn test_context_service_embed_text() -> Result<(), Box<dyn std::error::Error>> {
         let embedding_provider = Arc::new(MockEmbeddingProvider::new());
         let vector_store = Arc::new(InMemoryVectorStoreProvider::new());
         let (sender, receiver) = tokio::sync::mpsc::channel(100);
@@ -381,12 +374,10 @@ mod service_unit_tests {
         ));
         let service = ContextService::new(embedding_provider, vector_store, hybrid_search);
 
-        let result = service.embed_text("test query").await;
-        assert!(result.is_ok());
-
-        let embedding = result.unwrap();
+        let embedding = service.embed_text("test query").await?;
         // NullEmbeddingProvider returns dimension=1 for minimal test vectors
         assert_eq!(embedding.vector.len(), 1);
+        Ok(())
     }
 }
 

@@ -340,7 +340,7 @@ mod tests {
     }
 
     #[test]
-    fn test_generic_chunking_fallback() {
+    fn test_generic_chunking_fallback() -> Result<(), Box<dyn std::error::Error>> {
         let chunker = IntelligentChunker::new();
 
         // Test with unknown language
@@ -355,12 +355,18 @@ mod tests {
 
             let metadata = &chunk.metadata;
             assert!(metadata.is_object());
-            assert!(metadata.get("chunk_type").unwrap().as_str().unwrap() == "generic");
+            let chunk_type = metadata
+                .get("chunk_type")
+                .ok_or("Missing chunk_type")?
+                .as_str()
+                .ok_or("chunk_type is not a string")?;
+            assert_eq!(chunk_type, "generic");
         }
+        Ok(())
     }
 
     #[test]
-    fn test_unsupported_languages_use_generic_chunking() {
+    fn test_unsupported_languages_use_generic_chunking() -> Result<(), Box<dyn std::error::Error>> {
         let chunker = IntelligentChunker::new();
 
         // Test various unsupported languages that should use generic chunking
@@ -445,8 +451,11 @@ mod tests {
                 );
                 // Generic chunking should have chunk_type: "generic"
                 if let Some(chunk_type) = metadata.get("chunk_type") {
+                    let chunk_type_str = chunk_type.as_str().ok_or_else(|| {
+                        format!("chunk_type is not a string for {:?}", language)
+                    })?;
                     assert_eq!(
-                        chunk_type.as_str().unwrap(),
+                        chunk_type_str,
                         "generic",
                         "Should use generic chunking for {:?}",
                         language
@@ -454,6 +463,7 @@ mod tests {
                 }
             }
         }
+        Ok(())
     }
 
     // Helper function to convert language to file extension

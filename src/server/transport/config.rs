@@ -198,13 +198,15 @@ mod tests {
     }
 
     #[test]
-    fn test_transport_mode_serde() {
+    fn test_transport_mode_serde() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let json = r#""hybrid""#;
-        let mode: TransportMode = serde_json::from_str(json).unwrap();
+        let mode: TransportMode = serde_json::from_str(json)?;
         assert_eq!(mode, TransportMode::Hybrid);
 
         let json = r#""stdio""#;
-        let mode: TransportMode = serde_json::from_str(json).unwrap();
+        let mode: TransportMode = serde_json::from_str(json)?;
         assert_eq!(mode, TransportMode::Stdio);
+
+        Ok(())
     }
 }

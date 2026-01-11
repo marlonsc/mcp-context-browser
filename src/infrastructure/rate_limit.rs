@@ -198,7 +198,11 @@ impl RateLimiter {
             RateLimitStorage::Redis { client, .. } => {
                 let redis_config = match &self.config.backend {
                     RateLimitBackend::Redis { url, .. } => url,
-                    _ => unreachable!(),
+                    _ => {
+                        return Err(Error::internal(
+                            "Redis storage configured but backend is not Redis",
+                        ))
+                    }
                 };
 
                 let redis_client = Client::open(redis_config.as_str()).map_err(|e| {
