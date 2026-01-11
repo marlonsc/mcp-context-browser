@@ -14,11 +14,12 @@ mod tests {
     // ===== STRING VALIDATION TESTS =====
 
     #[test]
-    fn test_string_validator_not_empty_should_pass_for_non_empty_string() {
+    fn test_string_validator_not_empty_should_pass_for_non_empty_string() -> Result<(), Box<dyn std::error::Error>> {
         let validator = StringValidator::not_empty();
         let result = validator.validate("hello");
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), "hello");
+        assert_eq!(result?, "hello");
+        Ok(())
     }
 
     #[test]
@@ -26,10 +27,8 @@ mod tests {
         let validator = StringValidator::not_empty();
         let result = validator.validate("");
         assert!(result.is_err());
-        assert!(matches!(
-            result.unwrap_err(),
-            ValidationError::Required { .. }
-        ));
+        let err = result.expect_err("Expected Required error for empty string");
+        assert!(matches!(err, ValidationError::Required { .. }));
     }
 
     #[test]
@@ -37,18 +36,17 @@ mod tests {
         let validator = StringValidator::not_empty();
         let result = validator.validate("   ");
         assert!(result.is_err());
-        assert!(matches!(
-            result.unwrap_err(),
-            ValidationError::Required { .. }
-        ));
+        let err = result.expect_err("Expected Required error for whitespace-only string");
+        assert!(matches!(err, ValidationError::Required { .. }));
     }
 
     #[test]
-    fn test_string_validator_min_length_should_pass_when_above_minimum() {
+    fn test_string_validator_min_length_should_pass_when_above_minimum() -> Result<(), Box<dyn std::error::Error>> {
         let validator = StringValidator::min_length(3);
         let result = validator.validate("hello");
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), "hello");
+        assert_eq!(result?, "hello");
+        Ok(())
     }
 
     #[test]
@@ -56,18 +54,17 @@ mod tests {
         let validator = StringValidator::min_length(3);
         let result = validator.validate("hi");
         assert!(result.is_err());
-        assert!(matches!(
-            result.unwrap_err(),
-            ValidationError::TooShort { .. }
-        ));
+        let err = result.expect_err("Expected TooShort error for short string");
+        assert!(matches!(err, ValidationError::TooShort { .. }));
     }
 
     #[test]
-    fn test_string_validator_max_length_should_pass_when_below_maximum() {
+    fn test_string_validator_max_length_should_pass_when_below_maximum() -> Result<(), Box<dyn std::error::Error>> {
         let validator = StringValidator::max_length(5);
         let result = validator.validate("hello");
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), "hello");
+        assert_eq!(result?, "hello");
+        Ok(())
     }
 
     #[test]
@@ -75,18 +72,17 @@ mod tests {
         let validator = StringValidator::max_length(3);
         let result = validator.validate("hello");
         assert!(result.is_err());
-        assert!(matches!(
-            result.unwrap_err(),
-            ValidationError::TooLong { .. }
-        ));
+        let err = result.expect_err("Expected TooLong error for long string");
+        assert!(matches!(err, ValidationError::TooLong { .. }));
     }
 
     #[test]
-    fn test_string_validator_contains_should_pass_for_matching_substring() {
+    fn test_string_validator_contains_should_pass_for_matching_substring() -> Result<(), Box<dyn std::error::Error>> {
         let validator = StringValidator::contains("test");
         let result = validator.validate("this is a test");
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), "this is a test");
+        assert_eq!(result?, "this is a test");
+        Ok(())
     }
 
     #[test]
@@ -94,10 +90,8 @@ mod tests {
         let validator = StringValidator::contains("test");
         let result = validator.validate("hello world");
         assert!(result.is_err());
-        assert!(matches!(
-            result.unwrap_err(),
-            ValidationError::InvalidFormat { .. }
-        ));
+        let err = result.expect_err("Expected InvalidFormat error for missing substring");
+        assert!(matches!(err, ValidationError::InvalidFormat { .. }));
     }
 
     #[test]
@@ -113,24 +107,20 @@ mod tests {
         // Should fail first rule (empty)
         let result = validator.validate("");
         assert!(result.is_err());
-        assert!(matches!(
-            result.unwrap_err(),
-            ValidationError::Required { .. }
-        ));
+        let err = result.expect_err("Expected Required error for empty string");
+        assert!(matches!(err, ValidationError::Required { .. }));
 
         // Should fail second rule (too short)
         let result = validator.validate("hi");
         assert!(result.is_err());
-        assert!(matches!(
-            result.unwrap_err(),
-            ValidationError::TooShort { .. }
-        ));
+        let err = result.expect_err("Expected TooShort error for short string");
+        assert!(matches!(err, ValidationError::TooShort { .. }));
 
         // Should fail third rule (too long)
         let result = validator.validate("this_is_too_long");
         assert!(result.is_err());
-        assert!(matches!(
-            result.unwrap_err(),
+        let err = result.expect_err("Expected TooLong error for long string");
+        assert!(matches!(err,
             ValidationError::TooLong { .. }
         ));
     }
@@ -138,11 +128,12 @@ mod tests {
     // ===== NUMBER VALIDATION TESTS =====
 
     #[test]
-    fn test_number_validator_range_should_pass_within_bounds() {
+    fn test_number_validator_range_should_pass_within_bounds() -> Result<(), Box<dyn std::error::Error>> {
         let validator = NumberValidator::range(10, 100);
         let result = validator.validate(&50);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), 50);
+        assert_eq!(result?, 50);
+        Ok(())
     }
 
     #[test]
@@ -150,10 +141,8 @@ mod tests {
         let validator = NumberValidator::range(10, 100);
         let result = validator.validate(&5);
         assert!(result.is_err());
-        assert!(matches!(
-            result.unwrap_err(),
-            ValidationError::OutOfRange { .. }
-        ));
+        let err = result.expect_err("Expected OutOfRange error for value below minimum");
+        assert!(matches!(err, ValidationError::OutOfRange { .. }));
     }
 
     #[test]
@@ -161,18 +150,17 @@ mod tests {
         let validator = NumberValidator::range(10, 100);
         let result = validator.validate(&150);
         assert!(result.is_err());
-        assert!(matches!(
-            result.unwrap_err(),
-            ValidationError::OutOfRange { .. }
-        ));
+        let err = result.expect_err("Expected OutOfRange error for value above maximum");
+        assert!(matches!(err, ValidationError::OutOfRange { .. }));
     }
 
     #[test]
-    fn test_number_validator_positive_should_pass_for_positive_number() {
+    fn test_number_validator_positive_should_pass_for_positive_number() -> Result<(), Box<dyn std::error::Error>> {
         let validator = NumberValidator::positive();
         let result = validator.validate(&42);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), 42);
+        assert_eq!(result?, 42);
+        Ok(())
     }
 
     #[test]
@@ -180,10 +168,8 @@ mod tests {
         let validator = NumberValidator::positive();
         let result = validator.validate(&-5);
         assert!(result.is_err());
-        assert!(matches!(
-            result.unwrap_err(),
-            ValidationError::OutOfRange { .. }
-        ));
+        let err = result.expect_err("Expected OutOfRange error for negative number");
+        assert!(matches!(err, ValidationError::OutOfRange { .. }));
     }
 
     #[test]
@@ -191,10 +177,8 @@ mod tests {
         let validator = NumberValidator::positive();
         let result = validator.validate(&0);
         assert!(result.is_err());
-        assert!(matches!(
-            result.unwrap_err(),
-            ValidationError::OutOfRange { .. }
-        ));
+        let err = result.expect_err("Expected OutOfRange error for zero");
+        assert!(matches!(err, ValidationError::OutOfRange { .. }));
     }
 
     #[test]
@@ -209,10 +193,8 @@ mod tests {
         let validator = NumberValidator::non_negative();
         let result = validator.validate(&-5);
         assert!(result.is_err());
-        assert!(matches!(
-            result.unwrap_err(),
-            ValidationError::OutOfRange { .. }
-        ));
+        let err = result.expect_err("Expected OutOfRange error for negative value");
+        assert!(matches!(err, ValidationError::OutOfRange { .. }));
     }
 
     // ===== COMPOSITE VALIDATION TESTS =====

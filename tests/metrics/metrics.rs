@@ -11,26 +11,28 @@ async fn test_system_metrics_collector_creation() {
 }
 
 #[tokio::test]
-async fn test_cpu_metrics_collection() {
+async fn test_cpu_metrics_collection() -> Result<(), Box<dyn std::error::Error>> {
     let collector = SystemMetricsCollector::new();
-    let metrics = collector.collect_cpu_metrics().await.unwrap();
+    let metrics = collector.collect_cpu_metrics().await?;
 
     // Basic structure validation
     assert!(metrics.cores >= 1); // Should have at least 1 core
     assert!(metrics.usage >= 0.0 && metrics.usage <= 100.0); // Usage should be percentage
     assert!(!metrics.model.is_empty()); // Model should not be empty
+    Ok(())
 }
 
 #[tokio::test]
-async fn test_memory_metrics_collection() {
+async fn test_memory_metrics_collection() -> Result<(), Box<dyn std::error::Error>> {
     let collector = SystemMetricsCollector::new();
-    let metrics = collector.collect_memory_metrics().await.unwrap();
+    let metrics = collector.collect_memory_metrics().await?;
 
     // Basic validation
     assert!(metrics.total > 0); // Should have some total memory
     assert!(metrics.used <= metrics.total); // Used should not exceed total
     assert!(metrics.free <= metrics.total); // Free should not exceed total
     assert!(metrics.usage_percent >= 0.0 && metrics.usage_percent <= 100.0); // Percentage validation
+    Ok(())
 }
 
 #[test]

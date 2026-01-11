@@ -7,6 +7,7 @@
 mod property_tests {
     use mcp_context_browser::domain::types::{CodeChunk, Embedding, Language};
     use proptest::prelude::*;
+    use proptest::test_runner::TestCaseError;
 
     // Property: CodeChunk content length should be preserved through operations
     proptest! {
@@ -121,8 +122,8 @@ mod property_tests {
             Just(Language::Unknown),
         ]) {
             // Serialize and deserialize
-            let serialized = serde_json::to_string(&lang).unwrap();
-            let deserialized: Language = serde_json::from_str(&serialized).unwrap();
+            let serialized = serde_json::to_string(&lang).map_err(|e| TestCaseError::fail(e.to_string()))?;
+            let deserialized: Language = serde_json::from_str(&serialized).map_err(|e| TestCaseError::fail(e.to_string()))?;
 
             // Should roundtrip correctly
             prop_assert_eq!(lang, deserialized);
@@ -147,8 +148,8 @@ mod property_tests {
             };
 
             // Should be valid JSON
-            let serialized = serde_json::to_string(&chunk.metadata).unwrap();
-            let _: serde_json::Value = serde_json::from_str(&serialized).unwrap();
+            let serialized = serde_json::to_string(&chunk.metadata).map_err(|e| TestCaseError::fail(e.to_string()))?;
+            let _: serde_json::Value = serde_json::from_str(&serialized).map_err(|e| TestCaseError::fail(e.to_string()))?;
         }
     }
 

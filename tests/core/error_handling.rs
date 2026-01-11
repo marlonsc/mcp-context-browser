@@ -27,7 +27,8 @@ mod auth_error_handling_tests {
         // Should return proper error instead of panicking
         let result = auth.authenticate("user", "pass").await;
         assert!(matches!(result, Err(Error::Generic(_))));
-        assert!(result.unwrap_err().to_string().contains("disabled"));
+        let err = result.expect_err("Expected error for disabled auth");
+        assert!(err.to_string().contains("disabled"));
     }
 
     #[tokio::test]
@@ -37,12 +38,8 @@ mod auth_error_handling_tests {
         // Should return proper error instead of panicking
         let result = auth.authenticate("invalid@email.com", "wrongpass").await;
         assert!(matches!(result, Err(Error::Generic(_))));
-        assert!(
-            result
-                .unwrap_err()
-                .to_string()
-                .contains("Invalid credentials")
-        );
+        let err = result.expect_err("Expected error for invalid credentials");
+        assert!(err.to_string().contains("Invalid credentials"));
     }
 
     #[tokio::test]
@@ -52,7 +49,8 @@ mod auth_error_handling_tests {
         // Should return proper error for invalid tokens instead of panicking
         let result = auth.validate_token("invalid.jwt.token");
         assert!(matches!(result, Err(Error::Generic(_))));
-        assert!(result.unwrap_err().to_string().contains("Invalid token"));
+        let err = result.expect_err("Expected error for invalid token");
+        assert!(err.to_string().contains("Invalid token"));
 
         // Should return proper error for expired tokens instead of panicking
         let result = auth.validate_token("expired.token.here");
@@ -92,14 +90,15 @@ mod cache_error_handling_tests {
         // In Exclusive mode, this should FAIL on creation
         let result = CacheManager::new(config, None).await;
         assert!(result.is_err());
+        let err = result.expect_err("Expected connection failure error");
         assert!(matches!(
-            result.unwrap_err(),
+            err,
             Error::Redis { .. } | Error::Generic(_)
         ));
     }
 
     #[tokio::test]
-    async fn test_cache_manager_handles_disabled_cache_operations() {
+    async fn test_cache_manager_handles_disabled_cache_operations() -> Result<(), Box<dyn std::error::Error>> {
         let config = CacheConfig {
             redis_url: "".to_string(),
             default_ttl_seconds: 300,
@@ -108,7 +107,7 @@ mod cache_error_handling_tests {
             namespaces: Default::default(),
         };
 
-        let manager = CacheManager::new(config).await.unwrap();
+        let manager = CacheManager::new(config).await?;
 
         // Operations on disabled cache should not panic
         let set_result = manager.set("test", "key", "value".to_string()).await;
@@ -116,12 +115,13 @@ mod cache_error_handling_tests {
 
         let get_result: CacheResult<String> = manager.get("test", "key").await;
         assert!(get_result.is_miss());
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_cache_manager_handles_namespace_operations() {
+    async fn test_cache_manager_handles_namespace_operations() -> Result<(), Box<dyn std::error::Error>> {
         let config = CacheConfig::default();
-        let manager = CacheManager::new(config).await.unwrap();
+        let manager = CacheManager::new(config).await?;
 
         // These operations should not panic
         let clear_result = manager.clear_namespace("test_ns").await;
@@ -132,12 +132,13 @@ mod cache_error_handling_tests {
 
         let stats = manager.get_stats().await;
         assert_eq!(stats.total_entries, 0);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_cache_manager_handles_large_data_operations() {
+    async fn test_cache_manager_handles_large_data_operations() -> Result<(), Box<dyn std::error::Error>> {
         let config = CacheConfig::default();
-        let manager = CacheManager::new(config).await.unwrap();
+        let manager = CacheManager::new(config).await?;
 
         // Test with large data that might cause issues
         let large_data = "x".repeat(1024 * 1024); // 1MB string
@@ -147,7 +148,9 @@ mod cache_error_handling_tests {
 
         let get_result: CacheResult<String> = manager.get("test", "large_key").await;
         assert!(get_result.is_hit());
-        assert_eq!(get_result.data().unwrap(), large_data);
+        let data = get_result.data().ok_or("Expected data in cache hit")?;
+        assert_eq!(data, large_data);
+        Ok(())
     }
 }
 
@@ -158,7 +161,7 @@ mod crypto_error_handling_tests {
     use mcp_context_browser::infrastructure::crypto::{CryptoService, EncryptionConfig};
 
     #[tokio::test]
-    async fn test_crypto_service_handles_disabled_crypto_operations() {
+    async fn test_crypto_service_handles_disabled_crypto_operations() -> Result<(), Box<dyn std::error::Error>> {
         let config = EncryptionConfig {
             enabled: false,
             master_key_path: None,
@@ -166,7 +169,7 @@ mod crypto_error_handling_tests {
             algorithm: mcp_context_browser::infrastructure::crypto::EncryptionAlgorithm::Aes256Gcm,
         };
 
-        let crypto = CryptoService::new(config).await.unwrap();
+        let crypto = CryptoService::new(config).await?;
 
         // Operations on disabled crypto should not panic
         let encrypt_result = crypto.encrypt("test data".as_bytes()).await;
@@ -174,16 +177,18 @@ mod crypto_error_handling_tests {
 
         let decrypt_result = crypto.decrypt(&[1, 2, 3]).await;
         assert!(decrypt_result.is_ok()); // Should succeed (no-op) or return proper error
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_crypto_service_handles_key_generation_errors() {
+    async fn test_crypto_service_handles_key_generation_errors() -> Result<(), Box<dyn std::error::Error>> {
         let config = EncryptionConfig::default();
-        let crypto = CryptoService::new(config).await.unwrap();
+        let crypto = CryptoService::new(config).await?;
 
         // Key generation should not panic
         let key_result = crypto.generate_data_key().await;
         assert!(key_result.is_ok());
+        Ok(())
     }
 }
 
@@ -215,13 +220,13 @@ mod integration_error_handling_tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_core_services_handle_cascading_errors() {
+    async fn test_core_services_handle_cascading_errors() -> Result<(), Box<dyn std::error::Error>> {
         // Test that errors propagate correctly through service layers
         // This ensures no unwrap/expect calls break the error chain
 
         let auth = AuthService::default();
         let cache_config = CacheConfig::default();
-        let cache = CacheManager::new(cache_config).await.unwrap();
+        let cache = CacheManager::new(cache_config).await?;
 
         // Test auth failure doesn't crash the system
         let auth_result = auth.authenticate("nonexistent", "wrong").await;
@@ -230,6 +235,7 @@ mod integration_error_handling_tests {
         // Test cache operations still work after auth failure
         let cache_result = cache.set("test", "key", "value".to_string()).await;
         assert!(cache_result.is_ok());
+        Ok(())
     }
 
     #[tokio::test]
@@ -240,7 +246,7 @@ mod integration_error_handling_tests {
         let result = auth.authenticate("", "").await;
         assert!(result.is_err());
 
-        let error = result.unwrap_err();
+        let error = result.expect_err("Expected auth error for empty credentials");
         // Error should contain useful context, not just "Generic error"
         let error_msg = error.to_string();
         assert!(!error_msg.is_empty());

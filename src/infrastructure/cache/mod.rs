@@ -14,6 +14,10 @@
 //! - Clustered/Distributed instances use Redis for consistency.
 
 mod config;
+mod local;
+mod operations;
+mod redis;
+mod stats;
 
 // Re-export configuration types
 pub use config::{
@@ -25,11 +29,11 @@ use crate::infrastructure::events::{SharedEventBus, SystemEvent};
 use moka::future::Cache;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::Duration;
 
 /// Convert Redis errors to domain errors in the infrastructure layer
-impl From<redis::RedisError> for Error {
-    fn from(err: redis::RedisError) -> Self {
+impl From<::redis::RedisError> for Error {
+    fn from(err: ::redis::RedisError) -> Self {
         Self::Cache {
             message: err.to_string(),
         }
@@ -39,20 +43,20 @@ impl From<redis::RedisError> for Error {
 /// Advanced distributed cache manager
 #[derive(Clone)]
 pub struct CacheManager {
-    config: CacheConfig,
+    pub(crate) config: CacheConfig,
     /// Redis client (Present if in Remote mode)
-    redis_client: Option<redis::Client>,
+    pub(crate) redis_client: Option<::redis::Client>,
     /// Local Moka caches (Present/Used if in Local mode)
     /// We keep these initialized but empty if in Redis mode to simplify struct
-    embeddings_cache: Cache<String, serde_json::Value>,
-    search_results_cache: Cache<String, serde_json::Value>,
-    metadata_cache: Cache<String, serde_json::Value>,
-    provider_responses_cache: Cache<String, serde_json::Value>,
-    sync_batches_cache: Cache<String, serde_json::Value>,
+    pub(crate) embeddings_cache: Cache<String, serde_json::Value>,
+    pub(crate) search_results_cache: Cache<String, serde_json::Value>,
+    pub(crate) metadata_cache: Cache<String, serde_json::Value>,
+    pub(crate) provider_responses_cache: Cache<String, serde_json::Value>,
+    pub(crate) sync_batches_cache: Cache<String, serde_json::Value>,
 
-    stats_hits: Arc<AtomicU64>,
-    stats_misses: Arc<AtomicU64>,
-    stats_evictions: Arc<AtomicU64>,
+    pub(crate) stats_hits: Arc<AtomicU64>,
+    pub(crate) stats_misses: Arc<AtomicU64>,
+    pub(crate) stats_evictions: Arc<AtomicU64>,
 }
 
 impl CacheManager {
@@ -67,7 +71,7 @@ impl CacheManager {
                 "Redis configured, attempting to connect to {}",
                 config.redis_url
             );
-            match redis::Client::open(config.redis_url.clone()) {
+            match ::redis::Client::open(config.redis_url.clone()) {
                 Ok(client) => {
                     tracing::debug!("Redis Client open success");
                     // Test connection
@@ -75,7 +79,7 @@ impl CacheManager {
                     match Self::test_redis_connection(&client).await {
                         Ok(_) => {
                             tracing::debug!("Redis connection established");
-                            tracing::info!("✅ Redis cache connection established (Remote Mode)");
+                            tracing::info!("Redis cache connection established (Remote Mode)");
                             redis_client = Some(client);
                         }
                         Err(e) => {
@@ -90,9 +94,9 @@ impl CacheManager {
                 }
             }
         } else if config.enabled {
-            tracing::info!("ℹ️  Redis not configured, using Local Moka Cache (Local Mode)");
+            tracing::info!("Redis not configured, using Local Moka Cache (Local Mode)");
         } else {
-            tracing::info!("ℹ️  Caching disabled");
+            tracing::info!("Caching disabled");
         }
 
         // Initialize Moka caches (Used in Local Mode)
@@ -212,525 +216,6 @@ impl CacheManager {
                 }
             }
         });
-    }
-
-    /// Test Redis connection
-    async fn test_redis_connection(client: &redis::Client) -> Result<()> {
-        let timeout_duration = Duration::from_secs(2);
-
-        let mut conn =
-            match tokio::time::timeout(timeout_duration, client.get_multiplexed_async_connection())
-                .await
-            {
-                Ok(Ok(conn)) => conn,
-                Ok(Err(e)) => {
-                    return Err(Error::generic(format!("Redis connection failed: {}", e)));
-                }
-                Err(_) => return Err(Error::generic("Redis connection timed out")),
-            };
-
-        match tokio::time::timeout(
-            timeout_duration,
-            redis::cmd("PING").query_async::<()>(&mut conn),
-        )
-        .await
-        {
-            Ok(Ok(_)) => Ok(()),
-            Ok(Err(e)) => Err(Error::generic(format!("Redis PING failed: {}", e))),
-            Err(_) => Err(Error::generic("Redis PING timed out")),
-        }
-    }
-
-    /// Get a value from cache
-    pub async fn get<T>(&self, namespace: &str, key: &str) -> CacheResult<T>
-    where
-        T: for<'de> serde::Deserialize<'de> + Clone,
-    {
-        if !self.config.enabled {
-            return CacheResult::Miss;
-        }
-
-        let full_key = format!("{}:{}", namespace, key);
-
-        // Remote Mode (Redis)
-        if self.redis_client.is_some() {
-            match self.get_from_redis(&full_key).await {
-                Ok(Some(data)) => match serde_json::from_value(data) {
-                    Ok(deserialized) => {
-                        self.stats_hits.fetch_add(1, Ordering::Relaxed);
-                        return CacheResult::Hit(deserialized);
-                    }
-                    Err(e) => {
-                        tracing::warn!("Failed to deserialize cached data from Redis: {}", e);
-                    }
-                },
-                Ok(None) => {} // Miss
-                Err(e) => {
-                    tracing::warn!("Redis get failed: {}", e);
-                    // In Remote mode, we don't fallback to local to avoid inconsistency
-                }
-            }
-            self.stats_misses.fetch_add(1, Ordering::Relaxed);
-            return CacheResult::Miss;
-        }
-
-        // Local Mode (Moka)
-        match self.get_from_local(&full_key).await {
-            Ok(Some(data)) => match serde_json::from_value(data) {
-                Ok(deserialized) => {
-                    self.stats_hits.fetch_add(1, Ordering::Relaxed);
-                    CacheResult::Hit(deserialized)
-                }
-                Err(e) => {
-                    self.stats_misses.fetch_add(1, Ordering::Relaxed);
-                    CacheResult::Error(Error::generic(format!(
-                        "Failed to deserialize local cached data: {}",
-                        e
-                    )))
-                }
-            },
-            Ok(None) => {
-                self.stats_misses.fetch_add(1, Ordering::Relaxed);
-                CacheResult::Miss
-            }
-            Err(e) => {
-                self.stats_misses.fetch_add(1, Ordering::Relaxed);
-                CacheResult::Error(e)
-            }
-        }
-    }
-
-    /// Set a value in cache
-    pub async fn set<T>(&self, namespace: &str, key: &str, value: T) -> Result<()>
-    where
-        T: serde::Serialize + Clone,
-    {
-        if !self.config.enabled {
-            return Ok(());
-        }
-
-        let full_key = format!("{}:{}", namespace, key);
-        let namespace_config = self.get_namespace_config(namespace);
-        let ttl = namespace_config.ttl_seconds;
-
-        // Serialize data
-        let data = serde_json::to_value(&value)
-            .map_err(|e| Error::generic(format!("Serialization failed: {}", e)))?;
-
-        // Remote Mode (Redis)
-        if self.redis_client.is_some() {
-            let size_bytes = serde_json::to_string(&data).map(|s| s.len()).unwrap_or(0);
-            let now = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .map_err(|e| Error::generic(format!("System time error: {}", e)))?
-                .as_secs();
-
-            let entry = CacheEntry {
-                data,
-                created_at: now,
-                accessed_at: now,
-                access_count: 1,
-                size_bytes,
-            };
-
-            if let Err(e) = self.set_in_redis(&full_key, &entry, ttl).await {
-                tracing::warn!("Redis set failed: {}", e);
-            }
-            return Ok(());
-        }
-
-        // Local Mode (Moka)
-        self.set_in_local(&full_key, data).await?;
-
-        Ok(())
-    }
-
-    /// Delete a value from cache
-    pub async fn delete(&self, namespace: &str, key: &str) -> Result<()> {
-        if !self.config.enabled {
-            return Ok(());
-        }
-
-        let full_key = format!("{}:{}", namespace, key);
-
-        // Remote Mode (Redis)
-        if self.redis_client.is_some() {
-            if let Err(e) = self.delete_from_redis(&full_key).await {
-                tracing::warn!("Redis delete failed: {}", e);
-            }
-            return Ok(());
-        }
-
-        // Local Mode (Moka)
-        self.delete_from_local(&full_key).await?;
-
-        Ok(())
-    }
-
-    /// Enqueue an item to a list in cache
-    pub async fn enqueue_item<T>(&self, namespace: &str, key: &str, value: T) -> Result<()>
-    where
-        T: serde::Serialize + Clone + Send + Sync + 'static,
-    {
-        if !self.config.enabled {
-            return Ok(());
-        }
-
-        let full_key = format!("{}:{}", namespace, key);
-
-        // Serialize data
-        let data = serde_json::to_value(&value)
-            .map_err(|e| Error::generic(format!("Serialization failed: {}", e)))?;
-
-        // Remote Mode (Redis)
-        if self.redis_client.is_some() {
-            if let Err(e) = self.enqueue_redis(&full_key, &data).await {
-                tracing::warn!("Redis enqueue failed: {}", e);
-            }
-            return Ok(());
-        }
-
-        // Local Mode (Moka)
-        self.enqueue_local(&full_key, data).await?;
-
-        Ok(())
-    }
-
-    /// Get all items from a queue in cache
-    pub async fn get_queue<T>(&self, namespace: &str, key: &str) -> Result<Vec<T>>
-    where
-        T: for<'de> serde::Deserialize<'de> + Clone + Send + Sync,
-    {
-        if !self.config.enabled {
-            return Ok(Vec::new());
-        }
-
-        let full_key = format!("{}:{}", namespace, key);
-
-        // Remote Mode (Redis)
-        if self.redis_client.is_some() {
-            match self.get_queue_redis(&full_key).await {
-                Ok(items) => {
-                    let mut result = Vec::new();
-                    for item in items {
-                        match serde_json::from_value(item) {
-                            Ok(deserialized) => result.push(deserialized),
-                            Err(e) => tracing::warn!("Failed to deserialize queue item: {}", e),
-                        }
-                    }
-                    return Ok(result);
-                }
-                Err(e) => {
-                    tracing::warn!("Redis get_queue failed: {}", e);
-                    return Ok(Vec::new()); // Return empty on error to avoid breaking flow?
-                }
-            }
-        }
-
-        // Local Mode (Moka)
-        if let Some(data_array) = self.get_from_local(&full_key).await? {
-            if let Some(array) = data_array.as_array() {
-                let mut result = Vec::new();
-                for item in array {
-                    match serde_json::from_value(item.clone()) {
-                        Ok(deserialized) => result.push(deserialized),
-                        Err(e) => tracing::warn!("Failed to deserialize local queue item: {}", e),
-                    }
-                }
-                return Ok(result);
-            }
-        }
-
-        Ok(Vec::new())
-    }
-
-    /// Remove an item from the queue
-    pub async fn remove_item<T>(&self, namespace: &str, key: &str, value: T) -> Result<()>
-    where
-        T: serde::Serialize + Clone + Send + Sync + 'static,
-    {
-        if !self.config.enabled {
-            return Ok(());
-        }
-
-        let full_key = format!("{}:{}", namespace, key);
-        let data = serde_json::to_value(&value)
-            .map_err(|e| Error::generic(format!("Serialization failed: {}", e)))?;
-
-        // Remote Mode (Redis)
-        if self.redis_client.is_some() {
-            if let Err(e) = self.remove_from_redis(&full_key, &data).await {
-                tracing::warn!("Redis remove_item failed: {}", e);
-            }
-            return Ok(());
-        }
-
-        // Local Mode (Moka)
-        self.remove_from_local(&full_key, &data).await?;
-
-        Ok(())
-    }
-
-    /// Clear entire namespace
-    pub async fn clear_namespace(&self, namespace: &str) -> Result<()> {
-        if !self.config.enabled {
-            return Ok(());
-        }
-
-        let pattern = format!("{}:*", namespace);
-
-        // Remote Mode (Redis)
-        if self.redis_client.is_some() {
-            if let Err(e) = self.clear_namespace_redis(&pattern).await {
-                tracing::warn!("Redis namespace clear failed: {}", e);
-            }
-            return Ok(());
-        }
-
-        // Local Mode (Moka)
-        self.clear_namespace_local(namespace).await?;
-
-        Ok(())
-    }
-
-    /// Get cache statistics
-    pub async fn get_stats(&self) -> CacheStats {
-        let mut stats = CacheStats::default();
-
-        // If in Redis mode, local caches are empty, stats will reflect that.
-        // We could potentially fetch Redis info, but that's expensive/complex.
-        // So stats will track local usage or be mostly empty for Redis mode (except hits/misses).
-
-        for cache in [
-            &self.embeddings_cache,
-            &self.search_results_cache,
-            &self.metadata_cache,
-            &self.provider_responses_cache,
-            &self.sync_batches_cache,
-        ] {
-            cache.run_pending_tasks().await;
-            stats.total_entries += cache.entry_count() as usize;
-        }
-
-        stats.hits = self.stats_hits.load(Ordering::Relaxed);
-        stats.misses = self.stats_misses.load(Ordering::Relaxed);
-        stats.evictions = self.stats_evictions.load(Ordering::Relaxed);
-
-        let total_requests = stats.hits + stats.misses;
-        if total_requests > 0 {
-            stats.hit_ratio = stats.hits as f64 / total_requests as f64;
-        }
-
-        stats
-    }
-
-    /// Check if cache is enabled
-    pub fn is_enabled(&self) -> bool {
-        self.config.enabled
-    }
-
-    /// Get configuration
-    pub fn config(&self) -> &CacheConfig {
-        &self.config
-    }
-
-    // Private methods
-
-    fn get_namespace_config(&self, namespace: &str) -> &CacheNamespaceConfig {
-        match namespace {
-            "embeddings" => &self.config.namespaces.embeddings,
-            "search_results" => &self.config.namespaces.search_results,
-            "metadata" => &self.config.namespaces.metadata,
-            "provider_responses" => &self.config.namespaces.provider_responses,
-            "sync_batches" => &self.config.namespaces.sync_batches,
-            _ => &self.config.namespaces.metadata, // Default to metadata config
-        }
-    }
-
-    async fn enqueue_redis(&self, key: &str, value: &serde_json::Value) -> Result<()> {
-        if let Some(ref client) = self.redis_client {
-            let mut conn = client.get_multiplexed_async_connection().await?;
-            let json_str = serde_json::to_string(value)?;
-            redis::cmd("RPUSH")
-                .arg(key)
-                .arg(json_str)
-                .query_async::<()>(&mut conn)
-                .await?;
-        }
-        Ok(())
-    }
-
-    async fn get_queue_redis(&self, key: &str) -> Result<Vec<serde_json::Value>> {
-        if let Some(ref client) = self.redis_client {
-            let mut conn = client.get_multiplexed_async_connection().await?;
-            let items: Vec<String> = redis::cmd("LRANGE")
-                .arg(key)
-                .arg(0)
-                .arg(-1)
-                .query_async(&mut conn)
-                .await?;
-
-            let mut result = Vec::new();
-            for item in items {
-                let val: serde_json::Value = serde_json::from_str(&item)?;
-                result.push(val);
-            }
-            return Ok(result);
-        }
-        Ok(Vec::new())
-    }
-
-    async fn remove_from_redis(&self, key: &str, value: &serde_json::Value) -> Result<()> {
-        if let Some(ref client) = self.redis_client {
-            let mut conn = client.get_multiplexed_async_connection().await?;
-            let json_str = serde_json::to_string(value)?;
-            // LREM key count value (count 0 means remove all occurrences)
-            redis::cmd("LREM")
-                .arg(key)
-                .arg(0)
-                .arg(json_str)
-                .query_async::<()>(&mut conn)
-                .await?;
-        }
-        Ok(())
-    }
-
-    async fn enqueue_local(&self, full_key: &str, value: serde_json::Value) -> Result<()> {
-        let namespace = full_key.split(':').next().unwrap_or("");
-        let cache = self.get_cache(namespace);
-
-        let mut current_list = if let Some(existing) = cache.get(full_key).await {
-            if let Some(arr) = existing.as_array() {
-                arr.clone()
-            } else {
-                Vec::new()
-            }
-        } else {
-            Vec::new()
-        };
-
-        current_list.push(value);
-        cache
-            .insert(full_key.to_string(), serde_json::Value::Array(current_list))
-            .await;
-        Ok(())
-    }
-
-    async fn remove_from_local(&self, full_key: &str, value: &serde_json::Value) -> Result<()> {
-        let namespace = full_key.split(':').next().unwrap_or("");
-        let cache = self.get_cache(namespace);
-
-        if let Some(existing) = cache.get(full_key).await {
-            if let Some(arr) = existing.as_array() {
-                // Remove all occurrences that match
-                let new_list: Vec<serde_json::Value> =
-                    arr.iter().filter(|v| *v != value).cloned().collect();
-                cache
-                    .insert(full_key.to_string(), serde_json::Value::Array(new_list))
-                    .await;
-            }
-        }
-        Ok(())
-    }
-
-    async fn get_from_redis(&self, key: &str) -> Result<Option<serde_json::Value>> {
-        if let Some(ref client) = self.redis_client {
-            let mut conn = client.get_multiplexed_async_connection().await?;
-            let data: Option<String> = redis::cmd("GET").arg(key).query_async(&mut conn).await?;
-
-            if let Some(json_str) = data {
-                let entry: CacheEntry<serde_json::Value> = serde_json::from_str(&json_str)?;
-                return Ok(Some(entry.data));
-            }
-        }
-        Ok(None)
-    }
-
-    async fn set_in_redis(
-        &self,
-        key: &str,
-        entry: &CacheEntry<serde_json::Value>,
-        ttl: u64,
-    ) -> Result<()> {
-        if let Some(ref client) = self.redis_client {
-            let mut conn = client.get_multiplexed_async_connection().await?;
-            let json_str = serde_json::to_string(entry)?;
-            redis::cmd("SETEX")
-                .arg(key)
-                .arg(ttl)
-                .arg(json_str)
-                .query_async::<()>(&mut conn)
-                .await?;
-        }
-        Ok(())
-    }
-
-    async fn delete_from_redis(&self, key: &str) -> Result<()> {
-        if let Some(ref client) = self.redis_client {
-            let mut conn = client.get_multiplexed_async_connection().await?;
-            redis::cmd("DEL")
-                .arg(key)
-                .query_async::<()>(&mut conn)
-                .await?;
-        }
-        Ok(())
-    }
-
-    async fn clear_namespace_redis(&self, pattern: &str) -> Result<()> {
-        if let Some(ref client) = self.redis_client {
-            let mut conn = client.get_multiplexed_async_connection().await?;
-            let keys: Vec<String> = redis::cmd("KEYS")
-                .arg(pattern)
-                .query_async::<Vec<String>>(&mut conn)
-                .await?;
-            if !keys.is_empty() {
-                redis::cmd("DEL")
-                    .arg(&keys)
-                    .query_async::<()>(&mut conn)
-                    .await?;
-            }
-        }
-        Ok(())
-    }
-
-    fn get_cache(&self, namespace: &str) -> &Cache<String, serde_json::Value> {
-        match namespace {
-            "embeddings" => &self.embeddings_cache,
-            "search_results" => &self.search_results_cache,
-            "metadata" => &self.metadata_cache,
-            "provider_responses" => &self.provider_responses_cache,
-            "sync_batches" => &self.sync_batches_cache,
-            _ => &self.metadata_cache,
-        }
-    }
-
-    async fn get_from_local(&self, full_key: &str) -> Result<Option<serde_json::Value>> {
-        let namespace = full_key.split(':').next().unwrap_or("");
-        let cache = self.get_cache(namespace);
-        Ok(cache.get(full_key).await)
-    }
-
-    async fn set_in_local(&self, full_key: &str, value: serde_json::Value) -> Result<()> {
-        let namespace = full_key.split(':').next().unwrap_or("");
-        let cache = self.get_cache(namespace);
-        cache.insert(full_key.to_string(), value).await;
-        Ok(())
-    }
-
-    async fn delete_from_local(&self, full_key: &str) -> Result<()> {
-        let namespace = full_key.split(':').next().unwrap_or("");
-        let cache = self.get_cache(namespace);
-        cache.invalidate(full_key).await;
-        Ok(())
-    }
-
-    async fn clear_namespace_local(&self, namespace: &str) -> Result<()> {
-        let cache = self.get_cache(namespace);
-        let prefix = format!("{}:", namespace);
-        if let Err(e) = cache.invalidate_entries_if(move |k, _v| k.starts_with(&prefix)) {
-            tracing::warn!("Failed to invalidate entries: {}", e);
-        }
-        Ok(())
     }
 }
 

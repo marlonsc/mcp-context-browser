@@ -231,10 +231,12 @@ fn check_version_compatibility(
     {
         let result = state.version_checker.check_compatibility(expected);
         if !result.allows_proceed() {
-            return Err(McpError::VersionIncompatible(match &result {
-                CompatibilityResult::Incompatible { message } => message.clone(),
-                _ => "Version incompatible".to_string(),
-            }));
+            return Err(McpError::VersionIncompatible(
+                match &result {
+                    CompatibilityResult::Incompatible { message } => message.clone(),
+                    _ => "Version incompatible".to_string(),
+                },
+            ));
         }
         Ok(result)
     } else {
@@ -248,7 +250,9 @@ fn add_version_headers(state: &HttpTransportState, headers: &mut axum::http::Hea
     }
 }
 
-async fn process_mcp_request(request: &serde_json::Value) -> Result<serde_json::Value, McpError> {
+async fn process_mcp_request(
+    request: &serde_json::Value,
+) -> Result<serde_json::Value, McpError> {
     // Placeholder - this should integrate with the actual MCP server
     debug!("Processing MCP request: {:?}", request.get("method"));
 
@@ -297,15 +301,11 @@ pub enum McpError {
 impl IntoResponse for McpError {
     fn into_response(self) -> Response {
         let (status, message) = match self {
-            McpError::MissingSessionId => {
-                (StatusCode::BAD_REQUEST, "Missing Mcp-Session-Id header")
-            }
+            McpError::MissingSessionId => (StatusCode::BAD_REQUEST, "Missing Mcp-Session-Id header"),
             McpError::SessionNotFound => (StatusCode::NOT_FOUND, "Session not found or expired"),
             McpError::SessionTerminated => (StatusCode::GONE, "Session has been terminated"),
             McpError::SessionError(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Session error"),
-            McpError::ServerDraining => {
-                (StatusCode::SERVICE_UNAVAILABLE, "Server is shutting down")
-            }
+            McpError::ServerDraining => (StatusCode::SERVICE_UNAVAILABLE, "Server is shutting down"),
             McpError::VersionIncompatible(_) => (StatusCode::BAD_REQUEST, "Version incompatible"),
             McpError::ProcessingError(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Processing error"),
         };
@@ -330,9 +330,7 @@ mod tests {
         HttpTransportState {
             session_manager: Arc::new(SessionManager::with_defaults()),
             version_checker: Arc::new(VersionChecker::with_defaults()),
-            connection_tracker: Arc::new(
-                ConnectionTracker::new(ConnectionTrackerConfig::default()),
-            ),
+            connection_tracker: Arc::new(ConnectionTracker::new(ConnectionTrackerConfig::default())),
             config: TransportConfig::default(),
         }
     }

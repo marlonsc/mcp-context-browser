@@ -52,13 +52,16 @@ fn create_benchmark_context_service() -> ContextService {
 }
 
 /// Create a benchmark MCP server
+///
+/// NOTE: In benchmarks, expect() is acceptable as benchmark setup failure
+/// should halt the benchmark rather than produce invalid results.
 #[allow(dead_code)]
 fn create_benchmark_mcp_server() -> McpServer {
-    let rt = Runtime::new().expect("Failed to create Tokio runtime");
+    let rt = Runtime::new().expect("Benchmark requires Tokio runtime");
     // Use None for cache manager in benchmarks to avoid external dependencies
     let cache_manager = None::<Arc<CacheManager>>;
     rt.block_on(McpServer::new(cache_manager))
-        .expect("Failed to create MCP server")
+        .expect("Benchmark requires valid MCP server")
 }
 
 /// Benchmark core type operations
@@ -111,8 +114,10 @@ pub fn bench_core_types(c: &mut Criterion) {
 
         b.iter(|| {
             let chunk_ref = black_box(&chunk);
+            // In benchmarks, expect() is acceptable for operations that should never fail
+            // with valid test data - failure indicates a bug in test setup, not production code
             let serialized = serde_json::to_string(chunk_ref)
-                .expect("Serialization of valid CodeChunk should never fail");
+                .expect("Benchmark: valid CodeChunk serialization should never fail");
             black_box(serialized);
         });
     });
@@ -122,8 +127,10 @@ pub fn bench_core_types(c: &mut Criterion) {
 
         b.iter(|| {
             let json_ref = black_box(json_str);
+            // In benchmarks, expect() is acceptable for operations that should never fail
+            // with valid test data - failure indicates a bug in test setup, not production code
             let chunk: CodeChunk = serde_json::from_str(json_ref)
-                .expect("Deserialization of valid JSON should never fail");
+                .expect("Benchmark: valid JSON deserialization should never fail");
             black_box(chunk);
         });
     });
@@ -306,9 +313,12 @@ pub fn bench_repository_operations(c: &mut Criterion) {
 }
 
 /// Benchmark provider operations (real implementations)
+///
+/// NOTE: In benchmarks, expect() is acceptable as benchmark setup failure
+/// should halt the benchmark rather than produce invalid results.
 #[allow(dead_code)]
 pub fn bench_provider_operations(c: &mut Criterion) {
-    let rt = Runtime::new().expect("Failed to create Tokio runtime");
+    let rt = Runtime::new().expect("Benchmark requires Tokio runtime");
     let (embedding_provider, vector_store_provider, _hybrid_search_provider) =
         create_benchmark_providers();
 
@@ -370,9 +380,12 @@ pub fn bench_provider_operations(c: &mut Criterion) {
 }
 
 /// Benchmark service operations (real implementations)
+///
+/// NOTE: In benchmarks, expect() is acceptable as benchmark setup failure
+/// should halt the benchmark rather than produce invalid results.
 #[allow(dead_code)]
 pub fn bench_service_operations(c: &mut Criterion) {
-    let rt = Runtime::new().expect("Failed to create Tokio runtime");
+    let rt = Runtime::new().expect("Benchmark requires Tokio runtime");
     let context_service = create_benchmark_context_service();
 
     c.bench_function("service_context_embed_text", |b| {
@@ -602,9 +615,12 @@ pub fn bench_mcp_operations(c: &mut Criterion) {
 }
 
 /// Benchmark concurrent operations (real implementations)
+///
+/// NOTE: In benchmarks, expect() is acceptable as benchmark setup failure
+/// should halt the benchmark rather than produce invalid results.
 #[allow(dead_code)]
 pub fn bench_concurrent_operations(c: &mut Criterion) {
-    let rt = Runtime::new().expect("Failed to create Tokio runtime");
+    let rt = Runtime::new().expect("Benchmark requires Tokio runtime");
     let context_service = create_benchmark_context_service();
 
     c.bench_function("concurrent_embedding_operations", |b| {

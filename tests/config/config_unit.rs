@@ -20,11 +20,12 @@ mod config_structure_tests {
     }
 
     #[test]
-    fn test_config_serialization_safety() {
+    fn test_config_serialization_safety() -> Result<(), Box<dyn std::error::Error>> {
         let config = Config::default();
-        let serialized = serde_json::to_string(&config).unwrap();
-        let deserialized: Config = serde_json::from_str(&serialized).unwrap();
+        let serialized = serde_json::to_string(&config)?;
+        let deserialized: Config = serde_json::from_str(&serialized)?;
         assert_eq!(config.name, deserialized.name);
+        Ok(())
     }
 }
 

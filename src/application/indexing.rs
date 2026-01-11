@@ -1,9 +1,17 @@
 //! Indexing service for processing codebases
+//!
+//! # Architecture Note
+//!
+//! This module imports from `infrastructure::events` which is a cross-cutting concern.
+//! Events are used for decoupled notification when indexing completes, enabling
+//! cache invalidation and UI updates without tight coupling. This is an acceptable
+//! deviation from strict Clean Architecture layering per ADR-002 (Async-First Design).
 
 use crate::application::context::ContextService;
 use crate::chunking::IntelligentChunker;
 use crate::domain::error::{Error, Result};
 use crate::domain::types::CodeChunk;
+// Cross-cutting concern: Event bus for decoupled notifications
 use crate::infrastructure::events::{SharedEventBus, SystemEvent};
 use crate::snapshot::SnapshotManager;
 use crate::sync::SyncManager;

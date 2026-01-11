@@ -15,7 +15,8 @@ mod tests {
 
     fn get_test_http_client(
     ) -> Result<Arc<dyn mcp_context_browser::adapters::http_client::HttpClientProvider>, Box<dyn std::error::Error>> {
-        Ok(Arc::new(HttpClientPool::new()?))
+        let pool = HttpClientPool::new().map_err(|e| e as Box<dyn std::error::Error>)?;
+        Ok(Arc::new(pool))
     }
 
     fn get_ollama_config() -> EmbeddingConfig {

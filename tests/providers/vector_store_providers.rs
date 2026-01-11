@@ -69,35 +69,32 @@ mod in_memory_provider_tests {
     }
 
     #[tokio::test]
-    async fn test_collection_operations() {
+    async fn test_collection_operations() -> Result<(), Box<dyn std::error::Error>> {
         let provider = InMemoryVectorStoreProvider::new();
         let collection = "test_collection";
         let dimensions = 128;
 
         // Test collection creation
-        let result = provider.create_collection(collection, dimensions).await;
-        assert!(result.is_ok());
+        provider.create_collection(collection, dimensions).await?;
 
         // Test collection existence
-        let exists = provider.collection_exists(collection).await.unwrap();
+        let exists = provider.collection_exists(collection).await?;
         assert!(exists);
 
         // Test non-existent collection
-        let exists = provider.collection_exists("non_existent").await.unwrap();
+        let exists = provider.collection_exists("non_existent").await?;
         assert!(!exists);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_vector_insertion_and_search() {
+    async fn test_vector_insertion_and_search() -> Result<(), Box<dyn std::error::Error>> {
         let provider = InMemoryVectorStoreProvider::new();
         let collection = "test_search";
         let dimensions = 128;
 
         // Create collection
-        provider
-            .create_collection(collection, dimensions)
-            .await
-            .unwrap();
+        provider.create_collection(collection, dimensions).await?;
 
         // Create test data
         let embeddings = vec![
@@ -112,8 +109,7 @@ mod in_memory_provider_tests {
         // Insert vectors
         let ids = provider
             .insert_vectors(collection, &embeddings, metadata)
-            .await
-            .unwrap();
+            .await?;
         assert_eq!(ids.len(), 3);
         // IDs should be unique and follow collection naming pattern
         assert!(ids.iter().all(|id| id.starts_with("test_search_")));
@@ -122,60 +118,52 @@ mod in_memory_provider_tests {
         let query_vector = test_utils::create_test_embedding(1, dimensions).vector;
         let results = provider
             .search_similar(collection, &query_vector, 5, None)
-            .await
-            .unwrap();
+            .await?;
 
         // Should find at least the exact match
         assert!(!results.is_empty());
         let best_match = &results[0];
         test_utils::assert_search_result(best_match, 1, collection);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_vector_deletion() {
+    async fn test_vector_deletion() -> Result<(), Box<dyn std::error::Error>> {
         let provider = InMemoryVectorStoreProvider::new();
         let collection = "test_delete";
         let dimensions = 128;
 
         // Setup
-        provider
-            .create_collection(collection, dimensions)
-            .await
-            .unwrap();
+        provider.create_collection(collection, dimensions).await?;
         let embedding = test_utils::create_test_embedding(1, dimensions);
         let metadata = test_utils::create_test_metadata(1);
         let ids = provider
             .insert_vectors(collection, &[embedding], vec![metadata])
-            .await
-            .unwrap();
+            .await?;
 
         // Delete vectors
-        let delete_result = provider.delete_vectors(collection, &ids).await;
-        assert!(delete_result.is_ok());
+        provider.delete_vectors(collection, &ids).await?;
 
         // Verify deletion by searching
         let query_vector = test_utils::create_test_embedding(1, dimensions).vector;
         let results = provider
             .search_similar(collection, &query_vector, 5, None)
-            .await
-            .unwrap();
+            .await?;
         assert!(results.is_empty());
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_stats_collection() {
+    async fn test_stats_collection() -> Result<(), Box<dyn std::error::Error>> {
         let provider = InMemoryVectorStoreProvider::new();
         let collection = "test_stats";
         let dimensions = 128;
 
         // Create collection
-        provider
-            .create_collection(collection, dimensions)
-            .await
-            .unwrap();
+        provider.create_collection(collection, dimensions).await?;
 
         // Check stats for empty collection
-        let stats = provider.get_stats(collection).await.unwrap();
+        let stats = provider.get_stats(collection).await?;
         assert_eq!(stats["collection"], collection);
         assert_eq!(stats["status"], "active");
         assert_eq!(stats["vectors_count"], 0);
@@ -186,31 +174,28 @@ mod in_memory_provider_tests {
         let metadata = test_utils::create_test_metadata(1);
         provider
             .insert_vectors(collection, &[embedding], vec![metadata])
-            .await
-            .unwrap();
+            .await?;
 
         // Check stats again
-        let stats = provider.get_stats(collection).await.unwrap();
+        let stats = provider.get_stats(collection).await?;
         assert_eq!(stats["vectors_count"], 1);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_multiple_collections() {
+    async fn test_multiple_collections() -> Result<(), Box<dyn std::error::Error>> {
         let provider = InMemoryVectorStoreProvider::new();
         let dimensions = 128;
 
         // Create multiple collections
         let collections = vec!["collection_1", "collection_2", "collection_3"];
         for collection in &collections {
-            provider
-                .create_collection(collection, dimensions)
-                .await
-                .unwrap();
+            provider.create_collection(collection, dimensions).await?;
         }
 
         // Verify all collections exist
         for collection in &collections {
-            assert!(provider.collection_exists(collection).await.unwrap());
+            assert!(provider.collection_exists(collection).await?);
         }
 
         // Add data to different collections
@@ -219,36 +204,32 @@ mod in_memory_provider_tests {
             let metadata = test_utils::create_test_metadata(i + 1);
             let ids = provider
                 .insert_vectors(collection, &[embedding], vec![metadata])
-                .await
-                .unwrap();
+                .await?;
             assert_eq!(ids.len(), 1);
         }
 
         // Verify data isolation between collections
         for (i, collection) in collections.iter().enumerate() {
-            let stats = provider.get_stats(collection).await.unwrap();
+            let stats = provider.get_stats(collection).await?;
             assert_eq!(stats["vectors_count"], 1);
 
             let query_vector = test_utils::create_test_embedding(i + 1, dimensions).vector;
             let results = provider
                 .search_similar(collection, &query_vector, 5, None)
-                .await
-                .unwrap();
+                .await?;
             assert_eq!(results.len(), 1);
             test_utils::assert_search_result(&results[0], i + 1, collection);
         }
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_search_limit() {
+    async fn test_search_limit() -> Result<(), Box<dyn std::error::Error>> {
         let provider = InMemoryVectorStoreProvider::new();
         let collection = "test_limit";
         let dimensions = 128;
 
-        provider
-            .create_collection(collection, dimensions)
-            .await
-            .unwrap();
+        provider.create_collection(collection, dimensions).await?;
 
         // Add multiple vectors
         let embeddings: Vec<Embedding> = (1..=10)
@@ -259,49 +240,43 @@ mod in_memory_provider_tests {
 
         provider
             .insert_vectors(collection, &embeddings, metadata)
-            .await
-            .unwrap();
+            .await?;
 
         // Search with different limits
         let query_vector = test_utils::create_test_embedding(1, dimensions).vector;
 
         let results_1 = provider
             .search_similar(collection, &query_vector, 1, None)
-            .await
-            .unwrap();
+            .await?;
         assert_eq!(results_1.len(), 1);
 
         let results_3 = provider
             .search_similar(collection, &query_vector, 3, None)
-            .await
-            .unwrap();
+            .await?;
         assert_eq!(results_3.len(), 3);
 
         let results_10 = provider
             .search_similar(collection, &query_vector, 10, None)
-            .await
-            .unwrap();
+            .await?;
         assert_eq!(results_10.len(), 10);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_empty_search_results() {
+    async fn test_empty_search_results() -> Result<(), Box<dyn std::error::Error>> {
         let provider = InMemoryVectorStoreProvider::new();
         let collection = "test_empty";
         let dimensions = 128;
 
-        provider
-            .create_collection(collection, dimensions)
-            .await
-            .unwrap();
+        provider.create_collection(collection, dimensions).await?;
 
         // Search in empty collection
         let query_vector = test_utils::create_test_embedding(1, dimensions).vector;
         let results = provider
             .search_similar(collection, &query_vector, 5, None)
-            .await
-            .unwrap();
+            .await?;
         assert!(results.is_empty());
+        Ok(())
     }
 }
 
@@ -332,49 +307,43 @@ mod null_provider_tests {
     }
 
     #[tokio::test]
-    async fn test_vector_operations() {
+    async fn test_vector_operations() -> Result<(), Box<dyn std::error::Error>> {
         let provider = NullVectorStoreProvider::new();
         let collection = "test_vectors";
         let embedding = test_utils::create_test_embedding(1, 128);
         let metadata = test_utils::create_test_metadata(1);
 
         // All operations should succeed but return empty/default results
-        let insert_result = provider
+        let ids = provider
             .insert_vectors(collection, &[embedding], vec![metadata])
-            .await;
-        assert!(insert_result.is_ok());
-        let ids = insert_result.unwrap();
+            .await?;
         assert_eq!(ids.len(), 1); // Should return one ID per vector
         assert_eq!(ids[0], ""); // Null provider returns empty string IDs
 
-        let search_result = provider
+        let search_results = provider
             .search_similar(collection, &vec![0.1; 128], 5, None)
-            .await;
-        assert!(search_result.is_ok());
-        assert!(search_result.unwrap().is_empty()); // Null provider returns empty results
+            .await?;
+        assert!(search_results.is_empty()); // Null provider returns empty results
 
-        let delete_result = provider
+        provider
             .delete_vectors(collection, &["test_id".to_string()])
-            .await;
-        assert!(delete_result.is_ok()); // Should succeed doing nothing
+            .await?; // Should succeed doing nothing
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_stats_operations() {
+    async fn test_stats_operations() -> Result<(), Box<dyn std::error::Error>> {
         let provider = NullVectorStoreProvider::new();
         let collection = "test_stats";
 
-        let stats_result = provider.get_stats(collection).await;
-        assert!(stats_result.is_ok());
-
-        let stats = stats_result.unwrap();
+        let stats = provider.get_stats(collection).await?;
         assert_eq!(stats["collection"], collection);
         assert_eq!(stats["status"], "active");
         assert_eq!(stats["vectors_count"], 0);
         assert_eq!(stats["provider"], "null");
 
-        let flush_result = provider.flush(collection).await;
-        assert!(flush_result.is_ok()); // Should succeed doing nothing
+        provider.flush(collection).await?; // Should succeed doing nothing
+        Ok(())
     }
 }
 
@@ -408,15 +377,14 @@ mod milvus_provider_tests {
     }
 
     #[tokio::test]
-    async fn test_milvus_integration_basic_operations() {
+    async fn test_milvus_integration_basic_operations() -> Result<(), Box<dyn std::error::Error>> {
         if !is_milvus_available().await {
-            println!("⚠️  Milvus not available, skipping integration test");
-            return;
+            println!("Milvus not available, skipping integration test");
+            return Ok(());
         }
 
         let provider = MilvusVectorStoreProvider::new("http://localhost:19531".to_string(), None)
-            .await
-            .unwrap();
+            .await?;
         let collection = "test_milvus_basic";
         let dimensions = 128;
 
@@ -424,37 +392,32 @@ mod milvus_provider_tests {
         let _ = provider.delete_collection(collection).await;
 
         // Test collection creation
-        let result = provider.create_collection(collection, dimensions).await;
-        assert!(
-            result.is_ok(),
-            "Failed to create collection: {:?}",
-            result.err()
-        );
+        provider.create_collection(collection, dimensions).await?;
 
         // Test collection existence
-        let exists = provider.collection_exists(collection).await.unwrap();
+        let exists = provider.collection_exists(collection).await?;
         assert!(exists, "Collection should exist after creation");
 
         // Test stats for empty collection
-        let stats = provider.get_stats(collection).await.unwrap();
+        let stats = provider.get_stats(collection).await?;
         assert_eq!(stats["collection"], collection);
         assert_eq!(stats["status"], "active");
         assert_eq!(stats["provider"], "milvus");
 
         // Clean up
         let _ = provider.delete_collection(collection).await;
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_milvus_integration_vector_operations() {
+    async fn test_milvus_integration_vector_operations() -> Result<(), Box<dyn std::error::Error>> {
         if !is_milvus_available().await {
-            println!("⚠️  Milvus not available, skipping integration test");
-            return;
+            println!("Milvus not available, skipping integration test");
+            return Ok(());
         }
 
         let provider = MilvusVectorStoreProvider::new("http://localhost:19531".to_string(), None)
-            .await
-            .unwrap();
+            .await?;
         let collection = "test_milvus_vectors";
         let dimensions = 128;
 
@@ -462,10 +425,7 @@ mod milvus_provider_tests {
         let _ = provider.delete_collection(collection).await;
 
         // Create collection
-        provider
-            .create_collection(collection, dimensions)
-            .await
-            .unwrap();
+        provider.create_collection(collection, dimensions).await?;
 
         // Create test data
         let embeddings = vec![
@@ -480,22 +440,20 @@ mod milvus_provider_tests {
         // Insert vectors
         let ids = provider
             .insert_vectors(collection, &embeddings, metadata)
-            .await
-            .unwrap();
+            .await?;
         assert_eq!(ids.len(), 3, "Should return 3 IDs");
 
         // Wait a bit for indexing
         tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
 
         // Flush to ensure persistence
-        provider.flush(collection).await.unwrap();
+        provider.flush(collection).await?;
 
         // Search for similar vectors
         let query_vector = test_utils::create_test_embedding(1, dimensions).vector;
         let results = provider
             .search_similar(collection, &query_vector, 5, None)
-            .await
-            .unwrap();
+            .await?;
 
         // Should find results
         assert!(!results.is_empty(), "Should find at least one result");
@@ -512,32 +470,28 @@ mod milvus_provider_tests {
         );
 
         // Test deletion
-        let delete_result = provider.delete_vectors(collection, &ids).await;
-        assert!(delete_result.is_ok(), "Delete operation should succeed");
+        provider.delete_vectors(collection, &ids).await?;
 
         // Clean up
         let _ = provider.delete_collection(collection).await;
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_milvus_integration_search_limits() {
+    async fn test_milvus_integration_search_limits() -> Result<(), Box<dyn std::error::Error>> {
         if !is_milvus_available().await {
-            println!("⚠️  Milvus not available, skipping integration test");
-            return;
+            println!("Milvus not available, skipping integration test");
+            return Ok(());
         }
 
         let provider = MilvusVectorStoreProvider::new("http://localhost:19531".to_string(), None)
-            .await
-            .unwrap();
+            .await?;
         let collection = "test_milvus_limits";
         let dimensions = 128;
 
         // Clean up and setup
         let _ = provider.delete_collection(collection).await;
-        provider
-            .create_collection(collection, dimensions)
-            .await
-            .unwrap();
+        provider.create_collection(collection, dimensions).await?;
 
         // Add multiple vectors
         let embeddings: Vec<Embedding> = (1..=10)
@@ -548,57 +502,52 @@ mod milvus_provider_tests {
 
         provider
             .insert_vectors(collection, &embeddings, metadata)
-            .await
-            .unwrap();
-        provider.flush(collection).await.unwrap();
+            .await?;
+        provider.flush(collection).await?;
 
         // Test different search limits
         let query_vector = test_utils::create_test_embedding(1, dimensions).vector;
 
         let results_1 = provider
             .search_similar(collection, &query_vector, 1, None)
-            .await
-            .unwrap();
+            .await?;
         assert_eq!(results_1.len(), 1);
 
         let results_3 = provider
             .search_similar(collection, &query_vector, 3, None)
-            .await
-            .unwrap();
+            .await?;
         assert_eq!(results_3.len(), 3);
 
         let results_10 = provider
             .search_similar(collection, &query_vector, 10, None)
-            .await
-            .unwrap();
+            .await?;
         assert_eq!(results_10.len(), 10);
 
         // Clean up
         let _ = provider.delete_collection(collection).await;
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_milvus_integration_empty_collection() {
+    async fn test_milvus_integration_empty_collection() -> Result<(), Box<dyn std::error::Error>> {
         if !is_milvus_available().await {
-            println!("⚠️  Milvus not available, skipping integration test");
-            return;
+            println!("Milvus not available, skipping integration test");
+            return Ok(());
         }
 
         let provider = MilvusVectorStoreProvider::new("http://localhost:19531".to_string(), None)
-            .await
-            .unwrap();
+            .await?;
         let collection = "test_milvus_empty";
 
         // Clean up and setup
         let _ = provider.delete_collection(collection).await;
-        provider.create_collection(collection, 128).await.unwrap();
+        provider.create_collection(collection, 128).await?;
 
         // Search in empty collection
         let query_vector = vec![0.1; 128];
         let results = provider
             .search_similar(collection, &query_vector, 5, None)
-            .await
-            .unwrap();
+            .await?;
         assert!(
             results.is_empty(),
             "Empty collection should return no results"
@@ -606,18 +555,18 @@ mod milvus_provider_tests {
 
         // Clean up
         let _ = provider.delete_collection(collection).await;
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_milvus_integration_multiple_collections() {
+    async fn test_milvus_integration_multiple_collections() -> Result<(), Box<dyn std::error::Error>> {
         if !is_milvus_available().await {
-            println!("⚠️  Milvus not available, skipping integration test");
-            return;
+            println!("Milvus not available, skipping integration test");
+            return Ok(());
         }
 
         let provider = MilvusVectorStoreProvider::new("http://localhost:19531".to_string(), None)
-            .await
-            .unwrap();
+            .await?;
         let collections = vec!["test_milvus_multi_1", "test_milvus_multi_2"];
         let dimensions = 128;
 
@@ -628,11 +577,8 @@ mod milvus_provider_tests {
 
         // Create multiple collections
         for collection in &collections {
-            provider
-                .create_collection(collection, dimensions)
-                .await
-                .unwrap();
-            assert!(provider.collection_exists(collection).await.unwrap());
+            provider.create_collection(collection, dimensions).await?;
+            assert!(provider.collection_exists(collection).await?);
         }
 
         // Add data to each collection
@@ -641,11 +587,10 @@ mod milvus_provider_tests {
             let metadata = test_utils::create_test_metadata(i + 1);
             let ids = provider
                 .insert_vectors(collection, &[embedding], vec![metadata])
-                .await
-                .unwrap();
+                .await?;
             assert_eq!(ids.len(), 1);
 
-            provider.flush(collection).await.unwrap();
+            provider.flush(collection).await?;
         }
 
         // Verify data isolation
@@ -653,8 +598,7 @@ mod milvus_provider_tests {
             let query_vector = test_utils::create_test_embedding(i + 1, dimensions).vector;
             let results = provider
                 .search_similar(collection, &query_vector, 5, None)
-                .await
-                .unwrap();
+                .await?;
             assert!(!results.is_empty(), "Each collection should have its data");
 
             // Verify the result belongs to the correct collection
@@ -666,6 +610,7 @@ mod milvus_provider_tests {
         for collection in &collections {
             let _ = provider.delete_collection(collection).await;
         }
+        Ok(())
     }
 }
 

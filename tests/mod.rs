@@ -8,6 +8,7 @@ pub mod benchmark;
 pub mod chunking;
 pub mod config;
 pub mod core;
+pub mod infrastructure;
 pub mod integration;
 pub mod metrics;
 pub mod providers;

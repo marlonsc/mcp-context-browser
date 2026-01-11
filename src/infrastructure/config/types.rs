@@ -1,3 +1,6 @@
+// Architecture Note: Configuration aggregation requires importing from adapters layer.
+// This is an acceptable deviation for the root config type that aggregates all settings.
+// The alternative (duplicating config types) would violate DRY principle.
 use crate::adapters::database::DatabaseConfig;
 use crate::adapters::hybrid_search::HybridSearchConfig;
 use crate::daemon::DaemonConfig;

@@ -564,7 +564,7 @@ mod tests {
 
     #[test]
     fn test_auth_service_handles_token_generation_errors() {
-        let auth = AuthService::default();
+        let auth = enabled_auth_service();
 
         // This should work in normal cases, but we test the error handling path
         let result = auth.authenticate("admin@context.browser", "admin");

@@ -157,7 +157,7 @@ mod repository_validation_tests {
     use super::*;
 
     #[test]
-    fn test_chunk_data_integrity() {
+    fn test_chunk_data_integrity() -> Result<(), Box<dyn std::error::Error>> {
         // Test that chunk data maintains integrity through repository operations
         let original_chunk = CodeChunk {
             id: "integrity_test".to_string(),
@@ -170,11 +170,11 @@ mod repository_validation_tests {
         };
 
         // Test that serialization/deserialization preserves data
-        let serialized = serde_json::to_string(&original_chunk).expect("Should serialize");
-        let deserialized: CodeChunk =
-            serde_json::from_str(&serialized).expect("Should deserialize");
+        let serialized = serde_json::to_string(&original_chunk)?;
+        let deserialized: CodeChunk = serde_json::from_str(&serialized)?;
 
         assert_eq!(original_chunk, deserialized);
+        Ok(())
     }
 
     #[test]

@@ -12,6 +12,23 @@ readme = "README.md"
 documentation = "https://docs.rs/mcp-context-browser"
 homepage = "https://github.com/marlonsc/mcp-context-browser"
 
+[features]
+default = ["fastembed", "filesystem-store"]
+
+# Embedding providers
+fastembed = []  # Local embeddings via FastEmbed
+
+# Vector stores
+filesystem-store = []  # Local filesystem storage
+milvus = []  # Milvus vector database
+edgevec = []  # EdgeVec in-memory store
+
+# Optional infrastructure
+redis-cache = []  # Redis distributed caching
+
+# Full feature set for development/testing
+full = ["fastembed", "filesystem-store", "milvus", "edgevec", "redis-cache"]
+
 [dependencies]
 # Core async runtime
 tokio = { version = "1.49", features = ["full"] }
@@ -179,3 +196,4 @@ moka = { version = "0.12", features = ["future"] }
 tempfile = "3.10"
 mockito = "1.4"
 proptest = "1.0"
+serial_test = "3.2"

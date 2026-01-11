@@ -61,7 +61,8 @@ mod provider_tests {
             embedding_health.is_some(),
             "Should have embedding provider health info after update"
         );
-        assert!(matches!(embedding_health.unwrap(), ProviderHealth::Healthy));
+        let health = embedding_health.expect("Should have embedding provider health");
+        assert!(matches!(health, ProviderHealth::Healthy));
     }
 }
 
@@ -81,15 +82,15 @@ mod core_config_tests {
     }
 
     #[test]
-    fn test_config_serialization() {
+    fn test_config_serialization() -> Result<(), Box<dyn std::error::Error>> {
         let config = Config::default();
 
         // Test TOML serialization
-        let toml_str = toml::to_string(&config);
-        assert!(toml_str.is_ok(), "Config should serialize to TOML");
+        let toml_str = toml::to_string(&config)?;
 
         // Test deserialization
-        let deserialized: Result<Config, _> = toml::from_str(&toml_str.unwrap());
-        assert!(deserialized.is_ok(), "Config should deserialize from TOML");
+        let deserialized: Config = toml::from_str(&toml_str)?;
+        assert_eq!(config.server.host, deserialized.server.host);
+        Ok(())
     }
 }

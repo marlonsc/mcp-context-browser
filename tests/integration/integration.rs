@@ -11,17 +11,17 @@ mod tests {
     use rmcp::ServerHandler;
 
     /// Get or create a shared test server instance
-    async fn get_test_server() -> Result<McpServer, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_test_server() -> Result<McpServer, Box<dyn std::error::Error>> {
         McpServer::new(None).await.map_err(|e| {
             Box::new(std::io::Error::other(e.to_string()))
-                as Box<dyn std::error::Error + Send + Sync>
+                as Box<dyn std::error::Error>
         })
     }
 
     /// Process an MCP JSON-RPC message using the actual server
     async fn run_mcp_command_test(
         json_input: &str,
-    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<String, Box<dyn std::error::Error>> {
         // Parse the JSON-RPC message
         let message: serde_json::Value =
             serde_json::from_str(json_input).map_err(|e| format!("Invalid JSON: {}", e))?;

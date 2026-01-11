@@ -518,7 +518,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_config_validation_openai() {
+    async fn test_config_validation_openai() -> Result<(), Box<dyn std::error::Error>> {
         let config = GlobalConfig {
             server: ServerConfigExample::default(),
             providers: GlobalProviderConfig {
@@ -538,12 +538,13 @@ mod tests {
             },
         };
 
-        let manager = ConfigManager::new().unwrap();
+        let manager = ConfigManager::new()?;
         assert!(manager.validate_config(&config).is_ok());
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_config_validation_missing_api_key() {
+    async fn test_config_validation_missing_api_key() -> Result<(), Box<dyn std::error::Error>> {
         let config = GlobalConfig {
             server: ServerConfigExample::default(),
             providers: GlobalProviderConfig {
@@ -563,7 +564,8 @@ mod tests {
             },
         };
 
-        let manager = ConfigManager::new().unwrap();
+        let manager = ConfigManager::new()?;
         assert!(manager.validate_config(&config).is_err());
+        Ok(())
     }
 }

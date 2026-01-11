@@ -94,23 +94,24 @@ mod tests {
     }
 
     #[test]
-    fn test_embedding_serialization() {
+    fn test_embedding_serialization() -> Result<(), Box<dyn std::error::Error>> {
         let embedding = Embedding {
             vector: vec![0.1, 0.2, 0.3],
             model: "test-model".to_string(),
             dimensions: 3,
         };
 
-        let json = serde_json::to_string(&embedding).unwrap();
-        let deserialized: Embedding = serde_json::from_str(&json).unwrap();
+        let json = serde_json::to_string(&embedding)?;
+        let deserialized: Embedding = serde_json::from_str(&json)?;
 
         assert_eq!(embedding.vector, deserialized.vector);
         assert_eq!(embedding.model, deserialized.model);
         assert_eq!(embedding.dimensions, deserialized.dimensions);
+        Ok(())
     }
 
     #[test]
-    fn test_code_chunk_serialization() {
+    fn test_code_chunk_serialization() -> Result<(), Box<dyn std::error::Error>> {
         let chunk = CodeChunk {
             id: "test-id".to_string(),
             content: "fn test() {}".to_string(),
@@ -121,8 +122,8 @@ mod tests {
             metadata: serde_json::json!({"author": "test"}),
         };
 
-        let json = serde_json::to_string(&chunk).unwrap();
-        let deserialized: CodeChunk = serde_json::from_str(&json).unwrap();
+        let json = serde_json::to_string(&chunk)?;
+        let deserialized: CodeChunk = serde_json::from_str(&json)?;
 
         assert_eq!(chunk.id, deserialized.id);
         assert_eq!(chunk.content, deserialized.content);
@@ -131,10 +132,11 @@ mod tests {
         assert_eq!(chunk.end_line, deserialized.end_line);
         assert_eq!(chunk.language, deserialized.language);
         assert_eq!(chunk.metadata, deserialized.metadata);
+        Ok(())
     }
 
     #[test]
-    fn test_search_result_serialization() {
+    fn test_search_result_serialization() -> Result<(), Box<dyn std::error::Error>> {
         let result = SearchResult {
             id: "test-id".to_string(),
             file_path: "src/main.rs".to_string(),
@@ -144,8 +146,8 @@ mod tests {
             metadata: serde_json::json!({"context": "main function"}),
         };
 
-        let json = serde_json::to_string(&result).unwrap();
-        let deserialized: SearchResult = serde_json::from_str(&json).unwrap();
+        let json = serde_json::to_string(&result)?;
+        let deserialized: SearchResult = serde_json::from_str(&json)?;
 
         assert_eq!(result.id, deserialized.id);
         assert_eq!(result.file_path, deserialized.file_path);
@@ -153,6 +155,7 @@ mod tests {
         assert_eq!(result.content, deserialized.content);
         assert_eq!(result.score, deserialized.score);
         assert_eq!(result.metadata, deserialized.metadata);
+        Ok(())
     }
 
     #[test]

@@ -317,7 +317,6 @@ mod service_unit_tests {
         InMemoryVectorStoreProvider, MockEmbeddingProvider,
     };
     use mcp_context_browser::application::ContextService;
-    use mcp_context_browser::domain::ports::{EmbeddingProvider, VectorStoreProvider};
     use std::sync::Arc;
 
     #[tokio::test]

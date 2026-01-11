@@ -1,0 +1,80 @@
+//! Hybrid search configuration
+//!
+//! This module provides configuration options for the hybrid search system,
+//! including weights for BM25 and semantic scores.
+
+use validator::Validate;
+
+/// Hybrid search configuration
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, Validate)]
+pub struct HybridSearchConfig {
+    /// Enable hybrid search
+    pub enabled: bool,
+    /// Weight for BM25 score (0-1)
+    #[validate(range(min = 0.0, max = 1.0))]
+    pub bm25_weight: f32,
+    /// Weight for semantic score (0-1)
+    #[validate(range(min = 0.0, max = 1.0))]
+    pub semantic_weight: f32,
+    /// BM25 k1 parameter
+    #[validate(range(min = 0.0))]
+    pub bm25_k1: f32,
+    /// BM25 b parameter
+    #[validate(range(min = 0.0, max = 1.0))]
+    pub bm25_b: f32,
+}
+
+impl Default for HybridSearchConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            bm25_weight: 0.4,
+            semantic_weight: 0.6,
+            bm25_k1: 1.2,
+            bm25_b: 0.75,
+        }
+    }
+}
+
+impl HybridSearchConfig {
+    /// Create config from environment variables
+    pub fn from_env() -> Self {
+        Self {
+            enabled: std::env::var("HYBRID_SEARCH_ENABLED")
+                .unwrap_or_else(|_| "true".to_string())
+                .parse()
+                .unwrap_or(true),
+            bm25_weight: std::env::var("HYBRID_SEARCH_BM25_WEIGHT")
+                .unwrap_or_else(|_| "0.4".to_string())
+                .parse()
+                .unwrap_or(0.4),
+            semantic_weight: std::env::var("HYBRID_SEARCH_SEMANTIC_WEIGHT")
+                .unwrap_or_else(|_| "0.6".to_string())
+                .parse()
+                .unwrap_or(0.6),
+            bm25_k1: std::env::var("HYBRID_SEARCH_BM25_K1")
+                .unwrap_or_else(|_| "1.2".to_string())
+                .parse()
+                .unwrap_or(1.2),
+            bm25_b: std::env::var("HYBRID_SEARCH_BM25_B")
+                .unwrap_or_else(|_| "0.75".to_string())
+                .parse()
+                .unwrap_or(0.75),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_hybrid_search_config() {
+        let config = HybridSearchConfig::default();
+        assert!(config.enabled);
+        assert_eq!(config.bm25_weight, 0.4);
+        assert_eq!(config.semantic_weight, 0.6);
+        assert_eq!(config.bm25_k1, 1.2);
+        assert_eq!(config.bm25_b, 0.75);
+    }
+}
