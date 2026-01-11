@@ -33,7 +33,7 @@ async fn test_sync_detects_new_files() -> Result<(), Box<dyn std::error::Error>>
     let manager = SyncManager::with_config(SyncConfig {
         interval_ms: 1000,
         debounce_ms: 0, // Disable debounce for testing
-    });
+    }, None);
 
     // When: We sync the first time
     let result = manager.sync_codebase(temp_dir.path()).await;
@@ -55,7 +55,7 @@ async fn test_sync_detects_file_modifications() -> Result<(), Box<dyn std::error
     let manager = SyncManager::with_config(SyncConfig {
         interval_ms: 1000,
         debounce_ms: 0,
-    });
+    }, None);
 
     // First sync to establish baseline
     let _ = manager.sync_codebase(temp_dir.path()).await;
@@ -86,7 +86,7 @@ async fn test_sync_tracks_modification_times() -> Result<(), Box<dyn std::error:
     let manager = SyncManager::with_config(SyncConfig {
         interval_ms: 1000,
         debounce_ms: 0,
-    });
+    }, None);
 
     // When: We sync
     let _ = manager.sync_codebase(temp_dir.path()).await;
@@ -104,7 +104,7 @@ async fn test_sync_returns_changed_files() -> Result<(), Box<dyn std::error::Err
     let manager = SyncManager::with_config(SyncConfig {
         interval_ms: 1000,
         debounce_ms: 0,
-    });
+    }, None);
 
     // First sync
     let _ = manager.sync_codebase(temp_dir.path()).await;
@@ -146,6 +146,7 @@ async fn test_sync_with_event_bus_publishes_event() -> Result<(), Box<dyn std::e
             debounce_ms: 0,
         },
         event_bus,
+        None,
     );
 
     // When: We sync
@@ -176,7 +177,7 @@ async fn test_sync_handles_empty_directory() -> Result<(), Box<dyn std::error::E
     let manager = SyncManager::with_config(SyncConfig {
         interval_ms: 1000,
         debounce_ms: 0,
-    });
+    }, None);
 
     // When: We sync an empty directory
     let result = manager.sync_codebase(temp_dir.path()).await;
@@ -210,7 +211,7 @@ async fn test_sync_filters_by_extension() -> Result<(), Box<dyn std::error::Erro
     let manager = SyncManager::with_config(SyncConfig {
         interval_ms: 1000,
         debounce_ms: 0,
-    });
+    }, None);
 
     // When: We get changed files (should only track code files)
     let _ = manager.sync_codebase(temp_dir.path()).await;

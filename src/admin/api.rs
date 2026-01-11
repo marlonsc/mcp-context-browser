@@ -13,11 +13,8 @@ pub struct AdminApiServer {
 
 impl AdminApiServer {
     /// Create a new admin API server
-    pub fn new(config: AdminConfig, mcp_server: crate::server::McpServer) -> Self {
-        Self {
-            config,
-            mcp_server: Arc::new(mcp_server),
-        }
+    pub fn new(config: AdminConfig, mcp_server: Arc<crate::server::McpServer>) -> Self {
+        Self { config, mcp_server }
     }
 
     /// Create the admin router

@@ -8,10 +8,12 @@ use dashmap::DashMap;
 use std::collections::HashMap;
 use std::sync::Arc;
 
+/// In-memory storage entry type
+type CollectionEntry = (Embedding, HashMap<String, serde_json::Value>);
+
 /// In-memory vector store provider
-#[allow(clippy::type_complexity)]
 pub struct InMemoryVectorStoreProvider {
-    collections: Arc<DashMap<String, Vec<(Embedding, HashMap<String, serde_json::Value>)>>>,
+    collections: Arc<DashMap<String, Vec<CollectionEntry>>>,
 }
 
 impl InMemoryVectorStoreProvider {

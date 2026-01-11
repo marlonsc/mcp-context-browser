@@ -328,8 +328,8 @@ pub async fn run_server() -> Result<(), Box<dyn std::error::Error>> {
             tracing::info!("📡 Starting MCP protocol server on stdio transport");
             tracing::info!("🎯 Ready to accept MCP client connections");
 
-            // Start the MCP service with stdio transport
-            let service_future = server.serve(stdio());
+        // Start the MCP service with stdio transport
+        let service_future = (*server).clone().serve(stdio());
 
             tokio::select! {
                 result = service_future => {
