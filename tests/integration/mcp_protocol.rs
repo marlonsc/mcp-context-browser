@@ -15,13 +15,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_mcp_server_creation() -> Result<(), Box<dyn std::error::Error>> {
-        let _server = McpServer::new(None).await?;
+        let _server = McpServer::new().await?;
         Ok(())
     }
 
     #[tokio::test]
     async fn test_server_info_structure() -> Result<(), Box<dyn std::error::Error>> {
-        let server = McpServer::new(None).await?;
+        let server = McpServer::new().await?;
         let info = server.get_info();
 
         // Check protocol version
@@ -71,7 +71,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_server_instructions_comprehensive() -> Result<(), Box<dyn std::error::Error>> {
-        let server = McpServer::new(None).await?;
+        let server = McpServer::new().await?;
         let info = server.get_info();
         let instructions = info.instructions.as_ref().ok_or("Missing instructions")?;
 
@@ -223,7 +223,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_server_capabilities_structure() -> Result<(), Box<dyn std::error::Error>> {
-        let server = McpServer::new(None).await?;
+        let server = McpServer::new().await?;
         let info = server.get_info();
         let capabilities = &info.capabilities;
 
@@ -255,7 +255,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_server_implementation_info() -> Result<(), Box<dyn std::error::Error>> {
-        let server = McpServer::new(None).await?;
+        let server = McpServer::new().await?;
         let info = server.get_info();
         let implementation = &info.server_info;
 
@@ -275,7 +275,7 @@ mod tests {
     {
         // This test ensures the server can be created with all its dependencies
         // In a real scenario, this would involve mock providers
-        let _server = McpServer::new(None).await?;
+        let _server = McpServer::new().await?;
 
         // Server creation succeeded - this is expected with mock/default providers
         assert!(
@@ -292,7 +292,7 @@ mod tests {
 
         // We expect server creation to succeed in test environment
         // In case of failure, it should be due to configuration, not code structure
-        let server_result = McpServer::new(None).await;
+        let server_result = McpServer::new().await;
 
         // Either it succeeds, or fails with a configuration-related error
         match server_result {
@@ -320,7 +320,7 @@ mod tests {
     #[tokio::test]
     async fn test_server_tool_router_initialization() -> Result<(), Box<dyn std::error::Error>> {
         // Test that the server properly initializes its tool router
-        let _server = McpServer::new(None).await?;
+        let _server = McpServer::new().await?;
 
         // The server should have a tool router (internal implementation detail)
         // We can't directly test the router, but we can verify the server structure
@@ -333,7 +333,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_server_instructions_formatting() -> Result<(), Box<dyn std::error::Error>> {
-        let server = McpServer::new(None).await?;
+        let server = McpServer::new().await?;
         let info = server.get_info();
         let instructions = info.instructions.as_ref().ok_or("Missing instructions")?;
 
@@ -359,7 +359,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_server_capabilities_compliance() -> Result<(), Box<dyn std::error::Error>> {
-        let server = McpServer::new(None).await?;
+        let server = McpServer::new().await?;
         let info = server.get_info();
 
         // Verify MCP protocol compliance
@@ -390,7 +390,7 @@ mod tests {
     #[tokio::test]
     async fn test_instructions_contain_essential_information(
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let server = McpServer::new(None).await?;
+        let server = McpServer::new().await?;
         let info = server.get_info();
         let instructions = info.instructions.as_ref().ok_or("Missing instructions")?;
 
@@ -423,7 +423,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_instructions_provide_usage_guidance() -> Result<(), Box<dyn std::error::Error>> {
-        let server = McpServer::new(None).await?;
+        let server = McpServer::new().await?;
         let info = server.get_info();
         let instructions = info.instructions.as_ref().ok_or("Missing instructions")?;
 
@@ -451,7 +451,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_server_info_serialization() -> Result<(), Box<dyn std::error::Error>> {
-        let server = McpServer::new(None).await?;
+        let server = McpServer::new().await?;
         let info = server.get_info();
 
         // Test that the server info can be serialized (required for MCP protocol)
@@ -467,7 +467,7 @@ mod tests {
     #[tokio::test]
     async fn test_server_supports_required_mcp_features() -> Result<(), Box<dyn std::error::Error>>
     {
-        let server = McpServer::new(None).await?;
+        let server = McpServer::new().await?;
         let info = server.get_info();
 
         // Must support MCP protocol version 2024-11-05

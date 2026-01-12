@@ -19,7 +19,7 @@ mod test_utils {
 
     pub async fn create_test_server() -> Result<McpServer, Box<dyn std::error::Error>> {
         // Create server with defaults (should use Ollama if available, fallback to mock)
-        let server = McpServer::new(None).await?;
+        let server = McpServer::new().await?;
         Ok(server)
     }
 

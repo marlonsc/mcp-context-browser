@@ -138,7 +138,7 @@ mod full_integration_tests {
     async fn create_mcp_server_with_providers() -> Result<McpServer, Box<dyn std::error::Error>> {
         // For integration tests, we'll use the default server creation
         // which should attempt to connect to local Ollama and Milvus
-        let server = McpServer::new(None)
+        let server = McpServer::new()
             .await
             .map_err(|e| format!("Failed to create MCP server: {}", e))?;
 

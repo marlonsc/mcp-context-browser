@@ -232,6 +232,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::assertions_on_constants)]
     fn test_activity_defaults() {
         assert!(DEFAULT_MAX_ACTIVITIES > 0);
         assert!(DEFAULT_ACTIVITY_RETENTION_DAYS > 0);
@@ -239,6 +240,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::assertions_on_constants)]
     fn test_backup_defaults() {
         assert!(DEFAULT_BACKUP_RETENTION_DAYS > 0);
         assert!(DEFAULT_BACKUP_COMPRESSION_LEVEL >= 1 && DEFAULT_BACKUP_COMPRESSION_LEVEL <= 9);

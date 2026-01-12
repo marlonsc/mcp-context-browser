@@ -29,7 +29,7 @@ mod tests {
 
     /// Get or create a shared test server instance
     async fn get_test_server() -> Result<McpServer, Box<dyn std::error::Error>> {
-        McpServer::new(None).await.map_err(|e| {
+        McpServer::new().await.map_err(|e| {
             Box::new(std::io::Error::other(e.to_string())) as Box<dyn std::error::Error>
         })
     }

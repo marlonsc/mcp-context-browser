@@ -452,7 +452,7 @@ mod search_code_tests {
             },
             namespaces: Default::default(),
         };
-        Arc::new(create_cache_provider(&config).await.unwrap())
+        create_cache_provider(&config).await.unwrap()
     }
 
     #[tokio::test]
