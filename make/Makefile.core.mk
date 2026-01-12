@@ -18,14 +18,18 @@ build-release: ## Build project (release mode)
 # Test
 # -----------------------------------------------------------------------------
 
-test: ## Run all tests
-	@cargo test --all-targets --all-features
+# Test-specific port (unified: Admin + Metrics + MCP on single port)
+# Uses 13001 to avoid conflicts with development server (default 3001)
+export MCP_PORT ?= 13001
+
+test: ## Run all tests (uses port 13001 to avoid conflicts)
+	@MCP_PORT=$(MCP_PORT) cargo test --all-targets --all-features
 
 test-unit: ## Run unit tests only
-	@cargo test --lib --all-features
+	@MCP_PORT=$(MCP_PORT) cargo test --lib --all-features
 
 test-integration: ## Run integration tests only
-	@cargo test --test '*'
+	@MCP_PORT=$(MCP_PORT) cargo test --test '*'
 
 # -----------------------------------------------------------------------------
 # Run

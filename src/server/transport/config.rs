@@ -42,11 +42,18 @@ pub struct TransportConfig {
 }
 
 /// HTTP transport configuration
+///
+/// Note: In the unified port architecture (ADR-007), MCP HTTP transport is served
+/// from the same port as Admin and Metrics (default: 3001, configured via MCP_PORT).
+/// The `port` field here is kept for backwards compatibility but is not used
+/// when running in unified mode.
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct HttpTransportConfig {
-    /// Port for MCP HTTP transport
+    /// Port for MCP HTTP transport (legacy - use MCP_PORT for unified server)
+    /// In unified mode, this is ignored; MCP is served from the metrics port.
     #[validate(range(min = 1024, max = 65535))]
     #[serde(default = "default_mcp_port")]
+    #[deprecated(note = "Use MCP_PORT env var for unified server port (default: 3001)")]
     pub port: u16,
 
     /// Bind address (localhost by default for security)
@@ -69,6 +76,7 @@ pub struct HttpTransportConfig {
 }
 
 impl Default for HttpTransportConfig {
+    #[allow(deprecated)] // port field is deprecated but kept for backwards compatibility
     fn default() -> Self {
         Self {
             port: default_mcp_port(),
@@ -132,6 +140,8 @@ impl Default for VersionConfig {
 
 // Default value functions
 fn default_mcp_port() -> u16 {
+    // Legacy: In unified mode (ADR-007), MCP is served from the metrics port.
+    // This default is kept for backwards compatibility with standalone HTTP mode.
     3002
 }
 fn default_bind_address() -> String {

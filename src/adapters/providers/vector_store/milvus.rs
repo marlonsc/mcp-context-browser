@@ -282,7 +282,7 @@ impl VectorStoreProvider for MilvusVectorStoreProvider {
             ])
             .add_param("metric_type", "L2");
 
-        let search_results = self
+        let search_results = match self
             .client
             .search(
                 collection,
@@ -290,7 +290,17 @@ impl VectorStoreProvider for MilvusVectorStoreProvider {
                 Some(search_options),
             )
             .await
-            .map_err(|e| Error::vector_db(format!("Failed to search: {}", e)))?;
+        {
+            Ok(results) => results,
+            Err(e) => {
+                let err_str = e.to_string();
+                // Handle empty collection case - Milvus returns error for no results
+                if err_str.contains("no IDs") || err_str.contains("empty") {
+                    return Ok(Vec::new());
+                }
+                return Err(Error::vector_db(format!("Failed to search: {}", e)));
+            }
+        };
 
         // Convert results to our format
         let mut results = Vec::new();

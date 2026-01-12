@@ -1,59 +1,57 @@
 # =============================================================================
-# QUALITY - Code quality operations (streamlined)
+# QUALITY - Code quality operations
 # =============================================================================
-# Naming: action-target pattern, minimal verbs
+# Same commands work everywhere: local, CI, Docker, any OS
 # =============================================================================
 
-.PHONY: check fmt lint fix quality validate
-.PHONY: coverage bench audit
+.PHONY: check fmt lint fix quality validate audit coverage bench
 
 # -----------------------------------------------------------------------------
-# Quick Commands (most used)
+# Core Quality Commands
 # -----------------------------------------------------------------------------
 
 check: ## Fast compilation check
 	@cargo check --all-targets
 
-fmt: ## Format all code (Rust + Markdown)
+fmt: ## Format code (use FMT_CHECK=1 for CI mode)
+ifdef FMT_CHECK
+	@cargo fmt --all -- --check
+else
 	@cargo fmt
 	@./scripts/docs/markdown.sh fix 2>/dev/null || true
-	@echo "✅ Code formatted"
+endif
 
-lint: ## Lint all code (Rust + Markdown)
-	@echo "🔍 Linting Rust..."
+lint: ## Lint code (Rust + Markdown)
 	@cargo clippy --all-targets --all-features -- -D warnings
-	@echo "🔍 Linting Markdown..."
-	@./scripts/docs/markdown.sh lint 2>/dev/null || echo "⚠️  Markdown lint skipped"
-	@echo "✅ Lint complete"
+	@./scripts/docs/markdown.sh lint 2>/dev/null || true
 
-fix: fmt ## Auto-fix all issues (format + clippy)
+fix: ## Auto-fix all issues
+	@cargo fmt
 	@cargo clippy --fix --allow-dirty --all-targets --all-features 2>/dev/null || true
-	@echo "✅ Issues fixed"
 
 # -----------------------------------------------------------------------------
-# Quality Gates (CI/CD)
+# Quality Gates
 # -----------------------------------------------------------------------------
 
-quality: check fmt lint test ## Full quality check (MANDATORY for CI)
-	@echo "🔒 Running security audit..."
-	@cargo audit 2>/dev/null || echo "⚠️  cargo-audit not installed (run: cargo install cargo-audit)"
+quality: check fmt lint test ## Full quality check
 	@echo "✅ Quality checks passed"
 
-validate: quality docs-check ## Complete validation (quality + docs)
-	@echo "🚀 All validations passed - Ready for release"
+validate: quality audit docs-check ## Complete validation
+	@echo "✅ All validations passed"
 
 # -----------------------------------------------------------------------------
-# Specialized Checks
+# Security & Coverage
 # -----------------------------------------------------------------------------
 
-coverage: ## Generate test coverage report
-	@echo "📊 Generating coverage report..."
+audit: ## Security audit
+	@cargo audit
+
+coverage: ## Generate coverage (use LCOV=1 for CI format)
+ifdef LCOV
+	@cargo tarpaulin --out Lcov --output-dir coverage
+else
 	@cargo tarpaulin --out Html --output-dir coverage 2>/dev/null || echo "⚠️  cargo-tarpaulin not installed"
-	@echo "📖 Coverage at: coverage/tarpaulin-report.html"
+endif
 
 bench: ## Run benchmarks
 	@cargo bench
-
-audit: ## Security audit of dependencies
-	@echo "🔒 Running security audit..."
-	@cargo audit

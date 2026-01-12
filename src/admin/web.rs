@@ -12,19 +12,52 @@ use tera::{Context, Tera};
 
 use crate::admin::models::AdminState;
 
+// Embed all templates at compile time so binary is self-contained
+const TPL_BASE: &str = include_str!("web/templates/base.html");
+const TPL_DASHBOARD: &str = include_str!("web/templates/dashboard.html");
+const TPL_PROVIDERS: &str = include_str!("web/templates/providers.html");
+const TPL_INDEXES: &str = include_str!("web/templates/indexes.html");
+const TPL_CONFIGURATION: &str = include_str!("web/templates/configuration.html");
+const TPL_LOGS: &str = include_str!("web/templates/logs.html");
+const TPL_MAINTENANCE: &str = include_str!("web/templates/maintenance.html");
+const TPL_DIAGNOSTICS: &str = include_str!("web/templates/diagnostics.html");
+const TPL_DATA_MANAGEMENT: &str = include_str!("web/templates/data_management.html");
+const TPL_LOGIN: &str = include_str!("web/templates/login.html");
+// HTMX partials
+const TPL_HTMX_DASHBOARD_METRICS: &str = include_str!("web/templates/htmx/dashboard_metrics.html");
+const TPL_HTMX_PROVIDERS_LIST: &str = include_str!("web/templates/htmx/providers_list.html");
+const TPL_HTMX_INDEXES_LIST: &str = include_str!("web/templates/htmx/indexes_list.html");
+const TPL_HTMX_SUBSYSTEMS_LIST: &str = include_str!("web/templates/htmx/subsystems_list.html");
+const TPL_HTMX_CONFIG_DIFF: &str = include_str!("web/templates/htmx/config_diff.html");
+
 /// Web interface manager
 pub struct WebInterface {
     templates: Arc<Tera>,
 }
 
 impl WebInterface {
-    /// Create a new web interface manager
+    /// Create a new web interface manager with embedded templates
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
-        // Initialize Tera templates
-        let tera = Tera::new("src/admin/web/templates/**/*.html")?;
+        // Initialize Tera with embedded templates (no filesystem access needed)
+        let mut tera = Tera::default();
 
-        // Also register CSS as a template if needed, or we can serve it directly
-        // For simplicity, we'll serve it via a dedicated route if it's in templates
+        // Add all embedded templates
+        tera.add_raw_template("base.html", TPL_BASE)?;
+        tera.add_raw_template("dashboard.html", TPL_DASHBOARD)?;
+        tera.add_raw_template("providers.html", TPL_PROVIDERS)?;
+        tera.add_raw_template("indexes.html", TPL_INDEXES)?;
+        tera.add_raw_template("configuration.html", TPL_CONFIGURATION)?;
+        tera.add_raw_template("logs.html", TPL_LOGS)?;
+        tera.add_raw_template("maintenance.html", TPL_MAINTENANCE)?;
+        tera.add_raw_template("diagnostics.html", TPL_DIAGNOSTICS)?;
+        tera.add_raw_template("data_management.html", TPL_DATA_MANAGEMENT)?;
+        tera.add_raw_template("login.html", TPL_LOGIN)?;
+        // HTMX partials
+        tera.add_raw_template("htmx/dashboard_metrics.html", TPL_HTMX_DASHBOARD_METRICS)?;
+        tera.add_raw_template("htmx/providers_list.html", TPL_HTMX_PROVIDERS_LIST)?;
+        tera.add_raw_template("htmx/indexes_list.html", TPL_HTMX_INDEXES_LIST)?;
+        tera.add_raw_template("htmx/subsystems_list.html", TPL_HTMX_SUBSYSTEMS_LIST)?;
+        tera.add_raw_template("htmx/config_diff.html", TPL_HTMX_CONFIG_DIFF)?;
 
         Ok(Self {
             templates: Arc::new(tera),

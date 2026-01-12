@@ -32,8 +32,10 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {% if log_stats %}
             {% set total = log_stats.total_entries %}
-            {% set error_rate = (log_stats.entries_by_level.ERROR | default(0)) / total * 100 %}
-            {% set warn_rate = (log_stats.entries_by_level.WARN | default(0)) / total * 100 %}
+            {% set error_count = log_stats.entries_by_level.ERROR | default(value=0) %}
+            {% set warn_count = log_stats.entries_by_level.WARN | default(value=0) %}
+            {% set error_rate = error_count / total * 100 %}
+            {% set warn_rate = warn_count / total * 100 %}
 
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm rounded-lg border border-gray-200 dark:border-gray-700">
                 <div class="p-6">
@@ -68,8 +70,8 @@
                         <div class="ml-5 w-0 flex-1">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Errors</dt>
-                                <dd class="text-lg font-medium text-gray-900 dark:text-white">{{ log_stats.entries_by_level.ERROR | default(0) }}</dd>
-                                <dd class="text-sm text-gray-600 dark:text-gray-400">({{ "%.1f"|format(error_rate) }}% of total)</dd>
+                                <dd class="text-lg font-medium text-gray-900 dark:text-white">{{ log_stats.entries_by_level.ERROR | default(value=0) }}</dd>
+                                <dd class="text-sm text-gray-600 dark:text-gray-400">({{ error_rate | round(precision=1) }}% of total)</dd>
                             </dl>
                         </div>
                     </div>
@@ -89,8 +91,8 @@
                         <div class="ml-5 w-0 flex-1">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Warnings</dt>
-                                <dd class="text-lg font-medium text-gray-900 dark:text-white">{{ log_stats.entries_by_level.WARN | default(0) }}</dd>
-                                <dd class="text-sm text-gray-600 dark:text-gray-400">({{ "%.1f"|format(warn_rate) }}% of total)</dd>
+                                <dd class="text-lg font-medium text-gray-900 dark:text-white">{{ log_stats.entries_by_level.WARN | default(value=0) }}</dd>
+                                <dd class="text-sm text-gray-600 dark:text-gray-400">({{ warn_rate | round(precision=1) }}% of total)</dd>
                             </dl>
                         </div>
                     </div>

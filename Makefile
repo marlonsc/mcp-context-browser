@@ -9,7 +9,6 @@
 include make/Makefile.help.mk
 include make/Makefile.core.mk
 include make/Makefile.quality.mk
-include make/Makefile.ci.mk
 include make/Makefile.development.mk
 include make/Makefile.release.mk
 include make/Makefile.documentation.mk

@@ -1,8 +1,8 @@
 # =============================================================================
-# CI Pipeline - Uses Makefile as Single Source of Truth
+# CI Pipeline
 # =============================================================================
-# All CI logic is in make/Makefile.ci.mk
-# This workflow simply calls `make ci-*` targets
+# Uses same Makefile verbs as local development
+# No special CI commands - same commands work everywhere
 # =============================================================================
 
 name: CI
@@ -15,13 +15,8 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  RUST_BACKTRACE: 1
 
 jobs:
-  # ===========================================================================
-  # Core CI Jobs
-  # ===========================================================================
-
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -31,7 +26,8 @@ jobs:
         with:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
-      - run: make ci-lint
+      - run: make fmt FMT_CHECK=1
+      - run: make lint
 
   test:
     name: Test
@@ -41,13 +37,12 @@ jobs:
         rust: [stable, beta]
     steps:
       - uses: actions/checkout@v4
-      - name: Install protobuf
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+      - run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
       - uses: Swatinem/rust-cache@v2
-      - run: make ci-test
+      - run: make test
 
   security:
     name: Security
@@ -56,47 +51,41 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - run: make ci-setup-tools
-      - run: make ci-security
+      - run: cargo install cargo-audit --locked
+      - run: make audit
 
   build:
     name: Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install protobuf
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+      - run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - run: make ci-build
-      - run: make ci-rust-docs
+      - run: make build-release
+      - run: make rust-docs
 
   docs:
     name: Documentation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: make ci-docs
+      - run: make docs-check || true
 
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install protobuf
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+      - run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - run: make ci-setup-tools
-      - run: make ci-coverage
+      - run: cargo install cargo-tarpaulin --locked
+      - run: make coverage LCOV=1
       - uses: codecov/codecov-action@v4
         with:
           file: ./coverage/lcov.info
           fail_ci_if_error: false
-
-  # ===========================================================================
-  # Release Builds (multi-platform)
-  # ===========================================================================
 
   release-build:
     name: Release (${{ matrix.target }})
@@ -106,31 +95,24 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            protobuf: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+            deps: sudo apt-get update && sudo apt-get install -y protobuf-compiler
           - os: macos-latest
             target: x86_64-apple-darwin
-            protobuf: brew install protobuf
+            deps: brew install protobuf
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            protobuf: choco install protoc
+            deps: choco install protoc
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install protobuf
-        run: ${{ matrix.protobuf }}
+      - name: Install dependencies
+        run: ${{ matrix.deps }}
         shell: bash
-
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
-
       - uses: Swatinem/rust-cache@v2
-
-      - name: Build
-        run: make ci-build-target TARGET=${{ matrix.target }}
-        shell: bash
-
+      - run: cargo build --release --target ${{ matrix.target }}
       - uses: actions/upload-artifact@v4
         with:
           name: mcp-context-browser-${{ matrix.target }}

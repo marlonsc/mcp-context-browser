@@ -62,6 +62,7 @@ mod test_utils {
         }
     }
 
+    #[allow(dead_code)]
     pub fn create_test_embedding(id: usize, dimensions: usize) -> Embedding {
         // Create embeddings that are more similar for closer IDs
         let base_value = id as f32 * 0.5;
@@ -96,20 +97,23 @@ mod test_utils {
         count: usize,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let dimensions = embedding_provider.dimensions();
+        // Use the same collection naming convention as the search repository
+        let prefixed_collection = format!("mcp_chunks_{}", collection);
 
-        // Create collection
+        // Create collection with prefix (matches repository convention)
         vector_store
-            .create_collection(collection, dimensions)
+            .create_collection(&prefixed_collection, dimensions)
             .await?;
 
-        // Add test data
+        // Add test data with REAL embeddings from Ollama
         for i in 0..count {
-            let embedding = create_test_embedding(i, dimensions);
+            let content = format!("Test content for item {}", i);
+            // Use real Ollama embeddings for test data
+            let embedding = embedding_provider.embed(&content).await?;
             let metadata = create_test_metadata(i);
-            let _content = format!("Test content for item {}", i);
 
             vector_store
-                .insert_vectors(collection, &[embedding], vec![metadata])
+                .insert_vectors(&prefixed_collection, &[embedding], vec![metadata])
                 .await?;
         }
 
@@ -121,13 +125,13 @@ mod test_utils {
 mod ollama_in_memory_tests {
     use super::*;
 
-    /// Integration test requiring Ollama running locally.
-    /// Run with: `cargo test --test integration -- --ignored test_ollama_with_in_memory`
+    /// Integration test with Ollama and in-memory vector store.
+    /// Automatically skips if Ollama is not available.
     #[tokio::test]
-    #[ignore = "Requires Ollama running locally with nomic-embed-text model"]
     async fn test_ollama_with_in_memory_store() -> Result<(), Box<dyn std::error::Error>> {
         let Some(ollama_provider) = test_utils::create_ollama_provider().await else {
-            return Err("Ollama provider not available".into());
+            println!("Ollama not available, skipping test");
+            return Ok(());
         };
 
         let in_memory_store =
@@ -143,16 +147,28 @@ mod ollama_in_memory_tests {
         // Setup test data
         let collection = "ollama_in_memory_test";
         let vector_store: Arc<dyn VectorStoreProvider> = in_memory_store.clone();
+        println!("📝 Setting up test data with Ollama embeddings...");
         test_utils::setup_test_data(&vector_store, &ollama_provider, collection, 5).await?;
+        println!("✅ Test data setup complete");
+
+        // Verify data was inserted
+        let stats = vector_store.get_stats(collection).await?;
+        println!("📊 Collection stats: {:?}", stats);
 
         // Create search service
         let search_service = SearchService::new(context_service);
 
         // Test search
         let query = "test content";
+        println!("🔍 Searching for: '{}'", query);
         let results = search_service.search(collection, query, 3).await?;
+        println!("📊 Found {} results", results.len());
 
-        assert!(!results.is_empty(), "Should find some results");
+        assert!(
+            !results.is_empty(),
+            "Should find some results (stats: {:?})",
+            stats
+        );
         assert!(results.len() <= 3, "Should not exceed limit");
 
         for result in &results {
@@ -176,13 +192,13 @@ mod ollama_filesystem_tests {
     use super::*;
     use tempfile::tempdir;
 
-    /// Integration test requiring Ollama running locally.
-    /// Run with: `cargo test --test integration -- --ignored test_ollama_with_filesystem`
+    /// Integration test with Ollama and filesystem vector store.
+    /// Automatically skips if Ollama is not available.
     #[tokio::test]
-    #[ignore = "Requires Ollama running locally with nomic-embed-text model"]
     async fn test_ollama_with_filesystem_store() -> Result<(), Box<dyn std::error::Error>> {
         let Some(ollama_provider) = test_utils::create_ollama_provider().await else {
-            return Err("Ollama provider not available".into());
+            println!("Ollama not available, skipping test");
+            return Ok(());
         };
 
         // Create temporary directory for filesystem store

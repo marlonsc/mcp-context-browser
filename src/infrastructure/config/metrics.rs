@@ -30,7 +30,13 @@ impl Default for MetricsConfig {
 }
 
 fn default_metrics_port() -> u16 {
-    3001
+    // MCP_PORT is the unified port for all services (Admin + Metrics + MCP HTTP)
+    // MCP_METRICS_PORT is kept for backwards compatibility
+    std::env::var("MCP_PORT")
+        .or_else(|_| std::env::var("MCP_METRICS_PORT"))
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(3001)
 }
 
 fn default_metrics_enabled() -> bool {

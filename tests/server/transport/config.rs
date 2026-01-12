@@ -1,23 +1,34 @@
 //! Tests for Transport Configuration
 //!
 //! Tests migrated from src/server/transport/config.rs
+//!
+//! Note: In unified port architecture (ADR-007), MCP HTTP is served from the
+//! same port as Admin and Metrics (default: 3001). The HttpTransportConfig.port
+//! field is deprecated and only used for backwards compatibility.
+
+#![allow(deprecated)] // HttpTransportConfig.port is deprecated but we still test it
 
 use mcp_context_browser::server::transport::{
     HttpTransportConfig, SessionConfig, TransportConfig, TransportMode, VersionConfig,
 };
 
+/// Legacy MCP HTTP port (deprecated - unified port is 3001)
+const LEGACY_MCP_HTTP_PORT: u16 = 3002;
+
 #[test]
 fn test_transport_config_defaults() {
     let config = TransportConfig::default();
     assert_eq!(config.mode, TransportMode::Hybrid);
-    assert_eq!(config.http.port, 3002);
+    // Note: This port is deprecated; unified server uses MCP_PORT (default 3001)
+    assert_eq!(config.http.port, LEGACY_MCP_HTTP_PORT);
     assert_eq!(config.http.bind_address, "127.0.0.1");
 }
 
 #[test]
 fn test_http_config_defaults() {
     let config = HttpTransportConfig::default();
-    assert_eq!(config.port, 3002);
+    // Note: This port is deprecated; unified server uses MCP_PORT (default 3001)
+    assert_eq!(config.port, LEGACY_MCP_HTTP_PORT);
     assert!(config.sse_enabled);
     assert_eq!(config.max_sessions, 1000);
     assert_eq!(config.request_timeout_secs, 30);
@@ -146,7 +157,7 @@ fn test_transport_config_partial_json() {
     let config: TransportConfig = serde_json::from_str(json).expect("Failed to deserialize");
 
     assert_eq!(config.mode, TransportMode::Stdio);
-    // Check defaults are applied
-    assert_eq!(config.http.port, 3002);
+    // Check defaults are applied (legacy port for backwards compatibility)
+    assert_eq!(config.http.port, LEGACY_MCP_HTTP_PORT);
     assert_eq!(config.session.ttl_secs, 3600);
 }

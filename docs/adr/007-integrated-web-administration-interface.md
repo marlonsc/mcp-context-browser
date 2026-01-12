@@ -36,7 +36,6 @@ This creates barriers for non-technical users and makes it difficult to:
 The existing infrastructure already includes:
 
 -   HTTP metrics server on port 3001
--   Basic HTML dashboard (assets/dashboard.html)
 -   Comprehensive metrics collection
 -   Provider management capabilities
 -   Configuration system
@@ -140,23 +139,30 @@ New REST endpoints under `/admin/` prefix:
 
 ### Frontend Structure
 
-Static assets served from embedded resources:
+Templates are **embedded at compile time** using `include_str!` macro, making the binary self-contained:
 
 ```
-assets/
-├── admin/
-│   ├── index.html
-│   ├── css/
-│   │   ├── main.css
-│   │   └── components.css
-│   ├── js/
-│   │   ├── app.js
-│   │   ├── api.js
-│   │   ├── charts.js
-│   │   └── websocket.js
-│   └── img/
-│       └── logo.svg
+src/admin/web/templates/
+├── base.html              # Master layout (Tailwind + Alpine.js + HTMX)
+├── dashboard.html         # Main dashboard
+├── providers.html         # Provider management
+├── indexes.html           # Index management
+├── configuration.html     # Config editor
+├── maintenance.html       # Maintenance operations
+├── diagnostics.html       # Diagnostic tools
+├── data_management.html   # Backup UI
+├── logs.html              # Log viewer
+├── login.html             # Authentication
+├── admin.css              # Custom styles
+└── htmx/                  # HTMX partials for dynamic updates
+    ├── dashboard_metrics.html
+    ├── providers_list.html
+    ├── indexes_list.html
+    ├── subsystems_list.html
+    └── config_diff.html
 ```
+
+**Key implementation detail**: All templates are loaded via `include_str!` in `src/admin/web.rs` and added to Tera at compile time, eliminating runtime filesystem access.
 
 ### Security Implementation
 
