@@ -262,13 +262,25 @@ impl VectorStoreProvider for MilvusVectorStoreProvider {
             return Ok(Vec::new());
         }
 
-        // Ensure collection is loaded
-        self.client
-            .load_collection(collection, None)
-            .await
-            .map_err(|e| {
-                Error::vector_db(format!("Failed to load collection '{}': {}", collection, e))
-            })?;
+        // Ensure collection is loaded - handle missing collection gracefully
+        if let Err(e) = self.client.load_collection(collection, None).await {
+            let err_str = e.to_string();
+            // Return empty results if collection doesn't exist (not an error, just no data)
+            if err_str.contains("CollectionNotExists")
+                || err_str.contains("collection not found")
+                || err_str.contains("not exist")
+            {
+                tracing::debug!(
+                    "Collection '{}' does not exist, returning empty results",
+                    collection
+                );
+                return Ok(Vec::new());
+            }
+            return Err(Error::vector_db(format!(
+                "Failed to load collection '{}': {}",
+                collection, e
+            )));
+        }
 
         use milvus::query::SearchOptions;
 

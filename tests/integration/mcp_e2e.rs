@@ -4,7 +4,7 @@
 //! The rmcp stdio transport uses newline-delimited JSON (NDJSON) format.
 //!
 //! IMPORTANT: Tests that spawn the server binary must be serialized because
-//! the server binds to fixed ports (3001, 3002). Use `#[serial]` from serial_test.
+//! the server binds to a unified port (default: 3001). Use `#[serial]` from serial_test.
 
 use mcp_context_browser::server::McpServer;
 use rmcp::ServerHandler;

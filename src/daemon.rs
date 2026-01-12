@@ -6,7 +6,8 @@
 //! - Background health checks
 
 mod service;
-mod types;
+pub mod types;
 
 pub use service::ContextDaemon;
 pub use types::{DaemonConfig, DaemonStats};
+pub use types::{RecoveryConfig, RecoveryPolicy, RecoveryState, RecoveryStatus, RecoveryStrategy};

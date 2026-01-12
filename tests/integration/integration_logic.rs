@@ -3,7 +3,7 @@
 //! This module tests the full application flow including MCP protocol handling.
 //!
 //! IMPORTANT: Tests that spawn the server binary must use `#[serial(mcp_binary)]`
-//! because the server binds to fixed ports (3001, 3002).
+//! because the server binds to a unified port (default: 3001).
 
 use serde_json::json;
 use serial_test::serial;

@@ -469,7 +469,7 @@ impl AdminService for AdminServiceImpl {
     }
 
     async fn restart_provider(&self, provider_id: &str) -> Result<MaintenanceResult, AdminError> {
-        helpers::maintenance::restart_provider(provider_id)
+        helpers::maintenance::restart_provider(&self.event_bus, provider_id)
     }
 
     async fn rebuild_index(&self, index_id: &str) -> Result<MaintenanceResult, AdminError> {

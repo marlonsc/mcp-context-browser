@@ -3,6 +3,7 @@
 use axum::{
     extract::State,
     http::StatusCode,
+    middleware,
     response::{Html, IntoResponse, Response},
     routing::get,
     Router,
@@ -10,6 +11,7 @@ use axum::{
 use std::sync::Arc;
 use tera::{Context, Tera};
 
+use crate::admin::auth::web_auth_middleware;
 use crate::admin::models::AdminState;
 
 // Embed all templates at compile time so binary is self-contained
@@ -70,8 +72,12 @@ impl WebInterface {
     }
 
     /// Get the web routes
+    ///
+    /// Protected routes require authentication via cookie.
+    /// Public routes (login, CSS) are accessible without authentication.
     pub fn routes(&self, state: AdminState) -> Router {
-        Router::new()
+        // Protected routes - require authentication
+        let protected_routes = Router::new()
             .route("/", get(dashboard_handler))
             .route("/dashboard", get(dashboard_handler))
             .route("/providers", get(providers_handler))
@@ -81,16 +87,25 @@ impl WebInterface {
             .route("/maintenance", get(maintenance_handler))
             .route("/diagnostics", get(diagnostics_handler))
             .route("/data", get(data_management_handler))
-            .route("/login", get(login_handler))
-            .route("/admin.css", get(css_handler))
-            // HTMX partials
+            // HTMX partials (also protected as they contain sensitive data)
             .route(
                 "/htmx/dashboard-metrics",
                 get(htmx_dashboard_metrics_handler),
             )
             .route("/htmx/providers-list", get(htmx_providers_list_handler))
             .route("/htmx/indexes-list", get(htmx_indexes_list_handler))
-            .with_state(state)
+            .layer(middleware::from_fn_with_state(
+                state.clone(),
+                web_auth_middleware,
+            ));
+
+        // Public routes - no authentication required
+        let public_routes = Router::new()
+            .route("/login", get(login_handler))
+            .route("/admin.css", get(css_handler));
+
+        // Merge routes
+        protected_routes.merge(public_routes).with_state(state)
     }
 }
 

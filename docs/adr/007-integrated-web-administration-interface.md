@@ -203,15 +203,38 @@ src/admin/web/templates/
 
 ## Unified Port Architecture (v0.2.0)
 
-All HTTP services now run on a single unified port (default: 3001, configurable):
+All HTTP services run on a single unified port (default: 3001).
+
+### Port Configuration
+
+Configure via environment variable:
+
+```bash
+export MCP_PORT=3001  # Default unified port for Admin + Metrics + MCP
+```
+
+### URL Structure
 
 ```
-Port 3001 (Unified)
+Port 3001 (Unified: Admin + Metrics + MCP HTTP)
+├── /                - Admin dashboard (root redirects to dashboard)
+├── /dashboard       - Admin dashboard
+├── /providers       - Provider management UI
+├── /indexes         - Index management UI
+├── /config          - Configuration UI
+├── /logs            - Log viewer UI
+├── /maintenance     - Maintenance UI
+├── /diagnostics     - Diagnostic tools UI
+├── /data            - Data management UI
+├── /login           - Authentication page
+├── /admin.css       - Admin stylesheet
+├── /htmx/*          - HTMX partial endpoints
+├── /admin/*         - Admin REST API endpoints
 ├── /api/*           - Metrics API endpoints
-├── /admin/*         - Admin web interface and API
-├── /mcp             - MCP protocol HTTP transport
-└── /static/*        - CSS/JS assets
+└── /mcp/*           - MCP protocol HTTP transport
 ```
+
+**Note**: The root path `/` serves the admin dashboard directly, making it the default landing page.
 
 ### Implementation
 

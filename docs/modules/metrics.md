@@ -71,7 +71,7 @@ pub use performance::PERFORMANCE_METRICS;
 Environment variables:
 
 -   `MCP_METRICS_ENABLED=true` - Enable metrics collection
--   `MCP_METRICS_PORT=3001` - HTTP API port
+-   `MCP_PORT=3001` - Unified HTTP port (Admin + Metrics + MCP)
 
 ## Testing
 

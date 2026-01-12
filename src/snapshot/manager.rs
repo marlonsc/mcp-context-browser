@@ -1,7 +1,15 @@
 //! Snapshot manager for incremental codebase tracking
+//!
+//! Uses the `ignore` crate (same as ripgrep) for proper git-aware file traversal,
+//! automatically respecting:
+//! - `.gitignore` files (including nested ones in subdirectories)
+//! - `.git/info/exclude`
+//! - Global gitignore from git config
+//! - Hidden files and directories
 
 use super::{CodebaseSnapshot, FileSnapshot, SnapshotChanges};
 use crate::domain::error::{Error, Result};
+use ignore::WalkBuilder;
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::fs;
@@ -44,15 +52,7 @@ impl SnapshotManager {
         };
 
         let (files, total_size) = tokio::task::spawn_blocking(move || {
-            let mut files = HashMap::new();
-            let mut total_size = 0u64;
-            snapshot_manager.walk_directory_sync(
-                &root_path_buf,
-                &root_path_buf,
-                &mut files,
-                &mut total_size,
-            )?;
-            Ok::<_, Error>((files, total_size))
+            snapshot_manager.walk_directory_sync(&root_path_buf)
         })
         .await
         .map_err(|e| Error::internal(format!("Blocking task failed: {}", e)))??;
@@ -156,56 +156,88 @@ impl SnapshotManager {
         Ok(changed_files)
     }
 
-    /// Walk directory recursively and collect file snapshots
+    /// Walk directory using git-aware traversal (respects .gitignore)
+    ///
+    /// Uses the `ignore` crate which automatically handles:
+    /// - All `.gitignore` files (root and nested in subdirectories)
+    /// - `.git/info/exclude`
+    /// - Global gitignore from `core.excludesFile` git config
+    /// - Hidden files (dotfiles)
     fn walk_directory_sync(
         &self,
         root_path: &Path,
-        current_path: &Path,
-        files: &mut HashMap<String, FileSnapshot>,
-        total_size: &mut u64,
-    ) -> Result<()> {
-        let entries = fs::read_dir(current_path)
-            .map_err(|e| Error::internal(format!("Failed to read directory: {}", e)))?;
+    ) -> Result<(HashMap<String, FileSnapshot>, u64)> {
+        let mut files = HashMap::new();
+        let mut total_size = 0u64;
 
-        for entry in entries {
-            let entry = entry
-                .map_err(|e| Error::internal(format!("Failed to read directory entry: {}", e)))?;
-            let path = entry.path();
+        // Build a git-aware walker using the ignore crate
+        // This is the same approach ripgrep uses
+        let walker = WalkBuilder::new(root_path)
+            // Respect .gitignore files
+            .git_ignore(true)
+            // Respect .git/info/exclude
+            .git_exclude(true)
+            // Respect global gitignore from git config
+            .git_global(true)
+            // Skip hidden files and directories (dotfiles)
+            .hidden(true)
+            // Don't follow symlinks (safer default)
+            .follow_links(false)
+            // Use reasonable defaults for parallel walking
+            .threads(1) // Single-threaded for deterministic ordering
+            .build();
 
-            // Skip hidden files and directories
-            if let Some(file_name) = path.file_name() {
-                if file_name.to_string_lossy().starts_with('.') {
+        for entry in walker {
+            let entry = match entry {
+                Ok(e) => e,
+                Err(e) => {
+                    // Log warning but continue - don't fail on permission errors etc.
+                    tracing::warn!("Error walking directory: {}", e);
                     continue;
                 }
+            };
+
+            // Skip directories (we only care about files)
+            let file_type = match entry.file_type() {
+                Some(ft) => ft,
+                None => continue,
+            };
+
+            if !file_type.is_file() {
+                continue;
             }
 
-            let metadata = entry
-                .metadata()
-                .map_err(|e| Error::internal(format!("Failed to get metadata: {}", e)))?;
+            let path = entry.path();
 
-            if metadata.is_dir() {
-                // Recurse into subdirectories
-                self.walk_directory_sync(root_path, &path, files, total_size)?;
-            } else if metadata.is_file() {
-                // Process file
-                let relative_path = path
-                    .strip_prefix(root_path)
-                    .map_err(|e| Error::internal(format!("Failed to make path relative: {}", e)))?
-                    .to_string_lossy()
-                    .to_string();
+            // Get relative path from root
+            let relative_path = match path.strip_prefix(root_path) {
+                Ok(p) => p.to_string_lossy().to_string(),
+                Err(_) => continue,
+            };
 
-                // Skip certain file types
-                if self.should_skip_file(&path) {
+            // Get file metadata
+            let metadata = match entry.metadata() {
+                Ok(m) => m,
+                Err(e) => {
+                    tracing::warn!("Failed to get metadata for {}: {}", path.display(), e);
                     continue;
                 }
+            };
 
-                let snapshot = self.create_file_snapshot_sync(&path, &relative_path, &metadata)?;
-                *total_size += snapshot.size;
-                files.insert(relative_path, snapshot);
+            // Create file snapshot
+            match self.create_file_snapshot_sync(path, &relative_path, &metadata) {
+                Ok(snapshot) => {
+                    total_size += snapshot.size;
+                    files.insert(relative_path, snapshot);
+                }
+                Err(e) => {
+                    tracing::warn!("Failed to create snapshot for {}: {}", path.display(), e);
+                    continue;
+                }
             }
         }
 
-        Ok(())
+        Ok((files, total_size))
     }
 
     /// Create snapshot for a single file
@@ -252,34 +284,6 @@ impl SnapshotManager {
         hasher.update(content);
         let result = hasher.finalize();
         format!("{:x}", result)
-    }
-
-    /// Check if file should be skipped
-    fn should_skip_file(&self, path: &Path) -> bool {
-        let file_name = path.file_name().unwrap_or_default().to_string_lossy();
-
-        // Skip common non-source files
-        if file_name.ends_with(".log")
-            || file_name.ends_with(".tmp")
-            || file_name.ends_with(".cache")
-            || file_name.ends_with(".lock")
-            || file_name.starts_with('.')
-        {
-            return true;
-        }
-
-        // Skip build artifacts
-        let path_str = path.to_string_lossy();
-        if path_str.contains("/target/")
-            || path_str.contains("/node_modules/")
-            || path_str.contains("/.git/")
-            || path_str.contains("/dist/")
-            || path_str.contains("/build/")
-        {
-            return true;
-        }
-
-        false
     }
 
     /// Get snapshot file path for a codebase

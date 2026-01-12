@@ -36,21 +36,111 @@ pub fn clear_cache(
     })
 }
 
-/// Request provider restart (not implemented - providers auto-reconnect on failure)
-pub fn restart_provider(provider_id: &str) -> Result<MaintenanceResult, AdminError> {
-    // Provider hot-restart is not implemented. Providers maintain their own connections
-    // and automatically reconnect on failure. This is intentional design.
+/// Request provider restart by publishing a restart event
+///
+/// The provider_id should be in the format "type:id" (e.g., "embedding:ollama" or "vector_store:milvus").
+/// If no type prefix is provided, it defaults to treating it as a generic provider ID.
+///
+/// The actual restart is handled asynchronously by the RecoveryManager which listens
+/// for ProviderRestart events.
+pub fn restart_provider(
+    event_bus: &SharedEventBus,
+    provider_id: &str,
+) -> Result<MaintenanceResult, AdminError> {
+    let start_time = std::time::Instant::now();
+
+    // Parse provider_id to extract type and id
+    // Format: "type:id" or just "id"
+    let (provider_type, actual_id): (String, String) = if provider_id.contains(':') {
+        let parts: Vec<&str> = provider_id.splitn(2, ':').collect();
+        (
+            parts[0].to_string(),
+            parts.get(1).map(|s| s.to_string()).unwrap_or_default(),
+        )
+    } else {
+        // Try to determine type from common provider names
+        let provider_type = match provider_id.to_lowercase().as_str() {
+            "ollama" | "openai" | "voyageai" | "gemini" | "fastembed" | "null_embedding" => {
+                "embedding"
+            }
+            "milvus" | "edgevec" | "filesystem" | "encrypted" | "in_memory" | "null_vector" => {
+                "vector_store"
+            }
+            _ => "unknown",
+        };
+        (provider_type.to_string(), provider_id.to_string())
+    };
+
     tracing::info!(
-        "[ADMIN] restart_provider('{}') called - returning not implemented. \
-         Providers auto-reconnect on connection failure.",
-        provider_id
+        "[ADMIN] Requesting restart for provider: {} (type: {}, id: {})",
+        provider_id,
+        provider_type,
+        actual_id
     );
 
-    Err(AdminError::NotImplemented(format!(
-        "Provider hot-restart not implemented for '{}'. Providers automatically \
-         reconnect on connection failure - manual restart is not supported.",
-        provider_id
-    )))
+    // Publish restart event
+    event_bus
+        .publish(crate::infrastructure::events::SystemEvent::ProviderRestart {
+            provider_type: provider_type.clone(),
+            provider_id: actual_id.clone(),
+        })
+        .map_err(|e| {
+            AdminError::McpServerError(format!("Failed to publish ProviderRestart event: {}", e))
+        })?;
+
+    Ok(MaintenanceResult {
+        success: true,
+        operation: "restart_provider".to_string(),
+        message: format!(
+            "Restart signal sent for provider '{}' (type: {}). \
+             The RecoveryManager will handle the restart asynchronously.",
+            actual_id, provider_type
+        ),
+        affected_items: 1,
+        execution_time_ms: start_time.elapsed().as_millis() as u64,
+    })
+}
+
+/// Restart all providers of a specific type or all providers
+pub fn restart_all_providers(
+    event_bus: &SharedEventBus,
+    provider_names: &[(String, String)], // Vec of (type, id)
+) -> Result<MaintenanceResult, AdminError> {
+    let start_time = std::time::Instant::now();
+    let mut restarted = 0;
+
+    for (provider_type, provider_id) in provider_names {
+        if let Err(e) = event_bus.publish(crate::infrastructure::events::SystemEvent::ProviderRestart {
+            provider_type: provider_type.clone(),
+            provider_id: provider_id.clone(),
+        }) {
+            tracing::warn!(
+                "[ADMIN] Failed to publish restart for {}:{}: {}",
+                provider_type,
+                provider_id,
+                e
+            );
+        } else {
+            restarted += 1;
+        }
+    }
+
+    tracing::info!(
+        "[ADMIN] Requested restart for {} providers",
+        restarted
+    );
+
+    Ok(MaintenanceResult {
+        success: true,
+        operation: "restart_all_providers".to_string(),
+        message: format!(
+            "Restart signals sent for {} providers. \
+             The RecoveryManager will handle restarts asynchronously.",
+            restarted
+        ),
+        affected_items: restarted,
+        execution_time_ms: start_time.elapsed().as_millis() as u64,
+    })
 }
 
 /// Request index rebuild

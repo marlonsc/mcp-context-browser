@@ -57,7 +57,7 @@
             </div>
             <div class="min-w-0 flex-1">
                 <h3 class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ subsystem.name }}</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400">{{ subsystem.subsystem_type|replace('_', ' ')|title }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ subsystem.subsystem_type | replace(from="_", to=" ") | title }}</p>
                 <div class="mt-1 flex items-center space-x-2">
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                {% if subsystem.status == "running" %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300
@@ -71,9 +71,9 @@
                 </div>
                 <!-- Subsystem Metrics -->
                 <div class="mt-2 grid grid-cols-3 gap-2 text-xs text-gray-500 dark:text-gray-400">
-                    <div>CPU: {{ subsystem.metrics.cpu_percent|round(1) }}%</div>
+                    <div>CPU: {{ subsystem.metrics.cpu_percent| round(precision=1) }}%</div>
                     <div>Mem: {{ subsystem.metrics.memory_mb }}MB</div>
-                    <div>Req/s: {{ subsystem.metrics.requests_per_sec|round(1) }}</div>
+                    <div>Req/s: {{ subsystem.metrics.requests_per_sec| round(precision=1) }}</div>
                 </div>
             </div>
         </div>

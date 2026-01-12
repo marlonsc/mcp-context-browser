@@ -2,16 +2,20 @@
 
 use axum::{
     extract::State,
-    http::{Request, StatusCode},
+    http::{header, Request, StatusCode},
     middleware::Next,
-    response::{IntoResponse, Json, Response},
+    response::{IntoResponse, Json, Redirect, Response},
 };
+use axum_extra::extract::CookieJar;
 use bcrypt::{hash, verify, DEFAULT_COST};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::admin::models::{ApiResponse, LoginRequest, LoginResponse, UserInfo};
+
+/// Cookie name for JWT token
+pub const AUTH_COOKIE_NAME: &str = "mcp_admin_token";
 
 /// JWT claims structure
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -162,10 +166,13 @@ pub async fn auth_middleware(
 }
 
 /// Login handler
+///
+/// Authenticates user and returns JWT token in both JSON response and Set-Cookie header.
+/// The cookie allows web pages to be authenticated server-side.
 pub async fn login_handler(
     State(state): State<crate::admin::models::AdminState>,
     Json(login_req): Json<LoginRequest>,
-) -> Result<Json<ApiResponse<LoginResponse>>, StatusCode> {
+) -> Response {
     let auth_service = match AuthService::new(
         state.admin_api.config().jwt_secret.clone(),
         state.admin_api.config().jwt_expiration,
@@ -174,42 +181,122 @@ pub async fn login_handler(
     ) {
         Ok(service) => service,
         Err(e) => {
-            return Ok(Json(ApiResponse::error(format!(
+            return Json(ApiResponse::<LoginResponse>::error(format!(
                 "Auth service initialization failed: {}",
                 e
-            ))));
+            )))
+            .into_response();
         }
     };
 
     match auth_service.authenticate(&login_req.username, &login_req.password) {
         Ok(user) => match auth_service.generate_token(&user) {
             Ok(token) => {
+                let jwt_expiration = state.admin_api.config().jwt_expiration;
                 let expires_at = SystemTime::now()
                     .duration_since(UNIX_EPOCH)
                     .unwrap_or_default()
                     .as_secs()
-                    + state.admin_api.config().jwt_expiration;
+                    + jwt_expiration;
 
                 let response = LoginResponse {
-                    token,
+                    token: token.clone(),
                     expires_at,
                     user,
                 };
 
-                Ok(Json(ApiResponse::success(response)))
+                // Return JSON response with Set-Cookie header
+                let cookie_value = create_auth_cookie(&token, jwt_expiration);
+
+                (
+                    [(header::SET_COOKIE, cookie_value)],
+                    Json(ApiResponse::success(response)),
+                )
+                    .into_response()
             }
-            Err(e) => Ok(Json(ApiResponse::error(format!(
+            Err(e) => Json(ApiResponse::<LoginResponse>::error(format!(
                 "Token generation failed: {}",
                 e
-            )))),
+            )))
+            .into_response(),
         },
-        Err(e) => Ok(Json(ApiResponse::error(e))),
+        Err(e) => Json(ApiResponse::<LoginResponse>::error(e)).into_response(),
     }
 }
 
 /// Logout handler
-pub async fn logout_handler() -> impl IntoResponse {
-    // For JWT, logout is primarily client-side (deleting the token)
-    // Here we just return success
-    Json(ApiResponse::success("Logged out successfully".to_string()))
+pub async fn logout_handler(jar: CookieJar) -> impl IntoResponse {
+    // Clear the auth cookie
+    let jar = jar.remove(AUTH_COOKIE_NAME);
+
+    (
+        jar,
+        Json(ApiResponse::success("Logged out successfully".to_string())),
+    )
+}
+
+/// Web page authentication middleware
+///
+/// Checks for JWT token in cookie and redirects to login page if not present or invalid.
+/// This middleware is for protecting web pages (HTML), not API endpoints.
+pub async fn web_auth_middleware(
+    State(state): State<crate::admin::models::AdminState>,
+    jar: CookieJar,
+    mut req: Request<axum::body::Body>,
+    next: Next,
+) -> Result<Response, Response> {
+    // Extract token from cookie
+    let token: Option<String> = jar
+        .get(AUTH_COOKIE_NAME)
+        .map(|cookie: &axum_extra::extract::cookie::Cookie<'_>| cookie.value().to_string());
+
+    let token: String = match token {
+        Some(t) => {
+            if t.is_empty() {
+                // Empty token - redirect to login
+                return Err(Redirect::to("/login").into_response());
+            }
+            t
+        }
+        None => {
+            // No cookie - redirect to login
+            return Err(Redirect::to("/login").into_response());
+        }
+    };
+
+    // Create auth service with proper configuration
+    let auth_service = match AuthService::new(
+        state.admin_api.config().jwt_secret.clone(),
+        state.admin_api.config().jwt_expiration,
+        state.admin_api.config().username.clone(),
+        state.admin_api.config().password.clone(),
+    ) {
+        Ok(service) => service,
+        Err(e) => {
+            tracing::error!("Auth service initialization failed: {}", e);
+            return Err(Redirect::to("/login").into_response());
+        }
+    };
+
+    // Validate token with proper cryptographic signature verification
+    match auth_service.validate_token(&token) {
+        Ok(claims) => {
+            // Add user info to request extensions for downstream handlers
+            req.extensions_mut().insert(claims);
+            Ok(next.run(req).await)
+        }
+        Err(e) => {
+            tracing::debug!("Token validation failed for web page: {}", e);
+            // Invalid token - redirect to login
+            Err(Redirect::to("/login").into_response())
+        }
+    }
+}
+
+/// Create a Set-Cookie header value for the JWT token
+pub fn create_auth_cookie(token: &str, expires_in_secs: u64) -> String {
+    format!(
+        "{}={}; Path=/; HttpOnly; SameSite=Lax; Max-Age={}",
+        AUTH_COOKIE_NAME, token, expires_in_secs
+    )
 }

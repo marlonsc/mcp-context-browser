@@ -29,18 +29,13 @@ spec:
       - name: mcp-context-browser
         image: mcp-context-browser:v0.0.3
         ports:
-        - containerPort: 3000
-          name: http
-          protocol: TCP
         - containerPort: 3001
-          name: metrics
+          name: http
           protocol: TCP
         env:
         - name: MCP_HOST
           value: "0.0.0.0"
         - name: MCP_PORT
-          value: "3000"
-        - name: MCP_METRICS_PORT
           value: "3001"
         - name: MCP_METRICS_ENABLED
           value: "true"
@@ -115,7 +110,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /api/health
-            port: metrics
+            port: http
           initialDelaySeconds: 30
           periodSeconds: 10
           timeoutSeconds: 5
@@ -123,7 +118,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /api/health
-            port: metrics
+            port: http
           initialDelaySeconds: 5
           periodSeconds: 5
           timeoutSeconds: 3
@@ -131,7 +126,7 @@ spec:
         startupProbe:
           httpGet:
             path: /api/health
-            port: metrics
+            port: http
           initialDelaySeconds: 10
           periodSeconds: 10
           timeoutSeconds: 5

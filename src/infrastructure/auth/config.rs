@@ -17,6 +17,7 @@ pub const DEFAULT_JWT_EXPIRATION: u64 = 86400;
 
 /// Authentication configuration
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[serde(default)]
 pub struct AuthConfig {
     /// JWT secret key (minimum 32 bytes recommended)
     #[validate(length(min = 1))]

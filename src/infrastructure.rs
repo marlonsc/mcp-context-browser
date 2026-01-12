@@ -12,6 +12,7 @@ pub mod logging;
 pub mod merkle;
 pub mod metrics;
 pub mod rate_limit;
+pub mod recovery;
 pub mod respawn;
 pub mod signals;
 pub mod utils;

@@ -1,4 +1,4 @@
-{% extends "admin/base.html" %}
+{% extends "base.html" %}
 
 {% block content %}
 <div class="space-y-6">
@@ -81,15 +81,15 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Cache Max Size (MB)</label>
-                            <input type="number" id="cache_max_size" value="{{ (configuration.cache.max_size | default(1073741824)) // 1048576 }}" class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                            <input type="number" id="cache_max_size" value="{{ configuration.cache.max_size_mb | default(value=1024) }}" class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Database Pool Size</label>
-                            <input type="number" id="db_pool_size" value="{{ configuration.database.pool_size | default(10) }}" class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                            <input type="number" id="db_pool_size" value="{{ configuration.database.pool_size | default(value=10) }}" class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Chunk Size</label>
-                            <input type="number" id="chunk_size" value="{{ configuration.indexing.chunk_size | default(1000) }}" class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                            <input type="number" id="chunk_size" value="{{ configuration.indexing.chunk_size | default(value=1000) }}" class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                         </div>
                     </div>
                 </div>
@@ -112,7 +112,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Max Requests per Minute</label>
-                        <input type="number" id="max_requests_per_minute" value="{{ configuration.security.max_requests_per_minute | default(60) }}" class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                        <input type="number" id="max_requests_per_minute" value="{{ configuration.security.max_requests_per_minute | default(value=60) }}" class="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                     </div>
                 </div>
             </div>
@@ -135,7 +135,7 @@
                                         <p class="text-sm text-gray-600 dark:text-gray-400">{{ change.change_type }}</p>
                                     </div>
                                     <div class="text-right">
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ change.timestamp | date:"Y-m-d H:i" }}</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ change.timestamp | date(format="%Y-%m-%d %H:%M") }}</p>
                                         <p class="text-xs text-gray-500 dark:text-gray-400">by {{ change.user }}</p>
                                     </div>
                                 </div>

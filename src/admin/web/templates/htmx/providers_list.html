@@ -12,7 +12,7 @@
             </div>
             <div class="min-w-0 flex-1">
                 <h3 class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ provider.name }}</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400">{{ provider.provider_type|replace('_', ' ')|title }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ provider.provider_type | replace(from="_", to=" ") | title }}</p>
                 <div class="mt-1">
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                {% if provider.status == 'active' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300{% else %}bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300{% endif %}">

@@ -141,9 +141,12 @@ async fn test_snapshot_skips_hidden_files() -> Result<(), Box<dyn std::error::Er
 }
 
 #[tokio::test]
-async fn test_snapshot_skips_log_files() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_snapshot_respects_gitignore() -> Result<(), Box<dyn std::error::Error>> {
     let temp_dir = TempDir::new()?;
     let manager = SnapshotManager::new()?;
+
+    // Create a .gitignore that excludes .log files
+    std::fs::write(temp_dir.path().join(".gitignore"), "*.log\n")?;
 
     // Create source and log files
     std::fs::write(temp_dir.path().join("main.rs"), "fn main() {}")?;
@@ -151,7 +154,7 @@ async fn test_snapshot_skips_log_files() -> Result<(), Box<dyn std::error::Error
 
     let snapshot = manager.create_snapshot(temp_dir.path()).await?;
 
-    // Should only include source file
+    // Should only include source file (log is gitignored)
     assert_eq!(snapshot.file_count, 1);
     assert!(snapshot.files.contains_key("main.rs"));
     assert!(!snapshot.files.contains_key("debug.log"));

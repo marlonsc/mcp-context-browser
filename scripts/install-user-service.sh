@@ -57,12 +57,12 @@ if [ ! -f "$CONFIG_DEST" ]; then
 mode = "hybrid"
 
 [transport.http]
-port = 3002
 bind_address = "127.0.0.1"
 
-[server]
-host = "127.0.0.1"
+[metrics]
+# Unified port for Admin + Metrics + MCP HTTP (default: 3001)
 port = 3001
+enabled = true
 EOF
     fi
     echo -e "${GREEN}Created config at $CONFIG_DEST${NC}"

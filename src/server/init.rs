@@ -300,8 +300,19 @@ pub async fn run_server() -> Result<(), Box<dyn std::error::Error>> {
     let (server, http_handle, _resource_limits, _http_client, connection_tracker) =
         initialize_server_components(None, log_buffer).await?;
 
-    // Get transport mode for stdio handling
-    let transport_config = TransportConfig::default();
+    // Get transport mode from environment variable or default
+    let transport_config = {
+        let mode = std::env::var("MCP__TRANSPORT__MODE")
+            .ok()
+            .and_then(|s| match s.to_lowercase().as_str() {
+                "stdio" => Some(TransportMode::Stdio),
+                "http" => Some(TransportMode::Http),
+                "hybrid" => Some(TransportMode::Hybrid),
+                _ => None,
+            })
+            .unwrap_or_default();
+        TransportConfig { mode, ..Default::default() }
+    };
     tracing::info!("🔧 Transport mode: {:?}", transport_config.mode);
 
     // Handle graceful shutdown signals
@@ -324,7 +335,7 @@ pub async fn run_server() -> Result<(), Box<dyn std::error::Error>> {
 
     // Start the MCP service based on transport mode
     match transport_config.mode {
-        TransportMode::Stdio | TransportMode::Hybrid => {
+        TransportMode::Stdio => {
             tracing::info!("📡 Starting MCP protocol server on stdio transport");
             tracing::info!("🎯 Ready to accept MCP client connections");
 
@@ -349,6 +360,33 @@ pub async fn run_server() -> Result<(), Box<dyn std::error::Error>> {
                     tracing::info!("🔄 Graceful shutdown initiated");
                 }
             }
+        }
+        TransportMode::Hybrid => {
+            tracing::info!("📡 Starting MCP protocol server on stdio + HTTP transport");
+            tracing::info!("🎯 Ready to accept MCP client connections (stdio) and HTTP admin on port 3001");
+
+            // Start the MCP service with stdio transport in a separate task
+            let server_clone = (*server).clone();
+            let stdio_handle = tokio::spawn(async move {
+                match server_clone.serve(stdio()).await {
+                    Ok(service) => {
+                        tracing::info!("🎉 MCP stdio server started successfully");
+                        let _ = service.waiting().await;
+                        tracing::info!("📡 MCP stdio connection closed (HTTP server continues running)");
+                    }
+                    Err(e) => {
+                        tracing::warn!("⚠️ MCP stdio service ended: {:?} (HTTP server continues running)", e);
+                    }
+                }
+            });
+
+            // In Hybrid mode, wait for shutdown signal - don't exit when stdio closes
+            // HTTP server continues running independently
+            shutdown_signal.await;
+
+            // Cancel stdio task if still running
+            stdio_handle.abort();
+            tracing::info!("🔄 Graceful shutdown initiated");
         }
         TransportMode::Http => {
             tracing::info!("📡 Running in HTTP-only mode (no stdio)");
