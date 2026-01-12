@@ -14,12 +14,12 @@ use super::types::{
 use crate::application::search::SearchService;
 use crate::infrastructure::di::factory::ServiceProviderInterface;
 use crate::infrastructure::metrics::system::SystemMetricsCollectorInterface;
-use crate::server::operations::IndexingOperationsInterface;
 use crate::server::metrics::PerformanceMetricsInterface;
+use crate::server::operations::IndexingOperationsInterface;
+use arc_swap::ArcSwap;
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::sync::Arc;
-use arc_swap::ArcSwap;
 
 /// Concrete implementation of AdminService
 #[derive(shaku::Component)]
@@ -47,6 +47,7 @@ pub struct AdminServiceImpl {
 
 impl AdminServiceImpl {
     /// Create new admin service with dependency injection
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         performance_metrics: Arc<dyn PerformanceMetricsInterface>,
         indexing_operations: Arc<dyn IndexingOperationsInterface>,
@@ -602,17 +603,23 @@ impl AdminService for AdminServiceImpl {
 
     async fn restart_provider(&self, provider_id: &str) -> Result<MaintenanceResult, AdminError> {
         let start_time = std::time::Instant::now();
-        tracing::info!(
-            "Provider {} restarted in {}ms",
-            provider_id,
-            start_time.elapsed().as_millis()
+
+        // NOTE: Provider restart is not yet implemented - providers maintain their own connections
+        // and reconnect automatically on failure. This endpoint is reserved for future use.
+        tracing::warn!(
+            "[ADMIN] restart_provider('{}') called but hot-restart not implemented. \
+             Providers reconnect automatically on connection failure.",
+            provider_id
         );
 
         Ok(MaintenanceResult {
             success: true,
             operation: "restart_provider".to_string(),
-            message: format!("Provider {} restarted successfully", provider_id),
-            affected_items: 1,
+            message: format!(
+                "Provider '{}' restart requested. Note: Providers auto-reconnect on failure.",
+                provider_id
+            ),
+            affected_items: 0, // No actual restart performed
             execution_time_ms: start_time.elapsed().as_millis() as u64,
         })
     }
@@ -656,19 +663,28 @@ impl AdminService for AdminServiceImpl {
                         if let Ok(entries) = std::fs::read_dir(export_dir) {
                             for entry in entries.flatten() {
                                 if let Ok(metadata) = entry.metadata() {
-                                    let created = metadata.created().unwrap_or(std::time::SystemTime::now());
-                                    let age = std::time::SystemTime::now().duration_since(created).unwrap_or_default();
-                                    if age.as_secs() > (cleanup_config.older_than_days * 86400) as u64 {
-                                        if std::fs::remove_file(entry.path()).is_ok() {
-                                            affected_items += 1;
-                                        }
+                                    let created =
+                                        metadata.created().unwrap_or(std::time::SystemTime::now());
+                                    let age = std::time::SystemTime::now()
+                                        .duration_since(created)
+                                        .unwrap_or_default();
+                                    if age.as_secs()
+                                        > (cleanup_config.older_than_days * 86400) as u64
+                                        && std::fs::remove_file(entry.path()).is_ok()
+                                    {
+                                        affected_items += 1;
                                     }
                                 }
                             }
                         }
                     }
                 }
-                _ => {}
+                unknown => {
+                    tracing::warn!(
+                        "[ADMIN] Unknown cleanup type '{}' ignored. Valid types: logs, exports",
+                        unknown
+                    );
+                }
             }
         }
 
@@ -812,7 +828,7 @@ impl AdminService for AdminServiceImpl {
                         failed_requests += 1;
                     }
                 }
-                
+
                 if start.elapsed().as_secs() >= test_config.duration_seconds as u64 {
                     break;
                 }
@@ -847,6 +863,8 @@ impl AdminService for AdminServiceImpl {
         let backup_id = format!("backup_{}", chrono::Utc::now().format("%Y%m%d_%H%M%S"));
         let path = format!("./backups/{}.tar.gz", backup_config.name);
 
+        // Publish backup event - actual backup created asynchronously by BackupManager
+        // Use list_backups() to check completion status and get actual file size
         self.event_bus
             .publish(crate::infrastructure::events::SystemEvent::BackupCreate {
                 path: path.clone(),
@@ -855,10 +873,18 @@ impl AdminService for AdminServiceImpl {
                 AdminError::McpServerError(format!("Failed to publish BackupCreate event: {}", e))
             })?;
 
+        tracing::info!(
+            "[ADMIN] Backup creation initiated: {} -> {}",
+            backup_config.name,
+            path
+        );
+
+        // Return immediately - size_bytes is 0 until backup completes
+        // Client should poll list_backups() for completion status
         Ok(BackupResult {
             backup_id,
             name: backup_config.name,
-            size_bytes: 0,
+            size_bytes: 0, // Async - check list_backups() for actual size
             created_at: chrono::Utc::now(),
             path,
         })
@@ -905,13 +931,23 @@ impl AdminService for AdminServiceImpl {
     async fn restore_backup(&self, backup_id: &str) -> Result<RestoreResult, AdminError> {
         let backups_dir = std::path::PathBuf::from("./backups");
         let backup_path = backups_dir.join(format!("{}.tar.gz", backup_id));
-        
+
         if !backup_path.exists() {
-            return Err(AdminError::ConfigError(format!("Backup not found: {}", backup_id)));
+            return Err(AdminError::ConfigError(format!(
+                "Backup not found: {}",
+                backup_id
+            )));
         }
 
-        tracing::info!("[ADMIN] Restoring backup: {}", backup_id);
-        
+        // NOTE: Backup restore is not yet implemented - event published but no handler exists
+        // Manual restore: extract tar.gz to data directory
+        tracing::warn!(
+            "[ADMIN] restore_backup('{}') called but restore handler not implemented. \
+             Manual restore required: tar -xzf {} -C ./data",
+            backup_id,
+            backup_path.display()
+        );
+
         self.event_bus
             .publish(crate::infrastructure::events::SystemEvent::BackupRestore {
                 path: backup_path.to_string_lossy().to_string(),
@@ -921,7 +957,7 @@ impl AdminService for AdminServiceImpl {
             })?;
 
         Ok(RestoreResult {
-            success: true,
+            success: false, // Not actually implemented
             backup_id: backup_id.to_string(),
             restored_items: 0,
             errors: vec![],
