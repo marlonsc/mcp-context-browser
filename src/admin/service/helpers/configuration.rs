@@ -272,6 +272,89 @@ pub struct ConfigUpdateApplicationResult {
     pub requires_restart: bool,
 }
 
+/// Helper for processing configuration changes with consistent patterns.
+/// Reduces boilerplate in apply_configuration_updates from ~150 lines to ~50 lines.
+struct ConfigChangeHandler {
+    changes_applied: Vec<String>,
+    requires_restart: bool,
+}
+
+impl ConfigChangeHandler {
+    fn new() -> Self {
+        Self {
+            changes_applied: Vec::new(),
+            requires_restart: false,
+        }
+    }
+
+    /// Handle boolean configuration change
+    fn handle_bool(&mut self, path: &str, value: &serde_json::Value, label: &str) {
+        if let Some(enabled) = value.as_bool() {
+            tracing::info!("{}: {}", label, if enabled { "enabled" } else { "disabled" });
+            self.changes_applied.push(format!("{} = {}", path, enabled));
+        }
+    }
+
+    /// Handle u64 configuration change
+    fn handle_u64(&mut self, path: &str, value: &serde_json::Value, label: &str, unit: &str) {
+        if let Some(val) = value.as_u64() {
+            let unit_suffix = if unit.is_empty() { String::new() } else { format!(" {}", unit) };
+            tracing::info!("{} set to {}{}", label, val, unit_suffix);
+            self.changes_applied.push(format!("{} = {}{}", path, val, unit_suffix));
+        }
+    }
+
+    /// Handle u64 configuration change requiring restart
+    fn handle_u64_restart(&mut self, path: &str, value: &serde_json::Value, label: &str, unit: &str) {
+        if let Some(val) = value.as_u64() {
+            let unit_suffix = if unit.is_empty() { String::new() } else { format!(" {}", unit) };
+            tracing::info!("{} set to {}{} (change requires restart)", label, val, unit_suffix);
+            self.changes_applied.push(format!("{} = {}{} (requires restart)", path, val, unit_suffix));
+            self.requires_restart = true;
+        }
+    }
+
+    /// Handle string configuration change
+    fn handle_string(&mut self, path: &str, value: &serde_json::Value, label: &str) {
+        if let Some(val) = value.as_str() {
+            tracing::info!("{} set to {}", label, val);
+            self.changes_applied.push(format!("{} = {}", path, val));
+        }
+    }
+
+    /// Handle string configuration change requiring restart
+    fn handle_string_restart(&mut self, path: &str, value: &serde_json::Value, label: &str) {
+        if let Some(val) = value.as_str() {
+            tracing::info!("{} configured to {} (change requires restart)", label, val);
+            self.changes_applied.push(format!("{} = {} (requires restart)", path, val));
+            self.requires_restart = true;
+        }
+    }
+
+    /// Handle secret/sensitive configuration change (always requires restart, masked value)
+    fn handle_secret(&mut self, path: &str, value: &serde_json::Value, label: &str) {
+        if value.as_str().is_some() {
+            tracing::info!("{} configured (change requires restart)", label);
+            self.changes_applied.push(format!("{} = ***", path));
+            self.requires_restart = true;
+        }
+    }
+
+    /// Handle unknown configuration path
+    fn handle_unknown(&mut self, path: &str, value: &serde_json::Value) {
+        tracing::warn!("Unknown configuration path: {}", path);
+        self.changes_applied.push(format!("{} = {:?} (unknown, not applied)", path, value));
+    }
+
+    /// Get final results
+    fn into_result(self) -> ConfigUpdateApplicationResult {
+        ConfigUpdateApplicationResult {
+            changes_applied: self.changes_applied,
+            requires_restart: self.requires_restart,
+        }
+    }
+}
+
 /// Apply configuration updates and return what was applied
 ///
 /// This function handles the mapping of configuration paths to actual changes,
@@ -279,161 +362,47 @@ pub struct ConfigUpdateApplicationResult {
 pub fn apply_configuration_updates(
     updates: &HashMap<String, serde_json::Value>,
 ) -> ConfigUpdateApplicationResult {
-    let mut changes_applied = Vec::new();
-    let mut requires_restart = false;
+    let mut handler = ConfigChangeHandler::new();
 
     for (path, value) in updates {
         match path.as_str() {
             // Metrics configuration
-            "metrics.enabled" => {
-                if let Some(enabled) = value.as_bool() {
-                    tracing::info!(
-                        "Metrics collection: {}",
-                        if enabled { "enabled" } else { "disabled" }
-                    );
-                    changes_applied.push(format!("metrics.enabled = {}", enabled));
-                }
-            }
-            "metrics.collection_interval" => {
-                if let Some(interval) = value.as_u64() {
-                    tracing::info!("Metrics collection interval set to {} seconds", interval);
-                    changes_applied.push(format!(
-                        "metrics.collection_interval = {} seconds",
-                        interval
-                    ));
-                }
-            }
-            "metrics.retention_days" => {
-                if let Some(days) = value.as_u64() {
-                    tracing::info!("Metrics retention set to {} days", days);
-                    changes_applied.push(format!("metrics.retention_days = {} days", days));
-                }
-            }
+            "metrics.enabled" => handler.handle_bool(path, value, "Metrics collection"),
+            "metrics.collection_interval" => handler.handle_u64(path, value, "Metrics collection interval", "seconds"),
+            "metrics.retention_days" => handler.handle_u64(path, value, "Metrics retention", "days"),
+
             // Cache configuration
-            "cache.enabled" => {
-                if let Some(enabled) = value.as_bool() {
-                    tracing::info!("Cache: {}", if enabled { "enabled" } else { "disabled" });
-                    changes_applied.push(format!("cache.enabled = {}", enabled));
-                }
-            }
-            "cache.max_size" => {
-                if let Some(size) = value.as_u64() {
-                    tracing::info!("Cache max size set to {} bytes", size);
-                    changes_applied.push(format!("cache.max_size = {} bytes", size));
-                }
-            }
-            "cache.ttl_seconds" => {
-                if let Some(ttl) = value.as_u64() {
-                    tracing::info!("Cache TTL set to {} seconds", ttl);
-                    changes_applied.push(format!("cache.ttl_seconds = {} seconds", ttl));
-                }
-            }
+            "cache.enabled" => handler.handle_bool(path, value, "Cache"),
+            "cache.max_size" => handler.handle_u64(path, value, "Cache max size", "bytes"),
+            "cache.ttl_seconds" => handler.handle_u64(path, value, "Cache TTL", "seconds"),
+
             // Database configuration (requires restart)
-            "database.url" => {
-                if value.as_str().is_some() {
-                    tracing::info!("Database URL configured (change requires restart)");
-                    changes_applied.push("database.url = ***".to_string());
-                    requires_restart = true;
-                }
-            }
-            "database.pool_size" => {
-                if let Some(pool_size) = value.as_u64() {
-                    tracing::info!(
-                        "Database pool size set to {} (change requires restart)",
-                        pool_size
-                    );
-                    changes_applied.push(format!(
-                        "database.pool_size = {} (requires restart)",
-                        pool_size
-                    ));
-                    requires_restart = true;
-                }
-            }
-            "database.connection_timeout" => {
-                if let Some(timeout) = value.as_u64() {
-                    tracing::info!(
-                        "Database connection timeout set to {} ms (change requires restart)",
-                        timeout
-                    );
-                    changes_applied.push(format!("database.connection_timeout = {} ms", timeout));
-                    requires_restart = true;
-                }
-            }
+            "database.url" => handler.handle_secret(path, value, "Database URL"),
+            "database.pool_size" => handler.handle_u64_restart(path, value, "Database pool size", ""),
+            "database.connection_timeout" => handler.handle_u64_restart(path, value, "Database connection timeout", "ms"),
+
             // Server configuration (requires restart)
-            "server.port" => {
-                if let Some(port) = value.as_u64() {
-                    tracing::info!(
-                        "Server port configured to {} (change requires restart)",
-                        port
-                    );
-                    changes_applied.push(format!("server.port = {} (requires restart)", port));
-                    requires_restart = true;
-                }
-            }
-            "server.listen_address" => {
-                if let Some(addr) = value.as_str() {
-                    tracing::info!(
-                        "Server listen address configured to {} (change requires restart)",
-                        addr
-                    );
-                    changes_applied.push(format!(
-                        "server.listen_address = {} (requires restart)",
-                        addr
-                    ));
-                    requires_restart = true;
-                }
-            }
+            "server.port" => handler.handle_u64_restart(path, value, "Server port", ""),
+            "server.listen_address" => handler.handle_string_restart(path, value, "Server listen address"),
+
             // Logging configuration
-            "logging.level" => {
-                if let Some(level) = value.as_str() {
-                    tracing::info!("Logging level set to {}", level);
-                    changes_applied.push(format!("logging.level = {}", level));
-                }
-            }
-            "logging.format" => {
-                if let Some(format) = value.as_str() {
-                    tracing::info!("Logging format set to {}", format);
-                    changes_applied.push(format!("logging.format = {}", format));
-                }
-            }
+            "logging.level" => handler.handle_string(path, value, "Logging level"),
+            "logging.format" => handler.handle_string(path, value, "Logging format"),
+
             // Indexing configuration
-            "indexing.enabled" => {
-                if let Some(enabled) = value.as_bool() {
-                    tracing::info!("Indexing: {}", if enabled { "enabled" } else { "disabled" });
-                    changes_applied.push(format!("indexing.enabled = {}", enabled));
-                }
-            }
-            "indexing.batch_size" => {
-                if let Some(batch_size) = value.as_u64() {
-                    tracing::info!("Indexing batch size set to {}", batch_size);
-                    changes_applied.push(format!("indexing.batch_size = {}", batch_size));
-                }
-            }
+            "indexing.enabled" => handler.handle_bool(path, value, "Indexing"),
+            "indexing.batch_size" => handler.handle_u64(path, value, "Indexing batch size", ""),
+
             // Provider configuration
-            "providers.embedding" => {
-                if let Some(provider) = value.as_str() {
-                    tracing::info!("Embedding provider set to {}", provider);
-                    changes_applied.push(format!("providers.embedding = {}", provider));
-                }
-            }
-            "providers.vector_store" => {
-                if let Some(provider) = value.as_str() {
-                    tracing::info!("Vector store provider set to {}", provider);
-                    changes_applied.push(format!("providers.vector_store = {}", provider));
-                }
-            }
+            "providers.embedding" => handler.handle_string(path, value, "Embedding provider"),
+            "providers.vector_store" => handler.handle_string(path, value, "Vector store provider"),
+
             // Unknown configuration path
-            _ => {
-                tracing::warn!("Unknown configuration path: {}", path);
-                changes_applied.push(format!("{} = {:?} (unknown, not applied)", path, value));
-            }
+            _ => handler.handle_unknown(path, value),
         }
     }
 
-    ConfigUpdateApplicationResult {
-        changes_applied,
-        requires_restart,
-    }
+    handler.into_result()
 }
 
 #[cfg(test)]
