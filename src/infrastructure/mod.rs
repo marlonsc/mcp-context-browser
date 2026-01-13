@@ -22,6 +22,7 @@ pub mod config;
 pub mod connection_tracker;
 pub mod constants;
 pub mod crypto;
+pub mod daemon;
 pub mod di;
 pub mod error_ext;
 pub mod events;
@@ -38,6 +39,8 @@ pub mod respawn;
 pub mod service_helpers;
 pub mod shutdown;
 pub mod signals;
+pub mod snapshot;
+pub mod sync;
 pub mod utils;
 
 // Re-export commonly used traits and types

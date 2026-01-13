@@ -49,15 +49,10 @@
 //! - `full`: All features enabled
 
 pub mod adapters;
-pub mod admin;
 pub mod application;
-pub mod chunking;
-pub mod daemon;
 pub mod domain;
 pub mod infrastructure;
 pub mod server;
-pub mod snapshot;
-pub mod sync;
 
 // Re-export core types for public API
 pub use domain::error::{Error, Result};

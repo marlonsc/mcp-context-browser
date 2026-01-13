@@ -1,4 +1,5 @@
 // Module declarations
+pub mod admin;
 pub mod args;
 pub mod auth;
 pub mod builder;
