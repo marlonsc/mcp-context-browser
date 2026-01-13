@@ -10,7 +10,7 @@ exports/
 *.swo
 CLAUDE.md
 !./CLAUDE.md
-toughts/
+thoughts/
 docs/plans/
 .claude/
 
