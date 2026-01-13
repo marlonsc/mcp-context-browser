@@ -10,6 +10,9 @@ exports/
 *.swo
 CLAUDE.md
 !./CLAUDE.md
+toughts/
+docs/plans/
+.claude/
 
 # OS files
 .DS_Store
@@ -26,6 +29,7 @@ Thumbs.db
 # Backup files
 *.bak
 *.bak?
+*.bkp
 *.backup
 *.backup*
 *.disabled
