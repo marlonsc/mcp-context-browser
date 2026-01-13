@@ -4,6 +4,7 @@ use crate::chunking::config::{LanguageConfig, NodeExtractionRule};
 use crate::chunking::processor::BaseProcessor;
 use crate::chunking::LanguageProcessor;
 use crate::domain::types::{CodeChunk, Language};
+use crate::infrastructure::constants::CHUNK_SIZE_SWIFT;
 
 /// Swift language processor with function, class, and protocol extraction.
 pub struct SwiftProcessor {
@@ -55,7 +56,7 @@ impl SwiftProcessor {
                 r"^enum ".to_string(),
                 r"^extension ".to_string(),
             ])
-            .with_chunk_size(15);
+            .with_chunk_size(CHUNK_SIZE_SWIFT);
 
         Self {
             processor: BaseProcessor::new(config),

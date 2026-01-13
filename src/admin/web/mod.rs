@@ -6,6 +6,7 @@
 
 pub mod builders;
 pub mod html_helpers;
+pub mod view_model_builders;
 pub mod view_models;
 
 use axum::{

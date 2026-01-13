@@ -4,6 +4,7 @@ use crate::chunking::config::{LanguageConfig, NodeExtractionRule};
 use crate::chunking::processor::BaseProcessor;
 use crate::chunking::LanguageProcessor;
 use crate::domain::types::{CodeChunk, Language};
+use crate::infrastructure::constants::CHUNK_SIZE_CSHARP;
 
 /// C# language processor with method and class extraction.
 pub struct CSharpProcessor {
@@ -39,7 +40,7 @@ impl CSharpProcessor {
                 r"^class ".to_string(),
                 r"^interface ".to_string(),
             ])
-            .with_chunk_size(15);
+            .with_chunk_size(CHUNK_SIZE_CSHARP);
 
         Self {
             processor: BaseProcessor::new(config),

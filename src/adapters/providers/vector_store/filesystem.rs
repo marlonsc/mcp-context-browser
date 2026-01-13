@@ -6,7 +6,11 @@
 use crate::domain::error::Result;
 use crate::domain::ports::VectorStoreProvider;
 use crate::domain::types::{Embedding, SearchResult};
-use crate::infrastructure::utils::FileUtils;
+use crate::infrastructure::constants::{
+    FILESYSTEM_BYTES_PER_DIMENSION, FILESYSTEM_VECTOR_STORE_INDEX_CACHE_SIZE,
+    FILESYSTEM_VECTOR_STORE_MAX_PER_SHARD,
+};
+use crate::infrastructure::utils::{FileUtils, JsonExt};
 use async_trait::async_trait;
 use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
@@ -37,10 +41,10 @@ impl Default for FilesystemVectorStoreConfig {
     fn default() -> Self {
         Self {
             base_path: PathBuf::from("./data/vectors"),
-            max_vectors_per_shard: 100000,
+            max_vectors_per_shard: FILESYSTEM_VECTOR_STORE_MAX_PER_SHARD,
             dimensions: 1536, // Default for text-embedding-3-small
             compression_enabled: false,
-            index_cache_size: 10000,
+            index_cache_size: FILESYSTEM_VECTOR_STORE_INDEX_CACHE_SIZE,
             memory_mapping_enabled: true,
         }
     }
@@ -299,10 +303,10 @@ impl FilesystemVectorStore {
             file.seek(std::io::SeekFrom::Start(offset))?;
 
             // Read vector data
-            let mut bytes = vec![0u8; dimensions * 4];
+            let mut bytes = vec![0u8; dimensions * FILESYSTEM_BYTES_PER_DIMENSION];
             file.read_exact(&mut bytes)?;
             let mut vector = Vec::with_capacity(dimensions);
-            for chunk in bytes.chunks_exact(4) {
+            for chunk in bytes.chunks_exact(FILESYSTEM_BYTES_PER_DIMENSION) {
                 let value = f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
                 vector.push(value);
             }
@@ -379,23 +383,13 @@ impl FilesystemVectorStore {
             {
                 let similarity = self.cosine_similarity(query_vector, &vector);
 
-                let file_path = metadata
-                    .get("file_path")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("unknown")
-                    .to_string();
-
+                let file_path = metadata.string_or("file_path", "unknown");
+                // Fallback for backward compatibility
                 let start_line = metadata
-                    .get("start_line")
-                    .or_else(|| metadata.get("line_number"))
-                    .and_then(|v| v.as_u64())
+                    .opt_u64("start_line")
+                    .or_else(|| metadata.opt_u64("line_number"))
                     .unwrap_or(0) as u32;
-
-                let content = metadata
-                    .get("content")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("")
-                    .to_string();
+                let content = metadata.string_or("content", "");
 
                 results.push(SearchResult {
                     id: entry.id.clone(),
@@ -437,7 +431,7 @@ impl FilesystemVectorStore {
 
     /// Convert vector to bytes
     fn vector_to_bytes(&self, vector: &[f32]) -> Vec<u8> {
-        let mut bytes = Vec::with_capacity(vector.len() * 4);
+        let mut bytes = Vec::with_capacity(vector.len() * FILESYSTEM_BYTES_PER_DIMENSION);
         for &value in vector {
             bytes.extend_from_slice(&value.to_le_bytes());
         }
@@ -589,23 +583,13 @@ impl VectorStoreProvider for FilesystemVectorStore {
                     .read_vector_from_shard(collection, entry.shard_id, entry.offset)
                     .await
                 {
-                    let file_path = metadata
-                        .get("file_path")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("unknown")
-                        .to_string();
-
+                    let file_path = metadata.string_or("file_path", "unknown");
+                    // Fallback for backward compatibility
                     let start_line = metadata
-                        .get("start_line")
-                        .or_else(|| metadata.get("line_number"))
-                        .and_then(|v| v.as_u64())
+                        .opt_u64("start_line")
+                        .or_else(|| metadata.opt_u64("line_number"))
                         .unwrap_or(0) as u32;
-
-                    let content = metadata
-                        .get("content")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string();
+                    let content = metadata.string_or("content", "");
 
                     results.push(SearchResult {
                         id: id.clone(),
@@ -641,23 +625,13 @@ impl VectorStoreProvider for FilesystemVectorStore {
                 .read_vector_from_shard(collection, entry.shard_id, entry.offset)
                 .await
             {
-                let file_path = metadata
-                    .get("file_path")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("unknown")
-                    .to_string();
-
+                let file_path = metadata.string_or("file_path", "unknown");
+                // Fallback for backward compatibility
                 let start_line = metadata
-                    .get("start_line")
-                    .or_else(|| metadata.get("line_number"))
-                    .and_then(|v| v.as_u64())
+                    .opt_u64("start_line")
+                    .or_else(|| metadata.opt_u64("line_number"))
                     .unwrap_or(0) as u32;
-
-                let content = metadata
-                    .get("content")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("")
-                    .to_string();
+                let content = metadata.string_or("content", "");
 
                 results.push(SearchResult {
                     id,

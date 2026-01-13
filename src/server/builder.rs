@@ -154,16 +154,18 @@ impl McpServerBuilder {
         // Create admin service with all dependencies
         // Cast concrete event bus to trait object for AdminService which uses async methods
         let event_bus_trait: SharedEventBusProvider = event_bus.clone() as SharedEventBusProvider;
-        let admin_service = Arc::new(crate::admin::service::AdminServiceImpl::new(
-            Arc::clone(&performance_metrics),
-            Arc::clone(&indexing_operations),
-            Arc::clone(&service_provider),
-            Arc::clone(&system_collector),
-            Arc::clone(&http_client),
-            event_bus_trait,
-            log_buffer.clone(),
-            Arc::clone(&config_arc),
-        )) as Arc<dyn crate::admin::service::AdminService>;
+        let deps = crate::admin::service::AdminServiceDependencies {
+            performance_metrics: Arc::clone(&performance_metrics),
+            indexing_operations: Arc::clone(&indexing_operations),
+            service_provider: Arc::clone(&service_provider),
+            system_collector: Arc::clone(&system_collector),
+            http_client: Arc::clone(&http_client),
+            event_bus: event_bus_trait,
+            log_buffer: log_buffer.clone(),
+            config: Arc::clone(&config_arc),
+        };
+        let admin_service = Arc::new(crate::admin::service::AdminServiceImpl::new(deps))
+            as Arc<dyn crate::admin::service::AdminService>;
 
         // Use from_components to assemble the server
         McpServer::from_components(crate::server::mcp_server::ServerComponents {

@@ -9,10 +9,11 @@ use crate::domain::error::Result;
 use crate::domain::types::SyncBatch;
 use crate::infrastructure::cache::{CacheProviderQueue, SharedCacheProvider};
 use crate::infrastructure::events::{SharedEventBusProvider, SystemEvent};
+use crate::infrastructure::utils::TimeUtils;
 use dashmap::DashMap;
 use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, UNIX_EPOCH};
 use uuid::Uuid;
 use validator::Validate;
 use walkdir::WalkDir;
@@ -264,15 +265,10 @@ impl SyncManager {
     pub async fn acquire_sync_slot(&self, codebase_path: &Path) -> Result<Option<SyncBatch>> {
         // Create SyncBatch
         let batch_id = Uuid::new_v4().to_string();
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or(Duration::from_secs(0))
-            .as_secs();
-
         let batch = SyncBatch {
             id: batch_id.clone(),
             path: codebase_path.to_string_lossy().to_string(),
-            created_at: now,
+            created_at: TimeUtils::now_unix_secs(),
         };
 
         // Enqueue if cache is available
@@ -351,10 +347,7 @@ impl SyncManager {
     pub async fn clean_old_batches(&self, max_age: Duration) {
         if let Some(cache) = &self.cache_manager {
             if let Ok(queue) = cache.get_queue::<SyncBatch>("sync_batches", "queue").await {
-                let now = SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .unwrap_or(Duration::from_secs(0))
-                    .as_secs();
+                let now = TimeUtils::now_unix_secs();
 
                 for batch in queue {
                     if now.saturating_sub(batch.created_at) > max_age.as_secs() {

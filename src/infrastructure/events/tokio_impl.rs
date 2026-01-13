@@ -4,6 +4,7 @@
 
 use super::{EventBusProvider, EventReceiver, SystemEvent};
 use crate::domain::error::Result;
+use crate::infrastructure::constants::EVENT_BUS_TOKIO_CAPACITY;
 use std::sync::Arc;
 use tokio::sync::broadcast::{self, Receiver, Sender};
 
@@ -20,9 +21,9 @@ impl EventBus {
         Self { sender }
     }
 
-    /// Create a new EventBus with default capacity (100)
+    /// Create a new EventBus with default capacity
     pub fn with_default_capacity() -> Self {
-        Self::new(100)
+        Self::new(EVENT_BUS_TOKIO_CAPACITY)
     }
 
     /// Publish an event (synchronous version for sync contexts)

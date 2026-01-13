@@ -5,13 +5,18 @@
 //! rate limiting for production security.
 
 use crate::domain::error::{Error, Result};
+use crate::infrastructure::constants::{
+    RATE_LIMIT_BURST_ALLOWANCE, RATE_LIMIT_CACHE_MAX_ENTRIES, RATE_LIMIT_DEFAULT_MAX_REQUESTS,
+    RATE_LIMIT_WINDOW_SECONDS,
+};
+use crate::infrastructure::utils::TimeUtils;
 use arc_swap::ArcSwapOption;
 use dashmap::DashMap;
 use redis::Client;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::sync::Arc;
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant};
 use tokio::task::spawn_blocking;
 use tokio::time::timeout;
 use validator::Validate;
@@ -84,7 +89,7 @@ impl Validate for RateLimitBackend {
 }
 
 fn default_memory_max_entries() -> usize {
-    10000
+    RATE_LIMIT_CACHE_MAX_ENTRIES
 }
 
 fn default_redis_timeout() -> u64 {
@@ -97,9 +102,9 @@ impl Default for RateLimitConfig {
             backend: RateLimitBackend::Memory {
                 max_entries: default_memory_max_entries(),
             },
-            window_seconds: 60,
-            max_requests_per_window: 100,
-            burst_allowance: 20,
+            window_seconds: RATE_LIMIT_WINDOW_SECONDS,
+            max_requests_per_window: RATE_LIMIT_DEFAULT_MAX_REQUESTS,
+            burst_allowance: RATE_LIMIT_BURST_ALLOWANCE,
             enabled: true,
             redis_timeout_seconds: default_redis_timeout(),
             cache_ttl_seconds: default_cache_ttl(),
@@ -331,10 +336,7 @@ impl RateLimiter {
         max_entries: usize,
     ) -> Result<RateLimitResult> {
         let storage_key = key.to_string();
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs();
+        let now = TimeUtils::now_unix_secs();
 
         let window_start = now.saturating_sub(self.config.window_seconds);
 
@@ -452,11 +454,7 @@ impl RateLimiter {
         };
 
         let redis_key = format!("ratelimit:{}", key);
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs() as f64;
-
+        let now = TimeUtils::now_unix_secs() as f64;
         let window_start = now - self.config.window_seconds as f64;
 
         // Remove old entries outside the window

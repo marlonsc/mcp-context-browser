@@ -4,6 +4,7 @@ use crate::chunking::config::{LanguageConfig, NodeExtractionRule};
 use crate::chunking::processor::BaseProcessor;
 use crate::chunking::LanguageProcessor;
 use crate::domain::types::{CodeChunk, Language};
+use crate::infrastructure::constants::CHUNK_SIZE_PYTHON;
 
 /// Python language processor with function and class extraction.
 pub struct PythonProcessor {
@@ -31,7 +32,7 @@ impl PythonProcessor {
                 include_context: true,
             }])
             .with_fallback_patterns(vec![r"^def ".to_string(), r"^class ".to_string()])
-            .with_chunk_size(15);
+            .with_chunk_size(CHUNK_SIZE_PYTHON);
 
         Self {
             processor: BaseProcessor::new(config),

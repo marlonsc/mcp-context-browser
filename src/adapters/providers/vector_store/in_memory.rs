@@ -3,6 +3,7 @@
 use crate::domain::error::{Error, Result};
 use crate::domain::ports::VectorStoreProvider;
 use crate::domain::types::{Embedding, SearchResult};
+use crate::infrastructure::utils::JsonExt;
 use async_trait::async_trait;
 use dashmap::DashMap;
 use std::collections::HashMap;
@@ -104,30 +105,18 @@ impl VectorStoreProvider for InMemoryVectorStoreProvider {
         let search_results = results
             .into_iter()
             .map(|(score, _i, _embedding, metadata)| {
-                let id = metadata
-                    .get("generated_id")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("")
-                    .to_string();
+                let id = metadata.string_or("generated_id", "");
+                // Fallback for backward compatibility
                 let start_line = metadata
-                    .get("start_line")
-                    .or_else(|| metadata.get("line_number"))
-                    .and_then(|v| v.as_u64())
+                    .opt_u64("start_line")
+                    .or_else(|| metadata.opt_u64("line_number"))
                     .unwrap_or(0) as u32;
 
                 SearchResult {
                     id,
-                    file_path: metadata
-                        .get("file_path")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string(),
+                    file_path: metadata.string_or("file_path", ""),
                     start_line,
-                    content: metadata
-                        .get("content")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string(),
+                    content: metadata.string_or("content", ""),
                     score,
                     metadata: serde_json::to_value(metadata).unwrap_or(serde_json::json!({})),
                 }
@@ -145,10 +134,7 @@ impl VectorStoreProvider for InMemoryVectorStoreProvider {
 
         // Remove vectors by their generated IDs
         coll.retain(|(_embedding, metadata)| {
-            let generated_id = metadata
-                .get("generated_id")
-                .and_then(|v| v.as_str())
-                .unwrap_or("");
+            let generated_id = metadata.str_or("generated_id", "");
             !ids.contains(&generated_id.to_string())
         });
         Ok(())
@@ -167,37 +153,22 @@ impl VectorStoreProvider for InMemoryVectorStoreProvider {
         let results = coll
             .iter()
             .filter(|(_embedding, metadata)| {
-                let generated_id = metadata
-                    .get("generated_id")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("");
+                let generated_id = metadata.str_or("generated_id", "");
                 ids.contains(&generated_id.to_string())
             })
             .map(|(_embedding, metadata)| {
-                let id = metadata
-                    .get("generated_id")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("")
-                    .to_string();
+                let id = metadata.string_or("generated_id", "");
+                // Fallback for backward compatibility
                 let start_line = metadata
-                    .get("start_line")
-                    .or_else(|| metadata.get("line_number"))
-                    .and_then(|v| v.as_u64())
+                    .opt_u64("start_line")
+                    .or_else(|| metadata.opt_u64("line_number"))
                     .unwrap_or(0) as u32;
 
                 SearchResult {
                     id,
-                    file_path: metadata
-                        .get("file_path")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string(),
+                    file_path: metadata.string_or("file_path", ""),
                     start_line,
-                    content: metadata
-                        .get("content")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string(),
+                    content: metadata.string_or("content", ""),
                     score: 1.0, // Exact match
                     metadata: serde_json::to_value(metadata).unwrap_or(serde_json::json!({})),
                 }
@@ -217,30 +188,18 @@ impl VectorStoreProvider for InMemoryVectorStoreProvider {
             .iter()
             .take(limit)
             .map(|(_embedding, metadata)| {
-                let id = metadata
-                    .get("generated_id")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("")
-                    .to_string();
+                let id = metadata.string_or("generated_id", "");
+                // Fallback for backward compatibility
                 let start_line = metadata
-                    .get("start_line")
-                    .or_else(|| metadata.get("line_number"))
-                    .and_then(|v| v.as_u64())
+                    .opt_u64("start_line")
+                    .or_else(|| metadata.opt_u64("line_number"))
                     .unwrap_or(0) as u32;
 
                 SearchResult {
                     id,
-                    file_path: metadata
-                        .get("file_path")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string(),
+                    file_path: metadata.string_or("file_path", ""),
                     start_line,
-                    content: metadata
-                        .get("content")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string(),
+                    content: metadata.string_or("content", ""),
                     score: 1.0,
                     metadata: serde_json::to_value(metadata).unwrap_or(serde_json::json!({})),
                 }

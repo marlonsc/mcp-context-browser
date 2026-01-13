@@ -6,6 +6,7 @@
 use crate::domain::error::{Error, Result};
 use crate::domain::ports::EmbeddingProvider;
 use crate::domain::types::Embedding;
+use crate::infrastructure::constants::EMBEDDING_DIMENSION_FASTEMBED_DEFAULT;
 use async_trait::async_trait;
 use fastembed::{EmbeddingModel, InitOptions, TextEmbedding};
 use tokio::sync::{mpsc, oneshot};
@@ -95,7 +96,7 @@ impl EmbeddingProvider for FastEmbedProvider {
         // AllMiniLML6V2 has 384 dimensions
         // We'll query the model for actual dimensions
         // For now, return a reasonable default that matches AllMiniLML6V2
-        384
+        EMBEDDING_DIMENSION_FASTEMBED_DEFAULT
     }
 
     fn provider_name(&self) -> &str {

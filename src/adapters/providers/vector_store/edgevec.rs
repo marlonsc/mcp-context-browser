@@ -12,6 +12,10 @@ use tokio::sync::{mpsc, oneshot};
 use crate::domain::error::{Error, Result};
 use crate::domain::ports::VectorStoreProvider;
 use crate::domain::types::{Embedding, SearchResult};
+use crate::infrastructure::constants::{
+    EDGEVEC_QUANTIZATION_LEVEL_1, EDGEVEC_QUANTIZATION_LEVEL_2,
+};
+use crate::infrastructure::utils::JsonExt;
 use edgevec::hnsw::VectorId;
 
 /// EdgeVec vector store configuration
@@ -63,10 +67,10 @@ pub struct HnswConfig {
 }
 
 fn default_m() -> u32 {
-    16
+    EDGEVEC_QUANTIZATION_LEVEL_1
 }
 fn default_m0() -> u32 {
-    32
+    EDGEVEC_QUANTIZATION_LEVEL_2
 }
 fn default_ef_construction() -> u32 {
     200
@@ -470,24 +474,17 @@ impl EdgeVecActor {
                                         if let Some(meta_val) = collection_metadata.get(&ext_id) {
                                             let meta =
                                                 meta_val.as_object().cloned().unwrap_or_default();
+                                            // Fallback for backward compatibility
+                                            let start_line = meta
+                                                .opt_u64("start_line")
+                                                .or_else(|| meta.opt_u64("line_number"))
+                                                .unwrap_or(0)
+                                                as u32;
                                             final_results.push(SearchResult {
                                                 id: ext_id,
-                                                file_path: meta
-                                                    .get("file_path")
-                                                    .and_then(|v| v.as_str())
-                                                    .unwrap_or("unknown")
-                                                    .to_string(),
-                                                start_line: meta
-                                                    .get("start_line")
-                                                    .or_else(|| meta.get("line_number"))
-                                                    .and_then(|v| v.as_u64())
-                                                    .unwrap_or(0)
-                                                    as u32,
-                                                content: meta
-                                                    .get("content")
-                                                    .and_then(|v| v.as_str())
-                                                    .unwrap_or("")
-                                                    .to_string(),
+                                                file_path: meta.string_or("file_path", "unknown"),
+                                                start_line,
+                                                content: meta.string_or("content", ""),
                                                 score: res.distance,
                                                 metadata: serde_json::json!(meta),
                                             });
@@ -548,22 +545,13 @@ impl EdgeVecActor {
 
                             final_results.push(SearchResult {
                                 id: ext_id.clone(),
-                                file_path: meta
-                                    .get("file_path")
-                                    .and_then(|v: &serde_json::Value| v.as_str())
-                                    .unwrap_or("unknown")
-                                    .to_string(),
+                                file_path: meta.string_or("file_path", "unknown"),
                                 start_line: meta
-                                    .get("start_line")
-                                    .or_else(|| meta.get("line_number"))
-                                    .and_then(|v: &serde_json::Value| v.as_u64())
+                                    .opt_u64("start_line")
+                                    .or_else(|| meta.opt_u64("line_number"))
                                     .unwrap_or(0)
                                     as u32,
-                                content: meta
-                                    .get("content")
-                                    .and_then(|v: &serde_json::Value| v.as_str())
-                                    .unwrap_or("")
-                                    .to_string(),
+                                content: meta.string_or("content", ""),
                                 score: 1.0,
                                 metadata: serde_json::json!(meta),
                             });
@@ -583,22 +571,13 @@ impl EdgeVecActor {
                                 let meta = meta_val.as_object().cloned().unwrap_or_default();
                                 final_results.push(SearchResult {
                                     id: id.clone(),
-                                    file_path: meta
-                                        .get("file_path")
-                                        .and_then(|v: &serde_json::Value| v.as_str())
-                                        .unwrap_or("unknown")
-                                        .to_string(),
+                                    file_path: meta.string_or("file_path", "unknown"),
                                     start_line: meta
-                                        .get("start_line")
-                                        .or_else(|| meta.get("line_number"))
-                                        .and_then(|v: &serde_json::Value| v.as_u64())
+                                        .opt_u64("start_line")
+                                        .or_else(|| meta.opt_u64("line_number"))
                                         .unwrap_or(0)
                                         as u32,
-                                    content: meta
-                                        .get("content")
-                                        .and_then(|v: &serde_json::Value| v.as_str())
-                                        .unwrap_or("")
-                                        .to_string(),
+                                    content: meta.string_or("content", ""),
                                     score: 1.0,
                                     metadata: serde_json::json!(meta),
                                 });

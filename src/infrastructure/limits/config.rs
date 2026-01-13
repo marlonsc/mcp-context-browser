@@ -3,6 +3,13 @@
 //! Defines configuration structures for resource limits including
 //! memory, CPU, disk, and operation concurrency limits.
 
+use crate::infrastructure::constants::{
+    CPU_LIMIT_UNHEALTHY_PERCENT, CPU_TIMEOUT_PER_OPERATION, CPU_WARNING_THRESHOLD,
+    DISK_LIMIT_UNHEALTHY_PERCENT, DISK_MIN_FREE_SPACE, DISK_WARNING_THRESHOLD,
+    MAX_CONCURRENT_EMBEDDING, MAX_CONCURRENT_INDEXING, MAX_CONCURRENT_SEARCH,
+    MAX_OPERATION_QUEUE_SIZE, MEMORY_LIMIT_PER_OPERATION, MEMORY_LIMIT_UNHEALTHY_PERCENT,
+    MEMORY_WARNING_THRESHOLD,
+};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use validator::Validate;
@@ -63,9 +70,9 @@ pub struct MemoryLimits {
 impl Default for MemoryLimits {
     fn default() -> Self {
         Self {
-            max_usage_percent: 85.0,
-            max_per_operation: 512 * 1024 * 1024, // 512MB
-            warning_threshold: 75.0,
+            max_usage_percent: MEMORY_LIMIT_UNHEALTHY_PERCENT as f32,
+            max_per_operation: MEMORY_LIMIT_PER_OPERATION as u64,
+            warning_threshold: MEMORY_WARNING_THRESHOLD as f32,
         }
     }
 }
@@ -89,9 +96,9 @@ pub struct CpuLimits {
 impl Default for CpuLimits {
     fn default() -> Self {
         Self {
-            max_usage_percent: 80.0,
-            max_time_per_operation: Duration::from_secs(300), // 5 minutes
-            warning_threshold: 70.0,
+            max_usage_percent: CPU_LIMIT_UNHEALTHY_PERCENT as f32,
+            max_time_per_operation: CPU_TIMEOUT_PER_OPERATION,
+            warning_threshold: CPU_WARNING_THRESHOLD as f32,
         }
     }
 }
@@ -116,9 +123,9 @@ pub struct DiskLimits {
 impl Default for DiskLimits {
     fn default() -> Self {
         Self {
-            max_usage_percent: 90.0,
-            min_free_space: 1024 * 1024 * 1024, // 1GB
-            warning_threshold: 80.0,
+            max_usage_percent: DISK_LIMIT_UNHEALTHY_PERCENT as f32,
+            min_free_space: DISK_MIN_FREE_SPACE,
+            warning_threshold: DISK_WARNING_THRESHOLD as f32,
         }
     }
 }
@@ -147,10 +154,10 @@ pub struct OperationLimits {
 impl Default for OperationLimits {
     fn default() -> Self {
         Self {
-            max_concurrent_indexing: 3,
-            max_concurrent_search: 10,
-            max_concurrent_embedding: 5,
-            max_queue_size: 100,
+            max_concurrent_indexing: MAX_CONCURRENT_INDEXING,
+            max_concurrent_search: MAX_CONCURRENT_SEARCH,
+            max_concurrent_embedding: MAX_CONCURRENT_EMBEDDING,
+            max_queue_size: MAX_OPERATION_QUEUE_SIZE,
         }
     }
 }

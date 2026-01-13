@@ -7,6 +7,7 @@ use crate::infrastructure::limits::config::ResourceLimitsConfig;
 use crate::infrastructure::limits::types::{
     CpuStats, DiskStats, MemoryStats, OperationStats, ResourceStats, ResourceViolation,
 };
+use crate::infrastructure::utils::TimeUtils;
 use async_trait::async_trait;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
@@ -189,10 +190,7 @@ impl ResourceLimits {
             cpu,
             disk,
             operations,
-            timestamp: std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_secs(),
+            timestamp: TimeUtils::now_unix_secs(),
         })
     }
 

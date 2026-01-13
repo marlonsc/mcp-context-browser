@@ -11,7 +11,7 @@ pub mod test_helpers {
     /// Create a real AdminService for testing with minimal dependencies
     pub async fn create_test_admin_service() -> std::sync::Arc<dyn AdminService> {
         use arc_swap::ArcSwap;
-        use mcp_context_browser::admin::service::AdminServiceImpl;
+        use mcp_context_browser::admin::service::{AdminServiceDependencies, AdminServiceImpl};
         use mcp_context_browser::infrastructure::config::ConfigLoader;
         use mcp_context_browser::infrastructure::di::factory::ServiceProvider;
         use mcp_context_browser::infrastructure::events::EventBus;
@@ -41,7 +41,7 @@ pub mod test_helpers {
         let config = Arc::new(ArcSwap::from_pointee(loaded_config));
 
         // Create the real admin service
-        let admin_service = AdminServiceImpl::new(
+        let deps = AdminServiceDependencies {
             performance_metrics,
             indexing_operations,
             service_provider,
@@ -50,7 +50,8 @@ pub mod test_helpers {
             event_bus,
             log_buffer,
             config,
-        );
+        };
+        let admin_service = AdminServiceImpl::new(deps);
 
         Arc::new(admin_service)
     }

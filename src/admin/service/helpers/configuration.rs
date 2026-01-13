@@ -5,11 +5,11 @@
 
 use crate::admin::service::helpers::admin_defaults;
 use crate::admin::service::types::{AdminError, ConfigurationChange};
+use crate::infrastructure::utils::FileUtils;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use tokio::fs;
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
@@ -158,35 +158,20 @@ impl ConfigHistoryManager {
 
 /// Load history from disk at a specific path
 async fn load_history_from_path(path: &PathBuf) -> Result<ConfigHistory, AdminError> {
-    if !path.exists() {
+    if !FileUtils::exists(path).await {
         return Ok(ConfigHistory::default());
     }
 
-    let content = fs::read_to_string(path)
+    FileUtils::read_json(path, "configuration history")
         .await
-        .map_err(|e| AdminError::InternalError(format!("Failed to read history file: {}", e)))?;
-
-    serde_json::from_str(&content)
-        .map_err(|e| AdminError::InternalError(format!("Failed to parse history file: {}", e)))
+        .map_err(|e| AdminError::InternalError(e.to_string()))
 }
 
 /// Save history to disk at a specific path
 async fn save_history_to_path(history: &ConfigHistory, path: &PathBuf) -> Result<(), AdminError> {
-    // Ensure directory exists
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).await.map_err(|e| {
-            AdminError::InternalError(format!("Failed to create history directory: {}", e))
-        })?;
-    }
-
-    let content = serde_json::to_string_pretty(history)
-        .map_err(|e| AdminError::InternalError(format!("Failed to serialize history: {}", e)))?;
-
-    fs::write(path, content)
+    FileUtils::ensure_dir_write_json(path, history, "configuration history")
         .await
-        .map_err(|e| AdminError::InternalError(format!("Failed to write history file: {}", e)))?;
-
-    Ok(())
+        .map_err(|e| AdminError::InternalError(e.to_string()))
 }
 
 /// Standalone function to get configuration history from a specific path (from config)

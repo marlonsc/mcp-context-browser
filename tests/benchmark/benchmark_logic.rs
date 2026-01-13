@@ -2,6 +2,10 @@
 //!
 //! These tests measure the performance characteristics of key operations
 //! to ensure they meet performance requirements.
+//!
+//! Benchmark functions and helper functions are registered via criterion_group! macro
+//! and thus appear as unused by static analysis, but are actually called at runtime.
+#![allow(dead_code)]
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use mcp_context_browser::adapters::repository::{RepositoryStats, SearchStats};
@@ -16,7 +20,6 @@ use tokio::runtime::Runtime;
 use mcp_context_browser::domain::ports::HybridSearchProvider;
 
 /// Create real providers for benchmarking
-#[allow(dead_code)]
 fn create_benchmark_providers() -> (
     Arc<dyn EmbeddingProvider>,
     Arc<dyn VectorStoreProvider>,
@@ -39,7 +42,6 @@ fn create_benchmark_providers() -> (
 }
 
 /// Create a benchmark context service
-#[allow(dead_code)]
 fn create_benchmark_context_service() -> ContextService {
     let (embedding_provider, vector_store_provider, hybrid_search_provider) =
         create_benchmark_providers();
@@ -54,7 +56,6 @@ fn create_benchmark_context_service() -> ContextService {
 ///
 /// NOTE: In benchmarks, expect() is acceptable as benchmark setup failure
 /// should halt the benchmark rather than produce invalid results.
-#[allow(dead_code)]
 fn create_benchmark_mcp_server() -> McpServer {
     let rt = Runtime::new().expect("Benchmark requires Tokio runtime");
     // Uses builder pattern with cache provider factory internally
@@ -63,7 +64,6 @@ fn create_benchmark_mcp_server() -> McpServer {
 }
 
 /// Benchmark core type operations
-#[allow(dead_code)]
 pub fn bench_core_types(c: &mut Criterion) {
     c.bench_function("create_code_chunk", |b| {
         b.iter(|| {
@@ -135,7 +135,6 @@ pub fn bench_core_types(c: &mut Criterion) {
 }
 
 /// Benchmark validation operations
-#[allow(dead_code)]
 pub fn bench_validation(c: &mut Criterion) {
     c.bench_function("validate_code_chunk_basic", |b| {
         let chunk = CodeChunk {
@@ -178,7 +177,6 @@ pub fn bench_validation(c: &mut Criterion) {
 }
 
 /// Benchmark repository operations (real implementations)
-#[allow(dead_code)]
 pub fn bench_repository_operations(c: &mut Criterion) {
     // Note: Using in-memory implementations for benchmarking as they provide real functionality
     // without external dependencies. In production, these would use actual database implementations.
@@ -314,7 +312,6 @@ pub fn bench_repository_operations(c: &mut Criterion) {
 ///
 /// NOTE: In benchmarks, expect() is acceptable as benchmark setup failure
 /// should halt the benchmark rather than produce invalid results.
-#[allow(dead_code)]
 pub fn bench_provider_operations(c: &mut Criterion) {
     let rt = Runtime::new().expect("Benchmark requires Tokio runtime");
     let (embedding_provider, vector_store_provider, _hybrid_search_provider) =
@@ -381,7 +378,6 @@ pub fn bench_provider_operations(c: &mut Criterion) {
 ///
 /// NOTE: In benchmarks, expect() is acceptable as benchmark setup failure
 /// should halt the benchmark rather than produce invalid results.
-#[allow(dead_code)]
 pub fn bench_service_operations(c: &mut Criterion) {
     let rt = Runtime::new().expect("Benchmark requires Tokio runtime");
     let context_service = create_benchmark_context_service();
@@ -501,7 +497,6 @@ pub fn bench_service_operations(c: &mut Criterion) {
 }
 
 /// Benchmark memory operations
-#[allow(dead_code)]
 pub fn bench_memory_operations(c: &mut Criterion) {
     c.bench_function("memory_chunk_allocation", |b| {
         b.iter(|| {
@@ -536,7 +531,6 @@ pub fn bench_memory_operations(c: &mut Criterion) {
 }
 
 /// Benchmark MCP protocol operations (real implementations)
-#[allow(dead_code)]
 pub fn bench_mcp_operations(c: &mut Criterion) {
     let mcp_server = create_benchmark_mcp_server();
 
@@ -616,7 +610,6 @@ pub fn bench_mcp_operations(c: &mut Criterion) {
 ///
 /// NOTE: In benchmarks, expect() is acceptable as benchmark setup failure
 /// should halt the benchmark rather than produce invalid results.
-#[allow(dead_code)]
 pub fn bench_concurrent_operations(c: &mut Criterion) {
     let rt = Runtime::new().expect("Benchmark requires Tokio runtime");
     let context_service = create_benchmark_context_service();

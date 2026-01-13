@@ -19,10 +19,12 @@
 
 use anyhow::{Context, Result};
 
+use super::view_model_builders::{
+    ActivityLevelFormatter, ConfigCategoryBuilder, ConfigSettingBuilder, MetricsCollector,
+};
 use super::view_models::*;
 use crate::admin::models::AdminState;
-use crate::admin::service::helpers::activity::ActivityLevel;
-use crate::infrastructure::utils::{activity_level, css, FormattingUtils, HealthUtils};
+use crate::infrastructure::utils::{css, FormattingUtils, HealthUtils, TimeUtils};
 
 /// Builds view models from AdminService data
 ///
@@ -76,25 +78,11 @@ impl<'a> ViewModelBuilder<'a> {
             .await
             .context("Failed to get performance metrics")?;
 
-        let cpu = self
-            .state
-            .mcp_server
-            .system_collector
-            .collect_cpu_metrics()
-            .await
-            .context("Failed to collect CPU metrics")?;
-
-        let memory = self
-            .state
-            .mcp_server
-            .system_collector
-            .collect_memory_metrics()
-            .await
-            .context("Failed to collect memory metrics")?;
+        let (cpu_usage, memory_usage) = MetricsCollector::new(self.state).collect_system().await?;
 
         Ok(MetricsViewModel::new(
-            cpu.usage as f64,
-            memory.usage_percent as f64,
+            cpu_usage,
+            memory_usage,
             performance.total_queries,
             performance.average_response_time_ms,
         ))
@@ -141,12 +129,7 @@ impl<'a> ViewModelBuilder<'a> {
         Ok(activities
             .into_iter()
             .map(|a| {
-                let level_str = match a.level {
-                    ActivityLevel::Success => activity_level::SUCCESS,
-                    ActivityLevel::Warning => activity_level::WARNING,
-                    ActivityLevel::Error => activity_level::ERROR,
-                    ActivityLevel::Info => activity_level::INFO,
-                };
+                let level_str = ActivityLevelFormatter::to_css_class(a.level);
                 ActivityViewModel::new(a.id, a.message, a.timestamp, level_str, a.category)
             })
             .collect())
@@ -161,24 +144,8 @@ impl<'a> ViewModelBuilder<'a> {
             .await
             .context("Failed to get system info")?;
 
-        // Determine health status based on actual metrics
-        let cpu = self
-            .state
-            .mcp_server
-            .system_collector
-            .collect_cpu_metrics()
-            .await
-            .context("Failed to collect CPU metrics for health check")?;
-
-        let memory = self
-            .state
-            .mcp_server
-            .system_collector
-            .collect_memory_metrics()
-            .await
-            .context("Failed to collect memory metrics for health check")?;
-
-        let status = HealthUtils::compute_status(cpu.usage as f64, memory.usage_percent as f64);
+        let (cpu_usage, memory_usage) = MetricsCollector::new(self.state).collect_system().await?;
+        let status = HealthUtils::compute_status(cpu_usage, memory_usage);
 
         Ok(HealthViewModel::new(
             status,
@@ -209,10 +176,7 @@ impl<'a> ViewModelBuilder<'a> {
             .await
             .context("Failed to get indexing status")?;
 
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_secs())
-            .unwrap_or(0);
+        let now = TimeUtils::now_unix_secs();
 
         let indexes = vec![IndexViewModel::new(
             "main-index".to_string(),
@@ -244,128 +208,83 @@ impl<'a> ViewModelBuilder<'a> {
             .await
             .context("Failed to get configuration")?;
 
-        // Group settings by category
-        let mut categories = Vec::new();
-
-        // Indexing settings
-        categories.push(ConfigCategoryViewModel {
-            name: "Indexing".to_string(),
-            description: "Code indexing and chunking settings".to_string(),
-            settings: vec![
-                ConfigSettingViewModel {
-                    key: "indexing.chunk_size".to_string(),
-                    label: "Chunk Size".to_string(),
-                    value: serde_json::json!(config.indexing.chunk_size),
-                    value_display: config.indexing.chunk_size.to_string(),
-                    setting_type: "number",
-                    description: "Size of code chunks for embedding".to_string(),
-                    editable: true,
-                },
-                ConfigSettingViewModel {
-                    key: "indexing.chunk_overlap".to_string(),
-                    label: "Chunk Overlap".to_string(),
-                    value: serde_json::json!(config.indexing.chunk_overlap),
-                    value_display: config.indexing.chunk_overlap.to_string(),
-                    setting_type: "number",
-                    description: "Overlap between adjacent chunks".to_string(),
-                    editable: true,
-                },
-                ConfigSettingViewModel {
-                    key: "indexing.max_file_size".to_string(),
-                    label: "Max File Size".to_string(),
-                    value: serde_json::json!(config.indexing.max_file_size),
-                    value_display: FormattingUtils::format_bytes(config.indexing.max_file_size),
-                    setting_type: "number",
-                    description: "Maximum file size to index".to_string(),
-                    editable: true,
-                },
-            ],
-        });
-
-        // Security settings
-        categories.push(ConfigCategoryViewModel {
-            name: "Security".to_string(),
-            description: "Authentication and rate limiting".to_string(),
-            settings: vec![
-                ConfigSettingViewModel {
-                    key: "security.enable_auth".to_string(),
-                    label: "Enable Authentication".to_string(),
-                    value: serde_json::json!(config.security.enable_auth),
-                    value_display: if config.security.enable_auth {
-                        "Enabled"
-                    } else {
-                        "Disabled"
-                    }
-                    .to_string(),
-                    setting_type: "boolean",
-                    description: "Require authentication for API access".to_string(),
-                    editable: true,
-                },
-                ConfigSettingViewModel {
-                    key: "security.rate_limiting".to_string(),
-                    label: "Rate Limiting".to_string(),
-                    value: serde_json::json!(config.security.rate_limiting),
-                    value_display: if config.security.rate_limiting {
-                        "Enabled"
-                    } else {
-                        "Disabled"
-                    }
-                    .to_string(),
-                    setting_type: "boolean",
-                    description: "Enable request rate limiting".to_string(),
-                    editable: true,
-                },
-                ConfigSettingViewModel {
-                    key: "security.max_requests_per_minute".to_string(),
-                    label: "Max Requests/Minute".to_string(),
-                    value: serde_json::json!(config.security.max_requests_per_minute),
-                    value_display: config.security.max_requests_per_minute.to_string(),
-                    setting_type: "number",
-                    description: "Maximum requests per minute per client".to_string(),
-                    editable: true,
-                },
-            ],
-        });
-
-        // Metrics settings
-        categories.push(ConfigCategoryViewModel {
-            name: "Metrics".to_string(),
-            description: "Performance monitoring configuration".to_string(),
-            settings: vec![
-                ConfigSettingViewModel {
-                    key: "metrics.enabled".to_string(),
-                    label: "Enable Metrics".to_string(),
-                    value: serde_json::json!(config.metrics.enabled),
-                    value_display: if config.metrics.enabled {
-                        "Enabled"
-                    } else {
-                        "Disabled"
-                    }
-                    .to_string(),
-                    setting_type: "boolean",
-                    description: "Enable metrics collection".to_string(),
-                    editable: true,
-                },
-                ConfigSettingViewModel {
-                    key: "metrics.collection_interval".to_string(),
-                    label: "Collection Interval".to_string(),
-                    value: serde_json::json!(config.metrics.collection_interval),
-                    value_display: format!("{}s", config.metrics.collection_interval),
-                    setting_type: "number",
-                    description: "Metrics collection interval in seconds".to_string(),
-                    editable: true,
-                },
-                ConfigSettingViewModel {
-                    key: "metrics.retention_days".to_string(),
-                    label: "Retention Days".to_string(),
-                    value: serde_json::json!(config.metrics.retention_days),
-                    value_display: format!("{} days", config.metrics.retention_days),
-                    setting_type: "number",
-                    description: "How long to keep metrics data".to_string(),
-                    editable: true,
-                },
-            ],
-        });
+        let categories = vec![
+            // Indexing settings
+            ConfigCategoryBuilder::new(
+                "Indexing",
+                "Code indexing and chunking settings",
+                vec![
+                    ConfigSettingBuilder::number(
+                        "indexing.chunk_size",
+                        "Chunk Size",
+                        config.indexing.chunk_size,
+                        "Size of code chunks for embedding",
+                    ),
+                    ConfigSettingBuilder::number(
+                        "indexing.chunk_overlap",
+                        "Chunk Overlap",
+                        config.indexing.chunk_overlap,
+                        "Overlap between adjacent chunks",
+                    ),
+                    ConfigSettingBuilder::bytes(
+                        "indexing.max_file_size",
+                        "Max File Size",
+                        config.indexing.max_file_size,
+                        "Maximum file size to index",
+                    ),
+                ],
+            ),
+            // Security settings
+            ConfigCategoryBuilder::new(
+                "Security",
+                "Authentication and rate limiting",
+                vec![
+                    ConfigSettingBuilder::boolean(
+                        "security.enable_auth",
+                        "Enable Authentication",
+                        config.security.enable_auth,
+                        "Require authentication for API access",
+                    ),
+                    ConfigSettingBuilder::boolean(
+                        "security.rate_limiting",
+                        "Rate Limiting",
+                        config.security.rate_limiting,
+                        "Enable request rate limiting",
+                    ),
+                    ConfigSettingBuilder::number(
+                        "security.max_requests_per_minute",
+                        "Max Requests/Minute",
+                        config.security.max_requests_per_minute,
+                        "Maximum requests per minute per client",
+                    ),
+                ],
+            ),
+            // Metrics settings
+            ConfigCategoryBuilder::new(
+                "Metrics",
+                "Performance monitoring configuration",
+                vec![
+                    ConfigSettingBuilder::boolean(
+                        "metrics.enabled",
+                        "Enable Metrics",
+                        config.metrics.enabled,
+                        "Enable metrics collection",
+                    ),
+                    ConfigSettingBuilder::number(
+                        "metrics.collection_interval",
+                        "Collection Interval",
+                        format!("{}s", config.metrics.collection_interval),
+                        "Metrics collection interval in seconds",
+                    ),
+                    ConfigSettingBuilder::number(
+                        "metrics.retention_days",
+                        "Retention Days",
+                        format!("{} days", config.metrics.retention_days),
+                        "How long to keep metrics data",
+                    ),
+                ],
+            ),
+        ];
 
         Ok(ConfigurationViewModel {
             page: "config",

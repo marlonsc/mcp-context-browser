@@ -4,6 +4,7 @@ use crate::chunking::config::{LanguageConfig, NodeExtractionRule};
 use crate::chunking::processor::BaseProcessor;
 use crate::chunking::LanguageProcessor;
 use crate::domain::types::{CodeChunk, Language};
+use crate::infrastructure::constants::CHUNK_SIZE_GO;
 
 /// Go language processor with function and type extraction.
 pub struct GoProcessor {
@@ -33,7 +34,7 @@ impl GoProcessor {
                 include_context: false,
             }])
             .with_fallback_patterns(vec![r"^func ".to_string(), r"^type ".to_string()])
-            .with_chunk_size(15);
+            .with_chunk_size(CHUNK_SIZE_GO);
 
         Self {
             processor: BaseProcessor::new(config),

@@ -46,10 +46,10 @@ use super::claims::{Claims, User};
 use super::password;
 use super::roles::UserRole;
 use crate::domain::error::{Error, Result};
+use crate::infrastructure::utils::TimeUtils;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::RwLock;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 /// API key prefix for identification
 pub const API_KEY_PREFIX: &str = "mcb_";
@@ -81,15 +81,9 @@ pub struct ApiKey {
 impl ApiKey {
     /// Check if the key is expired
     pub fn is_expired(&self) -> bool {
-        if let Some(expires_at) = self.expires_at {
-            let now = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_secs();
-            expires_at < now
-        } else {
-            false
-        }
+        self.expires_at
+            .map(|exp| exp < TimeUtils::now_unix_secs())
+            .unwrap_or(false)
     }
 
     /// Check if the key is usable (active and not expired)
@@ -147,11 +141,7 @@ impl ApiKeyStore {
         // Hash the key for storage
         let key_hash = password::hash_password(&key_plaintext)?;
 
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs();
-
+        let now = TimeUtils::now_unix_secs();
         let expires_at = expires_in_days.map(|days| now + days * 24 * 60 * 60);
 
         let api_key = ApiKey {
@@ -212,10 +202,7 @@ impl ApiKeyStore {
             // Update last used timestamp
             if let Ok(mut keys) = self.keys.write() {
                 if let Some(key) = keys.get_mut(&key_id) {
-                    key.last_used = SystemTime::now()
-                        .duration_since(UNIX_EPOCH)
-                        .unwrap_or_default()
-                        .as_secs();
+                    key.last_used = TimeUtils::now_unix_secs();
                 }
             }
 

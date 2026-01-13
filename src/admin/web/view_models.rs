@@ -95,18 +95,7 @@ impl ProviderViewModel {
     pub fn new(id: String, name: String, provider_type: String, status: String) -> Self {
         let is_active = matches!(status.as_str(), "available" | "active" | "healthy");
         let status_class = css::badge_for_status(&status);
-        let provider_type_display = provider_type
-            .replace('_', " ")
-            .split_whitespace()
-            .map(|word| {
-                let mut chars = word.chars();
-                match chars.next() {
-                    None => String::new(),
-                    Some(first) => first.to_uppercase().chain(chars).collect(),
-                }
-            })
-            .collect::<Vec<_>>()
-            .join(" ");
+        let provider_type_display = StringUtils::to_title_case(&provider_type);
         let status_display = StringUtils::capitalize_first(&status);
 
         Self {

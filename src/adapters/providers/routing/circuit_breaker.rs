@@ -4,6 +4,11 @@
 //! to eliminate locks and ensure non-blocking operation.
 
 use crate::domain::error::{Error, Result};
+use crate::infrastructure::constants::{
+    CIRCUIT_BREAKER_FAILURE_THRESHOLD, CIRCUIT_BREAKER_HALF_OPEN_MAX_REQUESTS,
+    CIRCUIT_BREAKER_RECOVERY_TIMEOUT, CIRCUIT_BREAKER_SUCCESS_THRESHOLD,
+};
+use crate::infrastructure::utils::FileUtils;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -67,10 +72,10 @@ impl CircuitBreakerConfig {
     /// Create a standard production configuration
     pub fn production() -> Self {
         Self {
-            failure_threshold: 5,
-            recovery_timeout: Duration::from_secs(60),
-            success_threshold: 3,
-            half_open_max_requests: 10,
+            failure_threshold: CIRCUIT_BREAKER_FAILURE_THRESHOLD as u32,
+            recovery_timeout: CIRCUIT_BREAKER_RECOVERY_TIMEOUT,
+            success_threshold: CIRCUIT_BREAKER_SUCCESS_THRESHOLD as u32,
+            half_open_max_requests: CIRCUIT_BREAKER_HALF_OPEN_MAX_REQUESTS,
             persistence_enabled: true,
         }
     }
@@ -387,33 +392,25 @@ impl CircuitBreakerActor {
     }
 
     async fn save_snapshot(&self, snapshot: &CircuitBreakerSnapshot) -> Result<()> {
-        if !self.persistence_dir.exists() {
-            tokio::fs::create_dir_all(&self.persistence_dir)
-                .await
-                .map_err(|e| Error::io(e.to_string()))?;
-        }
-
         let file_path = self.persistence_dir.join(format!("{}.json", self.id));
-        let content =
-            serde_json::to_string(snapshot).map_err(|e| Error::internal(e.to_string()))?;
-        tokio::fs::write(file_path, content)
-            .await
-            .map_err(|e| Error::io(e.to_string()))?;
-        Ok(())
+        FileUtils::ensure_dir_write_json(&file_path, snapshot, "circuit breaker snapshot").await
     }
 
     async fn load_snapshot(&self) -> Result<Option<CircuitBreakerSnapshot>> {
         let file_path = self.persistence_dir.join(format!("{}.json", self.id));
-        if !file_path.exists() {
-            return Ok(None);
-        }
-
-        let content = tokio::fs::read_to_string(file_path)
+        match FileUtils::read_if_exists(&file_path)
             .await
-            .map_err(|e| Error::io(e.to_string()))?;
-        let snapshot =
-            serde_json::from_str(&content).map_err(|e| Error::internal(e.to_string()))?;
-        Ok(Some(snapshot))
+            .map_err(|e| Error::io(e.to_string()))?
+        {
+            Some(bytes) => {
+                let content =
+                    String::from_utf8(bytes).map_err(|e| Error::internal(e.to_string()))?;
+                let snapshot =
+                    serde_json::from_str(&content).map_err(|e| Error::internal(e.to_string()))?;
+                Ok(Some(snapshot))
+            }
+            None => Ok(None),
+        }
     }
 
     fn apply_snapshot(&mut self, snapshot: CircuitBreakerSnapshot) {

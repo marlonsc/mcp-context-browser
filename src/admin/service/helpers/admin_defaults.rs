@@ -65,51 +65,63 @@
 //! ./mcp-context-browser
 //! ```
 
+use crate::infrastructure::constants::{
+    ADMIN_ACTIVITY_BUFFER_SIZE, ADMIN_ACTIVITY_RETENTION_DAYS, ADMIN_BACKUPS_DIR,
+    ADMIN_BACKUP_COMPRESSION_LEVEL, ADMIN_BACKUP_RETENTION_DAYS, ADMIN_CONFIG_QUERY_LIMIT,
+    ADMIN_DATA_DIR, ADMIN_EXPORTS_DIR, ADMIN_HISTORY_RETENTION_DAYS, ADMIN_LOG_BUFFER_SIZE,
+    ADMIN_LOG_QUERY_LIMIT, ADMIN_LOG_RETENTION_DAYS, ADMIN_MAX_ACTIVITIES, ADMIN_MAX_BACKUPS,
+    ADMIN_MAX_HISTORY_ENTRIES, CACHE_CLEAR_TIMEOUT_SECS, CLEANUP_BATCH_SIZE,
+    CLEANUP_RETENTION_DAYS, INDEX_REBUILD_TIMEOUT_SECS, PERF_TEST_CONCURRENCY,
+    PERF_TEST_DURATION_SECS, PERF_TEST_TIMEOUT_MS, RATE_LIMIT_ADMIN, RATE_LIMIT_BACKUP_COOLDOWN,
+    RATE_LIMIT_HEALTH, RATE_LIMIT_INDEXING, RATE_LIMIT_RELOAD_COOLDOWN, RATE_LIMIT_RESTORE,
+    RATE_LIMIT_SEARCH, RATE_LIMIT_SHUTDOWN_COOLDOWN,
+};
+
 // Activity Feed Configuration
-pub const DEFAULT_MAX_ACTIVITIES: usize = 100;
-pub const DEFAULT_ACTIVITY_RETENTION_DAYS: u32 = 30;
-pub const DEFAULT_ACTIVITY_BUFFER_SIZE: usize = 1000;
+pub const DEFAULT_MAX_ACTIVITIES: usize = ADMIN_MAX_ACTIVITIES;
+pub const DEFAULT_ACTIVITY_RETENTION_DAYS: u32 = ADMIN_ACTIVITY_RETENTION_DAYS;
+pub const DEFAULT_ACTIVITY_BUFFER_SIZE: usize = ADMIN_ACTIVITY_BUFFER_SIZE;
 
 // Configuration History
-pub const DEFAULT_MAX_HISTORY_ENTRIES: usize = 1000;
-pub const DEFAULT_HISTORY_RETENTION_DAYS: u32 = 90;
-pub const DEFAULT_CONFIG_QUERY_LIMIT: usize = 100;
+pub const DEFAULT_MAX_HISTORY_ENTRIES: usize = ADMIN_MAX_HISTORY_ENTRIES;
+pub const DEFAULT_HISTORY_RETENTION_DAYS: u32 = ADMIN_HISTORY_RETENTION_DAYS;
+pub const DEFAULT_CONFIG_QUERY_LIMIT: usize = ADMIN_CONFIG_QUERY_LIMIT;
 
 // Logging Configuration
-pub const DEFAULT_LOG_BUFFER_SIZE: usize = 1000;
-pub const DEFAULT_LOG_RETENTION_DAYS: u32 = 7;
-pub const DEFAULT_LOG_QUERY_LIMIT: usize = 100;
+pub const DEFAULT_LOG_BUFFER_SIZE: usize = ADMIN_LOG_BUFFER_SIZE;
+pub const DEFAULT_LOG_RETENTION_DAYS: u32 = ADMIN_LOG_RETENTION_DAYS;
+pub const DEFAULT_LOG_QUERY_LIMIT: usize = ADMIN_LOG_QUERY_LIMIT;
 
 // Backup Configuration
-pub const DEFAULT_BACKUP_RETENTION_DAYS: u32 = 30;
-pub const DEFAULT_BACKUP_COMPRESSION_LEVEL: u32 = 6;
-pub const DEFAULT_MAX_BACKUPS: usize = 10;
+pub const DEFAULT_BACKUP_RETENTION_DAYS: u32 = ADMIN_BACKUP_RETENTION_DAYS;
+pub const DEFAULT_BACKUP_COMPRESSION_LEVEL: u32 = ADMIN_BACKUP_COMPRESSION_LEVEL;
+pub const DEFAULT_MAX_BACKUPS: usize = ADMIN_MAX_BACKUPS;
 
 // Route Discovery Configuration
-pub const DEFAULT_ROUTE_RATE_LIMIT_HEALTH: u32 = 100; // requests per minute
-pub const DEFAULT_ROUTE_RATE_LIMIT_ADMIN: u32 = 100; // requests per minute
-pub const DEFAULT_ROUTE_RATE_LIMIT_INDEXING: u32 = 10; // requests per minute
-pub const DEFAULT_ROUTE_RATE_LIMIT_SEARCH: u32 = 10; // requests per minute
-pub const DEFAULT_ROUTE_RATE_LIMIT_SHUTDOWN: u32 = 60; // seconds cooldown
-pub const DEFAULT_ROUTE_RATE_LIMIT_RELOAD: u32 = 30; // seconds cooldown
-pub const DEFAULT_ROUTE_RATE_LIMIT_BACKUP: u32 = 60; // seconds cooldown
-pub const DEFAULT_ROUTE_RATE_LIMIT_RESTORE: u32 = 10; // requests per minute
+pub const DEFAULT_ROUTE_RATE_LIMIT_HEALTH: u32 = RATE_LIMIT_HEALTH; // requests per minute
+pub const DEFAULT_ROUTE_RATE_LIMIT_ADMIN: u32 = RATE_LIMIT_ADMIN; // requests per minute
+pub const DEFAULT_ROUTE_RATE_LIMIT_INDEXING: u32 = RATE_LIMIT_INDEXING; // requests per minute
+pub const DEFAULT_ROUTE_RATE_LIMIT_SEARCH: u32 = RATE_LIMIT_SEARCH; // requests per minute
+pub const DEFAULT_ROUTE_RATE_LIMIT_SHUTDOWN: u32 = RATE_LIMIT_SHUTDOWN_COOLDOWN; // seconds cooldown
+pub const DEFAULT_ROUTE_RATE_LIMIT_RELOAD: u32 = RATE_LIMIT_RELOAD_COOLDOWN; // seconds cooldown
+pub const DEFAULT_ROUTE_RATE_LIMIT_BACKUP: u32 = RATE_LIMIT_BACKUP_COOLDOWN; // seconds cooldown
+pub const DEFAULT_ROUTE_RATE_LIMIT_RESTORE: u32 = RATE_LIMIT_RESTORE; // requests per minute
 
 // Maintenance Operations
-pub const DEFAULT_CLEANUP_BATCH_SIZE: usize = 100;
-pub const DEFAULT_CLEANUP_RETENTION_DAYS: u32 = 30;
-pub const DEFAULT_INDEX_REBUILD_TIMEOUT_SECS: u64 = 3600; // 1 hour
-pub const DEFAULT_CACHE_CLEAR_TIMEOUT_SECS: u64 = 300; // 5 minutes
+pub const DEFAULT_CLEANUP_BATCH_SIZE: usize = CLEANUP_BATCH_SIZE;
+pub const DEFAULT_CLEANUP_RETENTION_DAYS: u32 = CLEANUP_RETENTION_DAYS;
+pub const DEFAULT_INDEX_REBUILD_TIMEOUT_SECS: u64 = INDEX_REBUILD_TIMEOUT_SECS; // 1 hour
+pub const DEFAULT_CACHE_CLEAR_TIMEOUT_SECS: u64 = CACHE_CLEAR_TIMEOUT_SECS; // 5 minutes
 
 // Performance Testing
-pub const DEFAULT_PERF_TEST_DURATION_SECS: u32 = 30;
-pub const DEFAULT_PERF_TEST_CONCURRENCY: u32 = 4;
-pub const DEFAULT_PERF_TEST_TIMEOUT_MS: u64 = 5000;
+pub const DEFAULT_PERF_TEST_DURATION_SECS: u32 = PERF_TEST_DURATION_SECS;
+pub const DEFAULT_PERF_TEST_CONCURRENCY: u32 = PERF_TEST_CONCURRENCY;
+pub const DEFAULT_PERF_TEST_TIMEOUT_MS: u64 = PERF_TEST_TIMEOUT_MS;
 
 // Directory Configuration
-pub const DEFAULT_BACKUPS_DIR: &str = "./backups";
-pub const DEFAULT_DATA_DIR: &str = "./data";
-pub const DEFAULT_EXPORTS_DIR: &str = "./exports";
+pub const DEFAULT_BACKUPS_DIR: &str = ADMIN_BACKUPS_DIR;
+pub const DEFAULT_DATA_DIR: &str = ADMIN_DATA_DIR;
+pub const DEFAULT_EXPORTS_DIR: &str = ADMIN_EXPORTS_DIR;
 
 // Indexing Configuration
 /// Supported file extensions for code indexing
@@ -277,24 +289,30 @@ mod tests {
         assert_eq!(BYTES_PER_GIGABYTE, 1024 * 1024 * 1024);
     }
 
-    #[test]
-    fn test_seconds_per_day_constant() {
-        assert_eq!(SECONDS_PER_DAY, 86400);
-    }
-
-    #[test]
+    // Compile-time verification of constant values (assertions_on_constants is intentional here)
     #[allow(clippy::assertions_on_constants)]
-    fn test_activity_defaults() {
-        assert!(DEFAULT_MAX_ACTIVITIES > 0);
-        assert!(DEFAULT_ACTIVITY_RETENTION_DAYS > 0);
-        assert!(DEFAULT_ACTIVITY_BUFFER_SIZE > 0);
-    }
-
-    #[test]
-    #[allow(clippy::assertions_on_constants)]
-    fn test_backup_defaults() {
-        assert!(DEFAULT_BACKUP_RETENTION_DAYS > 0);
-        assert!(DEFAULT_BACKUP_COMPRESSION_LEVEL >= 1 && DEFAULT_BACKUP_COMPRESSION_LEVEL <= 9);
-        assert!(DEFAULT_MAX_BACKUPS > 0);
-    }
+    const _: () = {
+        assert!(
+            DEFAULT_MAX_ACTIVITIES > 0,
+            "MAX_ACTIVITIES must be positive"
+        );
+        assert!(
+            DEFAULT_ACTIVITY_RETENTION_DAYS > 0,
+            "RETENTION_DAYS must be positive"
+        );
+        assert!(
+            DEFAULT_ACTIVITY_BUFFER_SIZE > 0,
+            "BUFFER_SIZE must be positive"
+        );
+        assert!(
+            DEFAULT_BACKUP_RETENTION_DAYS > 0,
+            "BACKUP_RETENTION_DAYS must be positive"
+        );
+        assert!(
+            DEFAULT_BACKUP_COMPRESSION_LEVEL >= 1 && DEFAULT_BACKUP_COMPRESSION_LEVEL <= 9,
+            "COMPRESSION_LEVEL must be 1-9"
+        );
+        assert!(DEFAULT_MAX_BACKUPS > 0, "MAX_BACKUPS must be positive");
+        assert!(SECONDS_PER_DAY == 86400, "SECONDS_PER_DAY must equal 86400");
+    };
 }

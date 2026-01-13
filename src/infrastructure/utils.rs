@@ -391,6 +391,26 @@ impl StringUtils {
         }
     }
 
+    /// Convert snake_case or space-separated string to Title Case
+    ///
+    /// # Examples
+    /// - "open_ai" → "Open Ai"
+    /// - "hello world" → "Hello World"
+    /// - "my_api_key" → "My Api Key"
+    pub fn to_title_case(s: &str) -> String {
+        s.replace('_', " ")
+            .split_whitespace()
+            .map(|word| {
+                let mut chars = word.chars();
+                match chars.next() {
+                    None => String::new(),
+                    Some(first) => first.to_uppercase().chain(chars).collect(),
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+
     /// Format relative time from chrono DateTime (e.g., "Just now", "5m ago")
     pub fn format_relative_time(timestamp: chrono::DateTime<chrono::Utc>) -> String {
         let now = chrono::Utc::now();
@@ -569,9 +589,10 @@ impl HttpResponseUtils {
         response: reqwest::Response,
         provider_name: &str,
     ) -> Result<T> {
-        response.json().await.map_err(|e| {
-            Error::embedding(format!("{} response parse error: {}", provider_name, e))
-        })
+        response
+            .json()
+            .await
+            .map_err(|e| Error::embedding(format!("{} response parse error: {}", provider_name, e)))
     }
 
     /// Combined: check response status and parse JSON (saves ~12 lines per use)
@@ -656,5 +677,350 @@ pub mod css {
             "info" | "debug" => indicator::INFO,
             _ => indicator::DEFAULT,
         }
+    }
+}
+
+// =============================================================================
+// Retry Utilities - Async retry with exponential backoff (~15 lines per use)
+// =============================================================================
+
+use std::future::Future;
+use std::time::Duration;
+
+/// Configuration for retry behavior
+#[derive(Debug, Clone)]
+pub struct RetryConfig {
+    /// Maximum number of retry attempts
+    pub max_attempts: u32,
+    /// Initial delay between retries (doubles each attempt)
+    pub initial_delay_ms: u64,
+    /// Maximum delay cap (prevents exponential explosion)
+    pub max_delay_ms: u64,
+}
+
+impl Default for RetryConfig {
+    fn default() -> Self {
+        Self {
+            max_attempts: 3,
+            initial_delay_ms: 500,
+            max_delay_ms: 5000,
+        }
+    }
+}
+
+impl RetryConfig {
+    /// Create with custom attempts
+    pub fn with_attempts(mut self, attempts: u32) -> Self {
+        self.max_attempts = attempts;
+        self
+    }
+
+    /// Create with custom initial delay
+    pub fn with_initial_delay(mut self, delay_ms: u64) -> Self {
+        self.initial_delay_ms = delay_ms;
+        self
+    }
+
+    /// Create with custom max delay
+    pub fn with_max_delay(mut self, delay_ms: u64) -> Self {
+        self.max_delay_ms = delay_ms;
+        self
+    }
+}
+
+/// Retry utilities - saves ~15 lines per retry pattern
+pub struct RetryUtils;
+
+impl RetryUtils {
+    /// Retry an async operation with exponential backoff
+    ///
+    /// # Arguments
+    /// * `config` - Retry configuration (attempts, delays)
+    /// * `operation` - Async closure returning Result<T, E>
+    /// * `should_retry` - Predicate on error to decide if retry should continue
+    /// * `context` - Description for logging (e.g., "index creation")
+    ///
+    /// # Example
+    /// ```ignore
+    /// // Before: ~15 lines of retry logic
+    /// // After: 6 lines
+    /// RetryUtils::retry_with_backoff(
+    ///     RetryConfig::default(),
+    ///     || async { client.create_index(name).await },
+    ///     |e| e.to_string().contains("NotFound"),
+    ///     "index creation",
+    /// ).await?;
+    /// ```
+    pub async fn retry_with_backoff<T, E, F, Fut, R>(
+        config: RetryConfig,
+        mut operation: F,
+        should_retry: R,
+        context: &str,
+    ) -> std::result::Result<T, E>
+    where
+        F: FnMut() -> Fut,
+        Fut: Future<Output = std::result::Result<T, E>>,
+        R: Fn(&E) -> bool,
+        E: std::fmt::Display,
+    {
+        let mut last_error = None;
+
+        for attempt in 0..config.max_attempts {
+            match operation().await {
+                Ok(result) => return Ok(result),
+                Err(e) => {
+                    if should_retry(&e) && attempt + 1 < config.max_attempts {
+                        let delay = std::cmp::min(
+                            config.initial_delay_ms * 2u64.pow(attempt),
+                            config.max_delay_ms,
+                        );
+                        tracing::debug!(
+                            "{} attempt {} failed ({}), retrying in {}ms...",
+                            context,
+                            attempt + 1,
+                            e,
+                            delay
+                        );
+                        tokio::time::sleep(Duration::from_millis(delay)).await;
+                        last_error = Some(e);
+                    } else {
+                        return Err(e);
+                    }
+                }
+            }
+        }
+
+        // Should not reach here, but return last error if we do
+        Err(last_error.expect("retry loop should have at least one attempt"))
+    }
+
+    /// Simplified retry - always retries on any error
+    ///
+    /// # Example
+    /// ```ignore
+    /// RetryUtils::retry(3, 500, || async { fetch_data().await }, "data fetch").await?;
+    /// ```
+    pub async fn retry<T, E, F, Fut>(
+        max_attempts: u32,
+        initial_delay_ms: u64,
+        operation: F,
+        context: &str,
+    ) -> std::result::Result<T, E>
+    where
+        F: FnMut() -> Fut,
+        Fut: Future<Output = std::result::Result<T, E>>,
+        E: std::fmt::Display,
+    {
+        Self::retry_with_backoff(
+            RetryConfig::default()
+                .with_attempts(max_attempts)
+                .with_initial_delay(initial_delay_ms),
+            operation,
+            |_| true, // Always retry on error
+            context,
+        )
+        .await
+    }
+
+    /// Calculate delay for a given attempt (useful for custom retry loops)
+    #[inline]
+    pub fn calculate_delay(attempt: u32, initial_ms: u64, max_ms: u64) -> Duration {
+        let delay = std::cmp::min(initial_ms * 2u64.pow(attempt), max_ms);
+        Duration::from_millis(delay)
+    }
+}
+
+// =============================================================================
+// JSON Value Extension - Replaces .get().and_then(|v| v.as_*()) pattern
+// =============================================================================
+
+/// Extension trait for serde_json::Value with convenient accessor methods
+///
+/// Replaces the verbose pattern:
+/// ```ignore
+/// meta.get("key").and_then(|v| v.as_str()).unwrap_or("default")
+/// ```
+/// With:
+/// ```ignore
+/// meta.str_or("key", "default")
+/// ```
+pub trait JsonExt {
+    /// Get string value or default (replaces .get().and_then(as_str).unwrap_or)
+    fn str_or<'a>(&'a self, key: &str, default: &'a str) -> &'a str;
+
+    /// Get owned string value or default
+    fn string_or(&self, key: &str, default: &str) -> String;
+
+    /// Get i64 value or default
+    fn i64_or(&self, key: &str, default: i64) -> i64;
+
+    /// Get u64 value or default
+    fn u64_or(&self, key: &str, default: u64) -> u64;
+
+    /// Get f64 value or default
+    fn f64_or(&self, key: &str, default: f64) -> f64;
+
+    /// Get bool value or default
+    fn bool_or(&self, key: &str, default: bool) -> bool;
+
+    /// Get optional string (replaces .get().and_then(as_str))
+    fn opt_str(&self, key: &str) -> Option<&str>;
+
+    /// Get optional i64
+    fn opt_i64(&self, key: &str) -> Option<i64>;
+
+    /// Get optional u64
+    fn opt_u64(&self, key: &str) -> Option<u64>;
+}
+
+impl JsonExt for serde_json::Value {
+    #[inline]
+    fn str_or<'a>(&'a self, key: &str, default: &'a str) -> &'a str {
+        self.get(key).and_then(|v| v.as_str()).unwrap_or(default)
+    }
+
+    #[inline]
+    fn string_or(&self, key: &str, default: &str) -> String {
+        self.get(key)
+            .and_then(|v| v.as_str())
+            .unwrap_or(default)
+            .to_string()
+    }
+
+    #[inline]
+    fn i64_or(&self, key: &str, default: i64) -> i64 {
+        self.get(key).and_then(|v| v.as_i64()).unwrap_or(default)
+    }
+
+    #[inline]
+    fn u64_or(&self, key: &str, default: u64) -> u64 {
+        self.get(key).and_then(|v| v.as_u64()).unwrap_or(default)
+    }
+
+    #[inline]
+    fn f64_or(&self, key: &str, default: f64) -> f64 {
+        self.get(key).and_then(|v| v.as_f64()).unwrap_or(default)
+    }
+
+    #[inline]
+    fn bool_or(&self, key: &str, default: bool) -> bool {
+        self.get(key).and_then(|v| v.as_bool()).unwrap_or(default)
+    }
+
+    #[inline]
+    fn opt_str(&self, key: &str) -> Option<&str> {
+        self.get(key).and_then(|v| v.as_str())
+    }
+
+    #[inline]
+    fn opt_i64(&self, key: &str) -> Option<i64> {
+        self.get(key).and_then(|v| v.as_i64())
+    }
+
+    #[inline]
+    fn opt_u64(&self, key: &str) -> Option<u64> {
+        self.get(key).and_then(|v| v.as_u64())
+    }
+}
+
+/// Extension trait for HashMap<String, serde_json::Value>
+impl JsonExt for std::collections::HashMap<String, serde_json::Value> {
+    #[inline]
+    fn str_or<'a>(&'a self, key: &str, default: &'a str) -> &'a str {
+        self.get(key).and_then(|v| v.as_str()).unwrap_or(default)
+    }
+
+    #[inline]
+    fn string_or(&self, key: &str, default: &str) -> String {
+        self.get(key)
+            .and_then(|v| v.as_str())
+            .unwrap_or(default)
+            .to_string()
+    }
+
+    #[inline]
+    fn i64_or(&self, key: &str, default: i64) -> i64 {
+        self.get(key).and_then(|v| v.as_i64()).unwrap_or(default)
+    }
+
+    #[inline]
+    fn u64_or(&self, key: &str, default: u64) -> u64 {
+        self.get(key).and_then(|v| v.as_u64()).unwrap_or(default)
+    }
+
+    #[inline]
+    fn f64_or(&self, key: &str, default: f64) -> f64 {
+        self.get(key).and_then(|v| v.as_f64()).unwrap_or(default)
+    }
+
+    #[inline]
+    fn bool_or(&self, key: &str, default: bool) -> bool {
+        self.get(key).and_then(|v| v.as_bool()).unwrap_or(default)
+    }
+
+    #[inline]
+    fn opt_str(&self, key: &str) -> Option<&str> {
+        self.get(key).and_then(|v| v.as_str())
+    }
+
+    #[inline]
+    fn opt_i64(&self, key: &str) -> Option<i64> {
+        self.get(key).and_then(|v| v.as_i64())
+    }
+
+    #[inline]
+    fn opt_u64(&self, key: &str) -> Option<u64> {
+        self.get(key).and_then(|v| v.as_u64())
+    }
+}
+
+/// Extension trait for serde_json::Map<String, Value>
+impl JsonExt for serde_json::Map<String, serde_json::Value> {
+    #[inline]
+    fn str_or<'a>(&'a self, key: &str, default: &'a str) -> &'a str {
+        self.get(key).and_then(|v| v.as_str()).unwrap_or(default)
+    }
+
+    #[inline]
+    fn string_or(&self, key: &str, default: &str) -> String {
+        self.get(key)
+            .and_then(|v| v.as_str())
+            .unwrap_or(default)
+            .to_string()
+    }
+
+    #[inline]
+    fn i64_or(&self, key: &str, default: i64) -> i64 {
+        self.get(key).and_then(|v| v.as_i64()).unwrap_or(default)
+    }
+
+    #[inline]
+    fn u64_or(&self, key: &str, default: u64) -> u64 {
+        self.get(key).and_then(|v| v.as_u64()).unwrap_or(default)
+    }
+
+    #[inline]
+    fn f64_or(&self, key: &str, default: f64) -> f64 {
+        self.get(key).and_then(|v| v.as_f64()).unwrap_or(default)
+    }
+
+    #[inline]
+    fn bool_or(&self, key: &str, default: bool) -> bool {
+        self.get(key).and_then(|v| v.as_bool()).unwrap_or(default)
+    }
+
+    #[inline]
+    fn opt_str(&self, key: &str) -> Option<&str> {
+        self.get(key).and_then(|v| v.as_str())
+    }
+
+    #[inline]
+    fn opt_i64(&self, key: &str) -> Option<i64> {
+        self.get(key).and_then(|v| v.as_i64())
+    }
+
+    #[inline]
+    fn opt_u64(&self, key: &str) -> Option<u64> {
+        self.get(key).and_then(|v| v.as_u64())
     }
 }

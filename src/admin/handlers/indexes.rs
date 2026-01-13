@@ -1,7 +1,7 @@
 //! Index management handlers
 
 use super::common::*;
-use crate::infrastructure::utils::IntoStatusCode;
+use crate::infrastructure::utils::{IntoStatusCode, TimeUtils};
 
 /// List all indexes
 pub async fn list_indexes_handler(
@@ -19,10 +19,7 @@ pub async fn list_indexes_handler(
         },
         document_count: indexing_status.indexed_documents,
         created_at: indexing_status.start_time.unwrap_or(1640995200),
-        updated_at: std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs(),
+        updated_at: TimeUtils::now_unix_secs(),
     }];
 
     Ok(Json(ApiResponse::success(indexes)))

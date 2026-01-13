@@ -12,6 +12,7 @@ use std::sync::Arc;
 use crate::infrastructure::cache::{CacheStats, SharedCacheProvider};
 use crate::infrastructure::limits::ResourceLimits;
 use crate::infrastructure::rate_limit::RateLimiter;
+use crate::infrastructure::utils::TimeUtils;
 // Rate limiting middleware will be added later
 
 use crate::infrastructure::metrics::{
@@ -179,10 +180,7 @@ impl MetricsApiServer {
         let pid = std::process::id();
 
         Json(HealthResponse {
-            timestamp: std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_millis() as u64,
+            timestamp: TimeUtils::now_unix_millis() as u64,
             service: "mcp-context-browser".to_string(),
             version: env!("CARGO_PKG_VERSION").to_string(),
             uptime,
@@ -237,10 +235,7 @@ impl MetricsApiServer {
         };
 
         Ok(Json(ComprehensiveMetrics {
-            timestamp: std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_millis() as u64,
+            timestamp: TimeUtils::now_unix_millis() as u64,
             cpu,
             memory,
             query_performance: performance_data,
@@ -286,10 +281,7 @@ impl MetricsApiServer {
         };
 
         let status = serde_json::json!({
-            "timestamp": std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_millis() as u64,
+            "timestamp": TimeUtils::now_unix_millis() as u64,
             "service": "mcp-context-browser",
             "version": env!("CARGO_PKG_VERSION"),
             "uptime": uptime,

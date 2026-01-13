@@ -4,6 +4,9 @@ use crate::adapters::providers::embedding::helpers::constructor;
 use crate::domain::error::{Error, Result};
 use crate::domain::ports::EmbeddingProvider;
 use crate::domain::types::Embedding;
+use crate::infrastructure::constants::{
+    EMBEDDING_DIMENSION_VOYAGEAI_CODE, EMBEDDING_DIMENSION_VOYAGEAI_DEFAULT,
+};
 use crate::infrastructure::utils::HttpResponseUtils;
 use async_trait::async_trait;
 use std::sync::Arc;
@@ -122,8 +125,8 @@ impl EmbeddingProvider for VoyageAIEmbeddingProvider {
 
     fn dimensions(&self) -> usize {
         match self.model.as_str() {
-            "voyage-code-3" => 1024,
-            _ => 1024, // Default for VoyageAI models
+            "voyage-code-3" => EMBEDDING_DIMENSION_VOYAGEAI_CODE,
+            _ => EMBEDDING_DIMENSION_VOYAGEAI_DEFAULT, // Default for VoyageAI models
         }
     }
 

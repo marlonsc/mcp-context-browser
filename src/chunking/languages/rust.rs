@@ -4,6 +4,7 @@ use crate::chunking::config::{LanguageConfig, NodeExtractionRule};
 use crate::chunking::processor::BaseProcessor;
 use crate::chunking::LanguageProcessor;
 use crate::domain::types::{CodeChunk, Language};
+use crate::infrastructure::constants::CHUNK_SIZE_RUST;
 
 /// Rust language processor with comprehensive AST extraction rules.
 pub struct RustProcessor {
@@ -71,7 +72,7 @@ impl RustProcessor {
                 r"^const ".to_string(),
                 r"^static ".to_string(),
             ])
-            .with_chunk_size(20);
+            .with_chunk_size(CHUNK_SIZE_RUST);
 
         Self {
             processor: BaseProcessor::new(config),

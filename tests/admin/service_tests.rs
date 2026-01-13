@@ -2,12 +2,13 @@
 //!
 //! These tests verify the AdminService trait implementation contract
 
-use mcp_context_browser::admin::service::AdminService;
+use mcp_context_browser::admin::service::{
+    AdminService, AdminServiceDependencies, AdminServiceImpl,
+};
 
 // Import dependencies for real service creation
 use arc_swap::ArcSwap;
 use mcp_context_browser::adapters::http_client::{HttpClientPool, HttpClientProvider};
-use mcp_context_browser::admin::service::AdminServiceImpl;
 use mcp_context_browser::application::search::SearchService;
 use mcp_context_browser::infrastructure::config::Config;
 use mcp_context_browser::infrastructure::di::factory::{ServiceProvider, ServiceProviderInterface};
@@ -20,18 +21,25 @@ use mcp_context_browser::server::metrics::{McpPerformanceMetrics, PerformanceMet
 use mcp_context_browser::server::operations::{IndexingOperationsInterface, McpIndexingOperations};
 use std::sync::Arc;
 
-/// Test infrastructure for setting up real services
-#[allow(dead_code)]
 pub struct TestInfrastructure {
     pub admin_service: Arc<dyn AdminService>,
+    #[allow(dead_code)]
     pub config: Arc<ArcSwap<Config>>,
+    #[allow(dead_code)]
     pub event_bus: SharedEventBusProvider,
+    #[allow(dead_code)]
     pub log_buffer: SharedLogBuffer,
+    #[allow(dead_code)]
     pub performance_metrics: Arc<dyn PerformanceMetricsInterface>,
+    #[allow(dead_code)]
     pub indexing_operations: Arc<dyn IndexingOperationsInterface>,
+    #[allow(dead_code)]
     pub service_provider: Arc<dyn ServiceProviderInterface>,
+    #[allow(dead_code)]
     pub system_collector: Arc<dyn SystemMetricsCollectorInterface>,
+    #[allow(dead_code)]
     pub http_client: Arc<dyn HttpClientProvider>,
+    #[allow(dead_code)]
     pub search_service: Option<Arc<SearchService>>,
 }
 
@@ -64,16 +72,17 @@ impl TestInfrastructure {
             Arc::new(HttpClientPool::new().expect("Failed to create HTTP client"));
 
         // Create admin service with all dependencies
-        let admin_service = Arc::new(AdminServiceImpl::new(
-            Arc::clone(&performance_metrics),
-            Arc::clone(&indexing_operations),
-            Arc::clone(&service_provider),
-            Arc::clone(&system_collector),
-            Arc::clone(&http_client),
-            event_bus.clone(),
-            log_buffer.clone(),
-            Arc::clone(&config_arc),
-        )) as Arc<dyn AdminService>;
+        let deps = AdminServiceDependencies {
+            performance_metrics: Arc::clone(&performance_metrics),
+            indexing_operations: Arc::clone(&indexing_operations),
+            service_provider: Arc::clone(&service_provider),
+            system_collector: Arc::clone(&system_collector),
+            http_client: Arc::clone(&http_client),
+            event_bus: event_bus.clone(),
+            log_buffer: log_buffer.clone(),
+            config: Arc::clone(&config_arc),
+        };
+        let admin_service = Arc::new(AdminServiceImpl::new(deps)) as Arc<dyn AdminService>;
 
         Ok(Self {
             admin_service,

@@ -10,9 +10,9 @@ use axum_extra::extract::CookieJar;
 use bcrypt::{hash, verify, DEFAULT_COST};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::admin::models::{ApiResponse, LoginRequest, LoginResponse, UserInfo};
+use crate::infrastructure::utils::TimeUtils;
 
 /// Cookie name for JWT token
 pub const AUTH_COOKIE_NAME: &str = "mcp_admin_token";
@@ -67,8 +67,23 @@ impl AuthService {
 
     /// Authenticate user credentials
     pub fn authenticate(&self, username: &str, password: &str) -> Result<UserInfo, String> {
-        // Simple authentication - in production, use proper password hashing
-        if username == self.admin_username && self.verify_password(password) {
+        tracing::debug!(
+            "[AUTH] Authenticating: input_username={}, expected_username={}, username_match={}",
+            username,
+            self.admin_username,
+            username == self.admin_username
+        );
+        tracing::debug!(
+            "[AUTH] Hash info: starts_with_argon2={}, starts_with_bcrypt={}, hash_len={}",
+            self.admin_password_hash.starts_with("$argon2"),
+            self.admin_password_hash.starts_with("$2"),
+            self.admin_password_hash.len()
+        );
+
+        let password_valid = self.verify_password(password);
+        tracing::debug!("[AUTH] Password verification result: {}", password_valid);
+
+        if username == self.admin_username && password_valid {
             Ok(UserInfo {
                 username: username.to_string(),
                 role: "admin".to_string(),
@@ -95,11 +110,7 @@ impl AuthService {
 
     /// Generate JWT token
     pub fn generate_token(&self, user: &UserInfo) -> Result<String, String> {
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map_err(|e| format!("Time error: {}", e))?
-            .as_secs() as usize;
-
+        let now = TimeUtils::now_unix_secs() as usize;
         let expiration = now + self.jwt_expiration as usize;
 
         let claims = Claims {
@@ -215,11 +226,7 @@ pub async fn login_handler(
         Ok(user) => match auth_service.generate_token(&user) {
             Ok(token) => {
                 let jwt_expiration = state.admin_api.config().jwt_expiration;
-                let expires_at = SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .unwrap_or_default()
-                    .as_secs()
-                    + jwt_expiration;
+                let expires_at = TimeUtils::now_unix_secs() + jwt_expiration;
 
                 let response = LoginResponse {
                     token: token.clone(),

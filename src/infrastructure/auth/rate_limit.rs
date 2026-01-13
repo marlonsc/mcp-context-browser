@@ -3,6 +3,10 @@
 //! Provides DDoS protection and brute-force attack prevention
 //! using the governor crate for rate limiting.
 
+use crate::infrastructure::constants::{
+    RATE_LIMIT_AUTH_LOCKOUT_DURATION, RATE_LIMIT_AUTH_MAX_FAILED_ATTEMPTS,
+    RATE_LIMIT_AUTH_MAX_REQUESTS, RATE_LIMIT_AUTH_WINDOW_SECONDS,
+};
 use axum::{
     extract::ConnectInfo,
     http::StatusCode,
@@ -29,10 +33,10 @@ pub struct RateLimitConfig {
 impl Default for RateLimitConfig {
     fn default() -> Self {
         Self {
-            max_requests: 10,
-            window: Duration::from_secs(60),
-            lockout_duration: Duration::from_secs(300), // 5 minutes
-            max_failed_attempts: 5,
+            max_requests: RATE_LIMIT_AUTH_MAX_REQUESTS,
+            window: Duration::from_secs(RATE_LIMIT_AUTH_WINDOW_SECONDS),
+            lockout_duration: Duration::from_secs(RATE_LIMIT_AUTH_LOCKOUT_DURATION),
+            max_failed_attempts: RATE_LIMIT_AUTH_MAX_FAILED_ATTEMPTS,
         }
     }
 }

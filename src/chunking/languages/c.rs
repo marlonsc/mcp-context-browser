@@ -4,6 +4,7 @@ use crate::chunking::config::{LanguageConfig, NodeExtractionRule};
 use crate::chunking::processor::BaseProcessor;
 use crate::chunking::LanguageProcessor;
 use crate::domain::types::{CodeChunk, Language};
+use crate::infrastructure::constants::CHUNK_SIZE_C;
 
 /// C language processor with function and struct extraction.
 pub struct CProcessor {
@@ -37,7 +38,7 @@ impl CProcessor {
                 r"^enum ".to_string(),
                 r"^typedef ".to_string(),
             ])
-            .with_chunk_size(15);
+            .with_chunk_size(CHUNK_SIZE_C);
 
         Self {
             processor: BaseProcessor::new(config),

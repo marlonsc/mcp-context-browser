@@ -14,6 +14,10 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::Duration;
 
+use crate::infrastructure::constants::{
+    HTTP_CLIENT_IDLE_TIMEOUT, HTTP_KEEPALIVE_DURATION, HTTP_MAX_IDLE_PER_HOST, HTTP_REQUEST_TIMEOUT,
+};
+
 /// Trait for HTTP client pool operations (enables DI and testing)
 pub trait HttpClientProvider: shaku::Interface + Send + Sync {
     /// Get a reference to the underlying reqwest Client
@@ -53,10 +57,10 @@ pub struct HttpClientConfig {
 impl Default for HttpClientConfig {
     fn default() -> Self {
         Self {
-            max_idle_per_host: 10,
-            idle_timeout: Duration::from_secs(90),
-            keepalive: Duration::from_secs(60),
-            timeout: Duration::from_secs(30),
+            max_idle_per_host: HTTP_MAX_IDLE_PER_HOST as usize,
+            idle_timeout: HTTP_CLIENT_IDLE_TIMEOUT,
+            keepalive: HTTP_KEEPALIVE_DURATION,
+            timeout: HTTP_REQUEST_TIMEOUT,
             user_agent: format!("MCP-Context-Browser/{}", env!("CARGO_PKG_VERSION")),
         }
     }
@@ -83,14 +87,7 @@ impl HttpClientPool {
     pub fn with_config(
         config: HttpClientConfig,
     ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
-        let client = Client::builder()
-            .pool_max_idle_per_host(config.max_idle_per_host)
-            .pool_idle_timeout(config.idle_timeout)
-            .tcp_keepalive(config.keepalive)
-            .timeout(config.timeout)
-            .user_agent(&config.user_agent)
-            .build()?;
-
+        let client = Self::build_client(&config, config.timeout)?;
         Ok(Self { client, config })
     }
 
@@ -109,15 +106,22 @@ impl HttpClientPool {
         &self,
         timeout: Duration,
     ) -> Result<Client, Box<dyn std::error::Error + Send + Sync>> {
-        let client = Client::builder()
-            .pool_max_idle_per_host(self.config.max_idle_per_host)
-            .pool_idle_timeout(self.config.idle_timeout)
-            .tcp_keepalive(self.config.keepalive)
-            .timeout(timeout)
-            .user_agent(&self.config.user_agent)
-            .build()?;
+        Self::build_client(&self.config, timeout)
+    }
 
-        Ok(client)
+    /// Build a reqwest Client from config (DRY helper)
+    fn build_client(
+        config: &HttpClientConfig,
+        timeout: Duration,
+    ) -> Result<Client, Box<dyn std::error::Error + Send + Sync>> {
+        Client::builder()
+            .pool_max_idle_per_host(config.max_idle_per_host)
+            .pool_idle_timeout(config.idle_timeout)
+            .tcp_keepalive(config.keepalive)
+            .timeout(timeout)
+            .user_agent(&config.user_agent)
+            .build()
+            .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)
     }
 }
 

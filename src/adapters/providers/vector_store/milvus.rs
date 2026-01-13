@@ -3,6 +3,10 @@
 use crate::domain::error::{Error, Result};
 use crate::domain::ports::VectorStoreProvider;
 use crate::domain::types::{Embedding, SearchResult};
+use crate::infrastructure::constants::{
+    MILVUS_FIELD_VARCHAR_MAX_LENGTH, MILVUS_IVFFLAT_NLIST, MILVUS_METADATA_VARCHAR_MAX_LENGTH,
+};
+use crate::infrastructure::utils::JsonExt;
 use async_trait::async_trait;
 use milvus::client::Client;
 use milvus::data::FieldColumn;
@@ -76,9 +80,17 @@ impl VectorStoreProvider for MilvusVectorStoreProvider {
                 "feature field",
                 dimensions as i64,
             ))
-            .add_field(FieldSchema::new_varchar("file_path", "file path", 512))
+            .add_field(FieldSchema::new_varchar(
+                "file_path",
+                "file path",
+                MILVUS_FIELD_VARCHAR_MAX_LENGTH,
+            ))
             .add_field(FieldSchema::new_int64("start_line", "start line"))
-            .add_field(FieldSchema::new_varchar("content", "content", 65535))
+            .add_field(FieldSchema::new_varchar(
+                "content",
+                "content",
+                MILVUS_METADATA_VARCHAR_MAX_LENGTH,
+            ))
             .build()
             .map_err(|e| Error::vector_db(format!("Failed to create schema: {}", e)))?;
 
@@ -99,7 +111,7 @@ impl VectorStoreProvider for MilvusVectorStoreProvider {
             "vector_index".to_string(),
             IndexType::IvfFlat,
             MetricType::L2,
-            HashMap::from([("nlist".to_string(), "1024".to_string())]),
+            HashMap::from([("nlist".to_string(), MILVUS_IVFFLAT_NLIST.to_string())]),
         );
 
         // Retry index creation with backoff to handle eventual consistency
@@ -202,23 +214,15 @@ impl VectorStoreProvider for MilvusVectorStoreProvider {
         for (embedding, meta) in vectors.iter().zip(metadata.iter()) {
             vectors_flat.extend_from_slice(&embedding.vector);
 
-            let file_path = meta
-                .get("file_path")
-                .and_then(|v| v.as_str())
-                .unwrap_or("unknown")
-                .to_string();
+            let file_path = meta.string_or("file_path", "unknown");
 
+            // Use fallback key for backward compatibility
             let start_line = meta
-                .get("start_line")
-                .or_else(|| meta.get("line_number")) // Backward compatibility
-                .and_then(|v| v.as_i64())
+                .opt_i64("start_line")
+                .or_else(|| meta.opt_i64("line_number"))
                 .unwrap_or(0);
 
-            let content = meta
-                .get("content")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
+            let content = meta.string_or("content", "");
 
             file_paths.push(file_path);
             start_lines.push(start_line);
@@ -239,7 +243,7 @@ impl VectorStoreProvider for MilvusVectorStoreProvider {
             dtype: DataType::VarChar,
             value: ValueVec::String(file_paths),
             dim: 1,
-            max_length: 512,
+            max_length: MILVUS_FIELD_VARCHAR_MAX_LENGTH,
             is_dynamic: false,
         };
         let start_line_column = FieldColumn {
@@ -255,7 +259,7 @@ impl VectorStoreProvider for MilvusVectorStoreProvider {
             dtype: DataType::VarChar,
             value: ValueVec::String(contents),
             dim: 1,
-            max_length: 65535,
+            max_length: MILVUS_METADATA_VARCHAR_MAX_LENGTH,
             is_dynamic: false,
         };
 

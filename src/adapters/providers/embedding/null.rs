@@ -3,6 +3,7 @@
 use crate::domain::error::Result;
 use crate::domain::ports::EmbeddingProvider;
 use crate::domain::types::Embedding;
+use crate::infrastructure::constants::EMBEDDING_DIMENSION_NULL;
 use async_trait::async_trait;
 
 /// Null embedding provider for testing
@@ -62,7 +63,7 @@ impl EmbeddingProvider for NullEmbeddingProvider {
     }
 
     fn dimensions(&self) -> usize {
-        384
+        EMBEDDING_DIMENSION_NULL
     }
 
     fn provider_name(&self) -> &str {

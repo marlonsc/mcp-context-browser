@@ -7,7 +7,9 @@ use arc_swap::ArcSwap;
 use std::sync::Arc;
 
 use mcp_context_browser::adapters::http_client::{HttpClientPool, HttpClientProvider};
-use mcp_context_browser::admin::service::{AdminService, AdminServiceImpl};
+use mcp_context_browser::admin::service::{
+    AdminService, AdminServiceDependencies, AdminServiceImpl,
+};
 use mcp_context_browser::application::search::SearchService;
 use mcp_context_browser::infrastructure::config::Config;
 use mcp_context_browser::infrastructure::di::factory::{ServiceProvider, ServiceProviderInterface};
@@ -61,16 +63,17 @@ impl TestInfrastructure {
         );
 
         // Create admin service with all dependencies
-        let admin_service = Arc::new(AdminServiceImpl::new(
-            Arc::clone(&performance_metrics),
-            Arc::clone(&indexing_operations),
-            Arc::clone(&service_provider),
-            Arc::clone(&system_collector),
-            Arc::clone(&http_client),
-            event_bus.clone(),
-            log_buffer.clone(),
-            Arc::clone(&config_arc),
-        )) as Arc<dyn AdminService>;
+        let deps = AdminServiceDependencies {
+            performance_metrics: Arc::clone(&performance_metrics),
+            indexing_operations: Arc::clone(&indexing_operations),
+            service_provider: Arc::clone(&service_provider),
+            system_collector: Arc::clone(&system_collector),
+            http_client: Arc::clone(&http_client),
+            event_bus: event_bus.clone(),
+            log_buffer: log_buffer.clone(),
+            config: Arc::clone(&config_arc),
+        };
+        let admin_service = Arc::new(AdminServiceImpl::new(deps)) as Arc<dyn AdminService>;
 
         Ok(Self {
             admin_service,

@@ -4,17 +4,17 @@
 //! Enables events to be replayed and received reliably across multiple processes.
 
 use crate::domain::error::{Error, Result};
+use crate::infrastructure::constants::{
+    NATS_CONSUMER_ACK_WAIT, NATS_CONSUMER_MAX_DELIVER, NATS_STREAM_MAX_AGE, NATS_STREAM_MAX_MSGS,
+};
 use crate::infrastructure::events::{EventBusProvider, EventReceiver, SystemEvent};
 use async_nats::jetstream;
 use futures::StreamExt;
 use serde_json;
-use std::time::Duration;
 use tracing::{debug, error};
 
 const NATS_STREAM_NAME: &str = "MCP_EVENTS";
-const NATS_SUBJECT: &str = "mcp.events.>";
-const STREAM_MAX_AGE: Duration = Duration::from_secs(3600); // 1 hour retention
-const STREAM_MAX_MSGS: i64 = 10000;
+const NATS_SUBJECT: &str = "mcp.events.";
 
 /// NATS JetStream-based event receiver
 pub struct NatsEventReceiver {
@@ -140,8 +140,8 @@ impl NatsEventBus {
                 name: stream_name.to_string(),
                 subjects: vec![subject.to_string()],
                 retention: jetstream::stream::RetentionPolicy::Limits,
-                max_messages: STREAM_MAX_MSGS,
-                max_age: STREAM_MAX_AGE,
+                max_messages: NATS_STREAM_MAX_MSGS,
+                max_age: NATS_STREAM_MAX_AGE,
                 discard: jetstream::stream::DiscardPolicy::Old,
                 ..Default::default()
             })
@@ -224,8 +224,8 @@ impl EventBusProvider for NatsEventBus {
                     durable_name: None, // Ephemeral consumer for better test isolation
                     deliver_policy: jetstream::consumer::DeliverPolicy::New,
                     ack_policy: jetstream::consumer::AckPolicy::Explicit,
-                    ack_wait: Duration::from_secs(30),
-                    max_deliver: 10,
+                    ack_wait: NATS_CONSUMER_ACK_WAIT,
+                    max_deliver: NATS_CONSUMER_MAX_DELIVER as i64,
                     ..Default::default()
                 },
                 &self.stream_name,

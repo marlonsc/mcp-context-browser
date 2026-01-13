@@ -4,6 +4,7 @@ use crate::chunking::config::{LanguageConfig, NodeExtractionRule};
 use crate::chunking::processor::BaseProcessor;
 use crate::chunking::LanguageProcessor;
 use crate::domain::types::{CodeChunk, Language};
+use crate::infrastructure::constants::CHUNK_SIZE_JAVASCRIPT;
 
 /// JavaScript/TypeScript language processor supporting both languages.
 pub struct JavaScriptProcessor {
@@ -42,7 +43,7 @@ impl JavaScriptProcessor {
                 r"^const .*=>\s*\{".to_string(),
                 r"^class ".to_string(),
             ])
-            .with_chunk_size(15);
+            .with_chunk_size(CHUNK_SIZE_JAVASCRIPT);
 
         Self {
             processor: BaseProcessor::new(config),

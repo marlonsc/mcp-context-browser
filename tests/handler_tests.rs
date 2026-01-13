@@ -12,7 +12,7 @@ use mcp_context_browser::admin::service::AdminService;
 async fn create_test_admin_service() -> std::sync::Arc<dyn AdminService> {
     use arc_swap::ArcSwap;
     use mcp_context_browser::adapters::http_client::test_utils::NullHttpClientPool;
-    use mcp_context_browser::admin::service::AdminServiceImpl;
+    use mcp_context_browser::admin::service::{AdminServiceDependencies, AdminServiceImpl};
     use mcp_context_browser::infrastructure::config::ConfigLoader;
     use mcp_context_browser::infrastructure::di::factory::ServiceProvider;
     use mcp_context_browser::infrastructure::events::EventBus;
@@ -46,7 +46,7 @@ async fn create_test_admin_service() -> std::sync::Arc<dyn AdminService> {
     let config = Arc::new(ArcSwap::from_pointee(loaded_config));
 
     // Create the real admin service
-    let admin_service = AdminServiceImpl::new(
+    let deps = AdminServiceDependencies {
         performance_metrics,
         indexing_operations,
         service_provider,
@@ -55,7 +55,8 @@ async fn create_test_admin_service() -> std::sync::Arc<dyn AdminService> {
         event_bus,
         log_buffer,
         config,
-    );
+    };
+    let admin_service = AdminServiceImpl::new(deps);
 
     Arc::new(admin_service)
 }

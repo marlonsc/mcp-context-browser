@@ -4,6 +4,7 @@ use crate::chunking::config::{LanguageConfig, NodeExtractionRule};
 use crate::chunking::processor::BaseProcessor;
 use crate::chunking::LanguageProcessor;
 use crate::domain::types::{CodeChunk, Language};
+use crate::infrastructure::constants::CHUNK_SIZE_KOTLIN;
 
 /// Kotlin language processor with function, class, and object extraction.
 pub struct KotlinProcessor {
@@ -55,7 +56,7 @@ impl KotlinProcessor {
                 r"^data class ".to_string(),
                 r"^sealed class ".to_string(),
             ])
-            .with_chunk_size(15);
+            .with_chunk_size(CHUNK_SIZE_KOTLIN);
 
         Self {
             processor: BaseProcessor::new(config),

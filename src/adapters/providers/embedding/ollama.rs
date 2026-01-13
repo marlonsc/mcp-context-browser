@@ -3,6 +3,11 @@
 use crate::domain::error::{Error, Result};
 use crate::domain::ports::EmbeddingProvider;
 use crate::domain::types::Embedding;
+use crate::infrastructure::constants::{
+    EMBEDDING_DIMENSION_OLLAMA_ARCTIC, EMBEDDING_DIMENSION_OLLAMA_DEFAULT,
+    EMBEDDING_DIMENSION_OLLAMA_MINILM, EMBEDDING_DIMENSION_OLLAMA_MXBAI,
+    EMBEDDING_DIMENSION_OLLAMA_NOMIC,
+};
 use crate::infrastructure::utils::HttpResponseUtils;
 use async_trait::async_trait;
 use std::sync::Arc;
@@ -114,11 +119,11 @@ impl EmbeddingProvider for OllamaEmbeddingProvider {
 
     fn dimensions(&self) -> usize {
         match self.model.as_str() {
-            "nomic-embed-text" => 768,
-            "all-minilm" => 384,
-            "mxbai-embed-large" => 1024,
-            "snowflake-arctic-embed" => 768,
-            _ => 768, // Default for most Ollama embedding models
+            "nomic-embed-text" => EMBEDDING_DIMENSION_OLLAMA_NOMIC,
+            "all-minilm" => EMBEDDING_DIMENSION_OLLAMA_MINILM,
+            "mxbai-embed-large" => EMBEDDING_DIMENSION_OLLAMA_MXBAI,
+            "snowflake-arctic-embed" => EMBEDDING_DIMENSION_OLLAMA_ARCTIC,
+            _ => EMBEDDING_DIMENSION_OLLAMA_DEFAULT, // Default for most Ollama embedding models
         }
     }
 

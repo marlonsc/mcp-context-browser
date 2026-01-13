@@ -4,12 +4,11 @@
 
 use super::runtime_config::RuntimeConfig;
 use crate::admin::service::types::{
-    AdminError, ConnectivityTestResult, HealthCheck, HealthCheckResult, PerformanceTestConfig,
-    PerformanceTestResult, ProviderInfo, SearchResults,
+    AdminError, ConnectivityTestResult, HealthCheck, HealthCheckResult, ProviderInfo,
 };
 use crate::infrastructure::di::factory::ServiceProviderInterface;
 use crate::infrastructure::metrics::system::SystemMetricsCollectorInterface;
-use std::future::Future;
+use crate::infrastructure::utils::status;
 use std::sync::Arc;
 
 /// Run comprehensive health check
@@ -53,13 +52,12 @@ pub async fn run_health_check(
 
     // Determine CPU health status based on dynamic thresholds
     let cpu_status = if cpu_metrics.usage > thresholds.cpu_unhealthy_percent as f32 {
-        "unhealthy"
+        status::CRITICAL.to_string()
     } else if cpu_metrics.usage > thresholds.cpu_degraded_percent as f32 {
-        "degraded"
+        status::DEGRADED.to_string()
     } else {
-        "healthy"
-    }
-    .to_string();
+        status::HEALTHY.to_string()
+    };
 
     checks.push(HealthCheck {
         name: "cpu".to_string(),
@@ -75,15 +73,14 @@ pub async fn run_health_check(
     });
 
     // Determine memory health status based on dynamic thresholds
-    let memory_status =
-        if memory_metrics.usage_percent > thresholds.memory_unhealthy_percent as f32 {
-            "unhealthy"
-        } else if memory_metrics.usage_percent > thresholds.memory_degraded_percent as f32 {
-            "degraded"
-        } else {
-            "healthy"
-        }
-        .to_string();
+    let memory_status = if memory_metrics.usage_percent > thresholds.memory_unhealthy_percent as f32
+    {
+        status::CRITICAL.to_string()
+    } else if memory_metrics.usage_percent > thresholds.memory_degraded_percent as f32 {
+        status::DEGRADED.to_string()
+    } else {
+        status::HEALTHY.to_string()
+    };
 
     checks.push(HealthCheck {
         name: "memory".to_string(),
@@ -105,13 +102,12 @@ pub async fn run_health_check(
 
     // Determine disk health status based on dynamic thresholds
     let disk_status = if disk_metrics.usage_percent > thresholds.disk_unhealthy_percent as f32 {
-        "unhealthy"
+        status::CRITICAL.to_string()
     } else if disk_metrics.usage_percent > thresholds.disk_degraded_percent as f32 {
-        "degraded"
+        status::DEGRADED.to_string()
     } else {
-        "healthy"
-    }
-    .to_string();
+        status::HEALTHY.to_string()
+    };
 
     checks.push(HealthCheck {
         name: "disk".to_string(),
@@ -147,14 +143,13 @@ pub async fn run_health_check(
 
     // Provider health checks
     for provider in providers {
-        let provider_status = if provider.status == "active" {
-            "healthy"
-        } else if provider.status == "degraded" {
-            "degraded"
+        let provider_status = if provider.status == status::ACTIVE {
+            status::HEALTHY.to_string()
+        } else if provider.status == status::DEGRADED {
+            status::DEGRADED.to_string()
         } else {
-            "unhealthy"
-        }
-        .to_string();
+            status::CRITICAL.to_string()
+        };
 
         checks.push(HealthCheck {
             name: format!("provider_{}", provider.id),
@@ -176,11 +171,10 @@ pub async fn run_health_check(
     checks.push(HealthCheck {
         name: "indexing".to_string(),
         status: if runtime_cfg.indexing.enabled {
-            "healthy"
+            status::HEALTHY.to_string()
         } else {
-            "degraded"
-        }
-        .to_string(),
+            status::DEGRADED.to_string()
+        },
         message: format!(
             "Indexing subsystem {} with {} pending operations",
             if runtime_cfg.indexing.enabled {
@@ -201,14 +195,13 @@ pub async fn run_health_check(
     let cache_start = std::time::Instant::now();
     let cache_status = if runtime_cfg.cache.enabled {
         if runtime_cfg.cache.hit_rate >= thresholds.cache_hit_rate_degraded as f64 {
-            "healthy"
+            status::HEALTHY.to_string()
         } else {
-            "degraded"
+            status::DEGRADED.to_string()
         }
     } else {
-        "degraded"
-    }
-    .to_string();
+        status::DEGRADED.to_string()
+    };
 
     checks.push(HealthCheck {
         name: "cache".to_string(),
@@ -236,13 +229,12 @@ pub async fn run_health_check(
     let db_status = if !runtime_cfg.database.connected
         || db_utilization > thresholds.db_pool_unhealthy_percent as f64
     {
-        "unhealthy"
+        status::CRITICAL.to_string()
     } else if db_utilization > thresholds.db_pool_degraded_percent as f64 {
-        "degraded"
+        status::DEGRADED.to_string()
     } else {
-        "healthy"
-    }
-    .to_string();
+        status::HEALTHY.to_string()
+    };
 
     checks.push(HealthCheck {
         name: "database".to_string(),
@@ -328,86 +320,5 @@ pub fn test_provider_connectivity(
             "registry_status": "registered",
             "response_time_ms": response_time
         }),
-    })
-}
-
-/// Run performance test with the given configuration
-///
-/// Note: This function is prepared for future use when performance testing
-/// is refactored to use the helper pattern.
-#[allow(dead_code)]
-pub async fn run_performance_test<F, Fut>(
-    test_config: PerformanceTestConfig,
-    search_fn: F,
-) -> Result<PerformanceTestResult, AdminError>
-where
-    F: Fn(&str) -> Fut,
-    Fut: Future<Output = Result<SearchResults, AdminError>>,
-{
-    let start = std::time::Instant::now();
-    let mut successful_requests = 0;
-    let mut failed_requests = 0;
-    let mut total_latency_ms = 0.0;
-
-    let queries = if test_config.queries.is_empty() {
-        vec!["test".to_string()]
-    } else {
-        test_config.queries.clone()
-    };
-
-    // Load runtime configuration for dynamic performance test thresholds
-    let runtime_cfg = RuntimeConfig::load()
-        .await
-        .unwrap_or_else(|_| RuntimeConfig {
-            indexing: Default::default(),
-            cache: Default::default(),
-            database: Default::default(),
-            thresholds: Default::default(),
-        });
-
-    for _ in 0..test_config.concurrency.max(1) {
-        for query in &queries {
-            let q_start = std::time::Instant::now();
-            match search_fn(query).await {
-                Ok(_) => {
-                    successful_requests += 1;
-                    total_latency_ms += q_start.elapsed().as_millis() as f64;
-                }
-                Err(_) => {
-                    failed_requests += 1;
-                }
-            }
-
-            if start.elapsed().as_secs() >= test_config.duration_seconds as u64 {
-                break;
-            }
-        }
-        if start.elapsed().as_secs() >= test_config.duration_seconds as u64 {
-            break;
-        }
-    }
-
-    let total_requests = successful_requests + failed_requests;
-    let avg_latency = if successful_requests > 0 {
-        total_latency_ms / successful_requests as f64
-    } else {
-        0.0
-    };
-
-    // Use dynamic multipliers from runtime configuration thresholds
-    let p95_latency = avg_latency * runtime_cfg.thresholds.perf_p95_multiplier;
-    let p99_latency = avg_latency * runtime_cfg.thresholds.perf_p99_multiplier;
-
-    Ok(PerformanceTestResult {
-        test_id: format!("perf_test_{}", chrono::Utc::now().timestamp()),
-        test_type: test_config.test_type,
-        duration_seconds: start.elapsed().as_secs() as u32,
-        total_requests,
-        successful_requests,
-        failed_requests,
-        average_response_time_ms: avg_latency,
-        p95_response_time_ms: p95_latency,
-        p99_response_time_ms: p99_latency,
-        throughput_rps: total_requests as f64 / start.elapsed().as_secs_f64().max(1.0),
     })
 }

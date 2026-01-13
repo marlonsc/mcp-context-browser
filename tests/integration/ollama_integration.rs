@@ -70,6 +70,8 @@ mod test_utils {
         Some(Arc::new(provider) as Arc<dyn EmbeddingProvider>)
     }
 
+    /// Create test embeddings for use in other test modules
+    /// Note: marked as unused locally, but used from vector_store_providers.rs tests
     #[allow(dead_code)]
     pub fn create_test_embedding(id: usize, dimensions: usize) -> Embedding {
         // Create embeddings that are more similar for closer IDs

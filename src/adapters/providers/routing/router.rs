@@ -5,6 +5,17 @@
 
 use crate::domain::error::{Error, Result};
 use crate::domain::ports::{EmbeddingProvider, VectorStoreProvider};
+use crate::infrastructure::constants::{
+    PROVIDER_CONTEXT_COST_SENSITIVITY_DEFAULT, PROVIDER_CONTEXT_LATENCY_DEFAULT,
+    PROVIDER_CONTEXT_QUALITY_DEFAULT, PROVIDER_LATENCY_DEFAULT, PROVIDER_LATENCY_GEMINI,
+    PROVIDER_LATENCY_OLLAMA, PROVIDER_LATENCY_OPENAI, PROVIDER_LOAD_CRITICAL_DEFAULT,
+    PROVIDER_LOAD_CRITICAL_LOCAL, PROVIDER_LOAD_HIGH_DEFAULT, PROVIDER_LOAD_HIGH_LOCAL,
+    PROVIDER_LOAD_LOW, PROVIDER_LOAD_MEDIUM, PROVIDER_MAX_FAILOVER_ATTEMPTS,
+    PROVIDER_PREFERENCE_BONUS, PROVIDER_QUALITY_ANTHROPIC, PROVIDER_QUALITY_DEFAULT,
+    PROVIDER_QUALITY_GEMINI, PROVIDER_QUALITY_OLLAMA, PROVIDER_QUALITY_OPENAI,
+    PROVIDER_ROUTING_COST_WEIGHT, PROVIDER_ROUTING_HEALTH_WEIGHT, PROVIDER_ROUTING_LATENCY_WEIGHT,
+    PROVIDER_ROUTING_LOAD_WEIGHT, PROVIDER_ROUTING_QUALITY_WEIGHT,
+};
 use crate::infrastructure::di::registry::{ProviderRegistry, ProviderRegistryTrait};
 use std::sync::Arc;
 use tracing::{debug, info, instrument};
@@ -49,9 +60,9 @@ impl ProviderContext {
         Self {
             operation_type: operation_type.into(),
             expected_load: LoadLevel::Medium,
-            cost_sensitivity: 0.5,
-            quality_requirement: 0.5,
-            latency_sensitivity: 0.5,
+            cost_sensitivity: PROVIDER_CONTEXT_COST_SENSITIVITY_DEFAULT,
+            quality_requirement: PROVIDER_CONTEXT_QUALITY_DEFAULT,
+            latency_sensitivity: PROVIDER_CONTEXT_LATENCY_DEFAULT,
             preferred_providers: Vec::new(),
             excluded_providers: Vec::new(),
             max_budget: None,
@@ -103,11 +114,11 @@ impl ContextualStrategy {
     /// Create a new contextual strategy with default weights
     pub fn new() -> Self {
         Self {
-            health_weight: 0.3,
-            cost_weight: 0.25,
-            quality_weight: 0.2,
-            latency_weight: 0.15,
-            load_weight: 0.1,
+            health_weight: PROVIDER_ROUTING_HEALTH_WEIGHT,
+            cost_weight: PROVIDER_ROUTING_COST_WEIGHT,
+            quality_weight: PROVIDER_ROUTING_QUALITY_WEIGHT,
+            latency_weight: PROVIDER_ROUTING_LATENCY_WEIGHT,
+            load_weight: PROVIDER_ROUTING_LOAD_WEIGHT,
         }
     }
 
@@ -138,36 +149,36 @@ impl ContextualStrategy {
     /// Calculate quality score for a provider
     fn calculate_quality_score(&self, provider_id: &str) -> f64 {
         match provider_id {
-            id if id.contains("openai") => 0.9,
-            id if id.contains("anthropic") => 0.95,
-            id if id.contains("gemini") => 0.85,
-            id if id.contains("ollama") => 0.75,
-            _ => 0.6, // Default quality score
+            id if id.contains("openai") => PROVIDER_QUALITY_OPENAI,
+            id if id.contains("anthropic") => PROVIDER_QUALITY_ANTHROPIC,
+            id if id.contains("gemini") => PROVIDER_QUALITY_GEMINI,
+            id if id.contains("ollama") => PROVIDER_QUALITY_OLLAMA,
+            _ => PROVIDER_QUALITY_DEFAULT, // Default quality score
         }
     }
 
     /// Calculate latency score for a provider
     fn calculate_latency_score(&self, provider_id: &str) -> f64 {
         match provider_id {
-            id if id.contains("ollama") => 0.9, // Local, fast
-            id if id.contains("openai") => 0.7, // Cloud, variable
-            id if id.contains("gemini") => 0.8, // Cloud, good
-            _ => 0.75,                          // Default latency score
+            id if id.contains("ollama") => PROVIDER_LATENCY_OLLAMA, // Local, fast
+            id if id.contains("openai") => PROVIDER_LATENCY_OPENAI, // Cloud, variable
+            id if id.contains("gemini") => PROVIDER_LATENCY_GEMINI, // Cloud, good
+            _ => PROVIDER_LATENCY_DEFAULT,                          // Default latency score
         }
     }
 
     /// Calculate load compatibility score
     fn calculate_load_score(&self, provider_id: &str, load_level: LoadLevel) -> f64 {
         match load_level {
-            LoadLevel::Low => 1.0,
-            LoadLevel::Medium => 0.9,
+            LoadLevel::Low => PROVIDER_LOAD_LOW,
+            LoadLevel::Medium => PROVIDER_LOAD_MEDIUM,
             LoadLevel::High => match provider_id {
-                id if id.contains("ollama") => 0.9, // Local handles high load well
-                _ => 0.6,                           // Cloud providers may have limits
+                id if id.contains("ollama") => PROVIDER_LOAD_HIGH_LOCAL, // Local handles high load well
+                _ => PROVIDER_LOAD_HIGH_DEFAULT, // Cloud providers may have limits
             },
             LoadLevel::Critical => match provider_id {
-                id if id.contains("ollama") => 0.8,
-                _ => 0.4,
+                id if id.contains("ollama") => PROVIDER_LOAD_CRITICAL_LOCAL,
+                _ => PROVIDER_LOAD_CRITICAL_DEFAULT,
             },
         }
     }
@@ -214,7 +225,7 @@ impl ProviderSelectionStrategy for ContextualStrategy {
 
             // Bonus for preferred providers
             if context.preferred_providers.contains(provider_id) {
-                score += 0.1;
+                score += PROVIDER_PREFERENCE_BONUS;
             }
 
             scored_providers.push((provider_id.clone(), score));
@@ -409,7 +420,7 @@ impl ProviderRouter {
             operation_type: context.operation_type.clone(),
             preferred_providers: context.preferred_providers.clone(),
             excluded_providers: context.excluded_providers.clone(),
-            max_attempts: 3,
+            max_attempts: PROVIDER_MAX_FAILOVER_ATTEMPTS,
             current_attempt: 0,
         };
 
@@ -444,7 +455,7 @@ impl ProviderRouter {
             operation_type: context.operation_type.clone(),
             preferred_providers: context.preferred_providers.clone(),
             excluded_providers: context.excluded_providers.clone(),
-            max_attempts: 3,
+            max_attempts: PROVIDER_MAX_FAILOVER_ATTEMPTS,
             current_attempt: 0,
         };
 

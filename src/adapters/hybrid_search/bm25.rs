@@ -4,6 +4,9 @@
 //! It ranks documents based on the query terms appearing in each document.
 
 use crate::domain::types::CodeChunk;
+use crate::infrastructure::constants::{
+    BM25_TOKEN_MIN_LENGTH, HYBRID_SEARCH_BM25_B, HYBRID_SEARCH_BM25_K1,
+};
 use std::collections::{HashMap, HashSet};
 use validator::Validate;
 
@@ -21,8 +24,8 @@ pub struct BM25Params {
 impl Default for BM25Params {
     fn default() -> Self {
         Self {
-            k1: 1.2, // Standard BM25 k1 value
-            b: 0.75, // Standard BM25 b value
+            k1: HYBRID_SEARCH_BM25_K1 as f32, // Standard BM25 k1 value
+            b: HYBRID_SEARCH_BM25_B as f32,   // Standard BM25 b value
         }
     }
 }
@@ -134,7 +137,7 @@ impl BM25Scorer {
                     .map(|s| s.to_string())
                     .collect::<Vec<_>>()
             })
-            .filter(|token| token.len() > 2) // Filter out very short tokens
+            .filter(|token| token.len() > BM25_TOKEN_MIN_LENGTH) // Filter out very short tokens
             .collect()
     }
 }

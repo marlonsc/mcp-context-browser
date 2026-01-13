@@ -3,6 +3,11 @@
 //! This module defines the core configuration types used for language-specific
 //! chunking rules and settings.
 
+use crate::infrastructure::constants::{
+    DEFAULT_CHUNK_SIZE, NODE_EXTRACTION_DEFAULT_PRIORITY, NODE_EXTRACTION_MAX_DEPTH,
+    NODE_EXTRACTION_MIN_LENGTH, NODE_EXTRACTION_MIN_LINES,
+};
+
 /// Rule for extracting specific AST node types
 #[derive(Debug, Clone)]
 pub struct NodeExtractionRule {
@@ -40,7 +45,7 @@ impl LanguageConfig {
             ts_language: language,
             extraction_rules: Vec::new(),
             fallback_patterns: Vec::new(),
-            chunk_size: 20,
+            chunk_size: DEFAULT_CHUNK_SIZE,
         }
     }
 
@@ -89,10 +94,10 @@ impl NodeExtractionRuleBuilder {
     pub fn new() -> Self {
         Self {
             node_types: Vec::new(),
-            min_length: 20,
-            min_lines: 1,
-            max_depth: 3,
-            priority: 5,
+            min_length: NODE_EXTRACTION_MIN_LENGTH,
+            min_lines: NODE_EXTRACTION_MIN_LINES,
+            max_depth: NODE_EXTRACTION_MAX_DEPTH,
+            priority: NODE_EXTRACTION_DEFAULT_PRIORITY,
             include_context: false,
         }
     }

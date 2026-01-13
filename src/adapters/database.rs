@@ -10,6 +10,10 @@
 //! through constructors instead of using global state.
 
 use crate::domain::error::{Error, Result};
+use crate::infrastructure::constants::{
+    DB_CONNECTION_IDLE_TIMEOUT, DB_CONNECTION_MAX_LIFETIME, DB_CONNECTION_TIMEOUT,
+    DB_MAX_CONNECTIONS, DB_MIN_IDLE,
+};
 use async_trait::async_trait;
 use r2d2::Pool;
 use r2d2_postgres::{postgres::NoTls, PostgresConnectionManager};
@@ -95,11 +99,11 @@ impl Default for DatabaseConfig {
     fn default() -> Self {
         Self {
             url: String::new(), // Empty - must load from environment
-            max_connections: 20,
-            min_idle: 5,
-            max_lifetime: Duration::from_secs(1800), // 30 minutes
-            idle_timeout: Duration::from_secs(600),  // 10 minutes
-            connection_timeout: Duration::from_secs(30),
+            max_connections: DB_MAX_CONNECTIONS,
+            min_idle: DB_MIN_IDLE,
+            max_lifetime: DB_CONNECTION_MAX_LIFETIME,
+            idle_timeout: DB_CONNECTION_IDLE_TIMEOUT,
+            connection_timeout: DB_CONNECTION_TIMEOUT,
             enabled: false, // Disabled by default - enable via DATABASE_URL
         }
     }
@@ -126,28 +130,28 @@ impl DatabaseConfig {
         let max_connections = std::env::var("DATABASE_MAX_CONNECTIONS")
             .ok()
             .and_then(|v| v.parse::<u32>().ok())
-            .unwrap_or(20)
+            .unwrap_or(DB_MAX_CONNECTIONS)
             .max(1); // Ensure at least 1 connection
 
         let min_idle = std::env::var("DATABASE_MIN_IDLE")
             .ok()
             .and_then(|v| v.parse::<u32>().ok())
-            .unwrap_or(5);
+            .unwrap_or(DB_MIN_IDLE);
 
         let max_lifetime_secs = std::env::var("DATABASE_MAX_LIFETIME_SECS")
             .ok()
             .and_then(|v| v.parse::<u64>().ok())
-            .unwrap_or(1800);
+            .unwrap_or(DB_CONNECTION_MAX_LIFETIME.as_secs());
 
         let idle_timeout_secs = std::env::var("DATABASE_IDLE_TIMEOUT_SECS")
             .ok()
             .and_then(|v| v.parse::<u64>().ok())
-            .unwrap_or(600);
+            .unwrap_or(DB_CONNECTION_IDLE_TIMEOUT.as_secs());
 
         let connection_timeout_secs = std::env::var("DATABASE_CONNECTION_TIMEOUT_SECS")
             .ok()
             .and_then(|v| v.parse::<u64>().ok())
-            .unwrap_or(30);
+            .unwrap_or(DB_CONNECTION_TIMEOUT.as_secs());
 
         Self {
             url,

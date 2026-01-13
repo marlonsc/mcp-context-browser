@@ -4,6 +4,7 @@ use crate::chunking::config::{LanguageConfig, NodeExtractionRule};
 use crate::chunking::processor::BaseProcessor;
 use crate::chunking::LanguageProcessor;
 use crate::domain::types::{CodeChunk, Language};
+use crate::infrastructure::constants::CHUNK_SIZE_RUBY;
 
 /// Ruby language processor with method, class, and module extraction.
 pub struct RubyProcessor {
@@ -48,7 +49,7 @@ impl RubyProcessor {
                 r"^module ".to_string(),
                 r"^attr_".to_string(),
             ])
-            .with_chunk_size(15);
+            .with_chunk_size(CHUNK_SIZE_RUBY);
 
         Self {
             processor: BaseProcessor::new(config),

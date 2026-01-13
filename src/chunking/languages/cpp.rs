@@ -4,6 +4,7 @@ use crate::chunking::config::{LanguageConfig, NodeExtractionRule};
 use crate::chunking::processor::BaseProcessor;
 use crate::chunking::LanguageProcessor;
 use crate::domain::types::{CodeChunk, Language};
+use crate::infrastructure::constants::CHUNK_SIZE_CPP;
 
 /// C++ language processor with class and template extraction.
 pub struct CppProcessor {
@@ -38,7 +39,7 @@ impl CppProcessor {
                 r"^struct ".to_string(),
                 r"^[a-zA-Z_][a-zA-Z0-9_]*\s*\(".to_string(),
             ])
-            .with_chunk_size(15);
+            .with_chunk_size(CHUNK_SIZE_CPP);
 
         Self {
             processor: BaseProcessor::new(config),

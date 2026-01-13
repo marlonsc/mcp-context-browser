@@ -12,6 +12,10 @@ use crate::chunking::IntelligentChunker;
 use crate::domain::error::{Error, Result};
 use crate::domain::types::CodeChunk;
 // Cross-cutting concern: Event bus for decoupled notifications
+use crate::infrastructure::constants::{
+    INDEXING_BATCH_SIZE, INDEXING_CHUNKS_MAX_PER_FILE, INDEXING_CHUNK_MIN_LENGTH,
+    INDEXING_CHUNK_MIN_LINES,
+};
 use crate::infrastructure::events::{SharedEventBusProvider, SystemEvent};
 use crate::snapshot::SnapshotManager;
 use crate::sync::SyncManager;
@@ -158,11 +162,14 @@ impl IndexingService {
             .await;
 
         // Filter out chunks that are too small
-        chunks.retain(|chunk| chunk.content.len() >= 25 && chunk.content.lines().count() >= 2);
+        chunks.retain(|chunk| {
+            chunk.content.len() >= INDEXING_CHUNK_MIN_LENGTH
+                && chunk.content.lines().count() >= INDEXING_CHUNK_MIN_LINES
+        });
 
         // Limit chunks per file to avoid explosion
-        if chunks.len() > 50 {
-            chunks.truncate(50);
+        if chunks.len() > INDEXING_CHUNKS_MAX_PER_FILE {
+            chunks.truncate(INDEXING_CHUNKS_MAX_PER_FILE);
         }
 
         Ok(chunks)
@@ -182,7 +189,7 @@ impl IndexingService {
         changed_files: &[String],
         collection: &str,
     ) -> usize {
-        let batch_size = 10; // Process 10 files concurrently
+        let batch_size = INDEXING_BATCH_SIZE;
         let mut total_chunks = 0;
 
         // Process files in batches

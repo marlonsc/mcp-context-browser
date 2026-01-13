@@ -3,6 +3,7 @@
 //! Defines the token payload structure for authentication.
 
 use super::roles::UserRole;
+use crate::infrastructure::utils::TimeUtils;
 use serde::{Deserialize, Serialize};
 
 /// JWT claims structure
@@ -31,10 +32,7 @@ impl Claims {
         issuer: String,
         expiration_secs: u64,
     ) -> Self {
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs();
+        let now = TimeUtils::now_unix_secs();
 
         Self {
             sub: user_id,
@@ -48,20 +46,12 @@ impl Claims {
 
     /// Check if the token has expired
     pub fn is_expired(&self) -> bool {
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs();
-        self.exp < now
+        self.exp < TimeUtils::now_unix_secs()
     }
 
     /// Get remaining validity in seconds (0 if expired)
     pub fn remaining_secs(&self) -> u64 {
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs();
-        self.exp.saturating_sub(now)
+        self.exp.saturating_sub(TimeUtils::now_unix_secs())
     }
 }
 
@@ -99,18 +89,13 @@ pub enum HashVersion {
 impl User {
     /// Create a new user with default timestamps
     pub fn new(id: String, email: String, role: UserRole, password_hash: String) -> Self {
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs();
-
         Self {
             id,
             email,
             role,
             password_hash,
             hash_version: HashVersion::Argon2id,
-            created_at: now,
+            created_at: TimeUtils::now_unix_secs(),
             last_active: 0,
         }
     }
@@ -129,10 +114,7 @@ impl User {
 
     /// Update last active timestamp
     pub fn touch(&mut self) {
-        self.last_active = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs();
+        self.last_active = TimeUtils::now_unix_secs();
     }
 }
 

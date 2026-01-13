@@ -1,5 +1,6 @@
 //! Data models for the admin API
 
+use crate::infrastructure::utils::TimeUtils;
 use serde::{Deserialize, Serialize};
 
 /// Authentication request
@@ -108,10 +109,7 @@ impl<T> ApiResponse<T> {
             success: true,
             data: Some(data),
             error: None,
-            timestamp: std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_secs(),
+            timestamp: TimeUtils::now_unix_secs(),
         }
     }
 
@@ -120,10 +118,7 @@ impl<T> ApiResponse<T> {
             success: false,
             data: None,
             error: Some(error),
-            timestamp: std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_secs(),
+            timestamp: TimeUtils::now_unix_secs(),
         }
     }
 }

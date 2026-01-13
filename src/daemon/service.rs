@@ -4,6 +4,7 @@ use super::{DaemonConfig, DaemonStats};
 use crate::domain::error::{Error, Result};
 use crate::domain::types::SyncBatch;
 use crate::infrastructure::cache::{CacheProviderQueue, SharedCacheProvider};
+use crate::infrastructure::utils::TimeUtils;
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
@@ -182,10 +183,7 @@ impl ContextDaemon {
         let mut cleaned_count = 0;
         if let Some(cache) = cache_manager {
             if let Ok(queue) = cache.get_queue::<SyncBatch>("sync_batches", "queue").await {
-                let now = std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap_or(Duration::from_secs(0))
-                    .as_secs();
+                let now = TimeUtils::now_unix_secs();
 
                 for batch in queue {
                     if now.saturating_sub(batch.created_at) > max_age_secs
@@ -204,11 +202,9 @@ impl ContextDaemon {
         stats
             .locks_cleaned
             .fetch_add(cleaned_count, Ordering::Relaxed);
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs();
-        stats.last_cleanup.store(now, Ordering::Relaxed);
+        stats
+            .last_cleanup
+            .store(TimeUtils::now_unix_secs(), Ordering::Relaxed);
 
         if cleaned_count > 0 {
             tracing::info!("[DAEMON] Cleaned up {} stale batches", cleaned_count);
@@ -231,11 +227,9 @@ impl ContextDaemon {
 
         stats.monitoring_cycles.fetch_add(1, Ordering::Relaxed);
         stats.active_locks.store(queue_size, Ordering::Relaxed);
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs();
-        stats.last_monitoring.store(now, Ordering::Relaxed);
+        stats
+            .last_monitoring
+            .store(TimeUtils::now_unix_secs(), Ordering::Relaxed);
 
         // Warn about high backlog
         if queue_size > 10 {

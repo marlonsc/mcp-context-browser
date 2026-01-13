@@ -24,6 +24,21 @@ use async_trait::async_trait;
 use std::collections::HashMap;
 use std::sync::Arc;
 
+/// Dependencies for AdminService
+///
+/// Groups all dependencies needed to construct AdminServiceImpl.
+/// This reduces parameter count and improves readability.
+pub struct AdminServiceDependencies {
+    pub performance_metrics: Arc<dyn PerformanceMetricsInterface>,
+    pub indexing_operations: Arc<dyn IndexingOperationsInterface>,
+    pub service_provider: Arc<dyn ServiceProviderInterface>,
+    pub system_collector: Arc<dyn SystemMetricsCollectorInterface>,
+    pub http_client: Arc<dyn crate::adapters::http_client::HttpClientProvider>,
+    pub event_bus: crate::infrastructure::events::SharedEventBusProvider,
+    pub log_buffer: crate::infrastructure::logging::SharedLogBuffer,
+    pub config: Arc<arc_swap::ArcSwap<crate::infrastructure::config::Config>>,
+}
+
 /// Concrete implementation of AdminService
 #[derive(shaku::Component)]
 #[shaku(interface = AdminService)]
@@ -49,28 +64,18 @@ pub struct AdminServiceImpl {
 }
 
 impl AdminServiceImpl {
-    /// Create new admin service with dependency injection
-    #[allow(clippy::too_many_arguments)]
-    pub fn new(
-        performance_metrics: Arc<dyn PerformanceMetricsInterface>,
-        indexing_operations: Arc<dyn IndexingOperationsInterface>,
-        service_provider: Arc<dyn ServiceProviderInterface>,
-        system_collector: Arc<dyn SystemMetricsCollectorInterface>,
-        http_client: Arc<dyn crate::adapters::http_client::HttpClientProvider>,
-        event_bus: crate::infrastructure::events::SharedEventBusProvider,
-        log_buffer: crate::infrastructure::logging::SharedLogBuffer,
-        config: Arc<arc_swap::ArcSwap<crate::infrastructure::config::Config>>,
-    ) -> Self {
+    /// Create new admin service from dependencies
+    pub fn new(deps: AdminServiceDependencies) -> Self {
         Self {
-            performance_metrics,
-            indexing_operations,
-            service_provider,
-            system_collector,
-            http_client,
+            performance_metrics: deps.performance_metrics,
+            indexing_operations: deps.indexing_operations,
+            service_provider: deps.service_provider,
+            system_collector: deps.system_collector,
+            http_client: deps.http_client,
             search_service: Arc::new(ArcSwap::from_pointee(None)),
-            event_bus,
-            log_buffer,
-            config,
+            event_bus: deps.event_bus,
+            log_buffer: deps.log_buffer,
+            config: deps.config,
         }
     }
 

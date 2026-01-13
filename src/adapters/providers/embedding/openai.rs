@@ -5,6 +5,10 @@ use crate::domain::error::{Error, Result};
 use crate::domain::ports::EmbeddingProvider;
 use crate::domain::types::Embedding;
 use crate::infrastructure::cache::SharedCacheProvider;
+use crate::infrastructure::constants::{
+    EMBEDDING_DIMENSION_OPENAI_ADA, EMBEDDING_DIMENSION_OPENAI_LARGE,
+    EMBEDDING_DIMENSION_OPENAI_SMALL,
+};
 use crate::infrastructure::utils::HttpResponseUtils;
 use async_trait::async_trait;
 use std::sync::Arc;
@@ -252,10 +256,10 @@ impl EmbeddingProvider for OpenAIEmbeddingProvider {
 
     fn dimensions(&self) -> usize {
         match self.model.as_str() {
-            "text-embedding-3-small" => 1536,
-            "text-embedding-3-large" => 3072,
-            "text-embedding-ada-002" => 1536,
-            _ => 1536, // Default fallback
+            "text-embedding-3-small" => EMBEDDING_DIMENSION_OPENAI_SMALL,
+            "text-embedding-3-large" => EMBEDDING_DIMENSION_OPENAI_LARGE,
+            "text-embedding-ada-002" => EMBEDDING_DIMENSION_OPENAI_ADA,
+            _ => EMBEDDING_DIMENSION_OPENAI_SMALL, // Default fallback
         }
     }
 

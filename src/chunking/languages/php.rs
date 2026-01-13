@@ -4,6 +4,7 @@ use crate::chunking::config::{LanguageConfig, NodeExtractionRule};
 use crate::chunking::processor::BaseProcessor;
 use crate::chunking::LanguageProcessor;
 use crate::domain::types::{CodeChunk, Language};
+use crate::infrastructure::constants::CHUNK_SIZE_PHP;
 
 /// PHP language processor with function, class, and trait extraction.
 pub struct PhpProcessor {
@@ -55,7 +56,7 @@ impl PhpProcessor {
                 r"^interface ".to_string(),
                 r"^trait ".to_string(),
             ])
-            .with_chunk_size(15);
+            .with_chunk_size(CHUNK_SIZE_PHP);
 
         Self {
             processor: BaseProcessor::new(config),
