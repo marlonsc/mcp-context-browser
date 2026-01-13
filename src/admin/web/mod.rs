@@ -167,7 +167,7 @@ async fn dashboard_handler(State(state): State<AdminState>) -> impl IntoResponse
         Ok(view_model) => render_template(
             &state.templates,
             "dashboard.html",
-            &create_page_context_with_json(&view_model.page, &view_model),
+            &create_page_context_with_json(view_model.page, &view_model),
         ),
         Err(e) => {
             tracing::error!("Failed to build dashboard view model: {}", e);
@@ -183,7 +183,7 @@ async fn providers_handler(State(state): State<AdminState>) -> impl IntoResponse
         Ok(view_model) => render_template(
             &state.templates,
             "providers.html",
-            &create_page_context(&view_model.page, &view_model),
+            &create_page_context(view_model.page, &view_model),
         ),
         Err(e) => {
             tracing::error!("Failed to build providers view model: {}", e);
@@ -199,7 +199,7 @@ async fn indexes_handler(State(state): State<AdminState>) -> impl IntoResponse {
         Ok(view_model) => render_template(
             &state.templates,
             "indexes.html",
-            &create_page_context(&view_model.page, &view_model),
+            &create_page_context(view_model.page, &view_model),
         ),
         Err(e) => {
             tracing::error!("Failed to build indexes view model: {}", e);

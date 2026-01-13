@@ -7,7 +7,7 @@
 
 use serde::Serialize;
 
-use crate::infrastructure::utils::{css, FormattingUtils, StringUtils};
+use crate::infrastructure::utils::{css, FormattingUtils, StatusUtils, StringUtils};
 
 // =============================================================================
 // Dashboard View Models
@@ -93,7 +93,7 @@ pub struct ProviderViewModel {
 
 impl ProviderViewModel {
     pub fn new(id: String, name: String, provider_type: String, status: String) -> Self {
-        let is_active = matches!(status.as_str(), "available" | "active" | "healthy");
+        let is_active = StatusUtils::is_healthy(&status);
         let status_class = css::badge_for_status(&status);
         let provider_type_display = StringUtils::to_title_case(&provider_type);
         let status_display = StringUtils::capitalize_first(&status);
@@ -174,7 +174,7 @@ impl IndexViewModel {
         updated_at: u64,
     ) -> Self {
         let is_indexing = status == "indexing";
-        let is_active = matches!(status.as_str(), "active" | "ready");
+        let is_active = StatusUtils::is_healthy(&status);
         let status_class = css::badge_for_status(&status);
         let age_display = FormattingUtils::format_age(created_at);
 

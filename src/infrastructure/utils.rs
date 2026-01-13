@@ -483,6 +483,56 @@ impl ProviderUtils {
 }
 
 // =============================================================================
+// Status Utilities - Consistent status checking (DRY)
+// =============================================================================
+
+/// Status checking utilities for consistent status evaluation
+pub struct StatusUtils;
+
+impl StatusUtils {
+    /// Check if status indicates healthy/active/available state
+    ///
+    /// Normalizes inconsistent status values used across the codebase.
+    /// Returns true for: "available", "active", "healthy", "success", "ready", "online"
+    pub fn is_healthy(status: &str) -> bool {
+        matches!(
+            status.to_lowercase().as_str(),
+            "available" | "active" | "healthy" | "success" | "ready" | "online"
+        )
+    }
+
+    /// Check if status indicates degraded/warning state
+    ///
+    /// Returns true for: "degraded", "warning", "slow", "partial"
+    pub fn is_degraded(status: &str) -> bool {
+        matches!(
+            status.to_lowercase().as_str(),
+            "degraded" | "warning" | "slow" | "partial"
+        )
+    }
+
+    /// Check if status indicates error/failure state
+    ///
+    /// Returns true for: "error", "failed", "unavailable", "down", "offline"
+    pub fn is_error(status: &str) -> bool {
+        matches!(
+            status.to_lowercase().as_str(),
+            "error" | "failed" | "unavailable" | "down" | "offline"
+        )
+    }
+
+    /// Check if status indicates processing state
+    ///
+    /// Returns true for: "indexing", "processing", "building", "syncing", "updating"
+    pub fn is_processing(status: &str) -> bool {
+        matches!(
+            status.to_lowercase().as_str(),
+            "indexing" | "processing" | "building" | "syncing" | "updating"
+        )
+    }
+}
+
+// =============================================================================
 // Async File Utilities - Replaces 10+ lines per call across codebase
 // =============================================================================
 
