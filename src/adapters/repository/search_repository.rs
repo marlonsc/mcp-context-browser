@@ -13,14 +13,19 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 /// Vector store backed search repository with hybrid search support
+#[derive(shaku::Component)]
+#[shaku(interface = SearchRepository)]
 pub struct VectorStoreSearchRepository {
+    #[shaku(inject)]
     vector_store_provider: Arc<dyn VectorStoreProvider>,
+    #[shaku(default = Arc::new(RwLock::new(HybridSearchEngine::new(0.3, 0.7))))]
     hybrid_engine: Arc<RwLock<HybridSearchEngine>>,
+    #[shaku(default)]
     stats: SearchStatsTracker,
 }
 
 /// Tracks search statistics using atomic counters
-struct SearchStatsTracker {
+pub struct SearchStatsTracker {
     total_queries: AtomicU64,
     total_response_time_ms: AtomicU64,
     cache_hits: AtomicU64,

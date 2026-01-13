@@ -45,6 +45,9 @@ pub use traits::{AdaptersModule, AdminModule, InfrastructureModule, ServerModule
 use shaku::module;
 
 use crate::adapters::http_client::HttpClientProvider;
+use crate::domain::ports::{
+    ChunkRepository, EmbeddingProvider, SearchRepository, VectorStoreProvider,
+};
 use crate::infrastructure::auth::AuthServiceInterface;
 use crate::infrastructure::di::factory::ServiceProviderInterface;
 use crate::infrastructure::events::EventBusProvider;
@@ -63,7 +66,13 @@ module! {
         providers = [],
 
         use dyn AdaptersModule {
-            components = [dyn HttpClientProvider],
+            components = [
+                dyn HttpClientProvider,
+                dyn EmbeddingProvider,
+                dyn VectorStoreProvider,
+                dyn ChunkRepository,
+                dyn SearchRepository
+            ],
             providers = []
         },
 

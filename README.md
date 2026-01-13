@@ -109,30 +109,25 @@ Built on production-grade foundations:
 
 ## Testing
 
-493 automated tests covering all critical functionality:
+790+ automated tests covering all critical functionality:
 
 ```bash
-make test           # Run full test suite (493 tests)
+make test           # Run full test suite (790+ tests)
 make quality        # Complete quality check (fmt + lint + test + audit)
 make validate       # Documentation and configuration validation
 ```
 
-Test coverage:
+Test organization (Clean Architecture layers):
 
--   Library: 34 tests (lib.rs inline tests)
--   Adapters: 35 tests (repository, hybrid search)
--   Core: 36 tests (data structures, serialization, validation)
--   Domain: 17 tests (domain types and logic)
--   Handlers: 16 tests (MCP tool handlers)
--   Integration: 49 tests (end-to-end workflows, 2 ignored)
--   Providers: 73 tests (embedding and vector stores)
--   Server: 70 tests (protocol, transport, security)
--   Services: 16 tests (search, indexing, context)
--   Snapshot: 16 tests (state management)
--   Sync: 14 tests (synchronization)
--   Unit: 88 tests (component-level testing)
--   Validation: 14 tests (input validation)
--   Doc-tests: 15 tests (documentation examples, 3 ignored)
+-   **Domain tests**: Types, validation, chunking
+-   **Application tests**: Services (indexing, search, context)
+-   **Adapter tests**: Providers, repositories, hybrid search
+-   **Infrastructure tests**: Auth, cache, events, sync, daemon
+-   **Server tests**: Handlers, admin, protocol
+-   **Integration tests**: End-to-end workflows, Docker
+-   **Unit tests**: Property-based testing, security
+
+See [tests/README.md](tests/README.md) for detailed test structure.
 
 ## Performance
 
@@ -181,7 +176,7 @@ First stable release - drop-in replacement for Claude-context:
 -   ✅ 6 embedding providers (OpenAI, VoyageAI, Ollama, Gemini, FastEmbed, Null)
 -   ✅ 6 vector stores (Milvus, EdgeVec, In-Memory, Filesystem, Encrypted, Null)
 -   ✅ Claude-context environment variable compatibility
--   ✅ 493 tests with comprehensive coverage
+-   ✅ 790+ tests with comprehensive coverage
 -   ✅ JWT authentication and rate limiting
 -   ✅ Clean architecture with 14 domain port traits and full DI wiring
 -   ✅ HTTP transport foundation

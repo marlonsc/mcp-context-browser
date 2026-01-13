@@ -53,7 +53,7 @@
 ## Phase 1 Total: 250-300 lines saved
 
 ## Test Baseline
-- **Total tests**: 830+ (run with `make test`)
+- **Total tests**: 790+ (run with `make test`)
 - **Current status**: All passing ✅
 - **Quality gates**: `make quality` passing ✅
 

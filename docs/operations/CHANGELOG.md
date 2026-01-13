@@ -94,14 +94,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 \1-  **Clean Architecture**: Complete refactoring with trait-based dependency injection
-\1-  **Test Suite**: Expanded to 493 comprehensive tests across 15 test suites
+\1-  **Test Suite**: Expanded to 790+ comprehensive tests organized by Clean Architecture layers
 \1-  **Configuration**: Modular configuration with cache and limits separated
 \1-  **Server Operations**: Extracted operations to dedicated module (`src/server/operations.rs`)
 \1-  **Metrics**: Dedicated metrics module (`src/server/metrics.rs`)
 
 ### Technical Metrics
 
-\1-  **Total Tests**: 493 (100% pass rate, 2 ignored)
+\1-  **Total Tests**: 790+ (100% pass rate)
 \1-  **Language Processors**: 12 with full AST parsing support
 \1-  **Embedding Providers**: 6 (OpenAI, VoyageAI, Ollama, Gemini, FastEmbed, Null)
 \1-  **Vector Stores**: 6 (Milvus, EdgeVec, In-Memory, Filesystem, Encrypted, Null)
@@ -123,7 +123,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 \1-  **Memory Usage**: Native efficiency (reduced by ~60% vs Node.js)
 \1-  **Provider Support**: 6 embedding providers, 6 vector stores
 \1-  **Language Support**: 12 languages with AST parsing
-\1-  **Test Coverage**: 564 tests (from 150+)
+\1-  **Test Coverage**: 790+ tests
 
 ---
 

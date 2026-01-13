@@ -8,11 +8,11 @@
 | Metric | Value |
 |--------|-------|
 | **Version** | 0.1.0 |
-| **Languages** | 0 |
-| **Embedding Providers** | 7 |
+| **Languages** | 12 |
+| **Embedding Providers** | 6 |
 | **Vector Stores** | 6 |
 | **ADRs** | 11 |
-| **Tests** | 1008+ |
+| **Tests** | 790+ |
 | **Source Files** | 234 |
 | **Source Lines** | 44909 |
 | **Test Files** | 103 |

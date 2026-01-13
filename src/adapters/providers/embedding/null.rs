@@ -8,6 +8,8 @@ use async_trait::async_trait;
 
 /// Null embedding provider for testing
 /// Returns fixed-size vectors filled with test values
+#[derive(shaku::Component)]
+#[shaku(interface = EmbeddingProvider)]
 pub struct NullEmbeddingProvider;
 
 impl NullEmbeddingProvider {

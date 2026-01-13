@@ -21,8 +21,12 @@ fn parse_language_from_metadata(metadata: &serde_json::Value) -> Language {
 }
 
 /// Vector store backed chunk repository
+#[derive(shaku::Component)]
+#[shaku(interface = ChunkRepository)]
 pub struct VectorStoreChunkRepository {
+    #[shaku(inject)]
     embedding_provider: Arc<dyn EmbeddingProvider>,
+    #[shaku(inject)]
     vector_store_provider: Arc<dyn VectorStoreProvider>,
 }
 

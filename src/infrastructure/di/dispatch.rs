@@ -175,6 +175,143 @@ pub async fn create_vector_store_provider_from_config(
     dispatch_vector_store_provider(kind, config).await
 }
 
+// ============================================================================
+// Box-returning variants for Shaku DI override
+// ============================================================================
+
+/// Create embedding provider as Box (for Shaku component override).
+pub async fn create_embedding_provider_boxed(
+    config: &EmbeddingConfig,
+    http_client: Arc<dyn HttpClientProvider>,
+) -> Result<Box<dyn EmbeddingProvider>> {
+    use crate::adapters::providers::embedding::*;
+
+    let kind = EmbeddingProviderKind::from_string(&config.provider).ok_or_else(|| {
+        Error::config(format!(
+            "Unsupported embedding provider: '{}'. Supported: {}",
+            config.provider,
+            EmbeddingProviderKind::supported_providers().join(", ")
+        ))
+    })?;
+
+    match kind {
+        EmbeddingProviderKind::OpenAI => {
+            let api_key = config
+                .api_key
+                .as_ref()
+                .ok_or_else(|| Error::config("OpenAI API key required"))?;
+            Ok(Box::new(OpenAIEmbeddingProvider::new(
+                api_key.clone(),
+                config.base_url.clone(),
+                config.model.clone(),
+                HTTP_REQUEST_TIMEOUT,
+                http_client,
+            )) as Box<dyn EmbeddingProvider>)
+        }
+        EmbeddingProviderKind::Ollama => Ok(Box::new(OllamaEmbeddingProvider::new(
+            config
+                .base_url
+                .clone()
+                .unwrap_or_else(|| OLLAMA_DEFAULT_URL.to_string()),
+            config.model.clone(),
+            HTTP_REQUEST_TIMEOUT,
+            http_client,
+        )) as Box<dyn EmbeddingProvider>),
+        EmbeddingProviderKind::VoyageAI => {
+            let api_key = config
+                .api_key
+                .as_ref()
+                .ok_or_else(|| Error::config("VoyageAI API key required"))?;
+            Ok(Box::new(VoyageAIEmbeddingProvider::new(
+                api_key.clone(),
+                config.base_url.clone(),
+                config.model.clone(),
+                http_client,
+            )) as Box<dyn EmbeddingProvider>)
+        }
+        EmbeddingProviderKind::Gemini => {
+            let api_key = config
+                .api_key
+                .as_ref()
+                .ok_or_else(|| Error::config("Gemini API key required"))?;
+            Ok(Box::new(GeminiEmbeddingProvider::new(
+                api_key.clone(),
+                config.base_url.clone(),
+                config.model.clone(),
+                HTTP_REQUEST_TIMEOUT,
+                http_client,
+            )) as Box<dyn EmbeddingProvider>)
+        }
+        EmbeddingProviderKind::FastEmbed => {
+            Ok(Box::new(FastEmbedProvider::new()?) as Box<dyn EmbeddingProvider>)
+        }
+    }
+}
+
+/// Create vector store provider as Box (for Shaku component override).
+pub async fn create_vector_store_provider_boxed(
+    config: &VectorStoreConfig,
+) -> Result<Box<dyn VectorStoreProvider>> {
+    use crate::adapters::providers::vector_store::*;
+
+    let kind = VectorStoreProviderKind::from_string(&config.provider).ok_or_else(|| {
+        Error::config(format!(
+            "Unsupported vector store provider: '{}'. Supported: {}",
+            config.provider,
+            VectorStoreProviderKind::supported_providers().join(", ")
+        ))
+    })?;
+
+    match kind {
+        VectorStoreProviderKind::InMemory => {
+            Ok(Box::new(InMemoryVectorStoreProvider::new()) as Box<dyn VectorStoreProvider>)
+        }
+        VectorStoreProviderKind::Filesystem => {
+            use crate::adapters::providers::vector_store::filesystem::{
+                FilesystemVectorStore, FilesystemVectorStoreConfig,
+            };
+            let base_path = config
+                .address
+                .as_ref()
+                .map(std::path::PathBuf::from)
+                .unwrap_or_else(|| std::path::PathBuf::from("./data/vectors"));
+            let fs_config = FilesystemVectorStoreConfig {
+                base_path,
+                dimensions: config.dimensions.unwrap_or(1536),
+                ..Default::default()
+            };
+            Ok(Box::new(FilesystemVectorStore::new(fs_config).await?)
+                as Box<dyn VectorStoreProvider>)
+        }
+        #[cfg(feature = "milvus")]
+        VectorStoreProviderKind::Milvus => {
+            let address = config
+                .address
+                .as_ref()
+                .ok_or_else(|| Error::config("Milvus address required"))?;
+            Ok(Box::new(
+                MilvusVectorStoreProvider::new(
+                    address.clone(),
+                    config.token.clone(),
+                    config.timeout_secs,
+                )
+                .await?,
+            ) as Box<dyn VectorStoreProvider>)
+        }
+        VectorStoreProviderKind::EdgeVec => {
+            use crate::adapters::providers::vector_store::edgevec::{
+                EdgeVecConfig, EdgeVecVectorStoreProvider,
+            };
+            let edgevec_config = EdgeVecConfig {
+                dimensions: config.dimensions.unwrap_or(1536),
+                ..Default::default()
+            };
+            Ok(Box::new(EdgeVecVectorStoreProvider::new(edgevec_config)?)
+                as Box<dyn VectorStoreProvider>)
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -12,7 +12,10 @@ use std::sync::Arc;
 type CollectionEntry = (Embedding, HashMap<String, serde_json::Value>);
 
 /// Null vector store provider for testing
+#[derive(shaku::Component)]
+#[shaku(interface = VectorStoreProvider)]
 pub struct NullVectorStoreProvider {
+    #[shaku(default = Arc::new(DashMap::new()))]
     collections: Arc<DashMap<String, Vec<CollectionEntry>>>,
 }
 

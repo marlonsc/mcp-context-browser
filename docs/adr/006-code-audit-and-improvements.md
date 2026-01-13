@@ -11,7 +11,7 @@
 > -   thiserror-based error handling throughout
 > -   File sizes reduced (most < 500 lines)
 > -   3 files in src/infrastructure/auth/ retain RwLock unwraps (acceptable for lock poisoning)
-> -   Test coverage improved to 493+ tests (100% pass rate)
+> -   Test coverage improved to 790+ tests (100% pass rate)
 >
 > **January 2026 Updates:**
 >

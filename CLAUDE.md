@@ -7,7 +7,7 @@ MCP server for semantic code search using vector embeddings. **v0.1.0 production
 ```bash
 # Development
 make build          # Compile
-make test           # Run 1008+ tests
+make test           # Run 790+ tests
 make lint           # Clippy
 make fmt            # Format
 make quality        # Full check (fmt + lint + test + audit)
@@ -126,7 +126,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 -   12 languages with AST parsing (Rust, Python, JS/TS, Go, Java, C, C++, C#, Ruby, PHP, Swift, Kotlin)
 -   6 embedding providers (OpenAI, VoyageAI, Ollama, Gemini, FastEmbed, Null)
 -   6 vector stores (Milvus, EdgeVec, In-Memory, Filesystem, Encrypted, Null)
--   493 tests (100% pass rate, 2 ignored)
+-   790+ tests (100% pass rate)
 -   HTTP transport foundation
 -   Systemd integration
 

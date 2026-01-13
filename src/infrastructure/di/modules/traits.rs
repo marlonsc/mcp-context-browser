@@ -9,6 +9,9 @@
 use shaku::HasComponent;
 
 use crate::adapters::http_client::HttpClientProvider;
+use crate::domain::ports::{
+    ChunkRepository, EmbeddingProvider, SearchRepository, VectorStoreProvider,
+};
 use crate::infrastructure::auth::AuthServiceInterface;
 use crate::infrastructure::di::factory::ServiceProviderInterface;
 use crate::infrastructure::events::EventBusProvider;
@@ -17,8 +20,15 @@ use crate::server::admin::service::AdminService;
 use crate::server::metrics::PerformanceMetricsInterface;
 use crate::server::operations::IndexingOperationsInterface;
 
-/// Adapters module trait - external adapters like HTTP clients
-pub trait AdaptersModule: HasComponent<dyn HttpClientProvider> {}
+/// Adapters module trait - external adapters like HTTP clients, providers, and repositories
+pub trait AdaptersModule:
+    HasComponent<dyn HttpClientProvider>
+    + HasComponent<dyn EmbeddingProvider>
+    + HasComponent<dyn VectorStoreProvider>
+    + HasComponent<dyn ChunkRepository>
+    + HasComponent<dyn SearchRepository>
+{
+}
 
 /// Infrastructure module trait - core infrastructure services
 pub trait InfrastructureModule:

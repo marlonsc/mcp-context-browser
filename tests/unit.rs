@@ -1,13 +1,9 @@
-//! Unit tests including property-based testing
+//! Unit Tests Aggregator
+//!
+//! All unit tests organized by Clean Architecture layer.
+//! Structure mirrors src/ directory.
+//!
+//! Run with: cargo test --test unit
 
-#[path = "unit/property_based.rs"]
-mod property_based;
-
-#[path = "unit/rate_limiting.rs"]
-mod rate_limiting;
-
-#[path = "unit/security.rs"]
-mod security;
-
-#[path = "unit/unit_tests.rs"]
-mod unit_tests;
+#[path = "unit/mod.rs"]
+mod unit;

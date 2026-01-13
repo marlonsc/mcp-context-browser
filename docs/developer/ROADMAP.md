@@ -22,7 +22,7 @@ MCP Context Browser v0.1.0 is the first stable release, providing a complete dro
 \1-   ✅ 6 embedding providers (OpenAI, VoyageAI, Ollama, Gemini, FastEmbed, Null)
 \1-   ✅ 6 vector stores (Milvus, EdgeVec, In-Memory, Filesystem, Encrypted, Null)
 \1-   ✅ Claude-context environment variable compatibility
-\1-   ✅ 493 tests with comprehensive coverage (100% pass rate, 2 ignored)
+\1-   ✅ 790+ tests with comprehensive coverage (100% pass rate)
 \1-   ✅ JWT authentication and rate limiting
 \1-   ✅ Clean architecture with trait-based dependency injection
 \1-   ✅ HTTP transport foundation for future enhancements
