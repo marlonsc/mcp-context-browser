@@ -4,6 +4,7 @@
 //! Implements envelope encryption with data keys and master keys.
 
 use crate::domain::error::{Error, Result};
+use crate::infrastructure::ErrorContext;
 use aes_gcm::{
     aead::{Aead, KeyInit},
     Aes256Gcm, Key,
@@ -164,7 +165,7 @@ impl CryptoService {
         // Encrypt the data
         let ciphertext = cipher
             .encrypt(nonce, data)
-            .map_err(|e| Error::generic(format!("AES encryption failed: {}", e)))?;
+            .context("AES encryption failed")?;
 
         let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -190,7 +191,7 @@ impl CryptoService {
 
         let plaintext = cipher
             .decrypt(nonce, envelope.ciphertext.as_ref())
-            .map_err(|e| Error::generic(format!("AES decryption failed: {}", e)))?;
+            .context("AES decryption failed")?;
 
         Ok(plaintext)
     }
@@ -203,7 +204,7 @@ impl CryptoService {
             // Load existing key
             let key_data = tokio::fs::read(&path)
                 .await
-                .map_err(|e| Error::io(format!("Failed to read master key file: {}", e)))?;
+                .io_context("Failed to read master key file")?;
 
             if key_data.len() != 32 {
                 return Err(Error::generic("Invalid master key file: wrong size"));
@@ -216,20 +217,19 @@ impl CryptoService {
                 tokio::task::spawn_blocking(move || {
                     use std::os::unix::fs::PermissionsExt;
                     let metadata = std::fs::metadata(&path_clone)
-                        .map_err(|e| Error::io(format!("Failed to get key metadata: {}", e)))?;
+                        .io_context("Failed to get key metadata")?;
                     let mode = metadata.permissions().mode();
                     if mode & 0o077 != 0 {
                         // Permissions are too open, try to fix them
                         let mut perms = metadata.permissions();
                         perms.set_mode(0o600);
-                        std::fs::set_permissions(&path_clone, perms).map_err(|e| {
-                            Error::io(format!("Failed to secure key permissions: {}", e))
-                        })?;
+                        std::fs::set_permissions(&path_clone, perms)
+                            .io_context("Failed to secure key permissions")?;
                     }
                     Ok::<(), Error>(())
                 })
                 .await
-                .map_err(|e| Error::generic(format!("Blocking task failed: {}", e)))??;
+                .context("Blocking task failed")??;
             }
 
             Ok(key_data)
@@ -242,7 +242,7 @@ impl CryptoService {
             if let Some(parent) = path.parent() {
                 tokio::fs::create_dir_all(parent)
                     .await
-                    .map_err(|e| Error::io(format!("Failed to create key directory: {}", e)))?;
+                    .io_context("Failed to create key directory")?;
             }
 
             // Save the key with restricted permissions (0600)
@@ -260,22 +260,20 @@ impl CryptoService {
                         .truncate(true)
                         .mode(0o600)
                         .open(&path_clone)
-                        .map_err(|e| {
-                            Error::io(format!("Failed to create master key file: {}", e))
-                        })?;
+                        .io_context("Failed to create master key file")?;
 
                     file.write_all(&key_clone)
-                        .map_err(|e| Error::io(format!("Failed to write master key: {}", e)))?;
+                        .io_context("Failed to write master key")?;
                     Ok::<(), Error>(())
                 })
                 .await
-                .map_err(|e| Error::generic(format!("Blocking task failed: {}", e)))??;
+                .context("Blocking task failed")??;
             }
             #[cfg(not(unix))]
             {
                 tokio::fs::write(&path, &key)
                     .await
-                    .map_err(|e| Error::io(format!("Failed to write master key file: {}", e)))?;
+                    .io_context("Failed to write master key file")?;
             }
 
             Ok(key)

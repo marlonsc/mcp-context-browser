@@ -144,14 +144,8 @@ pub async fn api_restart_all_providers_handler(State(state): State<AdminState>) 
     )
     .await
     {
-        Ok(result) => Html(format!(
-            r#"<div class="text-green-600 dark:text-green-400 mt-2">{}</div>"#,
-            result.message
-        )),
-        Err(e) => Html(format!(
-            r#"<div class="text-red-600 dark:text-red-400 mt-2">Error: {}</div>"#,
-            e
-        )),
+        Ok(result) => html_success(&result.message),
+        Err(e) => html_error(&format!("Error: {}", e)),
     }
 }
 

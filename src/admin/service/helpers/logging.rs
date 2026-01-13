@@ -17,9 +17,9 @@ pub async fn get_logs(
 ) -> Result<LogEntries, AdminError> {
     let core_entries = log_buffer.get_all().await;
 
-    let mut entries: Vec<LogEntry> = core_entries
-        .into_iter()
-        .map(|e| LogEntry {
+    // Transform entries with predicate for filtering
+    let mut entries: Vec<LogEntry> = IteratorHelpers::filter_collect(
+        core_entries.into_iter().map(|e| LogEntry {
             timestamp: e.timestamp,
             level: e.level,
             module: e.target.clone(),
@@ -27,25 +27,37 @@ pub async fn get_logs(
             target: e.target,
             file: None,
             line: None,
-        })
-        .collect();
-
-    // Apply filters
-    if let Some(level) = filter.level {
-        entries.retain(|e| e.level == level);
-    }
-    if let Some(module) = filter.module {
-        entries.retain(|e| e.module == module);
-    }
-    if let Some(message_contains) = filter.message_contains {
-        entries.retain(|e| e.message.contains(&message_contains));
-    }
-    if let Some(start_time) = filter.start_time {
-        entries.retain(|e| e.timestamp >= start_time);
-    }
-    if let Some(end_time) = filter.end_time {
-        entries.retain(|e| e.timestamp <= end_time);
-    }
+        }),
+        |e| {
+            // Apply all filter conditions in one pass
+            if let Some(level) = &filter.level {
+                if e.level != *level {
+                    return false;
+                }
+            }
+            if let Some(module) = &filter.module {
+                if e.module != *module {
+                    return false;
+                }
+            }
+            if let Some(message_contains) = &filter.message_contains {
+                if !e.message.contains(message_contains) {
+                    return false;
+                }
+            }
+            if let Some(start_time) = filter.start_time {
+                if e.timestamp < start_time {
+                    return false;
+                }
+            }
+            if let Some(end_time) = filter.end_time {
+                if e.timestamp > end_time {
+                    return false;
+                }
+            }
+            true
+        },
+    );
 
     let total_count = entries.len() as u64;
 
