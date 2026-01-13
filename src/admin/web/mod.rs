@@ -180,13 +180,11 @@ async fn providers_handler(State(state): State<AdminState>) -> impl IntoResponse
     let builder = ViewModelBuilder::new(&state);
 
     match builder.build_providers_page().await {
-        Ok(view_model) => {
-            render_template(
-                &state.templates,
-                "providers.html",
-                &create_page_context(&view_model.page, &view_model),
-            )
-        }
+        Ok(view_model) => render_template(
+            &state.templates,
+            "providers.html",
+            &create_page_context(&view_model.page, &view_model),
+        ),
         Err(e) => {
             tracing::error!("Failed to build providers view model: {}", e);
             render_error_page(&state.templates, "Providers Error", &e.to_string())
@@ -198,13 +196,11 @@ async fn indexes_handler(State(state): State<AdminState>) -> impl IntoResponse {
     let builder = ViewModelBuilder::new(&state);
 
     match builder.build_indexes_page().await {
-        Ok(view_model) => {
-            render_template(
-                &state.templates,
-                "indexes.html",
-                &create_page_context(&view_model.page, &view_model),
-            )
-        }
+        Ok(view_model) => render_template(
+            &state.templates,
+            "indexes.html",
+            &create_page_context(&view_model.page, &view_model),
+        ),
         Err(e) => {
             tracing::error!("Failed to build indexes view model: {}", e);
             render_error_page(&state.templates, "Indexes Error", &e.to_string())
