@@ -5,7 +5,7 @@
 
 use crate::infrastructure::service_helpers::UptimeTracker;
 use dashmap::DashMap;
-use shaku::{Component, Interface, ModuleBuildContext};
+use shaku::Interface;
 
 /// Interface for indexing operations tracking
 pub trait IndexingOperationsInterface: Interface + Send + Sync {
@@ -30,21 +30,11 @@ pub struct IndexingOperation {
 }
 
 /// Concrete implementation of indexing operations tracking
-#[derive(Debug, Default)]
+#[derive(Debug, Default, shaku::Component)]
+#[shaku(interface = IndexingOperationsInterface)]
 pub struct McpIndexingOperations {
+    #[shaku(default)]
     pub map: DashMap<String, IndexingOperation>,
-}
-
-impl<M: shaku::Module> Component<M> for McpIndexingOperations {
-    type Interface = dyn IndexingOperationsInterface;
-    type Parameters = ();
-
-    fn build(
-        _context: &mut ModuleBuildContext<M>,
-        _params: Self::Parameters,
-    ) -> Box<Self::Interface> {
-        Box::new(Self::default())
-    }
 }
 
 impl IndexingOperationsInterface for McpIndexingOperations {

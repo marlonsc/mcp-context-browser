@@ -90,6 +90,112 @@ pub enum OperationType {
     Other(String),
 }
 
+// =============================================================================
+// Provider Kind Enums (Type-Safe Provider Selection)
+// =============================================================================
+
+/// Type-safe embedding provider selection
+///
+/// Replaces string-based provider selection with compile-time type safety.
+/// Invalid provider names are caught at config deserialization time.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum EmbeddingProviderKind {
+    /// OpenAI embedding API
+    OpenAI,
+    /// Ollama local embeddings
+    Ollama,
+    /// VoyageAI embedding API
+    VoyageAI,
+    /// Google Gemini embeddings
+    Gemini,
+    /// FastEmbed local embeddings (default)
+    #[default]
+    FastEmbed,
+}
+
+impl std::fmt::Display for EmbeddingProviderKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::OpenAI => write!(f, "openai"),
+            Self::Ollama => write!(f, "ollama"),
+            Self::VoyageAI => write!(f, "voyageai"),
+            Self::Gemini => write!(f, "gemini"),
+            Self::FastEmbed => write!(f, "fastembed"),
+        }
+    }
+}
+
+impl EmbeddingProviderKind {
+    /// Parse a provider string into the enum variant.
+    pub fn from_string(s: &str) -> Option<Self> {
+        match s.to_lowercase().as_str() {
+            "openai" => Some(Self::OpenAI),
+            "ollama" => Some(Self::Ollama),
+            "voyageai" => Some(Self::VoyageAI),
+            "gemini" => Some(Self::Gemini),
+            "fastembed" => Some(Self::FastEmbed),
+            _ => None,
+        }
+    }
+
+    /// Get all supported provider names
+    pub fn supported_providers() -> &'static [&'static str] {
+        &["openai", "ollama", "voyageai", "gemini", "fastembed"]
+    }
+}
+
+/// Type-safe vector store provider selection
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum VectorStoreProviderKind {
+    /// In-memory vector store (for testing/development)
+    #[serde(rename = "in-memory")]
+    InMemory,
+    /// Filesystem-based vector store
+    #[default]
+    Filesystem,
+    /// Milvus vector database
+    #[cfg(feature = "milvus")]
+    Milvus,
+    /// EdgeVec in-memory store
+    EdgeVec,
+}
+
+impl std::fmt::Display for VectorStoreProviderKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InMemory => write!(f, "in-memory"),
+            Self::Filesystem => write!(f, "filesystem"),
+            #[cfg(feature = "milvus")]
+            Self::Milvus => write!(f, "milvus"),
+            Self::EdgeVec => write!(f, "edgevec"),
+        }
+    }
+}
+
+impl VectorStoreProviderKind {
+    /// Parse a provider string into the enum variant.
+    pub fn from_string(s: &str) -> Option<Self> {
+        match s.to_lowercase().as_str() {
+            "in-memory" | "inmemory" => Some(Self::InMemory),
+            "filesystem" => Some(Self::Filesystem),
+            #[cfg(feature = "milvus")]
+            "milvus" => Some(Self::Milvus),
+            "edgevec" => Some(Self::EdgeVec),
+            _ => None,
+        }
+    }
+
+    /// Get all supported provider names
+    pub fn supported_providers() -> Vec<&'static str> {
+        let mut providers = vec!["in-memory", "filesystem", "edgevec"];
+        #[cfg(feature = "milvus")]
+        providers.push("milvus");
+        providers
+    }
+}
+
 /// Query performance metrics tracking
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct QueryPerformanceMetrics {

@@ -76,11 +76,12 @@ async fn test_connection_tracker_drain_timeout() {
 }
 
 #[tokio::test]
-async fn test_connection_tracker_cancel_drain() {
+async fn test_connection_tracker_cancel_drain_deprecated() {
+    // Note: cancel_drain() is deprecated because TaskTracker's close()
+    // is irreversible. This test verifies the deprecation behavior.
     let tracker = ConnectionTracker::with_defaults();
 
-    // Start draining (access internal field for testing)
-    // This is a workaround since draining is internal
+    // Start draining
     let tracker_inner = tracker.clone();
     tokio::spawn(async move {
         tracker_inner.drain(Some(Duration::from_secs(10))).await;
@@ -90,8 +91,16 @@ async fn test_connection_tracker_cancel_drain() {
     assert!(tracker.is_draining());
     assert!(tracker.request_start().is_none());
 
-    // Cancel drain
+    // cancel_drain() is now a no-op due to TaskTracker's irreversible close
+    #[allow(deprecated)]
     tracker.cancel_drain();
-    assert!(!tracker.is_draining());
-    assert!(tracker.request_start().is_some());
+
+    // The tracker remains in draining state (cancel has no effect)
+    assert!(tracker.is_draining());
+    assert!(tracker.request_start().is_none());
+
+    // To accept new requests, create a new tracker
+    let new_tracker = ConnectionTracker::with_defaults();
+    assert!(!new_tracker.is_draining());
+    assert!(new_tracker.request_start().is_some());
 }

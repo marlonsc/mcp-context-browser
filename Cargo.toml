@@ -123,7 +123,7 @@ dirs = "6.0"
 axum = "0.8"
 axum-extra = { version = "0.10", features = ["cookie"] }
 tower = { version = "0.5", features = ["load-shed", "limit", "load", "retry", "timeout", "util"] }
-tower-http = { version = "0.6", features = ["cors"] }
+tower-http = { version = "0.6", features = ["cors", "catch-panic", "request-id", "trace", "timeout", "limit", "compression-gzip"] }
 
 # System metrics
 sysinfo = "0.37.2"
@@ -172,7 +172,7 @@ governor = "0.10"
 prometheus = "0.14"
 metrics = "0.24"
 metrics-exporter-prometheus = "0.18"
-tokio-util = { version = "0.7", features = ["time"] }
+tokio-util = { version = "0.7", features = ["time", "rt"] }
 dashmap = "6.0"
 health = "0.2"
 

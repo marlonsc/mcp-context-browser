@@ -3,7 +3,7 @@
 //! Validates that Shaku features work as expected before major refactoring.
 //! Phase 0 of the Shaku optimization plan.
 
-use shaku::{module, Component, Interface, HasComponent};
+use shaku::{module, Component, HasComponent, Interface};
 use std::sync::Arc;
 
 // =============================================================================

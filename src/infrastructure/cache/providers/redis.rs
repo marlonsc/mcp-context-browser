@@ -281,7 +281,10 @@ mod tests {
     async fn test_redis_provider_new() {
         let result =
             RedisCacheProvider::new("redis://localhost:6379", Duration::from_secs(60)).await;
-        assert!(result.is_ok(), "Redis connection failed - is Redis running?");
+        assert!(
+            result.is_ok(),
+            "Redis connection failed - is Redis running?"
+        );
     }
 
     #[tokio::test]

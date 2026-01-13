@@ -30,10 +30,10 @@
 use crate::daemon::types::{RecoveryConfig, RecoveryState, RecoveryStatus, RecoveryStrategy};
 use crate::infrastructure::events::{SharedEventBusProvider, SystemEvent};
 use dashmap::DashMap;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::task::JoinHandle;
+use tokio_util::sync::CancellationToken;
 
 /// Recovery manager interface for dependency injection
 #[async_trait::async_trait]
@@ -67,6 +67,8 @@ pub trait RecoveryManagerInterface: Send + Sync {
 }
 
 /// Centralized recovery manager for automatic component recovery
+///
+/// Uses `CancellationToken` for async-native shutdown signaling.
 pub struct RecoveryManager {
     /// Configuration for recovery behavior
     config: RecoveryConfig,
@@ -77,8 +79,8 @@ pub struct RecoveryManager {
     /// Recovery state for each monitored subsystem
     recovery_states: Arc<DashMap<String, RecoveryState>>,
 
-    /// Flag indicating if the recovery manager is running
-    running: Arc<AtomicBool>,
+    /// Cancellation token for shutdown signaling
+    cancel_token: CancellationToken,
 
     /// Handle to the background recovery task
     task_handle: Arc<tokio::sync::Mutex<Option<JoinHandle<()>>>>,
@@ -91,7 +93,7 @@ impl RecoveryManager {
             config,
             event_bus,
             recovery_states: Arc::new(DashMap::new()),
-            running: Arc::new(AtomicBool::new(false)),
+            cancel_token: CancellationToken::new(),
             task_handle: Arc::new(tokio::sync::Mutex::new(None)),
         }
     }

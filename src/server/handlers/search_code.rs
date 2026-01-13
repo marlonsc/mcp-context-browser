@@ -11,7 +11,6 @@ use serde_json;
 use std::sync::Arc;
 
 use crate::application::SearchService;
-use crate::infrastructure::service_helpers::TimedOperation;
 use crate::domain::validation::{StringValidator, StringValidatorTrait, ValidationError};
 use crate::infrastructure::auth::Permission;
 use crate::infrastructure::cache::SharedCacheProvider;
@@ -20,6 +19,7 @@ use crate::infrastructure::constants::{
     SEARCH_RESULT_CACHE_TTL, SEARCH_RESULT_LIMIT_MAX, SEARCH_RESULT_LIMIT_MIN,
 };
 use crate::infrastructure::limits::ResourceLimits;
+use crate::infrastructure::service_helpers::TimedOperation;
 use crate::server::args::SearchCodeArgs;
 use crate::server::auth::AuthHandler;
 use crate::server::formatter::ResponseFormatter;

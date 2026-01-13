@@ -5,10 +5,12 @@ use crate::domain::error::{Error, Result};
 use crate::domain::types::SyncBatch;
 use crate::infrastructure::cache::{CacheProviderQueue, SharedCacheProvider};
 use crate::infrastructure::utils::TimeUtils;
-use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
+use tokio::task::JoinSet;
 use tokio::time;
+use tokio_util::sync::CancellationToken;
 
 /// Internal atomic statistics
 pub(crate) struct AtomicDaemonStats {
@@ -56,11 +58,14 @@ impl AtomicDaemonStats {
 }
 
 /// Background daemon for maintenance tasks
+///
+/// Uses `CancellationToken` for async-native shutdown signaling and
+/// `JoinSet` for clean task lifecycle management.
 pub struct ContextDaemon {
     config: DaemonConfig,
     cache_manager: Option<SharedCacheProvider>,
     stats: Arc<AtomicDaemonStats>,
-    running: Arc<AtomicBool>,
+    cancel_token: CancellationToken,
 }
 
 impl ContextDaemon {
@@ -75,14 +80,20 @@ impl ContextDaemon {
             config,
             cache_manager,
             stats: Arc::new(AtomicDaemonStats::new()),
-            running: Arc::new(AtomicBool::new(false)),
+            cancel_token: CancellationToken::new(),
         }
     }
 
     /// Start the daemon (non-blocking)
+    ///
+    /// Note: Once stopped, a new daemon instance must be created to restart
+    /// (CancellationToken cannot be reset).
     pub async fn start(&self) -> Result<()> {
-        if self.running.swap(true, Ordering::SeqCst) {
-            return Err(Error::internal("Daemon is already running"));
+        // Check if already cancelled (stop was called)
+        if self.cancel_token.is_cancelled() {
+            return Err(Error::internal(
+                "Daemon was already stopped. Create a new instance to restart.",
+            ));
         }
 
         tracing::info!("[DAEMON] Starting background daemon...");
@@ -96,76 +107,86 @@ impl ContextDaemon {
         );
         tracing::debug!("[DAEMON] Max lock age: {}s", self.config.max_lock_age_secs);
 
-        // Start cleanup task
-        let cleanup_handle = {
+        let mut join_set = JoinSet::new();
+
+        // Spawn cleanup task with cancellation
+        {
             let stats = Arc::clone(&self.stats);
             let config = self.config.clone();
-            let running = Arc::clone(&self.running);
+            let token = self.cancel_token.clone();
             let cache_manager = self.cache_manager.clone();
 
-            tokio::spawn(async move {
+            join_set.spawn(async move {
                 let mut interval =
                     time::interval(Duration::from_secs(config.cleanup_interval_secs));
 
                 loop {
-                    interval.tick().await;
-
-                    if !running.load(Ordering::Relaxed) {
-                        break;
-                    }
-
-                    if let Err(e) =
-                        Self::run_cleanup_cycle(&stats, config.max_lock_age_secs, &cache_manager)
-                            .await
-                    {
-                        tracing::error!("[DAEMON] Cleanup cycle failed: {}", e);
+                    tokio::select! {
+                        biased;
+                        _ = token.cancelled() => {
+                            tracing::debug!("[DAEMON] Cleanup task received cancellation signal");
+                            break;
+                        }
+                        _ = interval.tick() => {
+                            if let Err(e) =
+                                Self::run_cleanup_cycle(&stats, config.max_lock_age_secs, &cache_manager)
+                                    .await
+                            {
+                                tracing::error!("[DAEMON] Cleanup cycle failed: {}", e);
+                            }
+                        }
                     }
                 }
-            })
-        };
+            });
+        }
 
-        // Start monitoring task
-        let monitoring_handle = {
+        // Spawn monitoring task with cancellation
+        {
             let stats = Arc::clone(&self.stats);
-            let running = Arc::clone(&self.running);
             let config = self.config.clone();
+            let token = self.cancel_token.clone();
             let cache_manager = self.cache_manager.clone();
 
-            tokio::spawn(async move {
+            join_set.spawn(async move {
                 let mut interval =
                     time::interval(Duration::from_secs(config.monitoring_interval_secs));
 
                 loop {
-                    interval.tick().await;
-
-                    if !running.load(Ordering::Relaxed) {
-                        break;
-                    }
-
-                    if let Err(e) = Self::run_monitoring_cycle(&stats, &cache_manager).await {
-                        tracing::error!("[DAEMON] Monitoring cycle failed: {}", e);
+                    tokio::select! {
+                        biased;
+                        _ = token.cancelled() => {
+                            tracing::debug!("[DAEMON] Monitoring task received cancellation signal");
+                            break;
+                        }
+                        _ = interval.tick() => {
+                            if let Err(e) = Self::run_monitoring_cycle(&stats, &cache_manager).await {
+                                tracing::error!("[DAEMON] Monitoring cycle failed: {}", e);
+                            }
+                        }
                     }
                 }
-            })
-        };
+            });
+        }
 
-        // Wait for both tasks (they run indefinitely until stopped)
-        tokio::select! {
-            _ = cleanup_handle => {
-                tracing::info!("[DAEMON] Cleanup task ended");
-            }
-            _ = monitoring_handle => {
-                tracing::info!("[DAEMON] Monitoring task ended");
+        // Wait for all tasks to complete (they run until cancelled)
+        while let Some(result) = join_set.join_next().await {
+            match result {
+                Ok(()) => tracing::debug!("[DAEMON] Background task completed cleanly"),
+                Err(e) => tracing::warn!("[DAEMON] Background task panicked: {}", e),
             }
         }
 
+        tracing::info!("[DAEMON] All daemon tasks have ended");
         Ok(())
     }
 
     /// Stop the daemon
+    ///
+    /// Signals all background tasks to stop via CancellationToken.
+    /// Tasks will exit cleanly at their next check point.
     pub async fn stop(&self) -> Result<()> {
-        self.running.store(false, Ordering::SeqCst);
-        tracing::info!("[DAEMON] Stop signal sent to background daemon");
+        self.cancel_token.cancel();
+        tracing::info!("[DAEMON] Cancellation signal sent to background daemon");
         Ok(())
     }
 
@@ -250,8 +271,10 @@ impl ContextDaemon {
     }
 
     /// Check if daemon is running
-    pub async fn is_running(&self) -> bool {
-        self.running.load(Ordering::SeqCst)
+    ///
+    /// Returns true if the daemon has not been stopped (cancellation not signaled).
+    pub fn is_running(&self) -> bool {
+        !self.cancel_token.is_cancelled()
     }
 }
 

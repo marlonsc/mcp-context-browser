@@ -4,7 +4,7 @@
 //! metrics including queries, response times, cache hits, and active connections.
 
 use crate::infrastructure::service_helpers::UptimeTracker;
-use shaku::{Component, Interface, ModuleBuildContext};
+use shaku::Interface;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 /// Real-time performance metrics tracking interface
@@ -17,36 +17,33 @@ pub trait PerformanceMetricsInterface: Interface + Send + Sync {
 }
 
 /// Real-time performance metrics tracking
-#[derive(Debug)]
+#[derive(Debug, shaku::Component)]
+#[shaku(interface = PerformanceMetricsInterface)]
 pub struct McpPerformanceMetrics {
     /// Total queries processed
+    #[shaku(default = AtomicU64::new(0))]
     pub total_queries: AtomicU64,
     /// Successful queries
+    #[shaku(default = AtomicU64::new(0))]
     pub successful_queries: AtomicU64,
     /// Failed queries
+    #[shaku(default = AtomicU64::new(0))]
     pub failed_queries: AtomicU64,
     /// Response time accumulator (in milliseconds)
+    #[shaku(default = AtomicU64::new(0))]
     pub response_time_sum: AtomicU64,
     /// Cache hits
+    #[shaku(default = AtomicU64::new(0))]
     pub cache_hits: AtomicU64,
     /// Cache misses
+    #[shaku(default = AtomicU64::new(0))]
     pub cache_misses: AtomicU64,
     /// Active connections
+    #[shaku(default = AtomicU64::new(0))]
     pub active_connections: AtomicU64,
     /// Server uptime tracker
+    #[shaku(default = UptimeTracker::start())]
     pub uptime: UptimeTracker,
-}
-
-impl<M: shaku::Module> Component<M> for McpPerformanceMetrics {
-    type Interface = dyn PerformanceMetricsInterface;
-    type Parameters = ();
-
-    fn build(
-        _context: &mut ModuleBuildContext<M>,
-        _params: Self::Parameters,
-    ) -> Box<Self::Interface> {
-        Box::new(Self::default())
-    }
 }
 
 impl PerformanceMetricsInterface for McpPerformanceMetrics {
