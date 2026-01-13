@@ -11,6 +11,7 @@
 
 use crate::domain::error::{Error, Result};
 use crate::infrastructure::cache::provider::{CacheProvider, CacheStats, HealthStatus};
+use crate::infrastructure::ErrorContext;
 use async_trait::async_trait;
 use redis::{aio::MultiplexedConnection, Client};
 use std::time::Duration;
@@ -34,19 +35,19 @@ impl RedisCacheProvider {
         tracing::info!("[CACHE] Initializing Redis provider (remote mode): {}", url);
 
         let client = Client::open(url)
-            .map_err(|e| Error::generic(format!("failed to create redis client: {}", e)))?;
+            .context("failed to create redis client")?;
 
         // Test connection
         let mut conn = client
             .get_multiplexed_async_connection()
             .await
-            .map_err(|e| Error::generic(format!("failed to connect to redis at {}: {}", url, e)))?;
+            .context("failed to connect to redis")?;
 
         // Ping to verify connection
         let pong: String = redis::cmd("PING")
             .query_async(&mut conn)
             .await
-            .map_err(|e| Error::generic(format!("redis ping failed: {}", e)))?;
+            .context("redis ping failed")?;
 
         if pong != "PONG" {
             return Err(Error::generic("redis ping did not return pong".to_string()));
@@ -185,7 +186,7 @@ impl CacheProvider for RedisCacheProvider {
                         .arg(&keys)
                         .query_async::<()>(&mut conn)
                         .await
-                        .map_err(|e| Error::generic(format!("redis delete keys failed: {}", e)))?;
+                        .context("redis delete keys failed")?;
                 }
             }
             None => {
@@ -195,14 +196,14 @@ impl CacheProvider for RedisCacheProvider {
                     .arg(pattern)
                     .query_async(&mut conn)
                     .await
-                    .map_err(|e| Error::generic(format!("redis keys scan failed: {}", e)))?;
+                    .context("redis keys scan failed")?;
 
                 if !keys.is_empty() {
                     redis::cmd("DEL")
                         .arg(&keys)
                         .query_async::<()>(&mut conn)
                         .await
-                        .map_err(|e| Error::generic(format!("redis delete keys failed: {}", e)))?;
+                        .context("redis delete keys failed")?;
                 }
             }
         }
@@ -219,14 +220,14 @@ impl CacheProvider for RedisCacheProvider {
             .arg(&pattern)
             .query_async(&mut conn)
             .await
-            .map_err(|e| Error::generic(format!("Redis KEYS failed: {}", e)))?;
+            .context("Redis KEYS failed")?;
 
         // Get Redis info
         let info: String = redis::cmd("INFO")
             .arg("stats")
             .query_async(&mut conn)
             .await
-            .map_err(|e| Error::generic(format!("redis info command failed: {}", e)))?;
+            .context("redis info command failed")?;
 
         // Parse basic stats from INFO response
         // This is a simplified implementation - production code might use more detailed parsing
@@ -256,7 +257,7 @@ impl CacheProvider for RedisCacheProvider {
         let pong: String = redis::cmd("PING")
             .query_async(&mut conn)
             .await
-            .map_err(|e| Error::generic(format!("redis ping failed: {}", e)))?;
+            .context("redis ping failed")?;
 
         if pong == "PONG" {
             Ok(HealthStatus::Healthy)

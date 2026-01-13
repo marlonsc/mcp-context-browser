@@ -115,6 +115,7 @@ impl LanguageProcessor for BaseProcessor {
 }
 
 /// Macro to implement LanguageProcessor for concrete processors
+#[macro_export]
 macro_rules! impl_language_processor {
     ($processor:ty) => {
         impl LanguageProcessor for $processor {
@@ -182,3 +183,97 @@ macro_rules! impl_language_processor {
 
 // Export the macro for use in language-specific modules
 pub(crate) use impl_language_processor;
+
+/// Macro to define complete language processor with boilerplate generation
+///
+/// Generates:
+/// - Processor struct
+/// - Default impl
+/// - new() constructor with full configuration
+/// - LanguageProcessor trait implementation
+///
+/// # Example
+/// ```ignore
+/// define_language_processor! {
+///     PythonProcessor,
+///     tree_sitter_python::LANGUAGE,
+///     chunk_size: 512,
+///     doc: "Python language processor",
+///     rules: [
+///         {
+///             node_types: ["function_definition"],
+///             min_length: 30,
+///             min_lines: 2,
+///             max_depth: 2,
+///             priority: 5,
+///             include_context: true,
+///         },
+///     ],
+///     fallback_patterns: [r"^def "],
+/// }
+/// ```
+#[macro_export]
+macro_rules! define_language_processor {
+    (
+        $processor_name:ident,
+        $ts_language:expr,
+        chunk_size: $chunk_size:expr,
+        doc: $doc:literal,
+        rules: [
+            $(
+                {
+                    node_types: [$($node_type:literal),* $(,)?],
+                    min_length: $min_length:expr,
+                    min_lines: $min_lines:expr,
+                    max_depth: $max_depth:expr,
+                    priority: $priority:expr,
+                    include_context: $include_context:expr,
+                }
+            ),* $(,)?
+        ],
+        fallback_patterns: [$($pattern:literal),* $(,)?],
+    ) => {
+        #[doc = $doc]
+        pub struct $processor_name {
+            processor: $crate::chunking::processor::BaseProcessor,
+        }
+
+        impl Default for $processor_name {
+            fn default() -> Self {
+                Self::new()
+            }
+        }
+
+        impl $processor_name {
+            /// Create a new language processor
+            pub fn new() -> Self {
+                use $crate::chunking::config::{LanguageConfig, NodeExtractionRule};
+
+                let config = LanguageConfig::new($ts_language.into())
+                    .with_rules(vec![
+                        $(
+                            NodeExtractionRule {
+                                node_types: vec![$($node_type.to_string()),*],
+                                min_length: $min_length,
+                                min_lines: $min_lines,
+                                max_depth: $max_depth,
+                                priority: $priority,
+                                include_context: $include_context,
+                            },
+                        )*
+                    ])
+                    .with_fallback_patterns(vec![
+                        $($pattern.to_string()),*
+                    ])
+                    .with_chunk_size($chunk_size);
+
+                Self {
+                    processor: $crate::chunking::processor::BaseProcessor::new(config),
+                }
+            }
+        }
+
+        // Apply the trait implementation
+        $crate::impl_language_processor!($processor_name);
+    };
+}
