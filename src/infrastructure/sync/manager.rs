@@ -9,10 +9,12 @@
 use super::debounce::{DebounceConfig, DebounceService};
 use super::stats::SyncStatsCollector;
 use crate::domain::error::Result;
+use crate::domain::ports::SyncProvider;
 use crate::domain::types::SyncBatch;
 use crate::infrastructure::cache::{CacheProviderQueue, SharedCacheProvider};
 use crate::infrastructure::events::{SharedEventBusProvider, SystemEvent};
 use crate::infrastructure::utils::TimeUtils;
+use async_trait::async_trait;
 use dashmap::DashMap;
 use std::path::Path;
 use std::sync::Arc;
@@ -377,5 +379,36 @@ impl SyncManager {
     /// Get debounce interval as Duration
     pub fn debounce_interval(&self) -> Duration {
         Duration::from_millis(self.config.debounce_ms)
+    }
+}
+
+#[async_trait]
+impl SyncProvider for SyncManager {
+    async fn should_debounce(&self, codebase_path: &Path) -> Result<bool> {
+        self.should_debounce(codebase_path).await
+    }
+
+    async fn update_last_sync(&self, codebase_path: &Path) {
+        self.update_last_sync(codebase_path).await
+    }
+
+    async fn acquire_sync_slot(&self, codebase_path: &Path) -> Result<Option<SyncBatch>> {
+        self.acquire_sync_slot(codebase_path).await
+    }
+
+    async fn release_sync_slot(&self, codebase_path: &Path, batch: SyncBatch) -> Result<()> {
+        self.release_sync_slot(codebase_path, batch).await
+    }
+
+    async fn get_changed_files(&self, codebase_path: &Path) -> Result<Vec<String>> {
+        self.get_changed_files(codebase_path).await
+    }
+
+    fn sync_interval(&self) -> Duration {
+        self.sync_interval()
+    }
+
+    fn debounce_interval(&self) -> Duration {
+        self.debounce_interval()
     }
 }

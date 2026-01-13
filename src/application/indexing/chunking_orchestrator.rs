@@ -4,8 +4,10 @@
 
 use crate::domain::chunking::IntelligentChunker;
 use crate::domain::error::{Error, Result};
+use crate::domain::ports::ChunkingOrchestratorInterface;
 use crate::domain::types::{CodeChunk, Language};
-use crate::infrastructure::constants::{
+use async_trait::async_trait;
+use crate::domain::constants::{
     INDEXING_BATCH_SIZE, INDEXING_CHUNKS_MAX_PER_FILE, INDEXING_CHUNK_MIN_LENGTH,
     INDEXING_CHUNK_MIN_LINES,
 };
@@ -194,6 +196,36 @@ impl ChunkingOrchestrator {
     fn detect_language(&self, path: &Path) -> Language {
         let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
         Language::from_extension(ext)
+    }
+}
+
+#[async_trait]
+impl ChunkingOrchestratorInterface for ChunkingOrchestrator {
+    async fn process_files(&self, files: Vec<(String, String)>) -> Result<Vec<CodeChunk>> {
+        let mut all_chunks = Vec::new();
+
+        for (path, content) in files {
+            let language = Language::from_extension(
+                Path::new(&path)
+                    .extension()
+                    .and_then(|e| e.to_str())
+                    .unwrap_or(""),
+            );
+
+            let chunks = self.chunk_content(content, path, language).await;
+            all_chunks.extend(chunks);
+        }
+
+        Ok(all_chunks)
+    }
+
+    async fn process_file(&self, path: &Path, content: &str) -> Result<Vec<CodeChunk>> {
+        let file_name = path.display().to_string();
+        let language = self.detect_language(path);
+        let chunks = self
+            .chunk_content(content.to_string(), file_name, language)
+            .await;
+        Ok(chunks)
     }
 }
 

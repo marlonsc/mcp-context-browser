@@ -10,7 +10,7 @@ use rmcp::ErrorData as McpError;
 use std::sync::Arc;
 use std::time::Duration;
 
-use crate::application::IndexingService;
+use crate::domain::ports::IndexingServiceInterface;
 use crate::infrastructure::auth::Permission;
 use crate::infrastructure::constants::INDEXING_OPERATION_TIMEOUT;
 use crate::infrastructure::limits::ResourceLimits;
@@ -21,7 +21,7 @@ use crate::server::formatter::ResponseFormatter;
 
 /// Handler for codebase indexing operations
 pub struct IndexCodebaseHandler {
-    indexing_service: Arc<IndexingService>,
+    indexing_service: Arc<dyn IndexingServiceInterface>,
     auth_handler: Arc<AuthHandler>,
     resource_limits: Arc<ResourceLimits>,
 }
@@ -29,7 +29,7 @@ pub struct IndexCodebaseHandler {
 impl IndexCodebaseHandler {
     /// Create a new index_codebase handler
     pub fn new(
-        indexing_service: Arc<IndexingService>,
+        indexing_service: Arc<dyn IndexingServiceInterface>,
         auth_handler: Arc<AuthHandler>,
         resource_limits: Arc<ResourceLimits>,
     ) -> Self {
@@ -104,14 +104,14 @@ impl IndexCodebaseHandler {
         tracing::info!("Starting codebase indexing for path: {}", path.display());
 
         // Add timeout for long-running indexing operations
-        let indexing_future = self.indexing_service.index_directory(path, collection);
+        let indexing_future = self.indexing_service.index_codebase(path, collection);
         let result = tokio::time::timeout(INDEXING_OPERATION_TIMEOUT, indexing_future).await;
 
         let duration = Duration::from_millis(timer.elapsed_ms());
 
         match result {
-            Ok(Ok(chunk_count)) => Ok(ResponseFormatter::format_indexing_success(
-                chunk_count,
+            Ok(Ok(indexing_result)) => Ok(ResponseFormatter::format_indexing_success(
+                indexing_result.chunks_created,
                 path,
                 duration,
             )),

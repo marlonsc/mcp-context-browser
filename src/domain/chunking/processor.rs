@@ -5,9 +5,10 @@
 
 use crate::domain::chunking::config::LanguageConfig;
 use crate::domain::types::{CodeChunk, Language};
+use shaku::Interface;
 
 /// Trait for language-specific processing
-pub trait LanguageProcessor {
+pub trait LanguageProcessor: Interface {
     /// Get language configuration
     fn config(&self) -> &LanguageConfig;
 

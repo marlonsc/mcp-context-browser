@@ -2,6 +2,7 @@ use crate::domain::error::Result;
 use crate::domain::types::{Embedding, SearchResult};
 use async_trait::async_trait;
 use serde_json::Value;
+use shaku::Interface;
 use std::collections::HashMap;
 
 /// Enterprise Vector Storage Interface
@@ -11,7 +12,7 @@ use std::collections::HashMap;
 /// multiple storage backends from in-memory development stores to production
 /// Milvus clusters, ensuring optimal performance for different business needs.
 #[async_trait]
-pub trait VectorStoreProvider: Send + Sync {
+pub trait VectorStoreProvider: Interface + Send + Sync {
     async fn create_collection(&self, name: &str, dimensions: usize) -> Result<()>;
     async fn delete_collection(&self, name: &str) -> Result<()>;
     async fn collection_exists(&self, name: &str) -> Result<bool>;

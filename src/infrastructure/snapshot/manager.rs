@@ -9,7 +9,9 @@
 
 use super::{CodebaseSnapshot, FileSnapshot, HashCalculator, SnapshotChanges, SnapshotComparator};
 use crate::domain::error::{Error, Result};
+use crate::domain::ports::SnapshotProvider;
 use crate::infrastructure::utils::FileUtils;
+use async_trait::async_trait;
 use ignore::WalkBuilder;
 use std::collections::HashMap;
 use std::fs;
@@ -286,5 +288,12 @@ impl SnapshotManager {
     async fn save_snapshot(&self, snapshot: &CodebaseSnapshot) -> Result<()> {
         let snapshot_path = self.get_snapshot_path(Path::new(&snapshot.root_path));
         FileUtils::write_json(&snapshot_path, snapshot, "snapshot").await
+    }
+}
+
+#[async_trait]
+impl SnapshotProvider for SnapshotManager {
+    async fn get_changed_files(&self, root_path: &Path) -> Result<Vec<String>> {
+        self.get_changed_files(root_path).await
     }
 }

@@ -183,6 +183,11 @@ impl McpServer {
         cache_provider: Option<SharedCacheProvider>,
         admin_service: Arc<dyn crate::server::admin::service::AdminService>,
     ) -> Result<InitializedHandlers, Box<dyn std::error::Error>> {
+        // Cast concrete types to trait objects for DI
+        let indexing_service: Arc<dyn crate::domain::ports::IndexingServiceInterface> =
+            indexing_service;
+        let search_service: Arc<dyn crate::domain::ports::SearchServiceInterface> = search_service;
+
         Ok((
             Arc::new(IndexCodebaseHandler::new(
                 Arc::clone(&indexing_service),

@@ -6,6 +6,7 @@
 use crate::domain::error::Result;
 use crate::domain::types::{CodeChunk, SearchResult};
 use async_trait::async_trait;
+use shaku::Interface;
 use std::collections::HashMap;
 
 /// Result of a hybrid search operation
@@ -19,7 +20,7 @@ pub struct HybridSearchResult {
 
 /// Port for hybrid search operations
 #[async_trait]
-pub trait HybridSearchProvider: Send + Sync {
+pub trait HybridSearchProvider: Interface + Send + Sync {
     /// Index code chunks for hybrid search
     async fn index_chunks(&self, collection: &str, chunks: &[CodeChunk]) -> Result<()>;
 

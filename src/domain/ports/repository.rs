@@ -1,10 +1,11 @@
 use crate::domain::error::Result;
 use crate::domain::types::{CodeChunk, RepositoryStats, SearchResult, SearchStats};
 use async_trait::async_trait;
+use shaku::Interface;
 
 /// Repository for managing code chunks
 #[async_trait]
-pub trait ChunkRepository: Send + Sync {
+pub trait ChunkRepository: Interface + Send + Sync {
     /// Save a code chunk to the repository
     async fn save(&self, collection: &str, chunk: &CodeChunk) -> Result<String>;
 
@@ -29,7 +30,7 @@ pub trait ChunkRepository: Send + Sync {
 
 /// Repository for managing search operations and results
 #[async_trait]
-pub trait SearchRepository: Send + Sync {
+pub trait SearchRepository: Interface + Send + Sync {
     /// Perform semantic search and return results
     async fn semantic_search(
         &self,

@@ -6,6 +6,8 @@
 use crate::adapters::providers::routing::health::{HealthMonitor, HealthMonitorTrait};
 use crate::domain::error::{Error, Result};
 use crate::infrastructure::di::registry::ProviderRegistry;
+use async_trait::async_trait;
+use shaku::Interface;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tracing::{debug, info, warn};
@@ -188,8 +190,8 @@ pub enum FailoverStrategyType {
 }
 
 /// Failover manager trait
-#[async_trait::async_trait]
-pub trait FailoverManagerTrait: Send + Sync {
+#[async_trait]
+pub trait FailoverManagerTrait: Interface + Send + Sync {
     async fn select_provider(
         &self,
         candidates: &[String],

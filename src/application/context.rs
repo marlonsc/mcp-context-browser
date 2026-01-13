@@ -6,8 +6,11 @@
 //! code by meaning rather than keywords.
 
 use crate::domain::error::Result;
-use crate::domain::ports::{ChunkRepository, EmbeddingProvider, SearchRepository};
+use crate::domain::ports::{
+    ChunkRepository, ContextServiceInterface, EmbeddingProvider, SearchRepository,
+};
 use crate::domain::types::{CodeChunk, Embedding, RepositoryStats, SearchResult, SearchStats};
+use async_trait::async_trait;
 use std::sync::Arc;
 
 /// Enterprise Code Intelligence Coordinator
@@ -141,3 +144,39 @@ impl ContextService {
 
 // Note: impl Default removed (Phase 5 DI audit)
 // ContextService requires explicit dependency injection via new()
+
+#[async_trait]
+impl ContextServiceInterface for ContextService {
+    async fn initialize(&self, collection: &str) -> Result<()> {
+        self.initialize(collection).await
+    }
+
+    async fn store_chunks(&self, collection: &str, chunks: &[CodeChunk]) -> Result<()> {
+        self.store_chunks(collection, chunks).await
+    }
+
+    async fn search_similar(
+        &self,
+        collection: &str,
+        query: &str,
+        limit: usize,
+    ) -> Result<Vec<SearchResult>> {
+        self.search_similar(collection, query, limit).await
+    }
+
+    async fn embed_text(&self, text: &str) -> Result<Embedding> {
+        self.embed_text(text).await
+    }
+
+    async fn clear_collection(&self, collection: &str) -> Result<()> {
+        self.clear_collection(collection).await
+    }
+
+    async fn get_stats(&self) -> Result<(RepositoryStats, SearchStats)> {
+        self.get_stats().await
+    }
+
+    fn embedding_dimensions(&self) -> usize {
+        self.embedding_dimensions()
+    }
+}

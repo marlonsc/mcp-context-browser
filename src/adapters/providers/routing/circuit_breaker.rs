@@ -9,7 +9,9 @@ use crate::infrastructure::constants::{
     CIRCUIT_BREAKER_RECOVERY_TIMEOUT, CIRCUIT_BREAKER_SUCCESS_THRESHOLD,
 };
 use crate::infrastructure::utils::FileUtils;
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
+use shaku::Interface;
 use std::path::PathBuf;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tokio::sync::{mpsc, oneshot};
@@ -124,8 +126,8 @@ pub(crate) enum CBMessage {
 }
 
 /// Trait for circuit breaker
-#[async_trait::async_trait]
-pub trait CircuitBreakerTrait: Send + Sync {
+#[async_trait]
+pub trait CircuitBreakerTrait: Interface + Send + Sync {
     async fn call<F, Fut, T>(&self, f: F) -> Result<T>
     where
         F: FnOnce() -> Fut + Send + Sync,

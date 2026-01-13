@@ -1,6 +1,7 @@
 use crate::domain::error::Result;
 use crate::domain::types::Embedding;
 use async_trait::async_trait;
+use shaku::Interface;
 
 /// AI Semantic Understanding Interface
 ///
@@ -15,7 +16,7 @@ use async_trait::async_trait;
 /// `embed_batch()` with a single item. Providers only need to implement
 /// `embed_batch()` unless custom single-item optimization is needed.
 #[async_trait]
-pub trait EmbeddingProvider: Send + Sync {
+pub trait EmbeddingProvider: Interface + Send + Sync {
     /// Get embedding for a single text (default implementation provided)
     async fn embed(&self, text: &str) -> Result<Embedding> {
         // Default: delegate to embed_batch

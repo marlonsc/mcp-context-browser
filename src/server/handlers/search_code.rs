@@ -10,7 +10,7 @@ use rmcp::ErrorData as McpError;
 use serde_json;
 use std::sync::Arc;
 
-use crate::application::SearchService;
+use crate::domain::ports::SearchServiceInterface;
 use crate::domain::validation::{StringValidator, StringValidatorTrait, ValidationError};
 use crate::infrastructure::auth::Permission;
 use crate::infrastructure::cache::SharedCacheProvider;
@@ -26,7 +26,7 @@ use crate::server::formatter::ResponseFormatter;
 
 /// Handler for code search operations
 pub struct SearchCodeHandler {
-    search_service: Arc<SearchService>,
+    search_service: Arc<dyn SearchServiceInterface>,
     auth_handler: Arc<AuthHandler>,
     resource_limits: Arc<ResourceLimits>,
     cache_provider: Option<SharedCacheProvider>,
@@ -35,7 +35,7 @@ pub struct SearchCodeHandler {
 impl SearchCodeHandler {
     /// Create a new search_code handler
     pub fn new(
-        search_service: Arc<SearchService>,
+        search_service: Arc<dyn SearchServiceInterface>,
         auth_handler: Arc<AuthHandler>,
         resource_limits: Arc<ResourceLimits>,
         cache_provider: Option<SharedCacheProvider>,

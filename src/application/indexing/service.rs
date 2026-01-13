@@ -10,14 +10,17 @@
 use super::chunking_orchestrator::ChunkingOrchestrator;
 use crate::application::context::ContextService;
 use crate::domain::error::{Error, Result};
+use crate::domain::ports::{IndexingResult, IndexingServiceInterface, IndexingStatus};
 use crate::domain::types::CodeChunk;
 // Cross-cutting concern: Event bus for decoupled notifications
-use crate::infrastructure::constants::INDEXING_BATCH_SIZE;
+use crate::domain::constants::INDEXING_BATCH_SIZE;
 use crate::infrastructure::events::{SharedEventBusProvider, SystemEvent};
 use crate::infrastructure::snapshot::SnapshotManager;
 use crate::infrastructure::sync::SyncManager;
+use async_trait::async_trait;
 use futures::future::join_all;
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 
 /// Advanced indexing service with snapshot-based incremental processing
@@ -27,6 +30,12 @@ pub struct IndexingService {
     sync_manager: Option<Arc<SyncManager>>,
     /// Chunking orchestrator service for code chunking
     chunking_orchestrator: Arc<ChunkingOrchestrator>,
+    /// Whether indexing is in progress
+    is_indexing: AtomicBool,
+    /// Total files to process
+    total_files: AtomicUsize,
+    /// Files processed so far
+    processed_files: AtomicUsize,
 }
 
 impl IndexingService {
@@ -40,6 +49,9 @@ impl IndexingService {
             snapshot_manager: SnapshotManager::new()?,
             sync_manager,
             chunking_orchestrator: Arc::new(ChunkingOrchestrator::default()),
+            is_indexing: AtomicBool::new(false),
+            total_files: AtomicUsize::new(0),
+            processed_files: AtomicUsize::new(0),
         })
     }
 
@@ -68,6 +80,9 @@ impl IndexingService {
                 .unwrap_or_else(|_| SnapshotManager::new_disabled()),
             sync_manager: self.sync_manager.clone(),
             chunking_orchestrator: Arc::clone(&self.chunking_orchestrator),
+            is_indexing: AtomicBool::new(false),
+            total_files: AtomicUsize::new(0),
+            processed_files: AtomicUsize::new(0),
         }
     }
 
@@ -250,5 +265,46 @@ impl IndexingService {
         tracing::info!("[INDEX] Successfully cleared collection: {}", collection);
 
         Ok(())
+    }
+}
+
+#[async_trait]
+impl IndexingServiceInterface for IndexingService {
+    async fn index_codebase(&self, path: &Path, collection: &str) -> Result<IndexingResult> {
+        self.is_indexing.store(true, Ordering::SeqCst);
+        self.processed_files.store(0, Ordering::SeqCst);
+
+        let result = self.index_directory(path, collection).await;
+
+        self.is_indexing.store(false, Ordering::SeqCst);
+
+        match result {
+            Ok(chunks_created) => Ok(IndexingResult {
+                files_processed: self.processed_files.load(Ordering::SeqCst),
+                chunks_created,
+                files_skipped: 0,
+                errors: vec![],
+            }),
+            Err(e) => Err(e),
+        }
+    }
+
+    fn get_status(&self) -> IndexingStatus {
+        IndexingStatus {
+            is_indexing: self.is_indexing.load(Ordering::SeqCst),
+            progress: if self.total_files.load(Ordering::SeqCst) > 0 {
+                self.processed_files.load(Ordering::SeqCst) as f64
+                    / self.total_files.load(Ordering::SeqCst) as f64
+            } else {
+                0.0
+            },
+            current_file: None,
+            total_files: self.total_files.load(Ordering::SeqCst),
+            processed_files: self.processed_files.load(Ordering::SeqCst),
+        }
+    }
+
+    async fn clear_collection(&self, collection: &str) -> Result<()> {
+        self.clear_collection(collection).await
     }
 }

@@ -9,19 +9,19 @@ use rmcp::model::CallToolResult;
 use rmcp::ErrorData as McpError;
 use std::sync::Arc;
 
-use crate::application::IndexingService;
+use crate::domain::ports::IndexingServiceInterface;
 use crate::infrastructure::service_helpers::TimedOperation;
 use crate::server::args::ClearIndexArgs;
 use crate::server::formatter::ResponseFormatter;
 
 /// Handler for index clearing operations
 pub struct ClearIndexHandler {
-    indexing_service: Arc<IndexingService>,
+    indexing_service: Arc<dyn IndexingServiceInterface>,
 }
 
 impl ClearIndexHandler {
     /// Create a new clear_index handler with required dependencies
-    pub fn new(indexing_service: Arc<IndexingService>) -> Self {
+    pub fn new(indexing_service: Arc<dyn IndexingServiceInterface>) -> Self {
         Self { indexing_service }
     }
 

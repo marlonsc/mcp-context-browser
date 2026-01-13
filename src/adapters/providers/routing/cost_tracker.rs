@@ -5,6 +5,7 @@
 
 use crate::domain::error::{Error, Result};
 use dashmap::DashMap;
+use shaku::Interface;
 use std::sync::Arc;
 use tracing::{debug, info, warn};
 
@@ -85,7 +86,7 @@ impl CostTrackerConfig {
 }
 
 /// Trait for cost tracking
-pub trait CostTrackerTrait: Send + Sync {
+pub trait CostTrackerTrait: Interface + Send + Sync {
     fn record_usage(&self, provider_id: &str, units: u64) -> Result<f64>;
     fn get_usage_metrics(&self, provider_id: &str) -> Option<UsageMetrics>;
     fn set_budget(&self, provider_id: &str, budget: f64);

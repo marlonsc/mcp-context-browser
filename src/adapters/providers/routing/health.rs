@@ -12,7 +12,9 @@
 
 use crate::domain::error::{Error, Result};
 use crate::infrastructure::di::registry::{ProviderRegistry, ProviderRegistryTrait};
+use async_trait::async_trait;
 use dashmap::DashMap;
+use shaku::Interface;
 use std::collections::VecDeque;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -270,8 +272,8 @@ pub trait ProviderHealthChecker: Send + Sync {
 }
 
 /// Trait for health monitoring
-#[async_trait::async_trait]
-pub trait HealthMonitorTrait: Send + Sync {
+#[async_trait]
+pub trait HealthMonitorTrait: Interface + Send + Sync {
     async fn is_healthy(&self, provider_id: &str) -> bool;
     async fn get_health(&self, provider_id: &str) -> Option<ProviderHealth>;
     async fn record_result(&self, result: HealthCheckResult);

@@ -5,11 +5,12 @@
 
 use crate::domain::error::Result;
 use metrics::{counter, gauge, histogram};
+use shaku::Interface;
 use std::collections::HashMap;
 use tracing::{debug, info};
 
 /// Trait for provider metrics collection
-pub trait ProviderMetricsCollectorTrait: Send + Sync {
+pub trait ProviderMetricsCollectorTrait: Interface + Send + Sync {
     fn record_provider_selection(&self, provider_id: &str, strategy: &str);
     fn record_response_time(&self, provider_id: &str, operation: &str, duration_seconds: f64);
     fn record_request(&self, provider_id: &str, operation: &str, status: &str);
