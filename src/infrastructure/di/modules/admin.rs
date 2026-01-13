@@ -4,9 +4,9 @@
 
 use shaku::module;
 
-use super::traits::{AdminModule, InfrastructureModule, ServerModule};
-use crate::admin::service::AdminServiceImpl;
+use super::traits::{AdaptersModule, AdminModule, InfrastructureModule, ServerModule};
 use crate::adapters::http_client::HttpClientProvider;
+use crate::admin::service::AdminServiceImpl;
 use crate::infrastructure::di::factory::ServiceProviderInterface;
 use crate::infrastructure::metrics::system::SystemMetricsCollectorInterface;
 use crate::server::metrics::PerformanceMetricsInterface;
@@ -17,18 +17,18 @@ module! {
         components = [AdminServiceImpl],
         providers = [],
 
-        use InfrastructureModule {
-            components = [SystemMetricsCollectorInterface, ServiceProviderInterface],
+        use dyn InfrastructureModule {
+            components = [dyn SystemMetricsCollectorInterface, dyn ServiceProviderInterface],
             providers = []
         },
 
-        use ServerModule {
-            components = [PerformanceMetricsInterface, IndexingOperationsInterface],
+        use dyn ServerModule {
+            components = [dyn PerformanceMetricsInterface, dyn IndexingOperationsInterface],
             providers = []
         },
 
-        use super::traits::AdaptersModule {
-            components = [HttpClientProvider],
+        use dyn AdaptersModule {
+            components = [dyn HttpClientProvider],
             providers = []
         }
     }

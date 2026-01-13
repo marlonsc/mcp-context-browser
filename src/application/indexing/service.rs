@@ -147,12 +147,6 @@ impl IndexingService {
         self.chunking_orchestrator.chunk_file(path).await
     }
 
-    /// Detect programming language from file extension
-    fn detect_language(&self, path: &Path) -> crate::domain::types::Language {
-        let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
-        crate::domain::types::Language::from_extension(ext)
-    }
-
     /// Process files in parallel batches for better performance
     async fn process_files_parallel(
         &self,

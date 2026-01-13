@@ -98,7 +98,11 @@ impl ShutdownCoordinator {
     ///
     /// Provides both the future and a child cancellation token.
     /// The task should check the token and exit gracefully when cancelled.
-    pub fn spawn_cancellable<F, Fut>(&self, name: &'static str, task_fn: F) -> JoinHandle<Fut::Output>
+    pub fn spawn_cancellable<F, Fut>(
+        &self,
+        name: &'static str,
+        task_fn: F,
+    ) -> JoinHandle<Fut::Output>
     where
         F: FnOnce(CancellationToken) -> Fut,
         Fut: Future + Send + 'static,

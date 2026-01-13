@@ -190,7 +190,10 @@ impl MetricsApiServer {
             .layer(tower_http::cors::CorsLayer::permissive())
             .layer(CompressionLayer::new())
             .layer(RequestBodyLimitLayer::new(10 * 1024 * 1024))
-            .layer(TimeoutLayer::with_status_code(StatusCode::REQUEST_TIMEOUT, Duration::from_secs(30)))
+            .layer(TimeoutLayer::with_status_code(
+                StatusCode::REQUEST_TIMEOUT,
+                Duration::from_secs(30),
+            ))
             .layer(TraceLayer::new_for_http())
             .layer(PropagateRequestIdLayer::x_request_id())
             .layer(SetRequestIdLayer::x_request_id(MakeRequestUuid))

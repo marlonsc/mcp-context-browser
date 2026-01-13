@@ -60,23 +60,23 @@ module! {
         components = [],
         providers = [],
 
-        use AdaptersModule {
-            components = [HttpClientProvider],
+        use dyn AdaptersModule {
+            components = [dyn HttpClientProvider],
             providers = []
         },
 
-        use InfrastructureModule {
-            components = [SystemMetricsCollectorInterface, ServiceProviderInterface],
+        use dyn InfrastructureModule {
+            components = [dyn SystemMetricsCollectorInterface, dyn ServiceProviderInterface],
             providers = []
         },
 
-        use ServerModule {
-            components = [PerformanceMetricsInterface, IndexingOperationsInterface],
+        use dyn ServerModule {
+            components = [dyn PerformanceMetricsInterface, dyn IndexingOperationsInterface],
             providers = []
         },
 
-        use AdminModule {
-            components = [AdminService],
+        use dyn AdminModule {
+            components = [dyn AdminService],
             providers = []
         }
     }
