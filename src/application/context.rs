@@ -41,7 +41,6 @@ impl ContextService {
     pub fn new_with_providers(
         embedding_provider: Arc<dyn EmbeddingProvider>,
         vector_store_provider: Arc<dyn crate::domain::ports::VectorStoreProvider>,
-        _hybrid_search_provider: Arc<dyn crate::domain::ports::HybridSearchProvider>,
     ) -> Self {
         let chunk_repo = Arc::new(
             crate::adapters::repository::VectorStoreChunkRepository::new(

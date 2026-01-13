@@ -8,44 +8,6 @@ use mcp_context_browser::domain::ports::{EmbeddingProvider, VectorStoreProvider}
 use mcp_context_browser::domain::types::Embedding;
 use std::sync::Arc;
 
-fn dummy_hybrid_search() -> Arc<dyn mcp_context_browser::domain::ports::HybridSearchProvider> {
-    let (sender, receiver) = tokio::sync::mpsc::channel(100);
-    // Run a minimal actor that just returns semantic results as is
-    tokio::spawn(async move {
-        let mut receiver = receiver;
-        while let Some(msg) = receiver.recv().await {
-            use mcp_context_browser::adapters::hybrid_search::HybridSearchMessage;
-            match msg {
-                HybridSearchMessage::Search {
-                    semantic_results,
-                    respond_to,
-                    limit,
-                    ..
-                } => {
-                    use mcp_context_browser::adapters::hybrid_search::HybridSearchResult;
-                    let hybrid_results = semantic_results
-                        .into_iter()
-                        .take(limit)
-                        .map(|result| HybridSearchResult {
-                            bm25_score: 0.0,
-                            semantic_score: result.score,
-                            hybrid_score: result.score,
-                            result,
-                        })
-                        .collect();
-                    let _ = respond_to.send(Ok(hybrid_results));
-                }
-                HybridSearchMessage::GetStats { respond_to } => {
-                    let _ = respond_to.send(std::collections::HashMap::new());
-                }
-                _ => {}
-            }
-        }
-    });
-    Arc::new(mcp_context_browser::adapters::HybridSearchAdapter::new(
-        sender,
-    ))
-}
 
 /// Test utilities for Ollama integration tests
 mod test_utils {
@@ -151,7 +113,6 @@ mod ollama_in_memory_tests {
         let context_service = Arc::new(ContextService::new_with_providers(
             ollama_provider.clone(),
             in_memory_store.clone(),
-            dummy_hybrid_search(),
         ));
 
         // Setup test data
@@ -235,7 +196,6 @@ mod ollama_filesystem_tests {
         let context_service = Arc::new(ContextService::new_with_providers(
             ollama_provider.clone(),
             filesystem_store.clone(),
-            dummy_hybrid_search(),
         ));
 
         // Setup test data
@@ -300,7 +260,6 @@ mod ollama_indexing_tests {
         let context_service = Arc::new(ContextService::new_with_providers(
             ollama_provider.clone(),
             in_memory_store.clone(),
-            dummy_hybrid_search(),
         ));
 
         // Create indexing service

@@ -16,15 +16,6 @@ mod generic_context_service_tests {
     use mcp_context_browser::adapters::providers::InMemoryVectorStoreProvider;
     use mcp_context_browser::adapters::providers::embedding::null::NullEmbeddingProvider;
 
-    use mcp_context_browser::domain::ports::HybridSearchProvider;
-
-    fn dummy_hybrid_search() -> Arc<dyn HybridSearchProvider> {
-        let (sender, _receiver) = tokio::sync::mpsc::channel(1);
-        Arc::new(mcp_context_browser::adapters::HybridSearchAdapter::new(
-            sender,
-        ))
-    }
-
     #[test]
     fn test_generic_context_service_creation() {
         // Create concrete provider instances
@@ -35,7 +26,6 @@ mod generic_context_service_tests {
         let context_service = ContextService::new_with_providers(
             embedding_provider,
             vector_store_provider,
-            dummy_hybrid_search(),
         );
 
         assert_eq!(context_service.embedding_dimensions(), 384); // Mock provider dimensions
@@ -49,7 +39,6 @@ mod generic_context_service_tests {
         let context_service = ContextService::new_with_providers(
             embedding_provider,
             vector_store_provider,
-            dummy_hybrid_search(),
         );
 
         // Test that we can embed text
@@ -74,7 +63,6 @@ mod generic_context_service_tests {
         let context_service = ContextService::new_with_providers(
             embedding_provider,
             vector_store_provider,
-            dummy_hybrid_search(),
         );
 
         // Verify the service is properly constructed
@@ -111,7 +99,6 @@ mod strategy_pattern_tests {
         let service = ContextService::new_with_providers(
             embedding_provider,
             vector_store_provider,
-            dummy_hybrid_search(),
         );
 
         // The service should be able to perform operations using both strategies
@@ -131,7 +118,6 @@ mod strategy_pattern_tests {
         let service = ContextService::new_with_providers(
             embedding_provider.clone(),
             vector_store_provider.clone(),
-            dummy_hybrid_search(),
         );
 
         // Test that we can call methods directly on the concrete types
@@ -185,7 +171,6 @@ mod integration_tests {
         let context_service = ContextService::new_with_providers(
             embedding_provider,
             vector_store_provider,
-            dummy_hybrid_search(),
         );
 
         // Test basic functionality
@@ -210,7 +195,6 @@ mod integration_tests {
         let service = ContextService::new_with_providers(
             embedding_provider,
             vector_store_provider,
-            dummy_hybrid_search(),
         );
 
         // Performance should be consistent (no dynamic dispatch overhead)

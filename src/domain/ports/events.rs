@@ -7,6 +7,7 @@
 use crate::domain::error::Result;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
+use shaku::Interface;
 use std::sync::Arc;
 
 /// System-wide event types for decoupled service communication
@@ -71,7 +72,7 @@ pub enum DomainEvent {
 /// }
 /// ```
 #[async_trait]
-pub trait EventPublisher: Send + Sync {
+pub trait EventPublisher: Interface + Send + Sync {
     /// Publish an event to all subscribers
     ///
     /// Returns Ok(()) if the event was successfully published.

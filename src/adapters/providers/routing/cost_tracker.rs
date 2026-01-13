@@ -224,10 +224,13 @@ impl CostTrackerTrait for CostTracker {
     }
 
     fn get_total_cost(&self) -> f64 {
-        self.get_total_cost()
+        self.usage_metrics.iter().map(|m| m.total_cost).sum()
     }
 
     fn get_current_period_cost(&self) -> f64 {
-        self.get_current_period_cost()
+        self.usage_metrics
+            .iter()
+            .map(|m| m.current_period_cost)
+            .sum()
     }
 }

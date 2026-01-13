@@ -5,7 +5,6 @@
 use rmcp::handler::server::wrapper::Parameters;
 use std::sync::Arc;
 
-use mcp_context_browser::adapters::hybrid_search::{HybridSearchAdapter, HybridSearchMessage};
 use mcp_context_browser::server::admin::service::AdminService;
 
 // Test service creation function (copied from admin tests)
@@ -61,9 +60,7 @@ async fn create_test_admin_service() -> std::sync::Arc<dyn AdminService> {
     Arc::new(admin_service)
 }
 use mcp_context_browser::application::{ContextService, IndexingService, SearchService};
-use mcp_context_browser::domain::ports::{
-    EmbeddingProvider, HybridSearchProvider, VectorStoreProvider,
-};
+use mcp_context_browser::domain::ports::{EmbeddingProvider, VectorStoreProvider};
 use mcp_context_browser::infrastructure::auth::{AuthConfig, AuthService};
 use mcp_context_browser::infrastructure::limits::{ResourceLimits, ResourceLimitsConfig};
 use mcp_context_browser::server::args::{
@@ -79,49 +76,22 @@ use mcp_context_browser::server::handlers::{
 // ============================================================================
 
 async fn create_indexing_service() -> Arc<IndexingService> {
-    let (embedding_provider, vector_store_provider, hybrid_search_provider) =
-        create_test_providers();
+    let (embedding_provider, vector_store_provider) = create_test_providers();
     let context_service = Arc::new(ContextService::new_with_providers(
         embedding_provider,
         vector_store_provider,
-        hybrid_search_provider,
     ));
     Arc::new(IndexingService::new(context_service, None).unwrap())
 }
 
-fn create_test_providers() -> (
-    Arc<dyn EmbeddingProvider>,
-    Arc<dyn VectorStoreProvider>,
-    Arc<dyn HybridSearchProvider>,
-) {
+fn create_test_providers() -> (Arc<dyn EmbeddingProvider>, Arc<dyn VectorStoreProvider>) {
     let embedding_provider = Arc::new(
         mcp_context_browser::adapters::providers::embedding::null::NullEmbeddingProvider::new(),
     );
     let vector_store_provider = Arc::new(
-        mcp_context_browser::adapters::providers::vector_store::null::NullVectorStoreProvider::new(
-        ),
+        mcp_context_browser::adapters::providers::vector_store::null::NullVectorStoreProvider::new(),
     );
-    let (sender, receiver) = tokio::sync::mpsc::channel(100);
-    tokio::spawn(async move {
-        let mut receiver = receiver;
-        while let Some(msg) = receiver.recv().await {
-            match msg {
-                HybridSearchMessage::Search { respond_to, .. } => {
-                    let _ = respond_to.send(Ok(Vec::new()));
-                }
-                HybridSearchMessage::GetStats { respond_to } => {
-                    let _ = respond_to.send(std::collections::HashMap::new());
-                }
-                _ => {}
-            }
-        }
-    });
-    let hybrid_search_provider = Arc::new(HybridSearchAdapter::new(sender));
-    (
-        embedding_provider,
-        vector_store_provider,
-        hybrid_search_provider,
-    )
+    (embedding_provider, vector_store_provider)
 }
 
 // ============================================================================
@@ -439,12 +409,10 @@ mod search_code_tests {
     };
 
     async fn create_search_service() -> Arc<SearchService> {
-        let (embedding_provider, vector_store_provider, hybrid_search_provider) =
-            create_test_providers();
+        let (embedding_provider, vector_store_provider) = create_test_providers();
         let context_service = Arc::new(ContextService::new_with_providers(
             embedding_provider,
             vector_store_provider,
-            hybrid_search_provider,
         ));
         Arc::new(SearchService::new(context_service))
     }

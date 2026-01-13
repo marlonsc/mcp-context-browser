@@ -8,9 +8,10 @@
 //! deviation from strict Clean Architecture layering per ADR-002 (Async-First Design).
 
 use super::chunking_orchestrator::ChunkingOrchestrator;
-use crate::application::context::ContextService;
 use crate::domain::error::{Error, Result};
-use crate::domain::ports::{IndexingResult, IndexingServiceInterface, IndexingStatus};
+use crate::domain::ports::{
+    ContextServiceInterface, IndexingResult, IndexingServiceInterface, IndexingStatus,
+};
 use crate::domain::types::CodeChunk;
 // Cross-cutting concern: Event bus for decoupled notifications
 use crate::domain::constants::INDEXING_BATCH_SIZE;
@@ -25,7 +26,7 @@ use std::sync::Arc;
 
 /// Advanced indexing service with snapshot-based incremental processing
 pub struct IndexingService {
-    context_service: Arc<ContextService>,
+    context_service: Arc<dyn ContextServiceInterface>,
     snapshot_manager: SnapshotManager,
     sync_manager: Option<Arc<SyncManager>>,
     /// Chunking orchestrator service for code chunking
@@ -41,7 +42,7 @@ pub struct IndexingService {
 impl IndexingService {
     /// Create a new indexing service
     pub fn new(
-        context_service: Arc<ContextService>,
+        context_service: Arc<dyn ContextServiceInterface>,
         sync_manager: Option<Arc<SyncManager>>,
     ) -> Result<Self> {
         Ok(Self {

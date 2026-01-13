@@ -5,7 +5,7 @@
 //! IndexingService, and SearchService.
 
 use mcp_context_browser::application::{ContextService, IndexingService, SearchService};
-use mcp_context_browser::domain::ports::{EmbeddingProvider, VectorStoreProvider};
+use mcp_context_browser::domain::ports::{ContextServiceInterface, EmbeddingProvider, VectorStoreProvider};
 use mcp_context_browser::domain::types::{CodeChunk, Language};
 use std::sync::Arc;
 
@@ -25,53 +25,22 @@ mod tests {
         }
     }
 
-    use mcp_context_browser::domain::ports::HybridSearchProvider;
-
-    fn create_test_providers() -> (
-        Arc<dyn EmbeddingProvider>,
-        Arc<dyn VectorStoreProvider>,
-        Arc<dyn HybridSearchProvider>,
-    ) {
+    fn create_test_providers() -> (Arc<dyn EmbeddingProvider>, Arc<dyn VectorStoreProvider>) {
         let embedding_provider = Arc::new(
             mcp_context_browser::adapters::providers::embedding::null::NullEmbeddingProvider::new(),
         );
         let vector_store_provider = Arc::new(
             mcp_context_browser::adapters::providers::vector_store::null::NullVectorStoreProvider::new(),
         );
-        let (sender, receiver) = tokio::sync::mpsc::channel(100);
-        tokio::spawn(async move {
-            let mut receiver = receiver;
-            while let Some(msg) = receiver.recv().await {
-                use mcp_context_browser::adapters::hybrid_search::HybridSearchMessage;
-                match msg {
-                    HybridSearchMessage::Search { respond_to, .. } => {
-                        let _ = respond_to.send(Ok(Vec::new()));
-                    }
-                    HybridSearchMessage::GetStats { respond_to } => {
-                        let _ = respond_to.send(std::collections::HashMap::new());
-                    }
-                    _ => {}
-                }
-            }
-        });
-        let hybrid_search_provider = Arc::new(
-            mcp_context_browser::adapters::hybrid_search::HybridSearchAdapter::new(sender),
-        );
-        (
-            embedding_provider,
-            vector_store_provider,
-            hybrid_search_provider,
-        )
+        (embedding_provider, vector_store_provider)
     }
 
     #[tokio::test]
     async fn test_context_service_creation() {
-        let (embedding_provider, vector_store_provider, hybrid_search_provider) =
-            create_test_providers();
+        let (embedding_provider, vector_store_provider) = create_test_providers();
         let service = ContextService::new_with_providers(
             embedding_provider,
             vector_store_provider,
-            hybrid_search_provider,
         );
 
         // Verify service is properly initialized with expected embedding dimensions
@@ -81,13 +50,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_context_service_embed_text() -> Result<(), Box<dyn std::error::Error>> {
-        let (_ep, _vs, _hsp) = create_test_providers();
-        let (embedding_provider, vector_store_provider, hybrid_search_provider) =
-            create_test_providers();
+        let (embedding_provider, vector_store_provider) = create_test_providers();
         let service = ContextService::new_with_providers(
             embedding_provider,
             vector_store_provider,
-            hybrid_search_provider,
         );
 
         let text = "fn main() { println!(\"Hello!\"); }";
@@ -111,13 +77,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_context_service_embed_empty_text() -> Result<(), Box<dyn std::error::Error>> {
-        let (_ep, _vs, _hsp) = create_test_providers();
-        let (embedding_provider, vector_store_provider, hybrid_search_provider) =
-            create_test_providers();
+        let (embedding_provider, vector_store_provider) = create_test_providers();
         let service = ContextService::new_with_providers(
             embedding_provider,
             vector_store_provider,
-            hybrid_search_provider,
         );
 
         let text = "";
@@ -131,13 +94,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_context_service_store_chunks() {
-        let (_ep, _vs, _hsp) = create_test_providers();
-        let (embedding_provider, vector_store_provider, hybrid_search_provider) =
-            create_test_providers();
+        let (embedding_provider, vector_store_provider) = create_test_providers();
         let service = ContextService::new_with_providers(
             embedding_provider,
             vector_store_provider,
-            hybrid_search_provider,
         );
 
         let chunks = vec![create_test_code_chunk()];
@@ -149,13 +109,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_context_service_store_empty_chunks() {
-        let (_ep, _vs, _hsp) = create_test_providers();
-        let (embedding_provider, vector_store_provider, hybrid_search_provider) =
-            create_test_providers();
+        let (embedding_provider, vector_store_provider) = create_test_providers();
         let service = ContextService::new_with_providers(
             embedding_provider,
             vector_store_provider,
-            hybrid_search_provider,
         );
 
         let chunks: Vec<CodeChunk> = vec![];
@@ -167,13 +124,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_context_service_search_similar() -> Result<(), Box<dyn std::error::Error>> {
-        let (_ep, _vs, _hsp) = create_test_providers();
-        let (embedding_provider, vector_store_provider, hybrid_search_provider) =
-            create_test_providers();
+        let (embedding_provider, vector_store_provider) = create_test_providers();
         let service = ContextService::new_with_providers(
             embedding_provider,
             vector_store_provider,
-            hybrid_search_provider,
         );
 
         let query = "function definition";
@@ -191,13 +145,10 @@ mod tests {
     #[tokio::test]
     async fn test_context_service_search_with_zero_limit() -> Result<(), Box<dyn std::error::Error>>
     {
-        let (_ep, _vs, _hsp) = create_test_providers();
-        let (embedding_provider, vector_store_provider, hybrid_search_provider) =
-            create_test_providers();
+        let (embedding_provider, vector_store_provider) = create_test_providers();
         let service = ContextService::new_with_providers(
             embedding_provider,
             vector_store_provider,
-            hybrid_search_provider,
         );
 
         let query = "test query";
@@ -214,12 +165,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_indexing_service_creation() -> Result<(), Box<dyn std::error::Error>> {
-        let (embedding_provider, vector_store_provider, hybrid_search_provider) =
-            create_test_providers();
+        let (embedding_provider, vector_store_provider) = create_test_providers();
         let context_service = Arc::new(ContextService::new_with_providers(
             embedding_provider,
             vector_store_provider,
-            hybrid_search_provider,
         ));
         let _indexing_service = IndexingService::new(context_service, None)?;
 
@@ -229,12 +178,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_indexing_service_index_directory() -> Result<(), Box<dyn std::error::Error>> {
-        let (embedding_provider, vector_store_provider, hybrid_search_provider) =
-            create_test_providers();
+        let (embedding_provider, vector_store_provider) = create_test_providers();
         let context_service = Arc::new(ContextService::new_with_providers(
             embedding_provider,
             vector_store_provider,
-            hybrid_search_provider,
         ));
         let indexing_service = IndexingService::new(context_service, None)?;
 
@@ -254,12 +201,10 @@ mod tests {
     #[tokio::test]
     async fn test_indexing_service_index_nonexistent_directory(
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let (embedding_provider, vector_store_provider, hybrid_search_provider) =
-            create_test_providers();
+        let (embedding_provider, vector_store_provider) = create_test_providers();
         let context_service = Arc::new(ContextService::new_with_providers(
             embedding_provider,
             vector_store_provider,
-            hybrid_search_provider,
         ));
         let indexing_service = IndexingService::new(context_service, None)?;
 
@@ -275,12 +220,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_search_service_creation() {
-        let (embedding_provider, vector_store_provider, hybrid_search_provider) =
-            create_test_providers();
+        let (embedding_provider, vector_store_provider) = create_test_providers();
         let context_service = Arc::new(ContextService::new_with_providers(
             embedding_provider,
             vector_store_provider,
-            hybrid_search_provider,
         ));
         let _search_service = SearchService::new(context_service);
 
@@ -289,12 +232,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_search_service_search() -> Result<(), Box<dyn std::error::Error>> {
-        let (embedding_provider, vector_store_provider, hybrid_search_provider) =
-            create_test_providers();
+        let (embedding_provider, vector_store_provider) = create_test_providers();
         let context_service = Arc::new(ContextService::new_with_providers(
             embedding_provider,
             vector_store_provider,
-            hybrid_search_provider,
         ));
         let search_service = SearchService::new(context_service);
 
@@ -312,12 +253,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_search_service_search_empty_query() -> Result<(), Box<dyn std::error::Error>> {
-        let (embedding_provider, vector_store_provider, hybrid_search_provider) =
-            create_test_providers();
+        let (embedding_provider, vector_store_provider) = create_test_providers();
         let context_service = Arc::new(ContextService::new_with_providers(
             embedding_provider,
             vector_store_provider,
-            hybrid_search_provider,
         ));
         let search_service = SearchService::new(context_service);
 
@@ -335,12 +274,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_search_service_search_zero_limit() -> Result<(), Box<dyn std::error::Error>> {
-        let (embedding_provider, vector_store_provider, hybrid_search_provider) =
-            create_test_providers();
+        let (embedding_provider, vector_store_provider) = create_test_providers();
         let context_service = Arc::new(ContextService::new_with_providers(
             embedding_provider,
             vector_store_provider,
-            hybrid_search_provider,
         ));
         let search_service = SearchService::new(context_service);
 
@@ -358,13 +295,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_context_service_embed_batch() {
-        let (_ep, _vs, _hsp) = create_test_providers();
-        let (embedding_provider, vector_store_provider, hybrid_search_provider) =
-            create_test_providers();
+        let (embedding_provider, vector_store_provider) = create_test_providers();
         let service = ContextService::new_with_providers(
             embedding_provider,
             vector_store_provider,
-            hybrid_search_provider,
         );
 
         let _texts = [
@@ -382,13 +316,12 @@ mod tests {
     #[tokio::test]
     async fn test_services_integration() -> Result<(), Box<dyn std::error::Error>> {
         // Test the full integration of services
-        let (embedding_provider, vector_store_provider, hybrid_search_provider) =
-            create_test_providers();
-        let context_service = Arc::new(ContextService::new_with_providers(
-            embedding_provider,
-            vector_store_provider,
-            hybrid_search_provider,
-        ));
+        let (embedding_provider, vector_store_provider) = create_test_providers();
+        let context_service: Arc<dyn ContextServiceInterface> =
+            Arc::new(ContextService::new_with_providers(
+                embedding_provider,
+                vector_store_provider,
+            ));
         let indexing_service = IndexingService::new(Arc::clone(&context_service), None)?;
         let search_service = SearchService::new(Arc::clone(&context_service));
 

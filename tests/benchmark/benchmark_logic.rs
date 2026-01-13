@@ -17,39 +17,21 @@ use std::hint::black_box;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 
-use mcp_context_browser::domain::ports::HybridSearchProvider;
-
 /// Create real providers for benchmarking
-fn create_benchmark_providers() -> (
-    Arc<dyn EmbeddingProvider>,
-    Arc<dyn VectorStoreProvider>,
-    Arc<dyn HybridSearchProvider>,
-) {
+fn create_benchmark_providers() -> (Arc<dyn EmbeddingProvider>, Arc<dyn VectorStoreProvider>) {
     let embedding_provider: Arc<dyn EmbeddingProvider> = Arc::new(
         mcp_context_browser::adapters::providers::embedding::null::NullEmbeddingProvider::new(),
     );
     let vector_store_provider: Arc<dyn VectorStoreProvider> = Arc::new(
         mcp_context_browser::adapters::providers::vector_store::in_memory::InMemoryVectorStoreProvider::new(),
     );
-    let (sender, _receiver) = tokio::sync::mpsc::channel(1);
-    let hybrid_search_provider =
-        Arc::new(mcp_context_browser::adapters::hybrid_search::HybridSearchAdapter::new(sender));
-    (
-        embedding_provider,
-        vector_store_provider,
-        hybrid_search_provider,
-    )
+    (embedding_provider, vector_store_provider)
 }
 
 /// Create a benchmark context service
 fn create_benchmark_context_service() -> ContextService {
-    let (embedding_provider, vector_store_provider, hybrid_search_provider) =
-        create_benchmark_providers();
-    ContextService::new_with_providers(
-        embedding_provider,
-        vector_store_provider,
-        hybrid_search_provider,
-    )
+    let (embedding_provider, vector_store_provider) = create_benchmark_providers();
+    ContextService::new_with_providers(embedding_provider, vector_store_provider)
 }
 
 /// Create a benchmark MCP server
@@ -314,8 +296,7 @@ pub fn bench_repository_operations(c: &mut Criterion) {
 /// should halt the benchmark rather than produce invalid results.
 pub fn bench_provider_operations(c: &mut Criterion) {
     let rt = Runtime::new().expect("Benchmark requires Tokio runtime");
-    let (embedding_provider, vector_store_provider, _hybrid_search_provider) =
-        create_benchmark_providers();
+    let (embedding_provider, vector_store_provider) = create_benchmark_providers();
 
     c.bench_function("provider_embedding_operation", |b| {
         let provider = black_box(&embedding_provider);

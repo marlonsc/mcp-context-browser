@@ -169,47 +169,10 @@ impl TestInfrastructure {
             .get_vector_store_provider(&vector_store_config)
             .await?;
 
-        // Create a simple mock hybrid search provider
-        struct MockHybridSearchProvider;
-        #[async_trait::async_trait]
-        impl mcp_context_browser::domain::ports::HybridSearchProvider for MockHybridSearchProvider {
-            async fn index_chunks(
-                &self,
-                _collection: &str,
-                _chunks: &[mcp_context_browser::domain::types::CodeChunk],
-            ) -> mcp_context_browser::domain::error::Result<()> {
-                Ok(())
-            }
-
-            async fn search(
-                &self,
-                _collection: &str,
-                _query: &str,
-                _semantic_results: Vec<mcp_context_browser::domain::types::SearchResult>,
-                _limit: usize,
-            ) -> mcp_context_browser::domain::error::Result<
-                Vec<mcp_context_browser::domain::types::SearchResult>,
-            > {
-                Ok(vec![])
-            }
-
-            async fn clear_collection(
-                &self,
-                _collection: &str,
-            ) -> mcp_context_browser::domain::error::Result<()> {
-                Ok(())
-            }
-
-            async fn get_stats(&self) -> std::collections::HashMap<String, serde_json::Value> {
-                std::collections::HashMap::new()
-            }
-        }
-
         // Create context service
         let context_service = Arc::new(ContextService::new_with_providers(
             embedding_provider,
             vector_store_provider,
-            Arc::new(MockHybridSearchProvider),
         ));
 
         // Create search service

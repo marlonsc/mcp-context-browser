@@ -5,7 +5,7 @@
 //! business logic operations.
 
 use crate::domain::error::Result;
-use crate::domain::types::SyncBatch;
+use crate::domain::types::{CodebaseSnapshot, SnapshotChanges, SyncBatch};
 use async_trait::async_trait;
 use shaku::Interface;
 use std::path::Path;
@@ -49,8 +49,35 @@ pub trait SyncProvider: Interface + Send + Sync {
 /// Snapshot Provider Interface
 ///
 /// Defines the contract for codebase snapshot and change tracking operations.
+/// Snapshots capture the state of files (paths, sizes, modification times, hashes)
+/// to detect what has changed between indexing runs.
 #[async_trait]
 pub trait SnapshotProvider: Interface + Send + Sync {
+    /// Create a new snapshot for a codebase
+    ///
+    /// Traverses the codebase at `root_path`, computes file hashes, and creates
+    /// a snapshot representing the current state. The snapshot is automatically
+    /// saved to persistent storage.
+    async fn create_snapshot(&self, root_path: &Path) -> Result<CodebaseSnapshot>;
+
+    /// Load an existing snapshot for a codebase
+    ///
+    /// Retrieves the most recent snapshot for the given codebase path.
+    async fn load_snapshot(&self, root_path: &Path) -> Result<Option<CodebaseSnapshot>>;
+
+    /// Compare two snapshots to find changes
+    ///
+    /// Analyzes the differences between an old and new snapshot to determine
+    /// which files were added, modified, removed, or unchanged.
+    async fn compare_snapshots(
+        &self,
+        old_snapshot: &CodebaseSnapshot,
+        new_snapshot: &CodebaseSnapshot,
+    ) -> Result<SnapshotChanges>;
+
     /// Get files that need processing (added or modified since last snapshot)
+    ///
+    /// Convenience method that creates a new snapshot, compares with the previous
+    /// one, and returns the list of files that need to be re-indexed.
     async fn get_changed_files(&self, root_path: &Path) -> Result<Vec<String>>;
 }

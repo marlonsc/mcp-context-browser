@@ -7,6 +7,7 @@
 use crate::domain::error::Result;
 use crate::domain::types::{CodeChunk, Language};
 use async_trait::async_trait;
+use shaku::Interface;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -86,7 +87,7 @@ impl ChunkingResult {
 /// }
 /// ```
 #[async_trait]
-pub trait CodeChunker: Send + Sync {
+pub trait CodeChunker: Interface + Send + Sync {
     /// Chunk a single file
     ///
     /// Reads the file, detects its language, and extracts semantic chunks

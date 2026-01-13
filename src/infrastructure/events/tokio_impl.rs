@@ -4,9 +4,12 @@
 
 use super::{EventBusProvider, EventReceiver, SystemEvent};
 use crate::domain::error::Result;
+use crate::domain::ports::events::{DomainEvent, EventPublisher};
 use crate::infrastructure::constants::EVENT_BUS_TOKIO_CAPACITY;
+use async_trait::async_trait;
 use std::sync::Arc;
 use tokio::sync::broadcast::{self, Receiver, Sender};
+use tracing::debug;
 
 /// Event Bus for publishing and subscribing to system events using tokio broadcast
 #[derive(Clone)]
@@ -98,6 +101,57 @@ pub struct TokioEventReceiver {
 impl EventReceiver for TokioEventReceiver {
     async fn recv(&mut self) -> Result<SystemEvent> {
         Ok(self.receiver.recv().await?)
+    }
+}
+
+/// EventPublisher implementation for EventBus
+///
+/// Maps DomainEvent variants to SystemEvent variants where applicable.
+/// Events without direct SystemEvent equivalents are logged but not published.
+#[async_trait]
+impl EventPublisher for EventBus {
+    async fn publish(&self, event: DomainEvent) -> Result<()> {
+        // Map DomainEvent to SystemEvent where applicable
+        let system_event = match event {
+            DomainEvent::CacheInvalidate { namespace } => Some(SystemEvent::CacheClear { namespace }),
+            DomainEvent::IndexRebuild { collection: _ } => {
+                debug!("IndexRebuild event received - no SystemEvent mapping");
+                None
+            }
+            DomainEvent::SyncCompleted {
+                path: _,
+                files_changed: _,
+            } => {
+                debug!("SyncCompleted event received - no SystemEvent mapping");
+                None
+            }
+            DomainEvent::SnapshotCreated {
+                root_path: _,
+                file_count: _,
+            } => {
+                debug!("SnapshotCreated event received - no SystemEvent mapping");
+                None
+            }
+            DomainEvent::FileChangesDetected {
+                root_path: _,
+                added: _,
+                modified: _,
+                removed: _,
+            } => {
+                debug!("FileChangesDetected event received - no SystemEvent mapping");
+                None
+            }
+        };
+
+        if let Some(sys_event) = system_event {
+            let _ = self.sender.send(sys_event);
+        }
+
+        Ok(())
+    }
+
+    fn has_subscribers(&self) -> bool {
+        self.sender.receiver_count() > 0
     }
 }
 

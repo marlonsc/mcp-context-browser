@@ -293,7 +293,23 @@ impl SnapshotManager {
 
 #[async_trait]
 impl SnapshotProvider for SnapshotManager {
+    async fn create_snapshot(&self, root_path: &Path) -> Result<CodebaseSnapshot> {
+        SnapshotManager::create_snapshot(self, root_path).await
+    }
+
+    async fn load_snapshot(&self, root_path: &Path) -> Result<Option<CodebaseSnapshot>> {
+        SnapshotManager::load_snapshot(self, root_path).await
+    }
+
+    async fn compare_snapshots(
+        &self,
+        old_snapshot: &CodebaseSnapshot,
+        new_snapshot: &CodebaseSnapshot,
+    ) -> Result<SnapshotChanges> {
+        SnapshotManager::compare_snapshots(self, old_snapshot, new_snapshot).await
+    }
+
     async fn get_changed_files(&self, root_path: &Path) -> Result<Vec<String>> {
-        self.get_changed_files(root_path).await
+        SnapshotManager::get_changed_files(self, root_path).await
     }
 }

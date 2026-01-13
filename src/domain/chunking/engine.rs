@@ -4,9 +4,12 @@
 //! language-specific chunking using tree-sitter and fallback methods.
 
 use crate::domain::error::Result;
+use crate::domain::ports::chunking::{ChunkingOptions, ChunkingResult, CodeChunker};
 use crate::domain::types::{CodeChunk, Language};
 use crate::infrastructure::constants::CHUNK_SIZE_GENERIC;
+use async_trait::async_trait;
 use std::collections::HashMap;
+use std::path::Path;
 
 /// Intelligent chunking engine using tree-sitter
 #[derive(Default)]
@@ -119,5 +122,65 @@ impl IntelligentChunker {
         })?;
 
         Ok(tree)
+    }
+}
+
+#[async_trait]
+impl CodeChunker for IntelligentChunker {
+    async fn chunk_file(
+        &self,
+        file_path: &Path,
+        _options: ChunkingOptions,
+    ) -> Result<ChunkingResult> {
+        let content = tokio::fs::read_to_string(file_path)
+            .await
+            .map_err(|e| crate::domain::error::Error::io(e.to_string()))?;
+
+        let file_name = file_path.to_string_lossy().to_string();
+        let ext = file_path
+            .extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("");
+        let language = Language::from_extension(ext);
+
+        self.chunk_content(&content, &file_name, language, _options)
+            .await
+    }
+
+    async fn chunk_content(
+        &self,
+        content: &str,
+        file_name: &str,
+        language: Language,
+        _options: ChunkingOptions,
+    ) -> Result<ChunkingResult> {
+        let chunks = self.chunk_code(content, file_name, language.clone());
+        let used_ast = Self::is_language_supported(&language);
+
+        Ok(ChunkingResult {
+            file_path: file_name.to_string(),
+            language,
+            chunks,
+            used_ast,
+        })
+    }
+
+    async fn chunk_batch(
+        &self,
+        file_paths: &[&Path],
+        options: ChunkingOptions,
+    ) -> Result<Vec<ChunkingResult>> {
+        let mut results = Vec::with_capacity(file_paths.len());
+        for path in file_paths {
+            results.push(self.chunk_file(path, options.clone()).await?);
+        }
+        Ok(results)
+    }
+
+    fn supported_languages(&self) -> Vec<Language> {
+        crate::domain::chunking::LANGUAGE_CONFIGS
+            .keys()
+            .cloned()
+            .collect()
     }
 }

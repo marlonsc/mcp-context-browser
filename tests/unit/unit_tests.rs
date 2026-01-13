@@ -333,27 +333,7 @@ mod service_unit_tests {
     async fn test_context_service_creation() {
         let embedding_provider = Arc::new(NullEmbeddingProvider::new());
         let vector_store = Arc::new(InMemoryVectorStoreProvider::new());
-        let (sender, receiver) = tokio::sync::mpsc::channel(100);
-        tokio::spawn(async move {
-            let mut receiver = receiver;
-            while let Some(msg) = receiver.recv().await {
-                use mcp_context_browser::adapters::hybrid_search::HybridSearchMessage;
-                match msg {
-                    HybridSearchMessage::Search { respond_to, .. } => {
-                        let _ = respond_to.send(Ok(Vec::new()));
-                    }
-                    HybridSearchMessage::GetStats { respond_to } => {
-                        let _ = respond_to.send(std::collections::HashMap::new());
-                    }
-                    _ => {}
-                }
-            }
-        });
-        let hybrid_search = Arc::new(mcp_context_browser::adapters::HybridSearchAdapter::new(
-            sender,
-        ));
-        let service =
-            ContextService::new_with_providers(embedding_provider, vector_store, hybrid_search);
+        let service = ContextService::new_with_providers(embedding_provider, vector_store);
 
         // NullEmbeddingProvider returns 384-dimensional vectors
         assert_eq!(service.embedding_dimensions(), 384);
@@ -363,27 +343,7 @@ mod service_unit_tests {
     async fn test_context_service_embed_text() -> Result<(), Box<dyn std::error::Error>> {
         let embedding_provider = Arc::new(NullEmbeddingProvider::new());
         let vector_store = Arc::new(InMemoryVectorStoreProvider::new());
-        let (sender, receiver) = tokio::sync::mpsc::channel(100);
-        tokio::spawn(async move {
-            let mut receiver = receiver;
-            while let Some(msg) = receiver.recv().await {
-                use mcp_context_browser::adapters::hybrid_search::HybridSearchMessage;
-                match msg {
-                    HybridSearchMessage::Search { respond_to, .. } => {
-                        let _ = respond_to.send(Ok(Vec::new()));
-                    }
-                    HybridSearchMessage::GetStats { respond_to } => {
-                        let _ = respond_to.send(std::collections::HashMap::new());
-                    }
-                    _ => {}
-                }
-            }
-        });
-        let hybrid_search = Arc::new(mcp_context_browser::adapters::HybridSearchAdapter::new(
-            sender,
-        ));
-        let service =
-            ContextService::new_with_providers(embedding_provider, vector_store, hybrid_search);
+        let service = ContextService::new_with_providers(embedding_provider, vector_store);
 
         let embedding = service.embed_text("test query").await?;
         // NullEmbeddingProvider returns 384-dimensional vectors
