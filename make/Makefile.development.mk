@@ -58,10 +58,23 @@ docker-status: ## Show service status and endpoints
 	@echo "  Ollama:      http://localhost:11434"
 	@echo "  Milvus:      http://localhost:19530"
 
-test-docker: docker-up ## Run integration tests with Docker (starts services)
+test-integration-docker: ## Run integration tests with Docker containers (for use inside test-runner)
+	@echo "🧪 Running integration tests with Docker services..."
+	@OPENAI_BASE_URL=http://mcp-openai-mock:1080 \
+	OLLAMA_BASE_URL=http://mcp-ollama:11434 \
+	MILVUS_ADDRESS=http://mcp-milvus-standalone:19530 \
+	REDIS_URL=redis://host.docker.internal:6379 \
+	NATS_URL=nats://host.docker.internal:4222 \
+	cargo test --test integration_docker redis_cache_integration nats_event_bus_integration -- --nocapture
+
+test-docker: docker-up ## Run integration tests with Docker (uses host Redis/NATS and Docker services)
 	@echo "🧪 Running Docker integration tests..."
+	@echo "📍 Docker services: OpenAI mock, Ollama, Milvus"
+	@echo "📍 Host services: Redis, NATS (from host machine)"
 	@OPENAI_BASE_URL=http://localhost:1080 \
 	OLLAMA_BASE_URL=http://localhost:11434 \
 	MILVUS_ADDRESS=http://localhost:19530 \
-	cargo test --test integration_docker -- --nocapture || true
+	REDIS_URL=${REDIS_URL:-redis://127.0.0.1:6379} \
+	NATS_URL=${NATS_URL:-nats://127.0.0.1:4222} \
+	cargo test --test integration_docker redis_cache_integration nats_event_bus_integration -- --nocapture || true
 	@$(MAKE) docker-down

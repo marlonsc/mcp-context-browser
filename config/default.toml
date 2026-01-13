@@ -63,10 +63,12 @@ bypass_paths = ["/health", "/metrics"]  # Paths that bypass authentication
 # ============================================================================
 [admin]
 enabled = true            # Enable admin dashboard
-username = "admin"        # Admin username
-password = "admin"        # Admin password (change in production!)
-jwt_secret = "default-jwt-secret-change-in-production"  # JWT signing secret
 jwt_expiration = 3600     # Token expiration in seconds (1 hour)
+# SECURITY: Credentials MUST be set via environment variables:
+#   MCP_ADMIN_USERNAME - Admin username (required)
+#   MCP_ADMIN_PASSWORD - Admin password (min 8 chars, required)
+#   MCP_ADMIN_JWT_SECRET - JWT signing secret (min 32 chars, required)
+# The server will fail to start if these are not set when admin is enabled.
 
 # ============================================================================
 # EMBEDDING PROVIDERS - AI Model for Semantic Search

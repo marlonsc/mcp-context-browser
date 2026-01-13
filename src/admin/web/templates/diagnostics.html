@@ -104,36 +104,38 @@ function diagnostics() {
 
         async runHealthCheck() {
             try {
-                await API.post('/admin/diagnostics/health-check');
-                toast.success('Health check started');
+                await API.get('/admin/diagnostic/health');
+                toast.success('Health check completed');
                 location.reload();
             } catch (e) { toast.error(e.message); }
         },
 
         async testAllProviders() {
             try {
-                await API.post('/admin/diagnostics/test-providers');
-                toast.success('Provider test started');
+                // Test each provider type sequentially
+                await API.post('/admin/diagnostic/connectivity/embedding');
+                await API.post('/admin/diagnostic/connectivity/vector_store');
+                toast.success('Provider tests completed');
             } catch (e) { toast.error(e.message); }
         },
 
         async testEmbedding() {
             try {
-                await API.post('/admin/diagnostics/test-embedding');
-                toast.success('Embedding test started');
+                await API.post('/admin/diagnostic/connectivity/embedding');
+                toast.success('Embedding test completed');
             } catch (e) { toast.error(e.message); }
         },
 
         async testVectorStore() {
             try {
-                await API.post('/admin/diagnostics/test-vector-store');
-                toast.success('Vector store test started');
+                await API.post('/admin/diagnostic/connectivity/vector_store');
+                toast.success('Vector store test completed');
             } catch (e) { toast.error(e.message); }
         },
 
         async runPerfTest() {
             try {
-                await API.post('/admin/diagnostics/performance', this.perfTest);
+                await API.post('/admin/diagnostic/performance', this.perfTest);
                 toast.success('Performance test started');
             } catch (e) { toast.error(e.message); }
         }

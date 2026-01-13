@@ -34,6 +34,9 @@ const TPL_MAINTENANCE: &str = include_str!("web/templates/maintenance.html");
 const TPL_DIAGNOSTICS: &str = include_str!("web/templates/diagnostics.html");
 const TPL_DATA_MANAGEMENT: &str = include_str!("web/templates/data_management.html");
 const TPL_LOGIN: &str = include_str!("web/templates/login.html");
+const TPL_ICONS: &str = include_str!("web/templates/icons.html");
+const TPL_ADMIN_CSS: &str = include_str!("web/templates/admin.css");
+const TPL_ADMIN_JS: &str = include_str!("web/templates/admin.js");
 // HTMX partials
 const TPL_HTMX_DASHBOARD_METRICS: &str = include_str!("web/templates/htmx/dashboard_metrics.html");
 const TPL_HTMX_PROVIDERS_LIST: &str = include_str!("web/templates/htmx/providers_list.html");
@@ -54,6 +57,8 @@ impl WebInterface {
         let mut tera = Tera::default();
 
         // Add all embedded templates
+        // NOTE: icons.html MUST be registered FIRST since base.html imports macros from it
+        tera.add_raw_template("icons.html", TPL_ICONS)?;
         tera.add_raw_template("base.html", TPL_BASE)?;
         tera.add_raw_template("dashboard.html", TPL_DASHBOARD)?;
         tera.add_raw_template("providers.html", TPL_PROVIDERS)?;
@@ -113,7 +118,8 @@ impl WebInterface {
         // Public routes - no authentication required
         let public_routes = Router::new()
             .route("/login", get(login_handler))
-            .route("/admin.css", get(css_handler));
+            .route("/static/admin.css", get(css_handler))
+            .route("/static/admin.js", get(js_handler));
 
         // Merge routes
         protected_routes.merge(public_routes).with_state(state)
@@ -236,12 +242,21 @@ async fn login_handler(State(state): State<AdminState>) -> impl IntoResponse {
 }
 
 async fn css_handler() -> impl IntoResponse {
-    let css = include_str!("web/templates/admin.css");
     Response::builder()
         .header("Content-Type", "text/css")
-        .body(css.to_string())
+        .body(TPL_ADMIN_CSS.to_string())
         .map_err(|e| {
             tracing::error!("Failed to build CSS response: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })
+}
+
+async fn js_handler() -> impl IntoResponse {
+    Response::builder()
+        .header("Content-Type", "application/javascript")
+        .body(TPL_ADMIN_JS.to_string())
+        .map_err(|e| {
+            tracing::error!("Failed to build JS response: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR
         })
 }

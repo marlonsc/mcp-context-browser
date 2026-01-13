@@ -51,14 +51,41 @@ impl Default for SecurityConfig {
     fn default() -> Self {
         Self {
             enabled: true,
-            content_security_policy: Some("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'".to_string()),
+            // CSP for admin dashboard - requires 'unsafe-inline' for:
+            // - Inline <script> blocks in admin templates (dashboard.html, logs.html, etc.)
+            // - Tailwind CSS inline configuration
+            // - Alpine.js reactive attributes
+            // SECURITY NOTE: This CSP is designed for the internal admin interface.
+            // API endpoints are protected by authentication and rate limiting.
+            // TODO: Consider extracting inline scripts to external files (Phase 3 refactoring)
+            content_security_policy: Some(concat!(
+                "default-src 'self'; ",
+                // Script sources: self + CDNs for Alpine/HTMX/Chart.js + unsafe-inline for inline scripts
+                "script-src 'self' https://cdn.tailwindcss.com https://unpkg.com https://cdn.jsdelivr.net 'unsafe-inline'; ",
+                // Styles: self + inline for Tailwind utility classes
+                "style-src 'self' 'unsafe-inline'; ",
+                // Images: self + data URIs for inline icons + HTTPS for external images
+                "img-src 'self' data: https:; ",
+                // Fonts: self + data URIs for embedded fonts
+                "font-src 'self' data:; ",
+                // Connections: self only (no external API calls from admin)
+                "connect-src 'self'; ",
+                // Forms: self only
+                "form-action 'self'; ",
+                // Base URI: self only (prevent base tag hijacking)
+                "base-uri 'self'; ",
+                // Object sources: none (no plugins)
+                "object-src 'none'; ",
+                // Frame ancestors: none (prevent clickjacking via iframes)
+                "frame-ancestors 'none'"
+            ).to_string()),
             hsts_enabled: true,
-            hsts_max_age: 31536000, // 1 year
+            hsts_max_age: 31_536_000, // 1 year (with underscores for readability)
             hsts_include_subdomains: true,
             x_frame_options: Some("DENY".to_string()),
             x_content_type_options: true,
             referrer_policy: Some("strict-origin-when-cross-origin".to_string()),
-            permissions_policy: Some("camera=(), microphone=(), geolocation=(), payment=()".to_string()),
+            permissions_policy: Some("camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=()".to_string()),
             cross_origin_embedder_policy: Some("require-corp".to_string()),
             cross_origin_opener_policy: Some("same-origin".to_string()),
             cross_origin_resource_policy: Some("same-origin".to_string()),

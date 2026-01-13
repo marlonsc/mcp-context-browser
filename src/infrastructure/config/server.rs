@@ -11,6 +11,9 @@ pub struct ServerConfig {
 
 impl Default for ServerConfig {
     fn default() -> Self {
-        panic!("[FATAL] ServerConfig::default() should never be called - all config must come from config/default.toml embedded in binary")
+        Self {
+            host: "0.0.0.0".to_string(),
+            port: 3000,
+        }
     }
 }

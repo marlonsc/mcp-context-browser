@@ -283,7 +283,7 @@ mod in_memory_provider_tests {
 #[cfg(test)]
 mod null_provider_tests {
     use super::*;
-    use mcp_context_browser::adapters::providers::vector_store::NullVectorStoreProvider;
+    use mcp_context_browser::adapters::providers::vector_store::null::NullVectorStoreProvider;
 
     #[tokio::test]
     async fn test_provider_creation() {
@@ -293,7 +293,7 @@ mod null_provider_tests {
 
     #[tokio::test]
     async fn test_collection_operations() {
-        let provider = NullVectorStoreProvider::new();
+        let provider: NullVectorStoreProvider = NullVectorStoreProvider::new();
         let collection = "test_collection";
         let dimensions = 128;
 
@@ -308,13 +308,13 @@ mod null_provider_tests {
 
     #[tokio::test]
     async fn test_vector_operations() -> Result<(), Box<dyn std::error::Error>> {
-        let provider = NullVectorStoreProvider::new();
+        let provider: NullVectorStoreProvider = NullVectorStoreProvider::new();
         let collection = "test_vectors";
         let embedding = test_utils::create_test_embedding(1, 128);
         let metadata = test_utils::create_test_metadata(1);
 
         // All operations should succeed but return empty/default results
-        let ids = provider
+        let ids: Vec<String> = provider
             .insert_vectors(collection, &[embedding], vec![metadata])
             .await?;
         assert_eq!(ids.len(), 1); // Should return one ID per vector
@@ -663,7 +663,7 @@ mod common_provider_tests {
     #[tokio::test]
     async fn test_null_provider_compliance() {
         let provider =
-            mcp_context_browser::adapters::providers::vector_store::NullVectorStoreProvider::new();
+            mcp_context_browser::adapters::providers::vector_store::null::NullVectorStoreProvider::new();
         test_provider_interface_compliance(provider).await;
     }
 }

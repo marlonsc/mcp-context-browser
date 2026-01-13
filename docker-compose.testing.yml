@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: mcp-redis-test
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - mcp-test-network
+
+  nats:
+    image: nats:latest
+    container_name: mcp-nats-test
+    ports:
+      - "4222:4222"
+      - "8222:8222"  # NATS monitoring
+    command:
+      - "--jetstream"
+      - "--store_dir"
+      - "/data/jetstream"
+    volumes:
+      - nats_data:/data/jetstream
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8222/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - mcp-test-network
+
+volumes:
+  redis_data:
+  nats_data:
+
+networks:
+  mcp-test-network:
+    driver: bridge

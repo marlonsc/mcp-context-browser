@@ -20,6 +20,7 @@ use crate::server::transport::{
     VersionChecker,
 };
 use crate::server::McpServer;
+use arc_swap::ArcSwap;
 use rmcp::transport::stdio;
 use rmcp::ServerHandler;
 use rmcp::ServiceExt;
@@ -110,7 +111,8 @@ async fn initialize_server_components(
     let http_client = HttpClientPool::with_config(HttpClientConfig::default())
         .map_err(|e| format!("Failed to initialize HTTP client pool: {}", e))?;
     tracing::info!("✅ HTTP client pool initialized successfully");
-    let http_client: Arc<dyn crate::adapters::http_client::HttpClientProvider> = Arc::new(http_client);
+    let http_client: Arc<dyn crate::adapters::http_client::HttpClientProvider> =
+        Arc::new(http_client);
 
     // Initialize database pool (not used directly, but available for DI)
     if config.database.enabled {
@@ -163,8 +165,12 @@ async fn initialize_server_components(
     let event_bus_for_recovery = event_bus.clone();
     let event_bus_for_health = event_bus.clone();
 
+    // Wrap config in Arc<ArcSwap> for builder (clone first since we need config later)
+    let config_arc = Arc::new(ArcSwap::from_pointee(config.clone()));
+
     // Create server instance using builder
     let mut builder = McpServerBuilder::new()
+        .with_config(config_arc)
         .with_log_buffer(log_buffer)
         .with_event_bus(event_bus)
         .with_resource_limits(resource_limits.clone())
@@ -359,7 +365,9 @@ async fn initialize_server_components(
 /// - Production-ready rate limiting
 /// - Server version compatibility (±1 minor version)
 /// - Session management with resumption support
-pub async fn run_server(config_path: Option<&std::path::Path>) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn run_server(
+    config_path: Option<&std::path::Path>,
+) -> Result<(), Box<dyn std::error::Error>> {
     let log_buffer = create_shared_log_buffer(1000);
     // Initialize tracing first for proper error reporting
     init_tracing(log_buffer.clone())?;

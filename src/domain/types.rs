@@ -267,6 +267,19 @@ pub struct EmbeddingConfig {
     pub max_tokens: Option<usize>,
 }
 
+impl Default for EmbeddingConfig {
+    fn default() -> Self {
+        Self {
+            provider: "fastembed".to_string(),
+            model: "BAAI/bge-small-en-v1.5".to_string(),
+            api_key: None,
+            base_url: None,
+            dimensions: Some(384),
+            max_tokens: None,
+        }
+    }
+}
+
 /// Configuration for vector store providers
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct VectorStoreConfig {
@@ -277,6 +290,19 @@ pub struct VectorStoreConfig {
     pub collection: Option<String>,
     pub dimensions: Option<usize>,
     pub timeout_secs: Option<u64>,
+}
+
+impl Default for VectorStoreConfig {
+    fn default() -> Self {
+        Self {
+            provider: "filesystem".to_string(),
+            address: None,
+            token: None,
+            collection: None,
+            dimensions: Some(384),
+            timeout_secs: Some(30),
+        }
+    }
 }
 
 /// Sync batch for queue processing

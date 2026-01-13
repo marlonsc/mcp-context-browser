@@ -68,6 +68,8 @@ pub struct NatsEventBus {
     client: async_nats::Client,
     jetstream: jetstream::Context,
     stream_name: String,
+    subject: String,
+    consumer_name: String,
 }
 
 impl NatsEventBus {
@@ -88,6 +90,32 @@ impl NatsEventBus {
     /// }
     /// ```
     pub async fn new(server_url: &str) -> Result<Self> {
+        Self::new_with_config(
+            server_url,
+            NATS_STREAM_NAME,
+            NATS_SUBJECT,
+            NATS_CONSUMER_DURABLE,
+        )
+        .await
+    }
+
+    /// Create a new NATS event bus with custom stream/subject/consumer names
+    /// Useful for test isolation where each test needs its own namespace
+    pub async fn new_with_prefix(server_url: &str, prefix: &str) -> Result<Self> {
+        let stream_name = format!("{}_{}", prefix, NATS_STREAM_NAME);
+        let subject = format!("{}.events.>", prefix.to_lowercase());
+        let consumer_name = format!("{}-consumer", prefix.to_lowercase());
+
+        Self::new_with_config(server_url, &stream_name, &subject, &consumer_name).await
+    }
+
+    /// Internal constructor with full configuration
+    async fn new_with_config(
+        server_url: &str,
+        stream_name: &str,
+        subject: &str,
+        consumer_name: &str,
+    ) -> Result<Self> {
         debug!("Connecting to NATS server: {}", server_url);
 
         // Connect to NATS
@@ -103,23 +131,29 @@ impl NatsEventBus {
         let jetstream_ctx = jetstream::new(client.clone());
 
         // Ensure stream exists
-        Self::ensure_stream_exists(&jetstream_ctx).await?;
+        Self::ensure_stream_exists(&jetstream_ctx, stream_name, subject).await?;
 
         debug!("NATS event bus initialized successfully");
 
         Ok(Self {
             client,
             jetstream: jetstream_ctx,
-            stream_name: NATS_STREAM_NAME.to_string(),
+            stream_name: stream_name.to_string(),
+            subject: subject.to_string(),
+            consumer_name: consumer_name.to_string(),
         })
     }
 
     /// Create the JetStream stream if it doesn't exist
-    async fn ensure_stream_exists(jetstream_ctx: &jetstream::Context) -> Result<()> {
+    async fn ensure_stream_exists(
+        jetstream_ctx: &jetstream::Context,
+        stream_name: &str,
+        subject: &str,
+    ) -> Result<()> {
         match jetstream_ctx
             .get_or_create_stream(jetstream::stream::Config {
-                name: NATS_STREAM_NAME.to_string(),
-                subjects: vec![NATS_SUBJECT.to_string()],
+                name: stream_name.to_string(),
+                subjects: vec![subject.to_string()],
                 retention: jetstream::stream::RetentionPolicy::Limits,
                 max_messages: STREAM_MAX_MSGS,
                 max_age: STREAM_MAX_AGE,
@@ -129,7 +163,7 @@ impl NatsEventBus {
             .await
         {
             Ok(_) => {
-                debug!("JetStream stream '{}' ready", NATS_STREAM_NAME);
+                debug!("JetStream stream '{}' ready", stream_name);
                 Ok(())
             }
             Err(e) => {
@@ -163,7 +197,7 @@ impl EventBusProvider for NatsEventBus {
         // Publish to NATS JetStream
         match self
             .jetstream
-            .publish(NATS_SUBJECT.to_string(), payload.into())
+            .publish(self.subject.clone(), payload.into())
             .await
         {
             Ok(ack_future) => {
@@ -196,13 +230,14 @@ impl EventBusProvider for NatsEventBus {
         // Using pull subscription with durable consumer for reliability
         debug!("Creating NATS JetStream subscription");
 
-        // Create durable consumer on stream
+        // Create ephemeral consumer on stream (no durable_name for isolation)
+        // Each subscription gets its own consumer that receives ALL messages
         let consumer = self
             .jetstream
             .create_consumer_on_stream(
                 jetstream::consumer::pull::Config {
-                    durable_name: Some(NATS_CONSUMER_DURABLE.to_string()),
-                    deliver_policy: jetstream::consumer::DeliverPolicy::All,
+                    durable_name: None, // Ephemeral consumer for better test isolation
+                    deliver_policy: jetstream::consumer::DeliverPolicy::New,
                     ack_policy: jetstream::consumer::AckPolicy::Explicit,
                     ack_wait: Duration::from_secs(30),
                     max_deliver: 10,

@@ -262,7 +262,7 @@ mod repository_unit_tests {
 /// Test EmbeddingProvider implementations
 #[cfg(test)]
 mod provider_unit_tests {
-    use mcp_context_browser::adapters::providers::NullEmbeddingProvider;
+    use mcp_context_browser::adapters::providers::embedding::null::NullEmbeddingProvider;
     use mcp_context_browser::domain::ports::EmbeddingProvider;
     use std::sync::Arc;
 
@@ -324,9 +324,8 @@ mod provider_unit_tests {
 /// Test ContextService initialization and operations
 #[cfg(test)]
 mod service_unit_tests {
-    use mcp_context_browser::adapters::providers::{
-        InMemoryVectorStoreProvider, NullEmbeddingProvider,
-    };
+    use mcp_context_browser::adapters::providers::embedding::null::NullEmbeddingProvider;
+    use mcp_context_browser::adapters::providers::InMemoryVectorStoreProvider;
     use mcp_context_browser::application::ContextService;
     use std::sync::Arc;
 
@@ -469,7 +468,7 @@ mod utility_unit_tests {
 /// Performance tests with timing assertions
 #[cfg(test)]
 mod performance_unit_tests {
-    use mcp_context_browser::adapters::providers::NullEmbeddingProvider;
+    use mcp_context_browser::adapters::providers::embedding::null::NullEmbeddingProvider;
     use mcp_context_browser::domain::ports::EmbeddingProvider;
     use std::time::Instant;
 

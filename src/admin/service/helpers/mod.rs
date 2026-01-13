@@ -10,6 +10,7 @@
 //! - `admin_defaults` - Default configuration values for admin operations
 //! - `runtime_config` - Dynamic configuration values from running subsystems
 //! - `route_discovery` - Dynamic route registration and discovery
+//! - `subsystems` - Subsystem information building
 
 pub mod activity;
 pub mod admin_defaults;
@@ -21,3 +22,4 @@ pub mod logging;
 pub mod maintenance;
 pub mod route_discovery;
 pub mod runtime_config;
+pub mod subsystems;

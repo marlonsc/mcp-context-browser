@@ -70,12 +70,6 @@ pub enum VectorStoreProviderConfig {
     },
 }
 
-impl Default for VectorStoreProviderConfig {
-    fn default() -> Self {
-        panic!("[FATAL CONFIG ERROR] VectorStoreProviderConfig missing from config/default.toml - this field is REQUIRED and must come from the embedded configuration")
-    }
-}
-
 impl Validate for VectorStoreProviderConfig {
     fn validate(&self) -> std::result::Result<(), validator::ValidationErrors> {
         let mut errors = validator::ValidationErrors::new();

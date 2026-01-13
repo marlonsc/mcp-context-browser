@@ -3,7 +3,7 @@
 //! This example demonstrates how to use the basic provider routing system
 //! with health monitoring and failover capabilities.
 
-use mcp_context_browser::adapters::providers::embedding::NullEmbeddingProvider;
+use mcp_context_browser::adapters::providers::embedding::null::NullEmbeddingProvider;
 use mcp_context_browser::adapters::providers::routing::{
     CircuitBreaker, ContextualStrategy, CostTracker, CostTrackerConfig, FailoverManager,
     HealthMonitor, ProviderContext, ProviderMetricsCollector, ProviderRouter, ProviderRouterDeps,

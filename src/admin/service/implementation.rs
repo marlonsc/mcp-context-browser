@@ -45,7 +45,7 @@ pub struct AdminServiceImpl {
     pub event_bus: crate::infrastructure::events::SharedEventBusProvider,
     #[shaku(default)]
     log_buffer: crate::infrastructure::logging::SharedLogBuffer,
-    #[shaku(default)]
+    #[shaku(inject)]
     config: Arc<arc_swap::ArcSwap<crate::infrastructure::config::Config>>,
 }
 

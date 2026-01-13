@@ -17,6 +17,10 @@ pub struct MetricsConfig {
 
 impl Default for MetricsConfig {
     fn default() -> Self {
-        panic!("[FATAL] MetricsConfig::default() should never be called - all config must come from config/default.toml embedded in binary")
+        Self {
+            port: 3001,
+            enabled: true,
+            rate_limiting: RateLimitConfig::default(),
+        }
     }
 }

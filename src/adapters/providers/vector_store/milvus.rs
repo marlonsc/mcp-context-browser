@@ -87,6 +87,10 @@ impl VectorStoreProvider for MilvusVectorStoreProvider {
             .await
             .map_err(|e| Error::vector_db(format!("Failed to create collection: {}", e)))?;
 
+        // Small delay to allow Milvus to sync collection metadata before index creation
+        // This prevents "collection not found" errors due to timing race conditions
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+
         // Create index on the vector field for efficient search
         use milvus::index::{IndexParams, IndexType, MetricType};
 

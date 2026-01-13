@@ -13,9 +13,8 @@ use std::sync::Arc;
 #[cfg(test)]
 mod generic_context_service_tests {
     use super::*;
-    use mcp_context_browser::adapters::providers::{
-        InMemoryVectorStoreProvider, NullEmbeddingProvider,
-    };
+    use mcp_context_browser::adapters::providers::InMemoryVectorStoreProvider;
+    use mcp_context_browser::adapters::providers::embedding::null::NullEmbeddingProvider;
 
     use mcp_context_browser::domain::ports::HybridSearchProvider;
 

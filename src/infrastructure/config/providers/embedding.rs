@@ -64,12 +64,6 @@ pub enum EmbeddingProviderConfig {
     },
 }
 
-impl Default for EmbeddingProviderConfig {
-    fn default() -> Self {
-        panic!("[FATAL CONFIG ERROR] EmbeddingProviderConfig missing from config/default.toml - this field is REQUIRED and must come from the embedded configuration")
-    }
-}
-
 impl Validate for EmbeddingProviderConfig {
     fn validate(&self) -> std::result::Result<(), validator::ValidationErrors> {
         let mut errors = validator::ValidationErrors::new();

@@ -19,11 +19,11 @@
 {# Nav link macro - uses CSS classes from admin.css #}
 {% macro nav_link(icon, href, target_page, label, mobile=false) %}
 {% if mobile %}
-<a href="{{ href }}" class="mobile-nav-link {% if page == target_page %}active{% endif %}">
+<a href="{{ href | safe }}" class="mobile-nav-link {% if page == target_page %}active{% endif %}">
     {{ icons::icon(name=icon, class="icon") }}{{ label }}
 </a>
 {% else %}
-<a href="{{ href }}" class="nav-link {% if page == target_page %}active{% endif %}">
+<a href="{{ href | safe }}" class="nav-link {% if page == target_page %}active{% endif %}">
     {{ icons::icon(name=icon, class="icon") }}{{ label }}
 </a>
 {% endif %}
@@ -57,7 +57,7 @@
             <button @click="document.documentElement.classList.toggle('dark'); localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light')" class="icon-btn" title="Toggle theme">
                 {{ icons::icon(name="moon", class="icon") }}
             </button>
-            <form method="post" action="/logout">
+            <form method="post" action="/admin/auth/logout">
                 <button type="submit" class="icon-btn" title="Logout">
                     {{ icons::icon(name="logout", class="icon") }}
                 </button>

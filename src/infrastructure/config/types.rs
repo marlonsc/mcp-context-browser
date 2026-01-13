@@ -48,7 +48,7 @@ pub struct GlobalProviderConfig {
 }
 
 /// Legacy provider config (maintained for backward compatibility)
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, Default)]
 pub struct ProviderConfig {
     #[validate(nested)]
     pub embedding: crate::domain::types::EmbeddingConfig,
@@ -107,7 +107,22 @@ pub struct Config {
 
 impl Default for Config {
     fn default() -> Self {
-        panic!("[FATAL CONFIG ERROR] Config missing from config/default.toml - this field is REQUIRED and must come from the embedded configuration")
+        Self {
+            name: "MCP Context Browser".to_string(),
+            version: env!("CARGO_PKG_VERSION").to_string(),
+            server: ServerConfig::default(),
+            providers: ProviderConfig::default(),
+            metrics: MetricsConfig::default(),
+            admin: None,
+            auth: AuthConfig::default(),
+            database: DatabaseConfig::default(),
+            sync: SyncConfig::default(),
+            daemon: DaemonConfig::default(),
+            resource_limits: ResourceLimitsConfig::default(),
+            cache: CacheConfig::default(),
+            hybrid_search: HybridSearchConfig::default(),
+            data: DataConfig::default(),
+        }
     }
 }
 

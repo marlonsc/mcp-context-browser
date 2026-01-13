@@ -5,5 +5,6 @@
 //! - Service integration tests
 //! - E2E tests with MCP daemon
 //! - Security tests
+//! - Web interface tests
 
 mod admin;

@@ -111,9 +111,19 @@ services:
       dockerfile: tests/docker/Dockerfile.test
     container_name: mcp-test-runner
     environment:
+      # Internal services (Docker network)
       - OPENAI_BASE_URL=http://mcp-openai-mock:1080
       - OLLAMA_BASE_URL=http://mcp-ollama:11434
       - MILVUS_ADDRESS=http://mcp-milvus-standalone:19530
+      # Host services (Redis and NATS on host machine)
+      # Use host.docker.internal for macOS/Docker Desktop
+      # Use 172.17.0.1 for Linux host gateway
+      - REDIS_URL=redis://host.docker.internal:6379
+      - NATS_URL=nats://host.docker.internal:4222
+      - MCP_CACHE__BACKEND=redis
+      - MCP_CACHE__URL=redis://host.docker.internal:6379
+      - MCP_EVENT_BUS_TYPE=nats
+      - MCP_NATS_URL=nats://host.docker.internal:4222
       - RUST_BACKTRACE=1
     volumes:
       - .:/app
@@ -128,7 +138,11 @@ services:
         condition: service_healthy
     networks:
       - mcp-test
-    command: ["make", "test-integration-docker"]
+    extra_hosts:
+      # Support Linux hosts where host.docker.internal doesn't work
+      # If Redis/NATS are on host, this allows the container to reach them
+      - "host.docker.internal:host-gateway"
+    command: ["sh", "-c", "echo '⏳ Waiting for all services to be ready...' && sleep 10 && echo '🚀 Starting integration tests...' && make test-integration-docker"]
 
 volumes:
   ollama_data:

@@ -30,7 +30,13 @@ pub struct DataConfig {
 
 impl Default for DataConfig {
     fn default() -> Self {
-        panic!("[FATAL] DataConfig::default() should never be called - all config must come from config/default.toml embedded in binary")
+        Self {
+            base_dir: "~/.local/share/mcp-context-browser".to_string(),
+            snapshots_dir: None,
+            config_history_dir: None,
+            encryption_keys_dir: None,
+            circuit_breakers_dir: None,
+        }
     }
 }
 
