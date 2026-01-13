@@ -225,7 +225,7 @@ impl EventBusProvider for NatsEventBus {
                     deliver_policy: jetstream::consumer::DeliverPolicy::New,
                     ack_policy: jetstream::consumer::AckPolicy::Explicit,
                     ack_wait: NATS_CONSUMER_ACK_WAIT,
-                    max_deliver: NATS_CONSUMER_MAX_DELIVER as i64,
+                    max_deliver: NATS_CONSUMER_MAX_DELIVER,
                     ..Default::default()
                 },
                 &self.stream_name,

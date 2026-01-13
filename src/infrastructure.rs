@@ -18,5 +18,6 @@ pub mod provider_lifecycle;
 pub mod rate_limit;
 pub mod recovery;
 pub mod respawn;
+pub mod service_helpers;
 pub mod signals;
 pub mod utils;

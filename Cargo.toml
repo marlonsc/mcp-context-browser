@@ -185,6 +185,11 @@ async-trait = "0.1.89"
 downcast-rs = "2.0.2"
 futures-util = "0.3.31"
 
+# Service layer improvements
+backoff = { version = "0.4", features = ["tokio"] }  # Retry logic with exponential backoff
+itertools = "0.13"  # Iterator composition and chains
+humantime = "2.1"  # Human-readable duration formatting
+
 # Event bus providers
 async-nats = "0.35"  # NATS client with JetStream support
 

@@ -6,6 +6,7 @@ use crate::admin::service::helpers::admin_defaults;
 use crate::admin::service::types::{AdminError, CacheType, CleanupConfig, MaintenanceResult};
 use crate::infrastructure::events::SharedEventBusProvider;
 use crate::infrastructure::logging::SharedLogBuffer;
+use crate::infrastructure::utils::ProviderUtils;
 
 /// Clear cache by type
 pub async fn clear_cache(
@@ -52,26 +53,7 @@ pub async fn restart_provider(
     let start_time = std::time::Instant::now();
 
     // Parse provider_id to extract type and id
-    // Format: "type:id" or just "id"
-    let (provider_type, actual_id): (String, String) = if provider_id.contains(':') {
-        let parts: Vec<&str> = provider_id.splitn(2, ':').collect();
-        (
-            parts[0].to_string(),
-            parts.get(1).map(|s| s.to_string()).unwrap_or_default(),
-        )
-    } else {
-        // Try to determine type from common provider names
-        let provider_type = match provider_id.to_lowercase().as_str() {
-            "ollama" | "openai" | "voyageai" | "gemini" | "fastembed" | "null_embedding" => {
-                "embedding"
-            }
-            "milvus" | "edgevec" | "filesystem" | "encrypted" | "in_memory" | "null_vector" => {
-                "vector_store"
-            }
-            _ => "unknown",
-        };
-        (provider_type.to_string(), provider_id.to_string())
-    };
+    let (provider_type, actual_id) = ProviderUtils::parse_provider_id(provider_id);
 
     tracing::info!(
         "[ADMIN] Requesting restart for provider: {} (type: {}, id: {})",
@@ -120,21 +102,7 @@ pub async fn reconfigure_provider(
     let start_time = std::time::Instant::now();
 
     // Parse provider_id to extract type
-    let provider_type: String = if provider_id.contains(':') {
-        let parts: Vec<&str> = provider_id.splitn(2, ':').collect();
-        parts[0].to_string()
-    } else {
-        // Try to determine type from common provider names
-        match provider_id.to_lowercase().as_str() {
-            "ollama" | "openai" | "voyageai" | "gemini" | "fastembed" | "null_embedding" => {
-                "embedding".to_string()
-            }
-            "milvus" | "edgevec" | "filesystem" | "encrypted" | "in_memory" | "null_vector" => {
-                "vector_store".to_string()
-            }
-            _ => "unknown".to_string(),
-        }
-    };
+    let (provider_type, _) = ProviderUtils::parse_provider_id(provider_id);
 
     tracing::info!(
         "[ADMIN] Reconfiguring provider: {} (type: {}) with new config",

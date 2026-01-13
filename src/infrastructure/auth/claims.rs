@@ -3,6 +3,7 @@
 //! Defines the token payload structure for authentication.
 
 use super::roles::UserRole;
+use crate::infrastructure::constants::JWT_EXPIRATION_SECS;
 use crate::infrastructure::utils::TimeUtils;
 use serde::{Deserialize, Serialize};
 
@@ -129,7 +130,7 @@ mod tests {
             "test@example.com".to_string(),
             UserRole::Developer,
             "mcp-context-browser".to_string(),
-            3600,
+            JWT_EXPIRATION_SECS,
         );
 
         assert_eq!(claims.sub, "user123");

@@ -7,17 +7,15 @@ use super::claims::{HashVersion, User};
 use super::password::hash_password;
 use super::roles::UserRole;
 use crate::domain::error::{Error, Result};
+use crate::infrastructure::constants::{GENERATED_PASSWORD_LENGTH, JWT_SECRET_MIN_LENGTH_STRICT};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-/// Minimum JWT secret length for security
-pub const MIN_JWT_SECRET_LENGTH: usize = 64;
-
-/// Password length for generated passwords
-pub const GENERATED_PASSWORD_LENGTH: usize = 24;
+/// Minimum JWT secret length for security (alias for centralized constant)
+pub const MIN_JWT_SECRET_LENGTH: usize = JWT_SECRET_MIN_LENGTH_STRICT as usize;
 
 /// Characters used for password generation (alphanumeric + special)
 const PASSWORD_CHARSET: &[u8] =

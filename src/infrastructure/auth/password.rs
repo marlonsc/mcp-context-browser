@@ -4,6 +4,7 @@
 //! supporting bcrypt verification for migration.
 
 use crate::domain::error::{Error, Result};
+use crate::infrastructure::constants::BCRYPT_COST;
 
 // Feature flags for password hashing backends
 // Argon2id is preferred, bcrypt is fallback for migration
@@ -30,7 +31,7 @@ pub fn hash_password(password: &str) -> Result<String> {
 /// Hash a password using bcrypt (fallback when argon2 feature disabled)
 #[cfg(not(feature = "argon2"))]
 pub fn hash_password(password: &str) -> Result<String> {
-    bcrypt::hash(password, 10)
+    bcrypt::hash(password, BCRYPT_COST)
         .map_err(|e| Error::generic(format!("Password hashing failed: {}", e)))
 }
 

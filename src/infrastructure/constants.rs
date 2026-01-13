@@ -676,7 +676,7 @@ pub const NATS_STREAM_MAX_MSGS: i64 = 10000;
 pub const NATS_CONSUMER_ACK_WAIT: Duration = Duration::from_secs(30);
 
 /// NATS consumer max delivery attempts
-pub const NATS_CONSUMER_MAX_DELIVER: u32 = 10;
+pub const NATS_CONSUMER_MAX_DELIVER: i64 = 10;
 
 // ============================================================================
 // Authentication Configuration
@@ -688,8 +688,17 @@ pub const JWT_SECRET_MIN_LENGTH: usize = 32;
 /// Stricter JWT secret minimum length
 pub const JWT_SECRET_MIN_LENGTH_STRICT: usize = 64;
 
+/// JWT expiration time in seconds (1 hour)
+pub const JWT_EXPIRATION_SECS: u64 = 3600;
+
 /// Minimum password length
 pub const PASSWORD_MIN_LENGTH: usize = 8;
+
+/// Generated password length (for first-run user creation)
+pub const GENERATED_PASSWORD_LENGTH: usize = 24;
+
+/// Bcrypt hashing cost parameter (higher = slower/more secure)
+pub const BCRYPT_COST: u32 = 10;
 
 // ============================================================================
 // Connection Management
