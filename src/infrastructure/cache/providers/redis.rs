@@ -14,6 +14,7 @@ use crate::infrastructure::cache::provider::{CacheProvider, CacheStats, HealthSt
 use async_trait::async_trait;
 use redis::{aio::MultiplexedConnection, Client};
 use std::time::Duration;
+use tokio::time::timeout;
 
 /// Redis-based cache provider for distributed caching
 pub struct RedisCacheProvider {
@@ -33,22 +34,22 @@ impl RedisCacheProvider {
         tracing::info!("[CACHE] Initializing Redis provider (remote mode): {}", url);
 
         let client = Client::open(url)
-            .map_err(|e| Error::generic(format!("Failed to create Redis client: {}", e)))?;
+            .map_err(|e| Error::generic(format!("failed to create redis client: {}", e)))?;
 
         // Test connection
         let mut conn = client
             .get_multiplexed_async_connection()
             .await
-            .map_err(|e| Error::generic(format!("Failed to connect to Redis at {}: {}", url, e)))?;
+            .map_err(|e| Error::generic(format!("failed to connect to redis at {}: {}", url, e)))?;
 
         // Ping to verify connection
         let pong: String = redis::cmd("PING")
             .query_async(&mut conn)
             .await
-            .map_err(|e| Error::generic(format!("Redis PING failed: {}", e)))?;
+            .map_err(|e| Error::generic(format!("redis ping failed: {}", e)))?;
 
         if pong != "PONG" {
-            return Err(Error::generic("Redis PING did not return PONG".to_string()));
+            return Err(Error::generic("redis ping did not return pong".to_string()));
         }
 
         tracing::info!("[CACHE] Redis connection established");
@@ -57,16 +58,32 @@ impl RedisCacheProvider {
     }
 
     /// Create a full cache key combining namespace and key
+    #[inline]
     fn full_key(namespace: &str, key: &str) -> String {
         format!("cache:{}:{}", namespace, key)
     }
 
-    /// Get a Redis connection from the pool
+    /// Get a Redis connection from the pool with timeout
     async fn get_connection(&self) -> Result<MultiplexedConnection> {
-        self.client
-            .get_multiplexed_async_connection()
-            .await
-            .map_err(|e| Error::generic(format!("Failed to get Redis connection: {}", e)))
+        // Set a 5-second timeout on connection pool retrieval to prevent indefinite blocking
+        timeout(
+            Duration::from_secs(5),
+            self.client.get_multiplexed_async_connection(),
+        )
+        .await
+        .map_err(|_| {
+            Error::generic(
+                    "redis connection pool timeout: failed to acquire connection within 5 seconds. \
+                     pool may be exhausted. check redis server availability and pool configuration"
+                        .to_string(),
+                )
+        })?
+        .map_err(|e| {
+            Error::generic(format!(
+                "failed to establish redis connection: {}. check redis server availability",
+                e
+            ))
+        })
     }
 }
 
@@ -82,7 +99,7 @@ impl CacheProvider for RedisCacheProvider {
             .await
             .map_err(|e| {
                 tracing::warn!("[CACHE] Redis GET failed for {}: {}", full_key, e);
-                Error::generic(format!("Redis GET failed: {}", e))
+                Error::generic(format!("redis get failed: {}", e))
             })?;
 
         Ok(value)
@@ -100,7 +117,7 @@ impl CacheProvider for RedisCacheProvider {
             .await
             .map_err(|e| {
                 tracing::warn!("[CACHE] Redis SET failed for {}: {}", full_key, e);
-                Error::generic(format!("Redis SET failed: {}", e))
+                Error::generic(format!("redis set failed: {}", e))
             })?;
 
         Ok(())
@@ -116,7 +133,7 @@ impl CacheProvider for RedisCacheProvider {
             .await
             .map_err(|e| {
                 tracing::warn!("[CACHE] Redis DEL failed for {}: {}", full_key, e);
-                Error::generic(format!("Redis DEL failed: {}", e))
+                Error::generic(format!("redis delete failed: {}", e))
             })?;
 
         Ok(())
@@ -132,14 +149,14 @@ impl CacheProvider for RedisCacheProvider {
                     .arg(&pattern)
                     .query_async(&mut conn)
                     .await
-                    .map_err(|e| Error::generic(format!("Redis KEYS failed: {}", e)))?;
+                    .map_err(|e| Error::generic(format!("redis keys scan failed: {}", e)))?;
 
                 if !keys.is_empty() {
                     redis::cmd("DEL")
                         .arg(&keys)
                         .query_async::<()>(&mut conn)
                         .await
-                        .map_err(|e| Error::generic(format!("Redis DEL keys failed: {}", e)))?;
+                        .map_err(|e| Error::generic(format!("redis delete keys failed: {}", e)))?;
                 }
             }
             None => {
@@ -149,14 +166,14 @@ impl CacheProvider for RedisCacheProvider {
                     .arg(pattern)
                     .query_async(&mut conn)
                     .await
-                    .map_err(|e| Error::generic(format!("Redis KEYS failed: {}", e)))?;
+                    .map_err(|e| Error::generic(format!("redis keys scan failed: {}", e)))?;
 
                 if !keys.is_empty() {
                     redis::cmd("DEL")
                         .arg(&keys)
                         .query_async::<()>(&mut conn)
                         .await
-                        .map_err(|e| Error::generic(format!("Redis DEL keys failed: {}", e)))?;
+                        .map_err(|e| Error::generic(format!("redis delete keys failed: {}", e)))?;
                 }
             }
         }
@@ -180,7 +197,7 @@ impl CacheProvider for RedisCacheProvider {
             .arg("stats")
             .query_async(&mut conn)
             .await
-            .map_err(|e| Error::generic(format!("Redis INFO failed: {}", e)))?;
+            .map_err(|e| Error::generic(format!("redis info command failed: {}", e)))?;
 
         // Parse basic stats from INFO response
         // This is a simplified implementation - production code might use more detailed parsing
@@ -210,7 +227,7 @@ impl CacheProvider for RedisCacheProvider {
         let pong: String = redis::cmd("PING")
             .query_async(&mut conn)
             .await
-            .map_err(|e| Error::generic(format!("Redis PING failed: {}", e)))?;
+            .map_err(|e| Error::generic(format!("redis ping failed: {}", e)))?;
 
         if pong == "PONG" {
             Ok(HealthStatus::Healthy)

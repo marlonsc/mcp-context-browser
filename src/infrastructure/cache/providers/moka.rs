@@ -120,6 +120,7 @@ impl MokaCacheProvider {
     }
 
     /// Get the cache for a specific namespace
+    #[inline]
     fn get_cache(&self, namespace: &str) -> &Cache<String, Vec<u8>> {
         match namespace {
             "embeddings" => &self.embeddings_cache,
@@ -132,6 +133,7 @@ impl MokaCacheProvider {
     }
 
     /// Create a full cache key combining namespace and key
+    #[inline]
     fn full_key(namespace: &str, key: &str) -> String {
         format!("{}:{}", namespace, key)
     }
