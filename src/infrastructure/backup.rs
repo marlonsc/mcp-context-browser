@@ -5,6 +5,7 @@
 
 use crate::domain::error::{Error, Result};
 use crate::infrastructure::events::{SharedEventBusProvider, SystemEvent};
+use crate::infrastructure::ErrorContext;
 use flate2::write::GzEncoder;
 use flate2::Compression;
 use std::fs::{self, File};
@@ -209,12 +210,12 @@ impl BackupActor {
         let backup_dir = Path::new(backup_dir_path);
         if !backup_dir.exists() {
             fs::create_dir_all(backup_dir)
-                .map_err(|e| Error::internal(format!("Failed to create backup dir: {}", e)))?;
+                .internal_context("Failed to create backup dir")?;
         }
 
         // Create the tar.gz file
         let file = File::create(target_path)
-            .map_err(|e| Error::internal(format!("Failed to create backup file: {}", e)))?;
+            .internal_context("Failed to create backup file")?;
 
         let encoder = GzEncoder::new(file, Compression::default());
         let mut archive = Builder::new(encoder);
@@ -224,20 +225,20 @@ impl BackupActor {
         if data_path.exists() && data_path.is_dir() {
             archive
                 .append_dir_all("data", data_path)
-                .map_err(|e| Error::internal(format!("Failed to add data to backup: {}", e)))?;
+                .internal_context("Failed to add data to backup")?;
         }
 
         // Finish writing the archive
         let encoder = archive
             .into_inner()
-            .map_err(|e| Error::internal(format!("Failed to finalize archive: {}", e)))?;
+            .internal_context("Failed to finalize archive")?;
         encoder
             .finish()
-            .map_err(|e| Error::internal(format!("Failed to finish compression: {}", e)))?;
+            .internal_context("Failed to finish compression")?;
 
         // Get file size
         let metadata = fs::metadata(target_path)
-            .map_err(|e| Error::internal(format!("Failed to get backup metadata: {}", e)))?;
+            .internal_context("Failed to get backup metadata")?;
 
         Ok(BackupInfo {
             path: target_path.to_string(),
@@ -254,7 +255,7 @@ impl BackupActor {
 
         let mut backups = Vec::new();
         let entries = fs::read_dir(backup_dir)
-            .map_err(|e| Error::internal(format!("Failed to read backup dir: {}", e)))?;
+            .internal_context("Failed to read backup dir")?;
 
         for entry in entries.flatten() {
             let path = entry.path();
