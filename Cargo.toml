@@ -191,7 +191,7 @@ itertools = "0.13"  # Iterator composition and chains
 humantime = "2.1"  # Human-readable duration formatting
 
 # Event bus providers
-async-nats = "0.35"  # NATS client with JetStream support
+async-nats = "0.45"  # NATS client with JetStream support
 
 # Local embeddings without external services
 fastembed = { version = "5.8", default-features = false, features = ["default"] }
