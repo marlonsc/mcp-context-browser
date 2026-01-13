@@ -6,9 +6,9 @@
 //! - Link validation
 //! - API endpoint consistency
 
-use mcp_context_browser::admin::web::builders::ViewModelBuilder;
-use mcp_context_browser::admin::web::view_models::*;
-use mcp_context_browser::admin::web::WebInterface;
+use mcp_context_browser::server::admin::web::builders::ViewModelBuilder;
+use mcp_context_browser::server::admin::web::view_models::*;
+use mcp_context_browser::server::admin::web::WebInterface;
 use tera::Context;
 
 // ============================================================================

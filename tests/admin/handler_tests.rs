@@ -3,7 +3,7 @@
 //! Tests for all HTTP handlers in src/admin/handlers.rs
 
 use mcp_context_browser::adapters::http_client::HttpClientPool;
-use mcp_context_browser::admin::service::AdminService;
+use mcp_context_browser::server::admin::service::AdminService;
 
 pub mod test_helpers {
     use super::*;
@@ -11,7 +11,7 @@ pub mod test_helpers {
     /// Create a real AdminService for testing with minimal dependencies
     pub async fn create_test_admin_service() -> std::sync::Arc<dyn AdminService> {
         use arc_swap::ArcSwap;
-        use mcp_context_browser::admin::service::{AdminServiceDependencies, AdminServiceImpl};
+        use mcp_context_browser::server::admin::service::{AdminServiceDependencies, AdminServiceImpl};
         use mcp_context_browser::infrastructure::config::ConfigLoader;
         use mcp_context_browser::infrastructure::di::factory::ServiceProvider;
         use mcp_context_browser::infrastructure::events::EventBus;
@@ -64,7 +64,7 @@ pub mod test_helpers {
 #[cfg(test)]
 mod auth_tests {
     use super::*;
-    use mcp_context_browser::admin::auth::AuthService;
+    use mcp_context_browser::server::admin::auth::AuthService;
 
     #[tokio::test]
     async fn test_auth_service_valid_credentials() {
@@ -108,7 +108,7 @@ mod auth_tests {
         )
         .expect("Failed to create auth service");
 
-        let user = mcp_context_browser::admin::models::UserInfo {
+        let user = mcp_context_browser::server::admin::models::UserInfo {
             username: "admin".to_string(),
             role: "admin".to_string(),
         };
@@ -145,7 +145,7 @@ mod auth_tests {
         )
         .expect("Failed to create auth service");
 
-        let user = mcp_context_browser::admin::models::UserInfo {
+        let user = mcp_context_browser::server::admin::models::UserInfo {
             username: "admin".to_string(),
             role: "admin".to_string(),
         };
@@ -238,7 +238,7 @@ mod auth_tests {
 //
 // #[tokio::test]
 // async fn test_admin_service_cache_operations() {
-//     use mcp_context_browser::admin::service::CacheType;
+//     use mcp_context_browser::server::admin::service::CacheType;
 //
 //     let test_infra = test_infrastructure::TestInfrastructure::new().await
 //         .expect("Failed to create test infrastructure");
@@ -252,7 +252,7 @@ mod auth_tests {
 //
 // #[tokio::test]
 // async fn test_admin_service_backup() {
-//     use mcp_context_browser::admin::service::BackupConfig;
+//     use mcp_context_browser::server::admin::service::BackupConfig;
 //
 //     let test_infra = test_infrastructure::TestInfrastructure::new().await
 //         .expect("Failed to create test infrastructure");

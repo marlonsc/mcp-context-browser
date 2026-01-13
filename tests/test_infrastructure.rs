@@ -7,7 +7,7 @@ use arc_swap::ArcSwap;
 use std::sync::Arc;
 
 use mcp_context_browser::adapters::http_client::{HttpClientPool, HttpClientProvider};
-use mcp_context_browser::admin::service::{
+use mcp_context_browser::server::admin::service::{
     AdminService, AdminServiceDependencies, AdminServiceImpl,
 };
 use mcp_context_browser::application::search::SearchService;

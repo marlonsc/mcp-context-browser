@@ -3,7 +3,7 @@
 //! Migrated from src/snapshot/mod.rs inline tests.
 //! Tests snapshot creation, loading, and change detection.
 
-use mcp_context_browser::snapshot::{SnapshotChanges, SnapshotManager};
+use mcp_context_browser::infrastructure::snapshot::{SnapshotChanges, SnapshotManager};
 use tempfile::TempDir;
 
 #[tokio::test]

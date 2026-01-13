@@ -6,13 +6,13 @@ use rmcp::handler::server::wrapper::Parameters;
 use std::sync::Arc;
 
 use mcp_context_browser::adapters::hybrid_search::{HybridSearchAdapter, HybridSearchMessage};
-use mcp_context_browser::admin::service::AdminService;
+use mcp_context_browser::server::admin::service::AdminService;
 
 // Test service creation function (copied from admin tests)
 async fn create_test_admin_service() -> std::sync::Arc<dyn AdminService> {
     use arc_swap::ArcSwap;
     use mcp_context_browser::adapters::http_client::test_utils::NullHttpClientPool;
-    use mcp_context_browser::admin::service::{AdminServiceDependencies, AdminServiceImpl};
+    use mcp_context_browser::server::admin::service::{AdminServiceDependencies, AdminServiceImpl};
     use mcp_context_browser::infrastructure::config::ConfigLoader;
     use mcp_context_browser::infrastructure::di::factory::ServiceProvider;
     use mcp_context_browser::infrastructure::events::EventBus;

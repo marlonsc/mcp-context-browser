@@ -7,7 +7,7 @@
 //! - AST traversal and rule-based extraction
 //! - Edge cases and error handling
 
-use mcp_context_browser::chunking::{IntelligentChunker, NodeExtractionRule};
+use mcp_context_browser::domain::chunking::{IntelligentChunker, NodeExtractionRule};
 use mcp_context_browser::domain::types::Language;
 
 /// Test data for different programming languages

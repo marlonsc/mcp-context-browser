@@ -1,7 +1,7 @@
 //! Test the new define_language_processor! macro
 
 #[allow(unused_imports)]
-use mcp_context_browser::chunking::LanguageProcessor;
+use mcp_context_browser::domain::chunking::LanguageProcessor;
 
 mcp_context_browser::define_language_processor! {
     TestProcessorSimple,

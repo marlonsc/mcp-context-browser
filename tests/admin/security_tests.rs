@@ -2,8 +2,8 @@
 //!
 //! Tests for authentication, token validation, and security features
 
-use mcp_context_browser::admin::auth::{AuthService, Claims, AUTH_COOKIE_NAME};
-use mcp_context_browser::admin::models::UserInfo;
+use mcp_context_browser::server::admin::auth::{AuthService, Claims, AUTH_COOKIE_NAME};
+use mcp_context_browser::server::admin::models::UserInfo;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 // ============================================================================

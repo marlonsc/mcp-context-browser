@@ -3,7 +3,7 @@
 //! Migrated from src/daemon/mod.rs inline tests.
 //! Tests daemon configuration, creation, and lifecycle.
 
-use mcp_context_browser::daemon::{ContextDaemon, DaemonConfig};
+use mcp_context_browser::infrastructure::daemon::{ContextDaemon, DaemonConfig};
 
 #[test]
 fn test_daemon_config_default() {

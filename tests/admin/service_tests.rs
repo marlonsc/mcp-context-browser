@@ -2,7 +2,7 @@
 //!
 //! These tests verify the AdminService trait implementation contract
 
-use mcp_context_browser::admin::service::{
+use mcp_context_browser::server::admin::service::{
     AdminService, AdminServiceDependencies, AdminServiceImpl,
 };
 

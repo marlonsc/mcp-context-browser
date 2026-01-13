@@ -7,7 +7,7 @@
 //!
 //! Includes tests migrated from src/sync/manager.rs inline tests.
 
-use mcp_context_browser::sync::manager::{SyncConfig, SyncManager};
+use mcp_context_browser::infrastructure::sync::manager::{SyncConfig, SyncManager};
 use std::fs;
 use std::path::PathBuf;
 use std::time::Duration;
