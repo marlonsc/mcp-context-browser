@@ -217,76 +217,48 @@ fn create_security_error(message: &str) -> Response {
         .into_response()
 }
 
+/// Helper to insert an optional header value
+#[inline]
+fn insert_optional_header(headers: &mut HeaderMap, name: &'static str, value: Option<&String>) {
+    if let Some(v) = value {
+        if let Ok(hv) = HeaderValue::from_str(v) {
+            headers.insert(name, hv);
+        }
+    }
+}
+
 /// Add security headers to response
 fn add_security_headers(response: &mut Response, config: &SecurityConfig) {
     let headers = response.headers_mut();
 
     // Content Security Policy
-    if let Some(csp) = &config.content_security_policy {
-        if let Ok(value) = HeaderValue::from_str(csp) {
-            headers.insert("Content-Security-Policy", value);
-        }
-    }
+    insert_optional_header(headers, "Content-Security-Policy", config.content_security_policy.as_ref());
 
     // HTTP Strict Transport Security
     if config.hsts_enabled {
-        let mut hsts_value = format!("max-age={}", config.hsts_max_age);
-        if config.hsts_include_subdomains {
-            hsts_value.push_str("; includeSubDomains");
-        }
+        let hsts_value = if config.hsts_include_subdomains {
+            format!("max-age={}; includeSubDomains", config.hsts_max_age)
+        } else {
+            format!("max-age={}", config.hsts_max_age)
+        };
         if let Ok(value) = HeaderValue::from_str(&hsts_value) {
             headers.insert("Strict-Transport-Security", value);
         }
     }
 
-    // X-Frame-Options
-    if let Some(xfo) = &config.x_frame_options {
-        if let Ok(value) = HeaderValue::from_str(xfo) {
-            headers.insert("X-Frame-Options", value);
-        }
-    }
+    // Standard security headers
+    insert_optional_header(headers, "X-Frame-Options", config.x_frame_options.as_ref());
+    insert_optional_header(headers, "Referrer-Policy", config.referrer_policy.as_ref());
+    insert_optional_header(headers, "Permissions-Policy", config.permissions_policy.as_ref());
+
+    // Cross-origin policies
+    insert_optional_header(headers, "Cross-Origin-Embedder-Policy", config.cross_origin_embedder_policy.as_ref());
+    insert_optional_header(headers, "Cross-Origin-Opener-Policy", config.cross_origin_opener_policy.as_ref());
+    insert_optional_header(headers, "Cross-Origin-Resource-Policy", config.cross_origin_resource_policy.as_ref());
 
     // X-Content-Type-Options
     if config.x_content_type_options {
-        headers.insert(
-            "X-Content-Type-Options",
-            HeaderValue::from_static("nosniff"),
-        );
-    }
-
-    // Referrer-Policy
-    if let Some(rp) = &config.referrer_policy {
-        if let Ok(value) = HeaderValue::from_str(rp) {
-            headers.insert("Referrer-Policy", value);
-        }
-    }
-
-    // Permissions-Policy
-    if let Some(pp) = &config.permissions_policy {
-        if let Ok(value) = HeaderValue::from_str(pp) {
-            headers.insert("Permissions-Policy", value);
-        }
-    }
-
-    // Cross-Origin-Embedder-Policy
-    if let Some(coep) = &config.cross_origin_embedder_policy {
-        if let Ok(value) = HeaderValue::from_str(coep) {
-            headers.insert("Cross-Origin-Embedder-Policy", value);
-        }
-    }
-
-    // Cross-Origin-Opener-Policy
-    if let Some(coop) = &config.cross_origin_opener_policy {
-        if let Ok(value) = HeaderValue::from_str(coop) {
-            headers.insert("Cross-Origin-Opener-Policy", value);
-        }
-    }
-
-    // Cross-Origin-Resource-Policy
-    if let Some(corp) = &config.cross_origin_resource_policy {
-        if let Ok(value) = HeaderValue::from_str(corp) {
-            headers.insert("Cross-Origin-Resource-Policy", value);
-        }
+        headers.insert("X-Content-Type-Options", HeaderValue::from_static("nosniff"));
     }
 
     // X-Request-ID for tracing
@@ -295,10 +267,7 @@ fn add_security_headers(response: &mut Response, config: &SecurityConfig) {
     }
 
     // Server header
-    headers.insert(
-        header::SERVER,
-        HeaderValue::from_static("mcp-context-browser"),
-    );
+    headers.insert(header::SERVER, HeaderValue::from_static("mcp-context-browser"));
 }
 
 /// Advanced request validation middleware

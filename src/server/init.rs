@@ -2,6 +2,12 @@
 //!
 //! This module contains server initialization logic extracted from the main
 //! server implementation to improve code organization and testability.
+//!
+//! # Helper Functions
+//!
+//! - [`init_cache_provider`] - Initialize cache provider with fallback
+//! - [`init_rate_limiter`] - Initialize rate limiter with appropriate backend
+//! - [`setup_admin_interface`] - Configure admin API with first-run support
 
 use crate::adapters::providers::routing::health::HealthMonitor;
 use crate::infrastructure::cache::{create_cache_provider, SharedCacheProvider};
@@ -58,6 +64,131 @@ fn init_tracing(
         .init();
 
     Ok(())
+}
+
+/// Initialize cache provider with fallback to None on error
+async fn init_cache_provider(
+    config: &crate::infrastructure::config::Config,
+) -> Option<SharedCacheProvider> {
+    if !config.cache.enabled {
+        tracing::info!("ℹ️  Caching disabled");
+        return None;
+    }
+
+    tracing::info!("🗄️  Initializing cache provider...");
+    match create_cache_provider(&config.cache).await {
+        Ok(provider) => {
+            tracing::info!("✅ Cache provider initialized successfully");
+            Some(provider)
+        }
+        Err(e) => {
+            tracing::warn!(
+                "⚠️  Failed to initialize cache provider: {}. Running without caching.",
+                e
+            );
+            None
+        }
+    }
+}
+
+/// Initialize rate limiter with appropriate backend
+fn init_rate_limiter(
+    config: &crate::infrastructure::config::Config,
+    cache_provider: Option<SharedCacheProvider>,
+) -> Option<SharedRateLimiter> {
+    if !config.metrics.rate_limiting.enabled {
+        tracing::info!("ℹ️  Rate limiting disabled");
+        return None;
+    }
+
+    let backend_type = determine_rate_limiter_backend(
+        cache_provider.as_ref(),
+        config.metrics.clustering_enabled,
+    );
+    tracing::info!(
+        backend = ?backend_type,
+        "🔒 Initializing rate limiter..."
+    );
+    let limiter = create_rate_limiter(
+        backend_type,
+        config.metrics.rate_limiting.clone(),
+        cache_provider,
+    );
+    tracing::info!("✅ Rate limiter initialized successfully");
+    Some(limiter)
+}
+
+/// Setup admin interface with first-run credential support
+///
+/// Returns the admin router to merge into the metrics server, or None if disabled/failed.
+async fn setup_admin_interface(
+    config: &crate::infrastructure::config::Config,
+    server: &Arc<McpServer>,
+) -> Option<axum::Router> {
+    let data_dir = config.data.base_path();
+
+    let (admin_config, generated_password) = match
+        crate::server::admin::config::AdminConfig::load_with_first_run(&data_dir).await
+    {
+        Ok(result) => result,
+        Err(e) => {
+            tracing::warn!(
+                "⚠️  Failed to load admin config: {}. Admin interface disabled.",
+                e
+            );
+            return None;
+        }
+    };
+
+    if !admin_config.enabled {
+        tracing::info!("ℹ️  Admin interface disabled");
+        return None;
+    }
+
+    // Display first-run message if password was generated
+    if generated_password.is_some() {
+        display_first_run_message(&admin_config, &data_dir);
+    }
+
+    let admin_api_server = crate::server::admin::api::AdminApiServer::new(
+        admin_config,
+        Arc::clone(server),
+    );
+
+    let auth_handler = server.auth_handler();
+    match admin_api_server.create_router_with_auth(auth_handler) {
+        Ok(router) => {
+            tracing::info!("✅ Admin interface enabled");
+            Some(router)
+        }
+        Err(e) => {
+            tracing::error!("💥 Failed to create admin router: {}", e);
+            None
+        }
+    }
+}
+
+/// Display first-run credentials message
+fn display_first_run_message(
+    admin_config: &crate::server::admin::config::AdminConfig,
+    data_dir: &std::path::Path,
+) {
+    let credentials_file = data_dir.join("users.json");
+    eprintln!();
+    eprintln!("========================================");
+    eprintln!("  FIRST RUN - Admin credentials created");
+    eprintln!("========================================");
+    eprintln!("  Username: {}", admin_config.username);
+    eprintln!();
+    eprintln!("  Credentials saved to:");
+    eprintln!("    {}", credentials_file.display());
+    eprintln!();
+    eprintln!("  To view your password, run:");
+    eprintln!("    cat {}", credentials_file.display());
+    eprintln!();
+    eprintln!("  IMPORTANT: Save the password securely!");
+    eprintln!("========================================");
+    eprintln!();
 }
 
 /// Initialize all server components and services
@@ -127,47 +258,10 @@ async fn initialize_server_components(
     }
 
     // Initialize cache provider first (needed for distributed rate limiting)
-    let cache_provider = if config.cache.enabled {
-        tracing::info!("🗄️  Initializing cache provider...");
-        match create_cache_provider(&config.cache).await {
-            Ok(provider) => {
-                tracing::info!("✅ Cache provider initialized successfully");
-                Some(provider)
-            }
-            Err(e) => {
-                tracing::warn!(
-                    "⚠️  Failed to initialize cache provider: {}. Running without caching.",
-                    e
-                );
-                None
-            }
-        }
-    } else {
-        tracing::info!("ℹ️  Caching disabled");
-        None
-    };
+    let cache_provider = init_cache_provider(&config).await;
 
     // Initialize rate limiter for HTTP API (uses cache if clustering enabled)
-    let rate_limiter: Option<SharedRateLimiter> = if config.metrics.rate_limiting.enabled {
-        let backend_type = determine_rate_limiter_backend(
-            cache_provider.as_ref(),
-            config.metrics.clustering_enabled,
-        );
-        tracing::info!(
-            backend = ?backend_type,
-            "🔒 Initializing rate limiter..."
-        );
-        let limiter = create_rate_limiter(
-            backend_type,
-            config.metrics.rate_limiting.clone(),
-            cache_provider.clone(),
-        );
-        tracing::info!("✅ Rate limiter initialized successfully");
-        Some(limiter)
-    } else {
-        tracing::info!("ℹ️  Rate limiting disabled");
-        None
-    };
+    let rate_limiter = init_rate_limiter(&config, cache_provider.clone());
 
     // Clone event_bus for recovery manager and health monitor before passing to builder
     let event_bus_for_recovery = event_bus.clone();
@@ -290,61 +384,8 @@ async fn initialize_server_components(
         );
 
         // Initialize admin API server with first-run support
-        // Priority: env vars > data file (users.json) > generate new credentials
-        let data_dir = config.data.base_path();
-        match crate::server::admin::config::AdminConfig::load_with_first_run(&data_dir).await {
-            Ok((admin_config, generated_password)) => {
-                if admin_config.enabled {
-                    // Display first-run message if password was generated
-                    // NOTE: Password is NOT displayed in terminal for security
-                    // User must read it from the credentials file
-                    if generated_password.is_some() {
-                        let credentials_file = data_dir.join("users.json");
-                        eprintln!();
-                        eprintln!("========================================");
-                        eprintln!("  FIRST RUN - Admin credentials created");
-                        eprintln!("========================================");
-                        eprintln!("  Username: {}", admin_config.username);
-                        eprintln!();
-                        eprintln!("  Credentials saved to:");
-                        eprintln!("    {}", credentials_file.display());
-                        eprintln!();
-                        eprintln!("  To view your password, run:");
-                        eprintln!("    cat {}", credentials_file.display());
-                        eprintln!();
-                        eprintln!("  IMPORTANT: Save the password securely!");
-                        eprintln!("========================================");
-                        eprintln!();
-                    }
-
-                    let admin_api_server = crate::server::admin::api::AdminApiServer::new(
-                        admin_config,
-                        Arc::clone(&server),
-                    );
-
-                    // Get auth handler from server
-                    let auth_handler = server.auth_handler();
-
-                    // Merge admin router into metrics server
-                    match admin_api_server.create_router_with_auth(auth_handler) {
-                        Ok(router) => {
-                            metrics_server = metrics_server.with_external_router(router);
-                            tracing::info!("✅ Admin interface enabled");
-                        }
-                        Err(e) => {
-                            tracing::error!("💥 Failed to create admin router: {}", e);
-                        }
-                    }
-                } else {
-                    tracing::info!("ℹ️  Admin interface disabled");
-                }
-            }
-            Err(e) => {
-                tracing::warn!(
-                    "⚠️  Failed to load admin config: {}. Admin interface disabled.",
-                    e
-                );
-            }
+        if let Some(admin_router) = setup_admin_interface(&config, &server).await {
+            metrics_server = metrics_server.with_external_router(admin_router);
         }
 
         // Create and merge MCP router for unified port architecture

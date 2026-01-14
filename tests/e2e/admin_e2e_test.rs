@@ -249,7 +249,7 @@ async fn test_e2e_all_protected_pages_render() {
                     .unwrap(),
             )
             .await
-            .expect(&format!("Request to {} failed", route));
+            .unwrap_or_else(|_| panic!("Request to {} failed", route));
 
         let status = response.status();
         let body = to_bytes(response.into_body(), usize::MAX).await.unwrap();
@@ -317,6 +317,207 @@ async fn test_e2e_protected_pages_require_auth() {
 }
 
 // ============================================================================
+// Auth Disabled Mode Tests
+// ============================================================================
+
+/// Test that dashboard is accessible without login when auth is disabled
+#[tokio::test]
+async fn test_e2e_dashboard_accessible_when_auth_disabled() {
+    use axum::body::{to_bytes, Body};
+    use axum::http::{Request, StatusCode};
+    use mcp_context_browser::server::admin::web::WebInterface;
+    use tower::ServiceExt;
+
+    let web_interface = WebInterface::new().expect("Failed to create web interface");
+    let state = create_test_admin_state_auth_disabled(&web_interface).await;
+    let app = web_interface.routes(state);
+
+    // Access dashboard WITHOUT any cookie - should succeed when auth disabled
+    let response = app
+        .oneshot(Request::get("/dashboard").body(Body::empty()).unwrap())
+        .await
+        .expect("Request failed");
+
+    assert_eq!(
+        response.status(),
+        StatusCode::OK,
+        "Dashboard should be accessible without login when auth is disabled"
+    );
+
+    // Verify HTML content is rendered
+    let body = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    let body_str = String::from_utf8_lossy(&body);
+
+    assert!(
+        body_str.contains("<!DOCTYPE html>") || body_str.contains("dashboard"),
+        "Dashboard should render HTML content"
+    );
+}
+
+/// Test that all protected pages are accessible when auth is disabled
+#[tokio::test]
+async fn test_e2e_all_pages_accessible_when_auth_disabled() {
+    use axum::body::{to_bytes, Body};
+    use axum::http::{Request, StatusCode};
+    use mcp_context_browser::server::admin::web::WebInterface;
+    use tower::ServiceExt;
+
+    let web_interface = WebInterface::new().expect("Failed to create web interface");
+    let state = create_test_admin_state_auth_disabled(&web_interface).await;
+
+    // All routes that should be accessible without auth when disabled
+    let routes = vec![
+        "/",
+        "/dashboard",
+        "/providers",
+        "/indexes",
+        "/config",
+        "/logs",
+        "/maintenance",
+        "/diagnostics",
+    ];
+
+    for route in routes {
+        let app = web_interface.routes(state.clone());
+        let response = app
+            .oneshot(Request::get(route).body(Body::empty()).unwrap())
+            .await
+            .unwrap_or_else(|_| panic!("Request to {} failed", route));
+
+        assert_eq!(
+            response.status(),
+            StatusCode::OK,
+            "Route {} should be accessible when auth is disabled",
+            route
+        );
+
+        // Verify some content is rendered
+        let body = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        assert!(
+            body.len() > 100,
+            "Route {} should return rendered content",
+            route
+        );
+    }
+}
+
+// ============================================================================
+// Dashboard Data Points Validation
+// ============================================================================
+
+/// Test that dashboard renders all expected data points
+#[tokio::test]
+async fn test_e2e_dashboard_data_points_validation() {
+    use axum::body::{to_bytes, Body};
+    use axum::http::{Request, StatusCode};
+    use mcp_context_browser::server::admin::web::WebInterface;
+    use tower::ServiceExt;
+
+    let web_interface = WebInterface::new().expect("Failed to create web interface");
+    let state = create_test_admin_state(&web_interface).await;
+    let token = get_test_auth_token(&state).await;
+    let app = web_interface.routes(state);
+
+    // Access dashboard with valid auth
+    let response = app
+        .oneshot(
+            Request::get("/dashboard")
+                .header("Cookie", format!("mcp_admin_token={}", token))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .expect("Request failed");
+
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let body = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    let body_str = String::from_utf8_lossy(&body);
+    let body_lower = body_str.to_lowercase();
+
+    // Verify Health section data points
+    assert!(
+        body_lower.contains("healthy") || body_lower.contains("status"),
+        "Dashboard should contain health status indicator"
+    );
+    assert!(
+        body_lower.contains("uptime") || body_lower.contains("running"),
+        "Dashboard should contain uptime information"
+    );
+
+    // Verify Providers section
+    assert!(
+        body_lower.contains("provider") || body_lower.contains("embedding"),
+        "Dashboard should contain provider information"
+    );
+    assert!(
+        body_lower.contains("active"),
+        "Dashboard should show active status for providers"
+    );
+
+    // Verify Indexes section
+    assert!(
+        body_lower.contains("index") || body_lower.contains("document"),
+        "Dashboard should contain indexing information"
+    );
+
+    // Verify Metrics section
+    assert!(
+        body_lower.contains("cpu") || body_lower.contains("memory"),
+        "Dashboard should contain system metrics"
+    );
+
+    // Verify the page structure
+    assert!(
+        body_str.contains("<!DOCTYPE html>"),
+        "Dashboard should be valid HTML"
+    );
+}
+
+/// Test dashboard with auth disabled also shows data points
+#[tokio::test]
+async fn test_e2e_dashboard_data_points_auth_disabled() {
+    use axum::body::{to_bytes, Body};
+    use axum::http::{Request, StatusCode};
+    use mcp_context_browser::server::admin::web::WebInterface;
+    use tower::ServiceExt;
+
+    let web_interface = WebInterface::new().expect("Failed to create web interface");
+    let state = create_test_admin_state_auth_disabled(&web_interface).await;
+    let app = web_interface.routes(state);
+
+    // Access dashboard without any auth
+    let response = app
+        .oneshot(Request::get("/dashboard").body(Body::empty()).unwrap())
+        .await
+        .expect("Request failed");
+
+    assert_eq!(
+        response.status(),
+        StatusCode::OK,
+        "Dashboard should be accessible when auth disabled"
+    );
+
+    let body = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    let body_str = String::from_utf8_lossy(&body);
+    let body_lower = body_str.to_lowercase();
+
+    // Same data points should be present regardless of auth mode
+    assert!(
+        body_lower.contains("healthy") || body_lower.contains("status"),
+        "Dashboard should contain health status even with auth disabled"
+    );
+    assert!(
+        body_lower.contains("provider") || body_lower.contains("active"),
+        "Dashboard should contain provider info even with auth disabled"
+    );
+    assert!(
+        body_str.contains("<!DOCTYPE html>"),
+        "Dashboard should be valid HTML"
+    );
+}
+
+// ============================================================================
 // Test Helper Functions
 // ============================================================================
 
@@ -364,6 +565,60 @@ async fn create_test_admin_state(
         enabled: true,
         bypass_paths: vec![],
         users,
+    };
+
+    let auth_service: Arc<dyn mcp_context_browser::infrastructure::auth::AuthServiceInterface> =
+        Arc::new(AuthService::new(auth_config));
+
+    // Create event bus
+    let event_bus: mcp_context_browser::infrastructure::events::SharedEventBusProvider =
+        Arc::new(EventBus::with_default_capacity());
+
+    // Create activity logger
+    let activity_logger = Arc::new(ActivityLogger::new());
+
+    // Create AdminApi with default config
+    let admin_api = Arc::new(AdminApi::new(
+        mcp_context_browser::server::admin::AdminConfig::default(),
+    ));
+
+    AdminState {
+        admin_api,
+        admin_service,
+        auth_service,
+        mcp_server: create_test_mcp_server().await,
+        templates: web_interface.templates(),
+        recovery_manager: None,
+        event_bus,
+        activity_logger,
+    }
+}
+
+/// Create AdminState for testing with authentication DISABLED
+///
+/// This helper creates an AdminState where auth is completely disabled,
+/// allowing access to all pages without login.
+async fn create_test_admin_state_auth_disabled(
+    web_interface: &mcp_context_browser::server::admin::web::WebInterface,
+) -> mcp_context_browser::server::admin::models::AdminState {
+    use mcp_context_browser::application::admin::helpers::activity::ActivityLogger;
+    use mcp_context_browser::infrastructure::auth::{AuthConfig, AuthService};
+    use mcp_context_browser::infrastructure::events::EventBus;
+    use mcp_context_browser::server::admin::models::AdminState;
+    use mcp_context_browser::server::admin::AdminApi;
+    use std::collections::HashMap;
+    use std::sync::Arc;
+
+    let admin_service = create_test_admin_service().await;
+
+    // Create auth config with authentication DISABLED
+    let auth_config = AuthConfig {
+        jwt_secret: String::new(), // Empty secret when disabled
+        jwt_expiration: 86400,
+        jwt_issuer: "mcp-context-browser".to_string(),
+        enabled: false, // KEY: Auth is disabled
+        bypass_paths: vec![],
+        users: HashMap::new(), // No users needed when disabled
     };
 
     let auth_service: Arc<dyn mcp_context_browser::infrastructure::auth::AuthServiceInterface> =

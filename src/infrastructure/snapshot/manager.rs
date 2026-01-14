@@ -41,7 +41,7 @@ impl SnapshotManager {
     /// Get default snapshot directory path (for DI defaults)
     pub fn default_snapshot_dir() -> PathBuf {
         let snapshot_dir = dirs::home_dir()
-            .unwrap_or_else(|| std::env::temp_dir())
+            .unwrap_or_else(std::env::temp_dir)
             .join(".context")
             .join("snapshots");
 

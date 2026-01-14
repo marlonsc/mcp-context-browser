@@ -578,6 +578,12 @@ impl DiagnosticsViewModel {
     }
 }
 
+impl Default for DiagnosticsViewModel {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 // =============================================================================
 // Error View Model
 // =============================================================================

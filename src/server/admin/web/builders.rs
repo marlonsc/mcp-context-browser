@@ -390,13 +390,34 @@ impl<'a> ViewModelBuilder<'a> {
 
     /// Build diagnostics page view model
     ///
-    /// Creates a diagnostics view model. Currently returns empty health check
-    /// results - in the future this should fetch actual health check data
-    /// from the admin service.
+    /// Fetches health check results from the admin service and transforms
+    /// them into a view model for the diagnostics template.
     pub async fn build_diagnostics_page(&self) -> Result<DiagnosticsViewModel> {
-        // TODO: Fetch actual health check results from admin service
-        // For now, return empty diagnostics view model
-        Ok(DiagnosticsViewModel::new())
+        // Fetch actual health check results from admin service
+        let health_result = self
+            .state
+            .admin_service
+            .run_health_check()
+            .await
+            .context("Failed to run health check")?;
+
+        // Transform HealthCheckResult into view model items
+        let checks: Vec<HealthCheckItemViewModel> = health_result
+            .checks
+            .into_iter()
+            .map(|check| HealthCheckItemViewModel {
+                name: check.name,
+                status: check.status,
+                message: Some(check.message),
+                duration_ms: Some(check.duration_ms),
+            })
+            .collect();
+
+        Ok(DiagnosticsViewModel::new().with_health_check(
+            health_result.overall_status,
+            health_result.duration_ms,
+            checks,
+        ))
     }
 
     // =========================================================================

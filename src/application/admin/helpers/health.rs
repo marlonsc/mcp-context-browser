@@ -1,6 +1,11 @@
 //! Health monitoring helper module
 //!
 //! Provides functions for health checks, connectivity tests, and performance testing.
+//!
+//! # Helper Functions
+//!
+//! - [`determine_health_status`] - Determine status from usage and thresholds
+//! - [`create_metric_health_check`] - Create HealthCheck from metric values
 
 use super::runtime_config::{RuntimeConfig, RuntimeConfigDependencies};
 use crate::application::admin::types::{
@@ -13,6 +18,33 @@ use crate::infrastructure::metrics::system::SystemMetricsCollectorInterface;
 use crate::infrastructure::service_helpers::{SafeMetrics, TimedOperation};
 use crate::infrastructure::utils::status;
 use std::sync::Arc;
+
+/// Determine health status from usage value and thresholds
+///
+/// Returns CRITICAL if value > unhealthy_threshold, DEGRADED if value > degraded_threshold,
+/// otherwise HEALTHY.
+#[inline]
+fn determine_health_status(value: f32, degraded_threshold: f32, unhealthy_threshold: f32) -> String {
+    if value > unhealthy_threshold {
+        status::CRITICAL.to_string()
+    } else if value > degraded_threshold {
+        status::DEGRADED.to_string()
+    } else {
+        status::HEALTHY.to_string()
+    }
+}
+
+/// Map provider status to health status
+#[inline]
+fn provider_status_to_health(provider_status: &str) -> String {
+    if provider_status == status::ACTIVE {
+        status::HEALTHY.to_string()
+    } else if provider_status == status::DEGRADED {
+        status::DEGRADED.to_string()
+    } else {
+        status::CRITICAL.to_string()
+    }
+}
 
 /// Service dependencies for health checks
 pub struct HealthCheckDependencies {
@@ -85,13 +117,11 @@ pub async fn run_health_check_with_services(
     .await;
 
     // Determine CPU health status based on dynamic thresholds
-    let cpu_status = if cpu_metrics.usage > thresholds.cpu_unhealthy_percent as f32 {
-        status::CRITICAL.to_string()
-    } else if cpu_metrics.usage > thresholds.cpu_degraded_percent as f32 {
-        status::DEGRADED.to_string()
-    } else {
-        status::HEALTHY.to_string()
-    };
+    let cpu_status = determine_health_status(
+        cpu_metrics.usage,
+        thresholds.cpu_degraded_percent as f32,
+        thresholds.cpu_unhealthy_percent as f32,
+    );
 
     checks.push(HealthCheck {
         name: "cpu".to_string(),
@@ -107,14 +137,11 @@ pub async fn run_health_check_with_services(
     });
 
     // Determine memory health status based on dynamic thresholds
-    let memory_status = if memory_metrics.usage_percent > thresholds.memory_unhealthy_percent as f32
-    {
-        status::CRITICAL.to_string()
-    } else if memory_metrics.usage_percent > thresholds.memory_degraded_percent as f32 {
-        status::DEGRADED.to_string()
-    } else {
-        status::HEALTHY.to_string()
-    };
+    let memory_status = determine_health_status(
+        memory_metrics.usage_percent,
+        thresholds.memory_degraded_percent as f32,
+        thresholds.memory_unhealthy_percent as f32,
+    );
 
     checks.push(HealthCheck {
         name: "memory".to_string(),
@@ -135,13 +162,11 @@ pub async fn run_health_check_with_services(
     });
 
     // Determine disk health status based on dynamic thresholds
-    let disk_status = if disk_metrics.usage_percent > thresholds.disk_unhealthy_percent as f32 {
-        status::CRITICAL.to_string()
-    } else if disk_metrics.usage_percent > thresholds.disk_degraded_percent as f32 {
-        status::DEGRADED.to_string()
-    } else {
-        status::HEALTHY.to_string()
-    };
+    let disk_status = determine_health_status(
+        disk_metrics.usage_percent,
+        thresholds.disk_degraded_percent as f32,
+        thresholds.disk_unhealthy_percent as f32,
+    );
 
     checks.push(HealthCheck {
         name: "disk".to_string(),
@@ -177,17 +202,11 @@ pub async fn run_health_check_with_services(
 
     // Provider health checks
     for provider in providers {
-        let provider_status = if provider.status == status::ACTIVE {
-            status::HEALTHY.to_string()
-        } else if provider.status == status::DEGRADED {
-            status::DEGRADED.to_string()
-        } else {
-            status::CRITICAL.to_string()
-        };
+        let provider_health = provider_status_to_health(&provider.status);
 
         checks.push(HealthCheck {
             name: format!("provider_{}", provider.id),
-            status: provider_status,
+            status: provider_health,
             message: format!("Provider {} is {}", provider.name, provider.status),
             duration_ms: 10,
             details: Some(serde_json::json!({

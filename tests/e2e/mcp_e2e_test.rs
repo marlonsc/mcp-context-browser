@@ -40,8 +40,11 @@ mod test_utils {
         // Create test codebase
         let _temp_dir = create_test_codebase().await?;
 
-        // Start the MCP server process
+        // Start the MCP server process in stdio-only mode to avoid port conflicts
+        // Disable HTTP server entirely to prevent port binding issues
         let mut child = Command::new(&binary_path)
+            .env("MCP__TRANSPORT__MODE", "stdio")
+            .env("MCP__METRICS__ENABLED", "false")
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())

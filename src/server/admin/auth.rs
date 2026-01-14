@@ -251,12 +251,20 @@ pub async fn logout_handler(jar: CookieJar) -> impl IntoResponse {
 ///
 /// Checks for JWT token in cookie and redirects to login page if not present or invalid.
 /// This middleware is for protecting web pages (HTML), not API endpoints.
+///
+/// When authentication is disabled (`config.enabled = false`), this middleware
+/// allows all requests through without checking for a valid token.
 pub async fn web_auth_middleware(
     State(state): State<super::models::AdminState>,
     jar: CookieJar,
     mut req: Request<axum::body::Body>,
     next: Next,
 ) -> Result<Response, Response> {
+    // Skip authentication if disabled in configuration
+    if !state.auth_service.is_enabled() {
+        return Ok(next.run(req).await);
+    }
+
     // Extract token from cookie
     let token: Option<String> = jar
         .get(AUTH_COOKIE_NAME)
