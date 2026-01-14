@@ -3,21 +3,34 @@
 //! Centralizes status strings and health checking logic
 
 /// Common status values used across admin interface
+/// Status indicating system is operating normally
 pub const HEALTHY: &str = "healthy";
+/// Status indicating system is operating with reduced performance
 pub const DEGRADED: &str = "degraded";
+/// Status indicating system is in a critical failure state
 pub const CRITICAL: &str = "critical";
+/// Status indicating component is actively running
 pub const ACTIVE: &str = "active";
+/// Status indicating component is not running
 pub const INACTIVE: &str = "inactive";
+/// Status indicating system is currently indexing content
 pub const INDEXING: &str = "indexing";
+/// Status indicating system is idle and available
 pub const IDLE: &str = "idle";
+/// Status indicating system is busy processing requests
 pub const BUSY: &str = "busy";
+/// Status indicating system state is unknown
 pub const UNKNOWN: &str = "unknown";
 
-/// Activity level strings
+/// Activity level strings for consistent logging and UI display
 pub mod activity_level {
+    /// Success level for completed operations
     pub const SUCCESS: &str = "success";
+    /// Warning level for operations with issues but not failures
     pub const WARNING: &str = "warning";
+    /// Error level for failed operations
     pub const ERROR: &str = "error";
+    /// Info level for general information and progress updates
     pub const INFO: &str = "info";
 }
 

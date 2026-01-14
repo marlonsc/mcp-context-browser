@@ -71,6 +71,7 @@ impl McpServerBuilder {
         self
     }
 
+    /// Set the indexing operations tracker
     pub fn with_indexing_operations(mut self, ops: Arc<dyn IndexingOperationsInterface>) -> Self {
         self.indexing_operations = Some(ops);
         self

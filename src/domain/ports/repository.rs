@@ -85,13 +85,24 @@ pub trait ChunkRepository: Interface + Send + Sync {
     /// List chunks in a collection (paginated)
     ///
     /// # Arguments
-    /// - `limit`: Maximum chunks to return
+    /// - `collection`: Collection/namespace identifier
+    /// - `limit`: Maximum chunks to return (implementation may return fewer)
+    ///
+    /// # Returns
+    /// Vector of chunks in the collection, up to the limit
     async fn find_by_collection(&self, collection: &str, limit: usize) -> Result<Vec<CodeChunk>>;
 
     /// Delete a specific chunk by ID
+    ///
+    /// # Arguments
+    /// - `collection`: Collection/namespace identifier
+    /// - `id`: Unique chunk identifier to delete
     async fn delete(&self, collection: &str, id: &str) -> Result<()>;
 
     /// Delete all chunks in a collection
+    ///
+    /// # Arguments
+    /// - `collection`: Collection/namespace identifier to clear completely
     async fn delete_collection(&self, collection: &str) -> Result<()>;
 
     /// Get repository storage statistics
@@ -174,6 +185,12 @@ pub trait SearchRepository: Interface + Send + Sync {
     ) -> Result<Vec<SearchResult>>;
 
     /// Clear keyword search index for a collection
+    ///
+    /// # Arguments
+    /// - `collection`: Collection/namespace identifier to clear the search index for
+    ///
+    /// # Note
+    /// This only affects the keyword/BM25 search index, not the semantic vector storage
     async fn clear_index(&self, collection: &str) -> Result<()>;
 
     /// Get search operation statistics

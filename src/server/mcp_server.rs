@@ -71,6 +71,8 @@ pub struct McpServer {
     /// System metrics collector
     pub system_collector:
         Arc<dyn crate::infrastructure::metrics::system::SystemMetricsCollectorInterface>,
+    /// Authentication handler
+    auth_handler: Arc<AuthHandler>,
 }
 
 /// Type alias for initialized handlers tuple
@@ -265,6 +267,7 @@ impl McpServer {
             event_bus: components.event_bus,
             log_buffer: components.log_buffer,
             system_collector: components.system_collector,
+            auth_handler,
         })
     }
 
@@ -280,6 +283,11 @@ impl McpServer {
     /// Get the admin service
     pub fn admin_service(&self) -> Arc<dyn crate::server::admin::service::AdminService> {
         Arc::clone(&self.admin_service)
+    }
+
+    /// Get the authentication handler
+    pub fn auth_handler(&self) -> Arc<AuthHandler> {
+        Arc::clone(&self.auth_handler)
     }
 
     /// Get performance metrics

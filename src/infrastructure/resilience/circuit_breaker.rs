@@ -247,11 +247,14 @@ impl CircuitBreakerBackend for TowerCircuitBreaker {
 }
 
 /// Null circuit breaker - always allows (for testing)
+/// Null circuit breaker that always allows calls (no-op implementation)
 pub struct NullCircuitBreaker {
+    /// Name identifier for this circuit breaker instance
     name: String,
 }
 
 impl NullCircuitBreaker {
+    /// Create a new null circuit breaker (always allows calls)
     pub fn new(name: impl Into<String>) -> Self {
         Self { name: name.into() }
     }
@@ -259,18 +262,23 @@ impl NullCircuitBreaker {
 
 #[async_trait]
 impl CircuitBreakerBackend for NullCircuitBreaker {
+    /// Check if a call is permitted (always returns true for null implementation)
     fn is_call_permitted(&self) -> bool {
         true
     }
 
+    /// Record a successful call (no-op for null implementation)
     async fn record_success(&self) {}
 
+    /// Record a failed call (no-op for null implementation)
     async fn record_failure(&self) {}
 
+    /// Get the current circuit breaker state (always Closed for null implementation)
     fn state(&self) -> CircuitBreakerState {
         CircuitBreakerState::Closed
     }
 
+    /// Get the circuit breaker name
     fn name(&self) -> &str {
         &self.name
     }

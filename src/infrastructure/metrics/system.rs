@@ -77,20 +77,30 @@ pub struct ProcessMetrics {
 }
 
 /// Messages for the system metrics actor
+/// Messages for the system metrics actor
 pub enum SystemMetricsMessage {
+    /// Request CPU metrics collection
     CollectCpu(oneshot::Sender<Result<CpuMetrics>>),
+    /// Request memory metrics collection
     CollectMemory(oneshot::Sender<Result<MemoryMetrics>>),
+    /// Request process metrics collection
     CollectProcess(oneshot::Sender<Result<ProcessMetrics>>),
 }
 
 /// System metrics collector Interface
 #[async_trait]
 pub trait SystemMetricsCollectorInterface: shaku::Interface + Send + Sync {
+    /// Collect current CPU usage metrics
     async fn collect_cpu_metrics(&self) -> Result<CpuMetrics>;
+    /// Collect current memory usage metrics
     async fn collect_memory_metrics(&self) -> Result<MemoryMetrics>;
+    /// Collect current disk usage metrics
     async fn collect_disk_metrics(&self) -> Result<DiskMetrics>;
+    /// Collect current network usage metrics
     async fn collect_network_metrics(&self) -> Result<NetworkMetrics>;
+    /// Collect current process metrics
     async fn collect_process_metrics(&self) -> Result<ProcessMetrics>;
+    /// Collect all system metrics at once
     async fn collect_all_metrics(
         &self,
     ) -> Result<(

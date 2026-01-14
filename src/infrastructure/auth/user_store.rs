@@ -154,7 +154,9 @@ impl UserStore {
     /// Generate a new user store with random admin password
     ///
     /// Returns the store and the generated plaintext password (for display).
+    /// Uses environment variables MCP_ADMIN_USERNAME if available, otherwise defaults to "admin".
     pub fn generate_new() -> Result<(Self, String)> {
+        let username = std::env::var("MCP_ADMIN_USERNAME").unwrap_or_else(|_| "admin".to_string());
         let password = generate_secure_string(GENERATED_PASSWORD_LENGTH, PASSWORD_CHARSET);
         let jwt_secret = generate_secure_string(MIN_JWT_SECRET_LENGTH, SECRET_CHARSET);
 
@@ -167,7 +169,7 @@ impl UserStore {
 
         let admin_user = StoredUser {
             id: "admin".to_string(),
-            email: "admin@local".to_string(),
+            email: username.clone(),
             role: UserRole::Admin,
             password_hash,
             hash_version: "Argon2id".to_string(),

@@ -4,16 +4,23 @@
 
 /// Byte size constants for formatting
 pub mod size_constants {
+    /// Number of bytes in one kilobyte (1024)
     pub const BYTES_KB: u64 = 1024;
+    /// Number of bytes in one megabyte (1024²)
     pub const BYTES_MB: u64 = BYTES_KB * 1024;
+    /// Number of bytes in one gigabyte (1024³)
     pub const BYTES_GB: u64 = BYTES_MB * 1024;
+    /// Number of bytes in one terabyte (1024⁴)
     pub const BYTES_TB: u64 = BYTES_GB * 1024;
 }
 
 /// Time constants for formatting
 pub mod time_constants {
+    /// Number of seconds in one minute
     pub const SECONDS_PER_MINUTE: u64 = 60;
+    /// Number of seconds in one hour
     pub const SECONDS_PER_HOUR: u64 = 3600;
+    /// Number of seconds in one day (24 hours)
     pub const SECONDS_PER_DAY: u64 = 86400;
 }
 

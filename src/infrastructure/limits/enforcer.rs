@@ -447,6 +447,7 @@ impl Drop for OperationPermit<'_> {
 /// Null resource limits for testing (always allows operations)
 #[derive(Clone)]
 pub struct NullResourceLimits {
+    /// Configuration for null resource limits (ignored in implementation)
     config: ResourceLimitsConfig,
 }
 

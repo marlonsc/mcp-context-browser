@@ -18,7 +18,10 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use validator::Validate;
 
+
+/// Minimum allowed password length for admin accounts
 pub const MIN_PASSWORD_LENGTH: usize = 8;
+/// Minimum allowed JWT secret length for security
 pub const MIN_JWT_SECRET_LENGTH: usize = 32;
 
 /// Insecure default values that MUST NOT be used in production
@@ -70,21 +73,27 @@ fn default_jwt_expiration() -> u64 {
 /// Configuration errors
 #[derive(Debug, Error)]
 pub enum ConfigError {
+    /// Required environment variable is missing
     #[error("Missing required environment variable: {0}")]
     MissingEnvVar(String),
 
+    /// Username validation failed
     #[error("Invalid username: {0}")]
     InvalidUsername(String),
 
+    /// Password validation failed
     #[error("Invalid password: {0}")]
     InvalidPassword(String),
 
+    /// JWT secret validation failed
     #[error("Invalid JWT secret: {0}")]
     InvalidJwtSecret(String),
 
+    /// Configuration contains insecure defaults
     #[error("Insecure configuration: {0}")]
     InsecureConfig(String),
 
+    /// General configuration error
     #[error("Configuration error: {0}")]
     ConfigError(String),
 }
@@ -383,10 +392,43 @@ impl AdminConfig {
             }
         }
 
-        // Priority 3: First run - generate new credentials
-        let (store, generated_password) = UserStore::generate_new().map_err(|e| {
-            ConfigError::ConfigError(format!("Failed to generate credentials: {}", e))
-        })?;
+        // Priority 3: First run - use development defaults if in development mode
+        // Check if we should use development defaults (when no env vars are set)
+        let use_dev_defaults = username_env.is_none() && password_env.is_none() && jwt_secret_env.is_none();
+
+        let (store, generated_password) = if use_dev_defaults {
+            // Use development defaults for easier local development
+            tracing::warn!("Using development admin credentials (admin/adminpass123). Set MCP_ADMIN_* environment variables for production.");
+            let dev_username = "admin".to_string();
+            let dev_password = "adminpass123".to_string();
+            let dev_jwt_secret = "mcp-context-browser-jwt-secret-key-32chars".to_string();
+
+            let dev_password_hash = crate::infrastructure::auth::password::hash_password(&dev_password)
+                .map_err(|e| ConfigError::ConfigError(format!("Failed to hash dev password: {}", e)))?;
+
+            let store = UserStore {
+                users: vec![crate::infrastructure::auth::user_store::StoredUser {
+                    id: "admin".to_string(),
+                    email: dev_username.clone(),
+                    role: crate::infrastructure::auth::roles::UserRole::Admin,
+                    password_hash: dev_password_hash,
+                    hash_version: "Argon2id".to_string(),
+                    created_at: std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap_or_default()
+                        .as_secs(),
+                    last_active: 0,
+                }],
+                jwt_secret: dev_jwt_secret,
+            };
+
+            (store, dev_password)
+        } else {
+            // Generate secure random credentials for production
+            UserStore::generate_new().map_err(|e| {
+                ConfigError::ConfigError(format!("Failed to generate credentials: {}", e))
+            })?
+        };
 
         // Save to data file
         store

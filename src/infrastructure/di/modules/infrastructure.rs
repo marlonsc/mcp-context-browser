@@ -10,13 +10,14 @@ use crate::infrastructure::di::factory::ServiceProvider;
 use crate::infrastructure::events::EventBus;
 use crate::infrastructure::metrics::system::SystemMetricsCollector;
 
-/// Implementation of the InfrastructureModule trait providing cross-cutting concerns.
-///
-/// This module contains infrastructure services that support the entire application:
-/// - SystemMetricsCollector for system resource monitoring
-/// - ServiceProvider factory for creating service instances
-/// - EventBus for system-wide event communication
-/// - AuthService for authentication and authorization
+// Implementation of the InfrastructureModule trait providing core infrastructure services.
+// This module provides system metrics, service providers, event bus, and authentication services.
+//
+// Generated components:
+// - `SystemMetricsCollector`: Monitors CPU, memory, disk, and network usage
+// - `ServiceProvider`: Factory for creating provider instances with dependency injection
+// - `EventBus`: Asynchronous event communication system for system-wide notifications
+// - `AuthService`: JWT-based authentication and role-based access control
 module! {
     pub InfrastructureModuleImpl: InfrastructureModule {
         components = [SystemMetricsCollector, ServiceProvider, EventBus, AuthService],

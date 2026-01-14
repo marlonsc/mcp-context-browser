@@ -22,7 +22,9 @@ pub struct ConfigHistory {
 
 /// Thread-safe configuration history manager
 pub struct ConfigHistoryManager {
+    /// Thread-safe access to configuration history
     history: RwLock<ConfigHistory>,
+    /// File path where history is persisted
     history_path: PathBuf,
 }
 

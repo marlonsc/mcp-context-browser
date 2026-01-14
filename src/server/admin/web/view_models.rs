@@ -513,6 +513,71 @@ impl BackupViewModel {
 }
 
 // =============================================================================
+// Diagnostics View Model
+// =============================================================================
+
+/// Diagnostics page view model
+#[derive(Debug, Clone, Serialize)]
+pub struct DiagnosticsViewModel {
+    /// Page
+    pub page: &'static str,
+    /// Page description
+    pub page_description: String,
+    /// Health check results
+    pub health_check: Option<HealthCheckViewModel>,
+}
+
+/// Health check view model
+#[derive(Debug, Clone, Serialize)]
+pub struct HealthCheckViewModel {
+    /// Overall status
+    pub overall_status: String,
+    /// Check duration in milliseconds
+    pub duration_ms: u64,
+    /// Individual health checks
+    pub checks: Vec<HealthCheckItemViewModel>,
+}
+
+/// Individual health check item view model
+#[derive(Debug, Clone, Serialize)]
+pub struct HealthCheckItemViewModel {
+    /// Check name
+    pub name: String,
+    /// Check status
+    pub status: String,
+    /// Check message
+    pub message: Option<String>,
+    /// Check duration in milliseconds
+    pub duration_ms: Option<u64>,
+}
+
+impl DiagnosticsViewModel {
+    /// Create a new diagnostics view model
+    pub fn new() -> Self {
+        Self {
+            page: "diagnostics",
+            page_description: "Monitor system health and run diagnostic checks".to_string(),
+            health_check: None,
+        }
+    }
+
+    /// Create with health check results
+    pub fn with_health_check(
+        mut self,
+        overall_status: String,
+        duration_ms: u64,
+        checks: Vec<HealthCheckItemViewModel>,
+    ) -> Self {
+        self.health_check = Some(HealthCheckViewModel {
+            overall_status,
+            duration_ms,
+            checks,
+        });
+        self
+    }
+}
+
+// =============================================================================
 // Error View Model
 // =============================================================================
 
@@ -530,6 +595,7 @@ pub struct ErrorViewModel {
 }
 
 impl ErrorViewModel {
+    /// Create a new error view model with title and message
     pub fn new(title: impl Into<String>, message: impl Into<String>) -> Self {
         Self {
             title: title.into(),
@@ -539,6 +605,7 @@ impl ErrorViewModel {
         }
     }
 
+    /// Add optional details to the error view model
     pub fn with_details(mut self, details: impl Into<String>) -> Self {
         self.details = Some(details.into());
         self

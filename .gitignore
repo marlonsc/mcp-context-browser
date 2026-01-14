@@ -54,6 +54,7 @@ archive/
 *.tmp
 *.temp
 data/
+*.pid
 
 # Test coverage
 *.profraw

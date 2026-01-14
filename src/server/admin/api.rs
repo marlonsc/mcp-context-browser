@@ -17,10 +17,13 @@ impl AdminApiServer {
         Self { config, mcp_server }
     }
 
-    /// Create the admin router
-    pub fn create_router(&self) -> Result<Router, Box<dyn std::error::Error>> {
+    /// Create the admin router with auth handler access
+    pub fn create_router_with_auth(&self, auth_handler: Arc<crate::server::auth::AuthHandler>) -> Result<Router, Box<dyn std::error::Error>> {
         let admin_api = Arc::new(AdminApi::new(self.config.clone()));
         let admin_service = self.mcp_server.admin_service();
+
+        // Get AuthService from auth handler
+        let auth_service: Arc<dyn crate::infrastructure::auth::AuthServiceInterface> = Arc::new((*auth_handler.auth_service()).clone());
 
         // Initialize web interface and templates
         let web_interface = super::web::WebInterface::new()?;
@@ -34,6 +37,7 @@ impl AdminApiServer {
         let state = AdminState {
             admin_api,
             admin_service,
+            auth_service,
             mcp_server: Arc::clone(&self.mcp_server),
             templates,
             recovery_manager: None, // Will be set during Phase 8 integration

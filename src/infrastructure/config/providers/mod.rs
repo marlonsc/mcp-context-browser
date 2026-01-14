@@ -4,6 +4,7 @@
 //! including health checking, configuration validation, and provider selection logic.
 
 pub mod embedding;
+/// Provider configuration management and validation
 mod manager;
 pub mod vector_store;
 

@@ -33,6 +33,15 @@ impl ConfigWatcher {
         }
     }
 
+    /// Start watching the configuration file for changes and update the shared config
+    ///
+    /// This method runs indefinitely, monitoring the configuration file for modifications.
+    /// When changes are detected, it reloads the configuration and updates the shared
+    /// ArcSwap<Config> instance. This enables hot-reload functionality for configuration.
+    ///
+    /// # Returns
+    /// Returns an error if the file watcher cannot be initialized or if configuration
+    /// reload fails after a file change.
     pub async fn watch(&self) -> Result<()> {
         let (tx, mut rx) = mpsc::channel(1);
         let path = self.path.clone();

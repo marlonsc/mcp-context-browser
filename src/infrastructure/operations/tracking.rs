@@ -19,6 +19,7 @@ pub struct McpIndexingOperations {
 }
 
 impl IndexingOperationsInterface for McpIndexingOperations {
+    /// Get access to the internal operations map
     fn get_map(&self) -> &DashMap<String, IndexingOperation> {
         &self.map
     }

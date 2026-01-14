@@ -214,6 +214,10 @@ async fn handle_restore_failure(
     )))
 }
 
+/// Restore system data from a backup archive
+///
+/// This function restores data from a compressed backup archive, with automatic
+/// rollback capability if the restore operation fails.
 pub async fn restore_backup(
     event_bus: &SharedEventBusProvider,
     backup_id: &str,

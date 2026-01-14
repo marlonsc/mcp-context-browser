@@ -5,12 +5,15 @@
 /// Validation result for input data
 #[derive(Debug, Clone, PartialEq)]
 pub enum ValidationResult<T> {
+    /// Input data passed validation
     Valid(T),
+    /// Input data failed validation with error message
     Invalid(String),
 }
 
 /// Generic validation trait for clean code
 pub trait Validatable {
+    /// Validate this instance and return the result
     fn validate(&self) -> ValidationResult<Self>
     where
         Self: Clone;
@@ -73,21 +76,24 @@ impl Default for ValidationConfig {
 }
 
 impl ValidationConfig {
-    /// Builder pattern for configuration - clean API
+    /// Create a new validation configuration with default settings
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Set the minimum allowed length for validated strings
     pub fn min_length(mut self, min: usize) -> Self {
         self.min_length = min;
         self
     }
 
+    /// Set the maximum allowed length for validated strings
     pub fn max_length(mut self, max: usize) -> Self {
         self.max_length = max;
         self
     }
 
+    /// Configure whether special characters are allowed in validated strings
     pub fn allow_special_chars(mut self, allow: bool) -> Self {
         self.allow_special_chars = allow;
         self

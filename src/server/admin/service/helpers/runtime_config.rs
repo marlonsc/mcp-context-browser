@@ -265,20 +265,26 @@ impl RuntimeConfig {
     }
 }
 
-/// Provider trait for runtime configuration
+/// Provider trait for runtime configuration management
 pub trait RuntimeConfigProvider: Send + Sync {
+    /// Get the current runtime configuration
     fn get_config(&self) -> RuntimeConfig;
+    /// Update the cache entries count
     fn update_cache_entries(&mut self, count: u64);
+    /// Update the cache hit rate
     fn update_cache_hit_rate(&mut self, rate: f64);
+    /// Update connection statistics
     fn update_connection_stats(&mut self, active: u32, idle: u32);
 }
 
 /// Default implementation tracking runtime state
 pub struct DefaultRuntimeConfigProvider {
+    /// Current runtime configuration state
     config: RuntimeConfig,
 }
 
 impl DefaultRuntimeConfigProvider {
+    /// Create a new default runtime config provider with default values
     pub fn new() -> Self {
         Self {
             config: RuntimeConfig {

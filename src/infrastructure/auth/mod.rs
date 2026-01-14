@@ -80,4 +80,4 @@ pub use rate_limit::{
 };
 
 // Re-export user store types
-pub use user_store::{FirstRunStatus, UserStore};
+pub use user_store::{FirstRunStatus, StoredUser, UserStore};

@@ -385,6 +385,21 @@ impl<'a> ViewModelBuilder<'a> {
     }
 
     // =========================================================================
+    // Diagnostics Builders
+    // =========================================================================
+
+    /// Build diagnostics page view model
+    ///
+    /// Creates a diagnostics view model. Currently returns empty health check
+    /// results - in the future this should fetch actual health check data
+    /// from the admin service.
+    pub async fn build_diagnostics_page(&self) -> Result<DiagnosticsViewModel> {
+        // TODO: Fetch actual health check results from admin service
+        // For now, return empty diagnostics view model
+        Ok(DiagnosticsViewModel::new())
+    }
+
+    // =========================================================================
     // Error Page Builder
     // =========================================================================
 

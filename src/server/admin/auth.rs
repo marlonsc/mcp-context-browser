@@ -149,7 +149,7 @@ impl AuthService {
 
 /// Authentication middleware
 ///
-/// Validates JWT tokens using proper cryptographic signature verification.
+/// Validates JWT tokens using the real AuthService from DI container.
 /// All requests must have a valid Bearer token in the Authorization header.
 pub async fn auth_middleware(
     State(state): State<super::models::AdminState>,
@@ -170,26 +170,8 @@ pub async fn auth_middleware(
         }
     };
 
-    // Create auth service with proper configuration
-    let auth_service = match AuthService::new(
-        state.admin_api.config().jwt_secret.clone(),
-        state.admin_api.config().jwt_expiration,
-        state.admin_api.config().username.clone(),
-        state.admin_api.config().password.clone(),
-    ) {
-        Ok(service) => service,
-        Err(e) => {
-            tracing::error!("Auth service initialization failed: {}", e);
-            return Ok((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Authentication service unavailable",
-            )
-                .into_response());
-        }
-    };
-
-    // Validate token with proper cryptographic signature verification
-    match auth_service.validate_token(token) {
+    // Use the real AuthService from DI container
+    match state.auth_service.validate_token(token) {
         Ok(claims) => {
             // Add user info to request extensions
             req.extensions_mut().insert(claims);
@@ -210,50 +192,44 @@ pub async fn login_handler(
     State(state): State<super::models::AdminState>,
     Json(login_req): Json<LoginRequest>,
 ) -> Response {
-    let auth_service = match AuthService::new(
-        state.admin_api.config().jwt_secret.clone(),
-        state.admin_api.config().jwt_expiration,
-        state.admin_api.config().username.clone(),
-        state.admin_api.config().password.clone(),
-    ) {
-        Ok(service) => service,
-        Err(e) => {
-            return Json(ApiResponse::<LoginResponse>::error(format!(
-                "Auth service initialization failed: {}",
-                e
-            )))
-            .into_response();
-        }
-    };
+    // Use the real AuthService from DI container
+    match state.auth_service.authenticate(&login_req.username, &login_req.password) {
+        Ok(token) => {
+            // For backward compatibility, create a UserInfo from the token claims
+            // This is needed because the response format expects UserInfo
+            match state.auth_service.validate_token(&token) {
+                Ok(claims) => {
+                    let user = UserInfo {
+                        username: claims.sub.clone(),
+                        role: format!("{:?}", claims.role).to_lowercase(),
+                    };
 
-    match auth_service.authenticate(&login_req.username, &login_req.password) {
-        Ok(user) => match auth_service.generate_token(&user) {
-            Ok(token) => {
-                let jwt_expiration = state.admin_api.config().jwt_expiration;
-                let expires_at = TimeUtils::now_unix_secs() + jwt_expiration;
+                    let jwt_expiration = 3600; // Default 1 hour, could be configurable
+                    let expires_at = TimeUtils::now_unix_secs() + jwt_expiration;
 
-                let response = LoginResponse {
-                    token: token.clone(),
-                    expires_at,
-                    user,
-                };
+                    let response = LoginResponse {
+                        token: token.clone(),
+                        expires_at,
+                        user,
+                    };
 
-                // Return JSON response with Set-Cookie header
-                let cookie_value = create_auth_cookie(&token, jwt_expiration);
+                    // Return JSON response with Set-Cookie header
+                    let cookie_value = create_auth_cookie(&token, jwt_expiration);
 
-                (
-                    [(header::SET_COOKIE, cookie_value)],
-                    Json(ApiResponse::success(response)),
-                )
-                    .into_response()
+                    (
+                        [(header::SET_COOKIE, cookie_value)],
+                        Json(ApiResponse::success(response)),
+                    )
+                        .into_response()
+                }
+                Err(e) => Json(ApiResponse::<LoginResponse>::error(format!(
+                    "Token validation failed: {}",
+                    e
+                )))
+                .into_response(),
             }
-            Err(e) => Json(ApiResponse::<LoginResponse>::error(format!(
-                "Token generation failed: {}",
-                e
-            )))
-            .into_response(),
-        },
-        Err(e) => Json(ApiResponse::<LoginResponse>::error(e)).into_response(),
+        }
+        Err(e) => Json(ApiResponse::<LoginResponse>::error(e.to_string())).into_response(),
     }
 }
 
@@ -297,22 +273,10 @@ pub async fn web_auth_middleware(
         }
     };
 
-    // Create auth service with proper configuration
-    let auth_service = match AuthService::new(
-        state.admin_api.config().jwt_secret.clone(),
-        state.admin_api.config().jwt_expiration,
-        state.admin_api.config().username.clone(),
-        state.admin_api.config().password.clone(),
-    ) {
-        Ok(service) => service,
-        Err(e) => {
-            tracing::error!("Auth service initialization failed: {}", e);
-            return Err(Redirect::to("/login").into_response());
-        }
-    };
+    // Use the real AuthService from DI container
 
     // Validate token with proper cryptographic signature verification
-    match auth_service.validate_token(&token) {
+    match state.auth_service.validate_token(&token) {
         Ok(claims) => {
             // Add user info to request extensions for downstream handlers
             req.extensions_mut().insert(claims);

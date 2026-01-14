@@ -47,6 +47,8 @@ pub struct AdminServiceDependencies {
     pub config: Arc<arc_swap::ArcSwap<crate::infrastructure::config::Config>>,
     /// Cache provider for real cache statistics
     pub cache_provider: Option<crate::infrastructure::cache::SharedCacheProvider>,
+    /// Search service for admin operations
+    pub search_service: Option<Arc<crate::application::search::SearchService>>,
 }
 
 /// Concrete implementation of AdminService
@@ -63,7 +65,7 @@ pub struct AdminServiceImpl {
     system_collector: Arc<dyn SystemMetricsCollectorInterface>,
     #[shaku(inject)]
     http_client: Arc<dyn crate::adapters::http_client::HttpClientProvider>,
-    #[shaku(default = Arc::new(ArcSwap::from_pointee(None)))]
+    #[shaku(default)]
     search_service: Arc<ArcSwap<Option<Arc<SearchService>>>>,
     /// Event bus for publishing system events (injected from DI)
     #[shaku(inject)]
@@ -86,7 +88,7 @@ impl AdminServiceImpl {
             service_provider: deps.service_provider,
             system_collector: deps.system_collector,
             http_client: deps.http_client,
-            search_service: Arc::new(ArcSwap::from_pointee(None)),
+            search_service: Arc::new(ArcSwap::from_pointee(deps.search_service)),
             event_bus: deps.event_bus,
             log_buffer: deps.log_buffer,
             config: deps.config,
@@ -94,10 +96,6 @@ impl AdminServiceImpl {
         }
     }
 
-    /// Set search service after construction
-    pub fn set_search_service(&self, search_service: Arc<SearchService>) {
-        self.search_service.store(Arc::new(Some(search_service)));
-    }
 }
 
 #[async_trait]

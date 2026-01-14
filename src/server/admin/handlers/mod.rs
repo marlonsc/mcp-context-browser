@@ -12,14 +12,22 @@
 //! - `htmx` - HTMX partial response handlers
 
 mod config;
+/// Data management handlers for backups and restoration
 mod data;
+/// System diagnostics and health check handlers
 mod diagnostics;
+/// Shared handler utilities and helpers
 mod helpers;
-mod htmx;
+pub mod htmx;
+/// Index management and monitoring handlers
 mod indexes;
+/// System maintenance and cleanup handlers
 mod maintenance;
+/// Provider management and configuration handlers
 mod providers;
+/// Subsystem control and monitoring handlers
 mod subsystems;
+/// System status and dashboard handlers
 mod system;
 
 // Re-export all handlers for backwards compatibility

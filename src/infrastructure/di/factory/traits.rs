@@ -9,11 +9,27 @@ use std::sync::Arc;
 /// Provider factory trait
 #[async_trait]
 pub trait ProviderFactory: Send + Sync {
+    /// Create an embedding provider instance based on configuration
+    ///
+    /// # Arguments
+    /// * `config` - Embedding provider configuration specifying the provider type and settings
+    /// * `http_client` - HTTP client for external API communication
+    ///
+    /// # Returns
+    /// A configured embedding provider instance wrapped in Arc
     async fn create_embedding_provider(
         &self,
         config: &EmbeddingConfig,
         http_client: Arc<dyn crate::adapters::http_client::HttpClientProvider>,
     ) -> Result<Arc<dyn EmbeddingProvider>>;
+
+    /// Create a vector store provider instance based on configuration
+    ///
+    /// # Arguments
+    /// * `config` - Vector store provider configuration specifying the provider type and settings
+    ///
+    /// # Returns
+    /// A configured vector store provider instance wrapped in Arc
     async fn create_vector_store_provider(
         &self,
         config: &VectorStoreConfig,
@@ -47,11 +63,13 @@ pub trait ServiceProviderInterface: shaku::Interface + Send + Sync {
     fn remove_embedding_provider(&self, name: &str) -> Result<()>;
     /// Remove a vector store provider by name
     fn remove_vector_store_provider(&self, name: &str) -> Result<()>;
+    /// Create an embedding provider from configuration
     async fn get_embedding_provider(
         &self,
         config: &EmbeddingConfig,
         http_client: Arc<dyn crate::adapters::http_client::HttpClientProvider>,
     ) -> Result<Arc<dyn EmbeddingProvider>>;
+    /// Create a vector store provider from configuration
     async fn get_vector_store_provider(
         &self,
         config: &VectorStoreConfig,

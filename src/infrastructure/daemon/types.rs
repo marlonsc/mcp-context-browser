@@ -313,7 +313,7 @@ impl RecoveryState {
         }
     }
 
-    /// Record a health check failure
+    /// Record a subsystem health check failure
     pub fn record_failure(&mut self, error: Option<String>) {
         self.consecutive_failures += 1;
         self.last_error = error;

@@ -8,31 +8,40 @@ use std::sync::Arc;
 
 /// Trait for provider registry
 pub trait ProviderRegistryTrait: Send + Sync {
+    /// Register an embedding provider with the given name
     fn register_embedding_provider(
         &self,
         name: String,
         provider: Arc<dyn EmbeddingProvider>,
     ) -> Result<()>;
 
+    /// Register a vector store provider with the given name
     fn register_vector_store_provider(
         &self,
         name: String,
         provider: Arc<dyn VectorStoreProvider>,
     ) -> Result<()>;
 
+    /// Get an embedding provider by name
     fn get_embedding_provider(&self, name: &str) -> Result<Arc<dyn EmbeddingProvider>>;
+    /// Get a vector store provider by name
     fn get_vector_store_provider(&self, name: &str) -> Result<Arc<dyn VectorStoreProvider>>;
+    /// Remove an embedding provider by name
     fn remove_embedding_provider(&self, name: &str) -> Result<()>;
+    /// Remove a vector store provider by name
     fn remove_vector_store_provider(&self, name: &str) -> Result<()>;
+    /// List all registered embedding provider names
     fn list_embedding_providers(&self) -> Vec<String>;
+    /// List all registered vector store provider names
     fn list_vector_store_providers(&self) -> Vec<String>;
 }
 
 /// Thread-safe provider registry using DashMap to eliminate locks
 #[derive(Clone)]
 pub struct ProviderRegistry {
-    // Explicit 'static bound required for DashMap trait objects in async contexts
+    /// Map of registered embedding providers by name
     embedding_providers: Arc<DashMap<String, Arc<dyn EmbeddingProvider + 'static>>>,
+    /// Map of registered vector store providers by name
     vector_store_providers: Arc<DashMap<String, Arc<dyn VectorStoreProvider + 'static>>>,
 }
 

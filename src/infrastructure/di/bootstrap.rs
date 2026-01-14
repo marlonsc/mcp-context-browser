@@ -76,18 +76,19 @@ impl DiContainer {
         let infrastructure_module: Arc<dyn InfrastructureModule> =
             Arc::new(InfrastructureModuleImpl::builder().build());
         let server_module: Arc<dyn ServerModule> = Arc::new(ServerModuleImpl::builder().build());
-        // Admin module depends on infrastructure, server, and adapters modules
+        // Application module depends on adapters module for repositories
+        let application_module: Arc<dyn ApplicationModule> =
+            Arc::new(ApplicationModuleImpl::builder(Arc::clone(&adapters_module)).build());
+        // Admin module depends on infrastructure, server, adapters, and application modules
         let admin_module: Arc<dyn AdminModule> = Arc::new(
             AdminModuleImpl::builder(
                 Arc::clone(&infrastructure_module),
                 Arc::clone(&server_module),
                 Arc::clone(&adapters_module),
+                Arc::clone(&application_module),
             )
             .build(),
         );
-        // Application module depends on adapters module for repositories
-        let application_module: Arc<dyn ApplicationModule> =
-            Arc::new(ApplicationModuleImpl::builder(Arc::clone(&adapters_module)).build());
 
         Ok(Self {
             adapters_module,
@@ -142,18 +143,19 @@ impl DiContainer {
         let infrastructure_module: Arc<dyn InfrastructureModule> =
             Arc::new(InfrastructureModuleImpl::builder().build());
         let server_module: Arc<dyn ServerModule> = Arc::new(ServerModuleImpl::builder().build());
-        // Admin module depends on infrastructure, server, and adapters modules
+        // Application module depends on adapters module for repositories
+        let application_module: Arc<dyn ApplicationModule> =
+            Arc::new(ApplicationModuleImpl::builder(Arc::clone(&adapters_module)).build());
+        // Admin module depends on infrastructure, server, adapters, and application modules
         let admin_module: Arc<dyn AdminModule> = Arc::new(
             AdminModuleImpl::builder(
                 Arc::clone(&infrastructure_module),
                 Arc::clone(&server_module),
                 Arc::clone(&adapters_module),
+                Arc::clone(&application_module),
             )
             .build(),
         );
-        // Application module depends on adapters module for repositories
-        let application_module: Arc<dyn ApplicationModule> =
-            Arc::new(ApplicationModuleImpl::builder(Arc::clone(&adapters_module)).build());
 
         Ok(Self {
             adapters_module,

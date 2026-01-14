@@ -78,49 +78,79 @@ use crate::infrastructure::constants::{
 };
 
 // Activity Feed Configuration
+/// Maximum number of activities to keep in memory
 pub const DEFAULT_MAX_ACTIVITIES: usize = ADMIN_MAX_ACTIVITIES;
+/// Number of days to retain activity entries
 pub const DEFAULT_ACTIVITY_RETENTION_DAYS: u32 = ADMIN_ACTIVITY_RETENTION_DAYS;
+/// Size of the activity buffer for in-memory storage
 pub const DEFAULT_ACTIVITY_BUFFER_SIZE: usize = ADMIN_ACTIVITY_BUFFER_SIZE;
 
 // Configuration History
+/// Maximum number of configuration history entries to keep
 pub const DEFAULT_MAX_HISTORY_ENTRIES: usize = ADMIN_MAX_HISTORY_ENTRIES;
+/// Number of days to retain configuration history
 pub const DEFAULT_HISTORY_RETENTION_DAYS: u32 = ADMIN_HISTORY_RETENTION_DAYS;
+/// Maximum number of configuration entries to return in queries
 pub const DEFAULT_CONFIG_QUERY_LIMIT: usize = ADMIN_CONFIG_QUERY_LIMIT;
 
 // Logging Configuration
+/// Size of the in-memory log buffer
 pub const DEFAULT_LOG_BUFFER_SIZE: usize = ADMIN_LOG_BUFFER_SIZE;
+/// Number of days to retain log entries
 pub const DEFAULT_LOG_RETENTION_DAYS: u32 = ADMIN_LOG_RETENTION_DAYS;
+/// Maximum number of log entries to return in queries
 pub const DEFAULT_LOG_QUERY_LIMIT: usize = ADMIN_LOG_QUERY_LIMIT;
 
 // Backup Configuration
+/// Number of days to retain backup files
 pub const DEFAULT_BACKUP_RETENTION_DAYS: u32 = ADMIN_BACKUP_RETENTION_DAYS;
+/// Compression level for backup files (1-9, higher = more compression)
 pub const DEFAULT_BACKUP_COMPRESSION_LEVEL: u32 = ADMIN_BACKUP_COMPRESSION_LEVEL;
+/// Maximum number of backup files to keep
 pub const DEFAULT_MAX_BACKUPS: usize = ADMIN_MAX_BACKUPS;
 
 // Route Discovery Configuration
-pub const DEFAULT_ROUTE_RATE_LIMIT_HEALTH: u32 = RATE_LIMIT_HEALTH; // requests per minute
-pub const DEFAULT_ROUTE_RATE_LIMIT_ADMIN: u32 = RATE_LIMIT_ADMIN; // requests per minute
-pub const DEFAULT_ROUTE_RATE_LIMIT_INDEXING: u32 = RATE_LIMIT_INDEXING; // requests per minute
-pub const DEFAULT_ROUTE_RATE_LIMIT_SEARCH: u32 = RATE_LIMIT_SEARCH; // requests per minute
-pub const DEFAULT_ROUTE_RATE_LIMIT_SHUTDOWN: u32 = RATE_LIMIT_SHUTDOWN_COOLDOWN; // seconds cooldown
-pub const DEFAULT_ROUTE_RATE_LIMIT_RELOAD: u32 = RATE_LIMIT_RELOAD_COOLDOWN; // seconds cooldown
-pub const DEFAULT_ROUTE_RATE_LIMIT_BACKUP: u32 = RATE_LIMIT_BACKUP_COOLDOWN; // seconds cooldown
-pub const DEFAULT_ROUTE_RATE_LIMIT_RESTORE: u32 = RATE_LIMIT_RESTORE; // requests per minute
+/// Rate limit for health check endpoints (requests per minute)
+pub const DEFAULT_ROUTE_RATE_LIMIT_HEALTH: u32 = RATE_LIMIT_HEALTH;
+/// Rate limit for admin endpoints (requests per minute)
+pub const DEFAULT_ROUTE_RATE_LIMIT_ADMIN: u32 = RATE_LIMIT_ADMIN;
+/// Rate limit for indexing endpoints (requests per minute)
+pub const DEFAULT_ROUTE_RATE_LIMIT_INDEXING: u32 = RATE_LIMIT_INDEXING;
+/// Rate limit for search endpoints (requests per minute)
+pub const DEFAULT_ROUTE_RATE_LIMIT_SEARCH: u32 = RATE_LIMIT_SEARCH;
+/// Cooldown period for shutdown operations (seconds)
+pub const DEFAULT_ROUTE_RATE_LIMIT_SHUTDOWN: u32 = RATE_LIMIT_SHUTDOWN_COOLDOWN;
+/// Cooldown period for reload operations (seconds)
+pub const DEFAULT_ROUTE_RATE_LIMIT_RELOAD: u32 = RATE_LIMIT_RELOAD_COOLDOWN;
+/// Cooldown period for backup operations (seconds)
+pub const DEFAULT_ROUTE_RATE_LIMIT_BACKUP: u32 = RATE_LIMIT_BACKUP_COOLDOWN;
+/// Rate limit for restore operations (requests per minute)
+pub const DEFAULT_ROUTE_RATE_LIMIT_RESTORE: u32 = RATE_LIMIT_RESTORE;
 
 // Maintenance Operations
+/// Number of items to process in each cleanup batch
 pub const DEFAULT_CLEANUP_BATCH_SIZE: usize = CLEANUP_BATCH_SIZE;
+/// Number of days to retain data before cleanup
 pub const DEFAULT_CLEANUP_RETENTION_DAYS: u32 = CLEANUP_RETENTION_DAYS;
-pub const DEFAULT_INDEX_REBUILD_TIMEOUT_SECS: u64 = INDEX_REBUILD_TIMEOUT_SECS; // 1 hour
-pub const DEFAULT_CACHE_CLEAR_TIMEOUT_SECS: u64 = CACHE_CLEAR_TIMEOUT_SECS; // 5 minutes
+/// Timeout for index rebuild operations (seconds)
+pub const DEFAULT_INDEX_REBUILD_TIMEOUT_SECS: u64 = INDEX_REBUILD_TIMEOUT_SECS;
+/// Timeout for cache clear operations (seconds)
+pub const DEFAULT_CACHE_CLEAR_TIMEOUT_SECS: u64 = CACHE_CLEAR_TIMEOUT_SECS;
 
 // Performance Testing
+/// Default duration for performance tests in seconds
 pub const DEFAULT_PERF_TEST_DURATION_SECS: u32 = PERF_TEST_DURATION_SECS;
+/// Default concurrency level for performance tests
 pub const DEFAULT_PERF_TEST_CONCURRENCY: u32 = PERF_TEST_CONCURRENCY;
+/// Default timeout for performance test requests in milliseconds
 pub const DEFAULT_PERF_TEST_TIMEOUT_MS: u64 = PERF_TEST_TIMEOUT_MS;
 
 // Directory Configuration
+/// Default directory for storing backup files
 pub const DEFAULT_BACKUPS_DIR: &str = ADMIN_BACKUPS_DIR;
+/// Default directory for storing application data
 pub const DEFAULT_DATA_DIR: &str = ADMIN_DATA_DIR;
+/// Default directory for storing exported data
 pub const DEFAULT_EXPORTS_DIR: &str = ADMIN_EXPORTS_DIR;
 
 // Indexing Configuration
@@ -175,14 +205,18 @@ pub fn default_exclude_patterns() -> Vec<String> {
 }
 
 // Time Constants
+/// Number of seconds in a standard day (24 hours)
 pub const SECONDS_PER_DAY: u64 = 86400;
 
 // Byte Conversion Constants
+/// Number of bytes in one kilobyte (1024)
 pub const BYTES_PER_KILOBYTE: u64 = 1024;
+/// Number of bytes in one megabyte (1024^2)
 pub const BYTES_PER_MEGABYTE: u64 = 1024 * 1024;
+/// Number of bytes in one gigabyte (1024^3)
 pub const BYTES_PER_GIGABYTE: u64 = 1024 * 1024 * 1024;
 
-// Helper function to read environment variables with defaults
+/// Read environment variable as usize with default fallback
 pub fn get_env_usize(key: &str, default: usize) -> usize {
     std::env::var(key)
         .ok()
@@ -190,6 +224,7 @@ pub fn get_env_usize(key: &str, default: usize) -> usize {
         .unwrap_or(default)
 }
 
+/// Read environment variable as u32 with default fallback
 pub fn get_env_u32(key: &str, default: u32) -> u32 {
     std::env::var(key)
         .ok()
@@ -197,6 +232,7 @@ pub fn get_env_u32(key: &str, default: u32) -> u32 {
         .unwrap_or(default)
 }
 
+/// Read environment variable as u64 with default fallback
 pub fn get_env_u64(key: &str, default: u64) -> u64 {
     std::env::var(key)
         .ok()

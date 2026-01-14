@@ -4,20 +4,30 @@
 
 /// Tailwind CSS badge classes for consistent UI styling
 pub mod badge {
+    /// Success state badge styling
     pub const SUCCESS: &str = "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
+    /// Error state badge styling
     pub const ERROR: &str = "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
+    /// Warning state badge styling
     pub const WARNING: &str =
         "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
+    /// Info state badge styling
     pub const INFO: &str = "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
+    /// Default/unknown state badge styling
     pub const DEFAULT: &str = "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
 }
 
 /// Indicator dot classes (single color)
 pub mod indicator {
+    /// Success state indicator styling
     pub const SUCCESS: &str = "bg-green-500";
+    /// Error state indicator styling
     pub const ERROR: &str = "bg-red-500";
+    /// Warning state indicator styling
     pub const WARNING: &str = "bg-yellow-500";
+    /// Info state indicator styling
     pub const INFO: &str = "bg-blue-500";
+    /// Default/unknown state indicator styling
     pub const DEFAULT: &str = "bg-gray-500";
 }
 

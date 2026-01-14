@@ -144,6 +144,10 @@ pub struct ApiResponse<T> {
 }
 
 impl<T> ApiResponse<T> {
+    /// Create a successful API response with data
+    ///
+    /// # Arguments
+    /// * `data` - The response data to include
     pub fn success(data: T) -> Self {
         Self {
             success: true,
@@ -153,6 +157,10 @@ impl<T> ApiResponse<T> {
         }
     }
 
+    /// Create an error API response with message
+    ///
+    /// # Arguments
+    /// * `error` - The error message to include
     pub fn error(error: String) -> Self {
         Self {
             success: false,
@@ -170,6 +178,8 @@ pub struct AdminState {
     pub admin_api: std::sync::Arc<super::AdminApi>,
     /// Admin Service
     pub admin_service: std::sync::Arc<dyn super::service::AdminService>,
+    /// Authentication Service from DI container
+    pub auth_service: std::sync::Arc<dyn crate::infrastructure::auth::AuthServiceInterface>,
     /// Mcp Server
     pub mcp_server: std::sync::Arc<crate::server::McpServer>,
     /// Templates

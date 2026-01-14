@@ -322,8 +322,11 @@ async fn initialize_server_components(
                         Arc::clone(&server),
                     );
 
+                    // Get auth handler from server
+                    let auth_handler = server.auth_handler();
+
                     // Merge admin router into metrics server
-                    match admin_api_server.create_router() {
+                    match admin_api_server.create_router_with_auth(auth_handler) {
                         Ok(router) => {
                             metrics_server = metrics_server.with_external_router(router);
                             tracing::info!("✅ Admin interface enabled");

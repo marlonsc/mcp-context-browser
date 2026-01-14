@@ -17,6 +17,11 @@ impl AuthHandler {
         Self { auth_service }
     }
 
+    /// Get the authentication service
+    pub fn auth_service(&self) -> &AuthService {
+        &self.auth_service
+    }
+
     /// Check authentication and permissions for a request
     ///
     /// Returns Ok(Some(claims)) if authentication succeeds and permissions are granted

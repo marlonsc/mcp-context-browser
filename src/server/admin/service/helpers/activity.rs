@@ -12,12 +12,17 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 /// Activity level/severity
+/// Activity severity levels for logging and display
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum ActivityLevel {
+    /// Informational activity
     Info,
+    /// Warning level activity
     Warning,
+    /// Error level activity
     Error,
+    /// Successful operation activity
     Success,
 }
 

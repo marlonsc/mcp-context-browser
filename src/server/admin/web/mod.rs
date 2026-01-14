@@ -26,6 +26,7 @@ use std::sync::Arc;
 use tera::{Context, Tera};
 
 use crate::server::admin::auth::web_auth_middleware;
+use crate::server::admin::handlers::htmx::{htmx_maintenance_history_handler, htmx_recovery_status_handler};
 use crate::server::admin::models::AdminState;
 use crate::server::admin::web::html_helpers::htmx_error;
 
@@ -91,6 +92,7 @@ impl WebInterface {
     }
 
     /// Get the templates instance
+    /// Get access to the Tera template engine instance
     pub fn templates(&self) -> Arc<Tera> {
         Arc::clone(&self.templates)
     }
@@ -118,6 +120,8 @@ impl WebInterface {
             )
             .route("/htmx/providers-list", get(htmx_providers_list_handler))
             .route("/htmx/indexes-list", get(htmx_indexes_list_handler))
+            .route("/htmx/recovery-status", get(htmx_recovery_status_handler))
+            .route("/htmx/maintenance-history", get(htmx_maintenance_history_handler))
             .layer(middleware::from_fn_with_state(
                 state.clone(),
                 web_auth_middleware,
@@ -256,9 +260,23 @@ async fn maintenance_handler(State(state): State<AdminState>) -> impl IntoRespon
 }
 
 async fn diagnostics_handler(State(state): State<AdminState>) -> impl IntoResponse {
-    let mut context = Context::new();
-    context.insert("page", "diagnostics");
-    render_template(&state.templates, "diagnostics.html", &context)
+    let builder = ViewModelBuilder::new(&state);
+
+    match builder.build_diagnostics_page().await {
+        Ok(view_model) => {
+            let mut context = Context::new();
+            context.insert("page", &view_model.page);
+            context.insert("page_description", &view_model.page_description);
+            if let Some(health_check) = &view_model.health_check {
+                context.insert("health_check", health_check);
+            }
+            render_template(&state.templates, "diagnostics.html", &context)
+        }
+        Err(e) => {
+            tracing::error!("Failed to build diagnostics view model: {}", e);
+            render_error_page(&state.templates, "Diagnostics Error", &e.to_string())
+        }
+    }
 }
 
 async fn data_management_handler(State(state): State<AdminState>) -> impl IntoResponse {

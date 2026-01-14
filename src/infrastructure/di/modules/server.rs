@@ -8,11 +8,12 @@ use super::traits::ServerModule;
 use crate::infrastructure::operations::McpIndexingOperations;
 use crate::server::metrics::McpPerformanceMetrics;
 
-/// Implementation of the ServerModule trait providing server-specific components.
-///
-/// This module contains server-level components for monitoring and operations:
-/// - McpPerformanceMetrics for tracking server performance statistics
-/// - McpIndexingOperations for managing and tracking indexing operations
+// Implementation of the ServerModule trait providing server-side components.
+// This module provides performance monitoring and indexing operations for the MCP server.
+//
+// Generated components:
+// - `McpPerformanceMetrics`: Performance metrics collection and reporting for MCP operations
+// - `McpIndexingOperations`: Tracking and management of ongoing indexing operations
 module! {
     pub ServerModuleImpl: ServerModule {
         components = [McpPerformanceMetrics, McpIndexingOperations],

@@ -16,12 +16,19 @@ pub enum PerformanceMessage {
         /// Whether the query was successful
         success: bool
     },
+    /// Record a cache hit
     RecordCacheHit,
+    /// Record a cache miss
     RecordCacheMiss,
+    /// Update the current cache size
     UpdateCacheSize(u64),
+    /// Request current query performance metrics
     GetQueryPerformance(oneshot::Sender<QueryPerformanceMetrics>),
+    /// Request current cache metrics
     GetCacheMetrics(oneshot::Sender<CacheMetrics>),
+    /// Reset all metrics
     Reset,
+    /// Clean old records older than the specified duration
     CleanOldRecords(Duration),
 }
 
@@ -47,26 +54,31 @@ impl PerformanceMetrics {
         Self { sender: tx }
     }
 
+    /// Record a query performance measurement
     pub fn record_query(&self, latency: Duration, success: bool) {
         let _ = self
             .sender
             .try_send(PerformanceMessage::RecordQuery { latency, success });
     }
 
+    /// Record a cache hit
     pub fn record_cache_hit(&self) {
         let _ = self.sender.try_send(PerformanceMessage::RecordCacheHit);
     }
 
+    /// Record a cache miss
     pub fn record_cache_miss(&self) {
         let _ = self.sender.try_send(PerformanceMessage::RecordCacheMiss);
     }
 
+    /// Update the current cache size
     pub fn update_cache_size(&self, size_bytes: u64) {
         let _ = self
             .sender
             .try_send(PerformanceMessage::UpdateCacheSize(size_bytes));
     }
 
+    /// Get current query performance metrics
     pub async fn get_query_performance(&self) -> QueryPerformanceMetrics {
         let (tx, rx) = oneshot::channel();
         let _ = self
@@ -76,6 +88,7 @@ impl PerformanceMetrics {
         rx.await.unwrap_or_default()
     }
 
+    /// Get current cache performance metrics
     pub async fn get_cache_metrics(&self) -> CacheMetrics {
         let (tx, rx) = oneshot::channel();
         let _ = self
@@ -85,10 +98,12 @@ impl PerformanceMetrics {
         rx.await.unwrap_or_default()
     }
 
+    /// Reset all performance metrics
     pub fn reset(&self) {
         let _ = self.sender.try_send(PerformanceMessage::Reset);
     }
 
+    /// Clean old performance records older than max_age
     pub fn clean_old_records(&self, max_age: Duration) {
         let _ = self
             .sender

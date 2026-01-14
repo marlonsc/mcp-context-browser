@@ -30,11 +30,17 @@
 //! let module = McpModule::builder(adapters, infrastructure, server, admin).build();
 //! ```
 
+/// Adapters module implementation
 mod adapters;
+/// Admin module implementation
 mod admin;
+/// Application module implementation
 mod application;
+/// Infrastructure module implementation
 mod infrastructure;
+/// Server module implementation
 mod server;
+/// Common traits and interfaces for DI modules
 pub mod traits;
 
 pub use adapters::AdaptersModuleImpl;
@@ -68,23 +74,16 @@ use crate::infrastructure::events::EventBusProvider;
 use crate::infrastructure::metrics::system::SystemMetricsCollectorInterface;
 use crate::server::admin::service::AdminService;
 
-// Root module that composes all domain modules.
+// Root dependency injection module for the MCP Context Browser.
+// This module composes all domain modules (adapters, infrastructure, application, server, admin)
+// into a single cohesive dependency injection container.
 //
-// Use this module for production initialization. Submodules can be used
-// independently for testing or partial initialization.
-///
-/// This module provides the complete dependency injection container
-/// for the MCP Context Browser application, composing adapters,
-/// infrastructure, server, and admin modules.
-///
-/// # Usage
-/// ```rust
-/// let adapters = Arc::new(AdaptersModuleImpl::builder().build());
-/// let infrastructure = Arc::new(InfrastructureModuleImpl::builder().build());
-/// let server = Arc::new(ServerModuleImpl::builder().build());
-/// let admin = Arc::new(AdminModuleImpl::builder().build());
-/// let module = McpModule::builder(adapters, infrastructure, server, admin).build();
-/// ```
+// Dependencies:
+// - `AdaptersModule`: HTTP clients, providers, repositories
+// - `InfrastructureModule`: System metrics, service providers, event bus, auth
+// - `ApplicationModule`: Business logic services (context, search, indexing)
+// - `ServerModule`: Server-side components (performance metrics, indexing ops)
+// - `AdminModule`: Administrative services and interfaces
 module! {
     pub McpModule {
         components = [],

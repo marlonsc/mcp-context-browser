@@ -24,15 +24,19 @@ use crate::application::indexing::{ChunkingOrchestrator, IndexingService};
 use crate::application::search::SearchService;
 use crate::domain::ports::{ChunkRepository, EmbeddingProvider, SearchRepository};
 
-/// Implementation of the ApplicationModule trait providing core business services.
-///
-/// This module contains the main business logic services:
-/// - ContextService for semantic context management
-/// - SearchService for code search operations
-/// - IndexingService for code indexing and processing
-/// - ChunkingOrchestrator for coordinating code chunking operations
-///
-/// Depends on AdaptersModule for external service integrations.
+// Implementation of the ApplicationModule trait providing business logic services.
+// This module provides the core application services with dependencies on adapters.
+//
+// Generated components:
+// - `ContextService`: Main intelligence service combining embeddings and search
+// - `SearchService`: Semantic code search functionality
+// - `IndexingService`: Codebase indexing orchestration
+// - `ChunkingOrchestrator`: AST-based code chunking coordination
+//
+// Dependencies (from AdaptersModule):
+// - `ChunkRepository`: Storage and retrieval of code chunks
+// - `SearchRepository`: Semantic search operations
+// - `EmbeddingProvider`: Text-to-vector embedding generation
 module! {
     pub ApplicationModuleImpl: ApplicationModule {
         components = [ContextService, SearchService, IndexingService, ChunkingOrchestrator],

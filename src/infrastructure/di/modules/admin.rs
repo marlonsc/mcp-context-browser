@@ -4,7 +4,7 @@
 
 use shaku::module;
 
-use super::traits::{AdaptersModule, AdminModule, InfrastructureModule, ServerModule};
+use super::traits::{AdaptersModule, AdminModule, ApplicationModule, InfrastructureModule, ServerModule};
 use crate::adapters::http_client::HttpClientProvider;
 use crate::domain::ports::admin::{IndexingOperationsInterface, PerformanceMetricsInterface};
 use crate::infrastructure::di::factory::ServiceProviderInterface;
@@ -12,11 +12,16 @@ use crate::infrastructure::events::EventBusProvider;
 use crate::infrastructure::metrics::system::SystemMetricsCollectorInterface;
 use crate::server::admin::service::AdminServiceImpl;
 
-/// Implementation of the AdminModule trait providing administrative services.
-///
-/// This module contains services for system administration and monitoring,
-/// including admin service implementation, service provider factory,
-/// event bus for system events, and system metrics collection.
+// Implementation of the AdminModule trait providing administrative services.
+// This module provides the main admin service with dependencies on infrastructure components.
+//
+// Generated components:
+// - `AdminServiceImpl`: Core admin service providing configuration, monitoring, and control
+//
+// Dependencies (from InfrastructureModule):
+// - `SystemMetricsCollectorInterface`: System resource monitoring for admin dashboard
+// - `ServiceProviderInterface`: Provider management and registry access
+// - `EventBusProvider`: Event system for admin notifications and updates
 module! {
     pub AdminModuleImpl: AdminModule {
         components = [AdminServiceImpl],
@@ -34,6 +39,11 @@ module! {
 
         use dyn AdaptersModule {
             components = [dyn HttpClientProvider],
+            providers = []
+        },
+
+        use dyn ApplicationModule {
+            components = [dyn crate::domain::ports::SearchServiceInterface],
             providers = []
         }
     }

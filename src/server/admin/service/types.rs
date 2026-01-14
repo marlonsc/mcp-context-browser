@@ -571,21 +571,27 @@ pub struct ConfigDiff {
 /// Admin service errors
 #[derive(Debug, thiserror::Error)]
 pub enum AdminError {
+    /// Error from MCP server operations
     #[error("MCP server error: {0}")]
     McpServerError(String),
 
+    /// Configuration-related error
     #[error("Configuration error: {0}")]
     ConfigError(String),
 
+    /// Database operation error
     #[error("Database error: {0}")]
     DatabaseError(String),
 
+    /// Network communication error
     #[error("Network error: {0}")]
     NetworkError(String),
 
+    /// Internal server error
     #[error("Internal error: {0}")]
     InternalError(String),
 
+    /// Feature not implemented
     #[error("Not implemented: {0}")]
     NotImplemented(String),
 }
