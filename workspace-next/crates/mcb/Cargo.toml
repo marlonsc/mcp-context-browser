@@ -1,0 +1,23 @@
+[package]
+name = "mcb"
+version = "0.1.1"
+edition = "2021"
+authors = ["Marlon Costa <marlonsc@gmail.com>"]
+license = "MIT"
+keywords = ["mcp", "semantic-search", "code-analysis", "vector-embeddings"]
+categories = ["development-tools", "api-bindings", "science::artificial-intelligence"]
+description = "MCP Context Browser - A Model Context Protocol server for semantic code analysis using vector embeddings"
+readme = "README.md"
+repository = "https://github.com/marlonsc/mcp-context-browser"
+homepage = "https://github.com/marlonsc/mcp-context-browser"
+rust-version = "1.89"
+
+[dependencies]
+# Domain layer - re-exported for public API
+mcb-domain = { path = "../mcb-domain" }
+
+# Re-export key domain types for convenience
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+targets = ["x86_64-unknown-linux-gnu"]

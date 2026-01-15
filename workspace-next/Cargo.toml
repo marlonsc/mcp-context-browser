@@ -1,0 +1,181 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/mcb",
+    "crates/mcb-domain",
+    "crates/mcb-infrastructure",
+    "crates/mcb-server",
+]
+
+[workspace.dependencies]
+# Core async runtime
+tokio = { version = "1.49", features = ["full"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "2.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Configuration
+config = "0.15"
+toml = "0.9"
+
+# Dependency injection
+shaku = "0.6"
+
+# HTTP client
+reqwest = { version = "0.13", features = ["json", "__tls"] }
+
+# CLI
+clap = { version = "4.5.54", features = ["derive"] }
+
+# File operations
+walkdir = "2.5"
+
+# Regex
+regex = "1.12"
+
+# Date/time handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# Template engines
+handlebars = "6.0"
+tera = "1.20"
+
+# Markdown processing
+pulldown-cmark = "0.13"
+
+# Redis
+redis = { version = "1.0", features = ["tokio-comp", "connection-manager"] }
+
+# Cryptography
+aes-gcm = "0.10"
+rand = "0.9"
+
+# Authentication
+jsonwebtoken = { version = "10.2", features = ["rust_crypto"] }
+bcrypt = "0.18"
+argon2 = "0.5"
+base64 = "0.22"
+
+# Database
+r2d2 = "0.8"
+r2d2_postgres = "0.18"
+
+# Hostname
+hostname = "0.4"
+
+# Hashing
+sha2 = "0.10"
+
+# Utilities
+uuid = { version = "1.0", features = ["v4"] }
+dirs = "6.0"
+
+# HTTP server
+axum = "0.8"
+axum-extra = { version = "0.12", features = ["cookie"] }
+tower = { version = "0.5", features = ["load-shed", "limit", "load", "retry", "timeout", "util"] }
+tower-http = { version = "0.6", features = ["cors", "catch-panic", "request-id", "trace", "timeout", "limit", "compression-gzip"] }
+
+# System metrics
+sysinfo = "0.37.2"
+nix = { version = "0.30", features = ["fs"] }
+
+# Code analysis and AST parsing
+tree-sitter = "0.26"
+tree-sitter-c = "0.24"
+tree-sitter-cpp = "0.23"
+tree-sitter-c-sharp = "0.23"
+tree-sitter-rust = "0.24"
+tree-sitter-python = "0.25"
+tree-sitter-javascript = "0.25"
+tree-sitter-typescript = "0.23"
+tree-sitter-java = "0.23"
+tree-sitter-go = "0.25"
+tree-sitter-ruby = "0.23"
+tree-sitter-php = "0.24"
+tree-sitter-swift = "0.7"
+tree-sitter-kotlin-ng = "1.1"
+
+# Fast globbing
+glob = "0.3"
+
+# Git ignore parsing
+ignore = "0.4"
+
+# Concurrent processing
+futures = "0.3"
+rayon = "1.8"
+
+# Text processing
+unicode-segmentation = "1.12"
+
+# Schema generation for MCP
+schemars = "1.0"
+
+# Input validation
+validator = { version = "0.20", features = ["derive"] }
+
+# MCP SDK
+rmcp = { version = "0.12.0", features = ["server", "client", "macros", "transport-io", "transport-child-process"] }
+
+# Advanced Multi-Provider Strategy
+prometheus = "0.14"
+metrics = "0.24"
+metrics-exporter-prometheus = "0.18"
+tokio-util = { version = "0.7", features = ["time", "rt"] }
+dashmap = "6.0"
+health = "0.2"
+
+# EdgeVec high-performance vector database
+edgevec = "0.8"
+
+# Additional dependencies
+async-trait = "0.1.89"
+downcast-rs = "2.0.2"
+futures-util = "0.3.31"
+
+# Service layer improvements
+itertools = "0.14"
+humantime = "2.1"
+
+# Event bus providers
+async-nats = "0.45"
+
+# Local embeddings without external services
+fastembed = { version = "5.8", default-features = false, features = ["default"] }
+
+# Optional provider - moved to individual crate dependencies since workspace deps can't be optional
+
+# Configuration watching
+notify = "8.2"
+arc-swap = "1.7"
+
+# Shell expansion
+shellexpand = "3.1"
+
+# Compression
+flate2 = "1.0"
+tar = "0.4"
+seahash = "4.1"
+
+# Caching
+moka = { version = "0.12", features = ["future"] }
+
+# Additional crypto
+pbkdf2 = { version = "0.12", features = ["simple"] }
+hmac = "0.12"
+
+# Logging appenders
+tracing-appender = "0.2"
+
+# Benchmarking
+criterion = "0.8.1"

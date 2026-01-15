@@ -1,0 +1,97 @@
+[package]
+name = "mcb-server"
+version = "0.1.1"
+edition = "2021"
+authors = ["Marlon Costa <marlonsc@gmail.com>"]
+license = "MIT"
+keywords = ["mcp", "server", "semantic-search", "code-analysis", "vector-embeddings"]
+categories = ["development-tools", "api-bindings", "science::artificial-intelligence"]
+description = "MCP Context Browser - Server transport and protocol layer"
+readme = "README.md"
+repository = "https://github.com/marlonsc/mcp-context-browser"
+homepage = "https://github.com/marlonsc/mcp-context-browser"
+rust-version = "1.89"
+
+[lib]
+name = "mcb_server"
+path = "src/lib.rs"
+
+[[bin]]
+name = "mcb-server"
+path = "src/main.rs"
+
+[dependencies]
+# Domain layer - core contracts and types
+mcb-domain = { path = "../mcb-domain" }
+
+# Core async runtime
+tokio = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Error handling
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+# CLI
+clap = { workspace = true }
+
+# HTTP server
+axum = { workspace = true }
+axum-extra = { workspace = true }
+tower = { workspace = true }
+tower-http = { workspace = true }
+
+# MCP SDK
+rmcp = { workspace = true }
+
+# Template engines
+handlebars = { workspace = true }
+tera = { workspace = true }
+
+# Markdown processing
+pulldown-cmark = { workspace = true }
+
+# Authentication
+jsonwebtoken = { workspace = true }
+bcrypt = { workspace = true }
+argon2 = { workspace = true }
+base64 = { workspace = true }
+
+# System metrics
+sysinfo = { workspace = true }
+
+# Utilities
+uuid = { workspace = true }
+
+# Schema generation for MCP
+schemars = { workspace = true }
+
+# Advanced Multi-Provider Strategy
+prometheus = { workspace = true }
+metrics = { workspace = true }
+metrics-exporter-prometheus = { workspace = true }
+dashmap = { workspace = true }
+health = { workspace = true }
+
+# Hashing for simple embeddings
+sha2 = "0.10"
+
+# Event bus
+async-nats = { workspace = true }
+
+# Configuration watching
+notify = { workspace = true }
+
+# Compression
+flate2 = { workspace = true }
+tar = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3.10"

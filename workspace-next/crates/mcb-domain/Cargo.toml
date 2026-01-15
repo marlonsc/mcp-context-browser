@@ -1,0 +1,56 @@
+[package]
+name = "mcb-domain"
+version = "0.1.1"
+edition = "2021"
+authors = ["Marlon Costa <marlonsc@gmail.com>"]
+license = "MIT"
+keywords = ["domain", "types", "mcp", "semantic-search"]
+categories = ["development-tools", "api-bindings"]
+description = "Domain layer for MCP Context Browser - Core business logic and types"
+readme = "README.md"
+repository = "https://github.com/marlonsc/mcp-context-browser"
+homepage = "https://github.com/marlonsc/mcp-context-browser"
+rust-version = "1.89"
+
+[lib]
+name = "mcb_domain"
+path = "src/mod.rs"
+
+[dependencies]
+# Serialization - pure lib acceptable for domain
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Error handling - pure lib acceptable for domain
+thiserror = { workspace = true }
+
+# Async traits - needed for port definitions
+async-trait = { workspace = true }
+
+# Dependency injection interfaces - shaku traits are pure
+shaku = { workspace = true }
+
+# Schema generation for MCP - pure lib acceptable for domain
+schemars = { workspace = true }
+
+# Text processing
+unicode-segmentation = { workspace = true }
+
+# Hashing utilities
+sha2 = { workspace = true }
+
+# UUID generation
+uuid = { workspace = true }
+
+# Base64 encoding
+base64 = { workspace = true }
+
+# Regex for text processing
+regex = { workspace = true }
+
+# Date/time handling
+chrono = { workspace = true }
+
+[dev-dependencies]
+# Testing utilities
+tempfile = "3.10"

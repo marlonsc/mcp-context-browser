@@ -1,0 +1,189 @@
+[package]
+name = "mcb-infrastructure"
+version = "0.1.1"
+edition = "2021"
+authors = ["Marlon Costa <marlonsc@gmail.com>"]
+license = "MIT"
+keywords = ["infrastructure", "mcp", "semantic-search"]
+categories = ["development-tools", "api-bindings"]
+description = "Infrastructure layer for MCP Context Browser - Cross-cutting technical concerns"
+readme = "README.md"
+repository = "https://github.com/marlonsc/mcp-context-browser"
+homepage = "https://github.com/marlonsc/mcp-context-browser"
+rust-version = "1.89"
+
+[lib]
+name = "mcb_infrastructure"
+path = "src/mod.rs"
+
+[dependencies]
+# Domain layer - only dependency allowed for infrastructure per Clean Architecture
+mcb-domain = { path = "../mcb-domain" }
+
+# Core async runtime
+tokio = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Error handling
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+# Configuration
+config = { workspace = true }
+toml = { workspace = true }
+notify = { workspace = true }
+arc-swap = { workspace = true }
+
+# Dependency injection
+shaku = { workspace = true }
+
+# HTTP client
+reqwest = { workspace = true }
+
+# CLI
+clap = { workspace = true }
+
+# File operations
+walkdir = { workspace = true }
+
+# Regex
+regex = { workspace = true }
+
+# Date/time handling
+chrono = { workspace = true }
+
+# Template engines
+handlebars = { workspace = true }
+tera = { workspace = true }
+
+# Markdown processing
+pulldown-cmark = { workspace = true }
+
+# Redis
+redis = { workspace = true }
+
+# Cryptography
+aes-gcm = { workspace = true }
+rand = { workspace = true }
+
+# Authentication
+jsonwebtoken = { workspace = true }
+bcrypt = { workspace = true }
+argon2 = { workspace = true }
+base64 = { workspace = true }
+
+# Database
+r2d2 = { workspace = true }
+r2d2_postgres = { workspace = true }
+
+# Hostname
+hostname = { workspace = true }
+
+# Hashing
+sha2 = { workspace = true }
+
+# Utilities
+uuid = { workspace = true }
+dirs = { workspace = true }
+
+# HTTP server
+axum = { workspace = true }
+axum-extra = { workspace = true }
+tower = { workspace = true }
+tower-http = { workspace = true }
+
+# System metrics
+sysinfo = { workspace = true }
+nix = { workspace = true }
+
+# Code analysis and AST parsing
+tree-sitter = { workspace = true }
+tree-sitter-c = { workspace = true }
+tree-sitter-cpp = { workspace = true }
+tree-sitter-c-sharp = { workspace = true }
+tree-sitter-rust = { workspace = true }
+tree-sitter-python = { workspace = true }
+tree-sitter-javascript = { workspace = true }
+tree-sitter-typescript = { workspace = true }
+tree-sitter-java = { workspace = true }
+tree-sitter-go = { workspace = true }
+tree-sitter-ruby = { workspace = true }
+tree-sitter-php = { workspace = true }
+tree-sitter-swift = { workspace = true }
+tree-sitter-kotlin-ng = { workspace = true }
+
+# Fast globbing
+glob = { workspace = true }
+
+# Git ignore parsing
+ignore = { workspace = true }
+
+# Concurrent processing
+futures = { workspace = true }
+rayon = { workspace = true }
+
+# Text processing
+unicode-segmentation = { workspace = true }
+
+# Schema generation for MCP
+schemars = { workspace = true }
+
+# Input validation
+validator = { workspace = true }
+
+# MCP SDK
+rmcp = { workspace = true }
+
+# Advanced Multi-Provider Strategy
+prometheus = { workspace = true }
+metrics = { workspace = true }
+metrics-exporter-prometheus = { workspace = true }
+tokio-util = { workspace = true }
+dashmap = { workspace = true }
+health = { workspace = true }
+
+# EdgeVec high-performance vector database
+edgevec = { workspace = true }
+
+# Additional dependencies
+async-trait = { workspace = true }
+downcast-rs = { workspace = true }
+futures-util = { workspace = true }
+
+# Service layer improvements
+itertools = { workspace = true }
+humantime = { workspace = true }
+
+# Event bus providers
+async-nats = { workspace = true }
+
+# Local embeddings without external services
+fastembed = { workspace = true }
+
+# Shell expansion
+shellexpand = { workspace = true }
+
+# Compression
+flate2 = { workspace = true }
+tar = { workspace = true }
+seahash = { workspace = true }
+
+# Caching
+moka = { workspace = true }
+
+# Additional crypto
+pbkdf2 = { workspace = true }
+hmac = { workspace = true }
+
+# Logging appenders
+tracing-appender = { workspace = true }
+
+# Benchmarking
+criterion = { workspace = true }
