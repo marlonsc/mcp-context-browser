@@ -29,3 +29,10 @@ pub type EmbeddingProviderKind = String;
 /// extension without modifying the domain layer. Provider capabilities
 /// are determined by the application and infrastructure layers.
 pub type VectorStoreProviderKind = String;
+
+/// Cache provider identifier
+///
+/// A string-based identifier for cache providers that allows dynamic
+/// extension without modifying the domain layer. Provider capabilities
+/// are determined by the application and infrastructure layers.
+pub type CacheProviderKind = String;

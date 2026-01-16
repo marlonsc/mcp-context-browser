@@ -2,7 +2,7 @@
 //!
 //! Provides automatic configuration reloading when the configuration file changes.
 
-use crate::config::data::AppConfig;
+use crate::config::AppConfig;
 use crate::config::loader::ConfigLoader;
 use crate::error_ext::ErrorContext;
 use crate::logging::log_config_loaded;

@@ -25,7 +25,7 @@ impl CProcessor {
             .with_rules(vec![NodeExtractionRule {
                 node_types: vec![
                     TS_NODE_FUNCTION_DEFINITION.to_string(),
-                    "struct_specifier".to_string(),
+                    AST_NODE_STRUCT_SPECIFIER.to_string(),
                 ],
                 min_length: 30,
                 min_lines: 2,

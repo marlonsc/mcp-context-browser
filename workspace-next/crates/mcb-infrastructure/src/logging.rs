@@ -6,7 +6,7 @@
 use mcb_domain::error::{Error, Result};
 
 // Re-export LoggingConfig for convenience
-pub use crate::config::data::LoggingConfig;
+pub use crate::config::LoggingConfig;
 use std::path::PathBuf;
 use tracing::{debug, error, info, warn, Level};
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Registry};

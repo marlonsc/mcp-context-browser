@@ -17,6 +17,8 @@ use crate::constants::{
     EMBEDDING_DIMENSION_OLLAMA_MINILM, EMBEDDING_DIMENSION_OLLAMA_MXBAI,
     EMBEDDING_DIMENSION_OLLAMA_NOMIC,
 };
+
+/// Error message for request timeouts
 use crate::utils::HttpResponseUtils;
 
 /// Ollama embedding provider
@@ -120,7 +122,7 @@ impl EmbeddingProvider for OllamaEmbeddingProvider {
                 .await
                 .map_err(|e| {
                     if e.is_timeout() {
-                        Error::embedding(format!("Request timed out after {:?}", self.timeout))
+                        Error::embedding(format!("{} {:?}", crate::constants::ERROR_MSG_REQUEST_TIMEOUT, self.timeout))
                     } else {
                         Error::embedding(format!("HTTP request failed: {}", e))
                     }

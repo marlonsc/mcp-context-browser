@@ -3,7 +3,9 @@
 //! HTTP server for the admin API running on a separate port.
 
 use mcb_domain::ports::admin::{IndexingOperationsInterface, PerformanceMetricsInterface};
+use mcb_infrastructure::config::watcher::ConfigWatcher;
 use std::net::SocketAddr;
+use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::net::TcpListener;
 
@@ -60,7 +62,31 @@ impl AdminApi {
     ) -> Self {
         Self {
             config,
-            state: AdminState { metrics, indexing },
+            state: AdminState {
+                metrics,
+                indexing,
+                config_watcher: None,
+                config_path: None,
+            },
+        }
+    }
+
+    /// Create a new admin API server with configuration watcher support
+    pub fn with_config_watcher(
+        config: AdminApiConfig,
+        metrics: Arc<dyn PerformanceMetricsInterface>,
+        indexing: Arc<dyn IndexingOperationsInterface>,
+        config_watcher: Arc<ConfigWatcher>,
+        config_path: PathBuf,
+    ) -> Self {
+        Self {
+            config,
+            state: AdminState {
+                metrics,
+                indexing,
+                config_watcher: Some(config_watcher),
+                config_path: Some(config_path),
+            },
         }
     }
 

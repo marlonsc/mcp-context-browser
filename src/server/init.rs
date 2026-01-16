@@ -234,10 +234,34 @@ async fn initialize_server_components(
         config.resource_limits.clone(),
     ));
 
+    // Check if we're in stdio-only mode (used for testing)
+    let is_stdio_only = std::env::var("MCP__TRANSPORT__MODE")
+        .map(|s| s.to_lowercase() == "stdio")
+        .unwrap_or(false);
+
+    // For production mode, we need an HTTP client to build the config-based container
+    let temp_http_client = if !is_stdio_only {
+        // Get HTTP client from temp container for production mode
+        let temp_container = DiContainer::build()
+            .map_err(|e| format!("Failed to build temp DI container: {}", e))?;
+        Some(temp_container.resolve())
+    } else {
+        None
+    };
+
     // Build DI container for component resolution
     tracing::info!("🔧 Building DI container...");
-    let container =
-        DiContainer::build().map_err(|e| format!("Failed to build DI container: {}", e))?;
+    let container = if is_stdio_only {
+        // For stdio-only mode (tests), use null providers to avoid external dependencies
+        tracing::info!("📡 Stdio-only mode detected, using null providers for testing");
+        DiContainer::build().map_err(|e| format!("Failed to build DI container: {}", e))?
+    } else {
+        // For production/server mode, build with config-based providers
+        let http_client = temp_http_client.as_ref().unwrap();
+        DiContainer::build_with_config(&config, Arc::clone(http_client))
+            .await
+            .map_err(|e| format!("Failed to build DI container with config: {}", e))?
+    };
 
     // Resolve HTTP client from DI container
     tracing::info!("🌐 Resolving HTTP client pool from DI container...");

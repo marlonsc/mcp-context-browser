@@ -87,6 +87,11 @@ impl FilesystemSnapshotProvider {
     }
 
     /// Check if file should be included in snapshot
+    fn should_include_directory(path: &Path) -> bool {
+        let dir_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+        !matches!(dir_name, ".git" | "node_modules" | "target" | "__pycache__")
+    }
+
     fn should_include_file(path: &Path) -> bool {
         // Skip hidden files and common non-code directories
         let path_str = path.to_string_lossy();
@@ -158,12 +163,8 @@ impl SnapshotProvider for FilesystemSnapshotProvider {
             while let Ok(Some(entry)) = entries.next_entry().await {
                 let path = entry.path();
 
-                if path.is_dir() {
-                    // Skip excluded directories
-                    let dir_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
-                    if !matches!(dir_name, ".git" | "node_modules" | "target" | "__pycache__") {
-                        dirs_to_visit.push(path);
-                    }
+                if path.is_dir() && Self::should_include_directory(&path) {
+                    dirs_to_visit.push(path);
                 } else if Self::should_include_file(&path) {
                     let metadata = match fs::metadata(&path).await {
                         Ok(m) => m,

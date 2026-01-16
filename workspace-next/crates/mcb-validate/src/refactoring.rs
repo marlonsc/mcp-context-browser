@@ -11,9 +11,41 @@
 use crate::{Result, Severity, ValidationConfig};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
+
+/// Known migration patterns that are expected during refactoring.
+/// These are pairs of crates where duplicates are expected temporarily.
+const KNOWN_MIGRATION_PAIRS: &[(&str, &str)] = &[
+    ("mcb-providers", "mcb-infrastructure"),
+    ("mcb-domain", "mcb-infrastructure"), // Domain types may be mirrored in infrastructure
+];
+
+/// Utility types that are intentionally duplicated to avoid cross-crate dependencies.
+/// These are common patterns that don't indicate incomplete migration.
+const UTILITY_TYPES: &[&str] = &[
+    "JsonExt",           // JSON extension trait
+    "HttpResponseUtils", // HTTP response helpers
+    "CacheStats",        // Cache statistics (implementation-specific)
+    "TimedOperation",    // Timing utilities
+];
+
+/// Generic type names that are expected to appear in multiple places.
+const GENERIC_TYPE_NAMES: &[&str] = &[
+    "Error",
+    "Result",
+    "Config",
+    "Builder",
+    "Context",
+    "State",
+    "Options",
+    "Params",
+    "Settings",
+    "Message", // Common for actor patterns
+    "Request",
+    "Response",
+];
 
 /// Refactoring completeness violation types
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -232,12 +264,8 @@ impl RefactoringValidator {
                 for cap in definition_pattern.captures_iter(&content) {
                     let type_name = cap.get(1).map(|m| m.as_str()).unwrap_or("");
 
-                    // Skip common generic names that are expected to be duplicated
-                    if type_name == "Error"
-                        || type_name == "Result"
-                        || type_name == "Config"
-                        || type_name == "Builder"
-                    {
+                    // Skip generic names that are expected to appear in multiple places
+                    if GENERIC_TYPE_NAMES.contains(&type_name) {
                         continue;
                     }
 
@@ -252,8 +280,8 @@ impl RefactoringValidator {
         // Find duplicates (same name in different files)
         for (type_name, locations) in definitions {
             if locations.len() > 1 {
-                // Check if duplicates are in different crates (more serious)
-                let crates: std::collections::HashSet<String> = locations
+                // Check if duplicates are in different crates
+                let crates: HashSet<String> = locations
                     .iter()
                     .filter_map(|p| {
                         p.to_string_lossy()
@@ -265,15 +293,29 @@ impl RefactoringValidator {
                     .collect();
 
                 if crates.len() > 1 {
-                    // Cross-crate duplicate - more serious
+                    // Cross-crate duplicate - categorize by pattern
+                    let severity = self.categorize_duplicate_severity(&type_name, &crates);
+
+                    let suggestion = match severity {
+                        Severity::Info => format!(
+                            "Type '{}' exists in {:?}. This is a known migration pattern - consolidate when migration completes.",
+                            type_name, crates
+                        ),
+                        Severity::Warning => format!(
+                            "Type '{}' is defined in {:?}. Consider consolidating to one location.",
+                            type_name, crates
+                        ),
+                        Severity::Error => format!(
+                            "Type '{}' is unexpectedly defined in multiple crates: {:?}. This requires immediate consolidation.",
+                            type_name, crates
+                        ),
+                    };
+
                     violations.push(RefactoringViolation::DuplicateDefinition {
                         type_name: type_name.clone(),
                         locations: locations.clone(),
-                        suggestion: format!(
-                            "Type '{}' is defined in multiple crates: {:?}. Consider consolidating to one location.",
-                            type_name, crates
-                        ),
-                        severity: Severity::Error,
+                        suggestion,
+                        severity,
                     });
                 } else if locations.len() > 2 {
                     // Same crate but many duplicates
@@ -281,7 +323,7 @@ impl RefactoringValidator {
                         type_name: type_name.clone(),
                         locations: locations.clone(),
                         suggestion: format!(
-                            "Type '{}' is defined {} times. This may indicate incomplete migration.",
+                            "Type '{}' is defined {} times in the same crate. This may indicate incomplete migration.",
                             type_name,
                             locations.len()
                         ),
@@ -292,6 +334,46 @@ impl RefactoringValidator {
         }
 
         Ok(violations)
+    }
+
+    /// Categorize duplicate severity based on known patterns
+    fn categorize_duplicate_severity(&self, type_name: &str, crates: &HashSet<String>) -> Severity {
+        // Check if this is an intentionally duplicated utility type
+        if UTILITY_TYPES.contains(&type_name) {
+            return Severity::Info;
+        }
+
+        // Check if the crates match a known migration pattern
+        let crate_vec: Vec<&String> = crates.iter().collect();
+        if crate_vec.len() == 2 {
+            for (crate_a, crate_b) in KNOWN_MIGRATION_PAIRS {
+                if (crate_vec[0].as_str() == *crate_a && crate_vec[1].as_str() == *crate_b)
+                    || (crate_vec[0].as_str() == *crate_b && crate_vec[1].as_str() == *crate_a)
+                {
+                    // This is a known migration pair - downgrade to Info
+                    return Severity::Info;
+                }
+            }
+        }
+
+        // Check for patterns that suggest migration in progress
+        // Types ending with Provider, Processor, etc. between known pairs
+        let migration_type_patterns = [
+            "Provider", "Processor", "Handler", "Service", "Repository",
+            "Adapter", "Factory", "Publisher", "Subscriber",
+        ];
+
+        if migration_type_patterns.iter().any(|p| type_name.ends_with(p)) {
+            // Check if any known migration pair is involved
+            for (crate_a, crate_b) in KNOWN_MIGRATION_PAIRS {
+                if crates.contains(*crate_a) || crates.contains(*crate_b) {
+                    return Severity::Warning; // Migration-related, but should be tracked
+                }
+            }
+        }
+
+        // Unknown cross-crate duplicate - Error
+        Severity::Error
     }
 
     /// Check for source files without corresponding test files

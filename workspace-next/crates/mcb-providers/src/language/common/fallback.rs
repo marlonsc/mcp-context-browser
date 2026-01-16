@@ -9,6 +9,21 @@ use mcb_domain::value_objects::Language;
 use regex::Regex;
 use std::collections::HashMap;
 
+/// Parameters for creating a code chunk
+#[derive(Debug)]
+pub struct ChunkCreationParams<'a> {
+    /// Lines of code to include in the chunk
+    pub lines: &'a [String],
+    /// Starting line number
+    pub start_line: usize,
+    /// Ending line number
+    pub end_line: usize,
+    /// Source file name
+    pub file_name: &'a str,
+    /// Programming language
+    pub language: &'a Language,
+}
+
 /// Generic fallback chunker using regex patterns
 pub struct GenericFallbackChunker<'a> {
     #[allow(dead_code)]
@@ -55,11 +70,13 @@ impl<'a> GenericFallbackChunker<'a> {
             if is_block_start {
                 if !current_block.is_empty() {
                     self.create_chunk(
-                        &current_block,
-                        block_start,
-                        i - 1,
-                        file_name,
-                        language,
+                        &ChunkCreationParams {
+                            lines: &current_block,
+                            start_line: block_start,
+                            end_line: i - 1,
+                            file_name,
+                            language,
+                        },
                         &mut chunks,
                     );
                     current_block.clear();
@@ -71,11 +88,13 @@ impl<'a> GenericFallbackChunker<'a> {
 
                 if self.is_block_complete(&current_block) {
                     self.create_chunk(
-                        &current_block,
-                        block_start,
-                        i,
-                        file_name,
-                        language,
+                        &ChunkCreationParams {
+                            lines: &current_block,
+                            start_line: block_start,
+                            end_line: i,
+                            file_name,
+                            language,
+                        },
                         &mut chunks,
                     );
                     current_block.clear();
@@ -86,11 +105,13 @@ impl<'a> GenericFallbackChunker<'a> {
 
         if !current_block.is_empty() {
             self.create_chunk(
-                &current_block,
-                block_start,
-                lines.len() - 1,
-                file_name,
-                language,
+                &ChunkCreationParams {
+                    lines: &current_block,
+                    start_line: block_start,
+                    end_line: lines.len() - 1,
+                    file_name,
+                    language,
+                },
                 &mut chunks,
             );
         }
@@ -113,28 +134,24 @@ impl<'a> GenericFallbackChunker<'a> {
 
     fn create_chunk(
         &self,
-        lines: &[String],
-        start_line: usize,
-        end_line: usize,
-        file_name: &str,
-        language: &Language,
+        params: &ChunkCreationParams,
         chunks: &mut Vec<CodeChunk>,
     ) {
-        let content = lines.join("\n").trim().to_string();
+        let content = params.lines.join("\n").trim().to_string();
         if content.is_empty() || content.len() < 20 {
             return;
         }
 
         let chunk = CodeChunk {
-            id: format!("{}_{}_{}", file_name, start_line, end_line),
+            id: format!("{}_{}_{}", params.file_name, params.start_line, params.end_line),
             content,
-            file_path: file_name.to_string(),
-            start_line: start_line as u32,
-            end_line: end_line as u32,
-            language: language.clone(),
+            file_path: params.file_name.to_string(),
+            start_line: params.start_line as u32,
+            end_line: params.end_line as u32,
+            language: params.language.clone(),
             metadata: {
                 let mut meta = HashMap::new();
-                meta.insert("file".to_string(), serde_json::json!(file_name));
+                meta.insert("file".to_string(), serde_json::json!(params.file_name));
                 meta.insert("chunk_type".to_string(), serde_json::json!("fallback"));
                 serde_json::to_value(meta).unwrap_or(serde_json::json!({}))
             },

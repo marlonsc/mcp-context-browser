@@ -11,16 +11,12 @@
 //! ### Security & Authentication
 //! | Module | Description |
 //! |--------|-------------|
-//! | [`auth`] | JWT authentication, RBAC, API keys, rate limiting |
 //! | [`crypto`] | AES-GCM encryption, secure key generation |
 //!
 //! ### Data & Storage
 //! | Module | Description |
 //! |--------|-------------|
 //! | [`cache`] | Moka/Redis caching with TTL and namespaces |
-//! | [`backup`] | Encrypted backup/restore operations |
-//! | [`snapshot`] | File system snapshots for change detection |
-//! | [`sync`] | File synchronization coordination |
 //!
 //! ### Configuration & DI
 //! | Module | Description |
@@ -32,48 +28,24 @@
 //! ### Observability
 //! | Module | Description |
 //! |--------|-------------|
-//! | [`metrics`] | Prometheus metrics collection |
 //! | [`health`] | Health check endpoints |
 //! | [`logging`] | Structured logging with tracing |
-//!
-//! ### Resilience
-//! | Module | Description |
-//! |--------|-------------|
-//! | [`resilience`] | Circuit breakers, rate limiters |
-//! | [`recovery`] | Error recovery strategies |
-//! | [`limits`] | Resource limits (memory, CPU, disk) |
-//!
-//! ### Lifecycle
-//! | Module | Description |
-//! |--------|-------------|
-//! | [`daemon`] | Background service management |
-//! | [`shutdown`] | Graceful shutdown coordination |
-//! | [`signals`] | Unix signal handling |
-//! | [`events`] | Event bus (Tokio broadcast, NATS) |
 //!
 //! ## Architecture
 //!
 //! ```text
 //! Infrastructure Layer
 //! ├── Security
-//! │   ├── auth/          # JWT, RBAC, API keys
 //! │   └── crypto         # Encryption utilities
 //! ├── Data
-//! │   ├── cache/         # Distributed caching
-//! │   ├── backup         # Backup/restore
-//! │   └── snapshot       # Change detection
+//! │   └── cache/         # Distributed caching
 //! ├── Config
 //! │   ├── config/        # Configuration management
 //! │   ├── di/            # Dependency injection
 //! │   └── constants      # Magic number elimination
-//! ├── Observability
-//! │   ├── metrics/       # Prometheus metrics
-//! │   ├── health         # Health checks
-//! │   └── logging        # Structured logging
-//! └── Resilience
-//!     ├── resilience/    # Circuit breakers
-//!     ├── recovery       # Error recovery
-//!     └── limits         # Resource limits
+//! └── Observability
+//!     ├── health         # Health checks
+//!     └── logging        # Structured logging
 //! ```
 //!
 //! ## Usage Pattern
@@ -106,29 +78,6 @@ pub mod logging;
 /// Utility helpers (timing, etc.)
 pub mod utils;
 
-// Placeholder modules (to be implemented - commented out to avoid compilation errors)
-// pub mod auth;
-// pub mod backup;
-// pub mod binary_watcher;
-// pub mod connection_tracker;
-// pub mod daemon;
-// pub mod di;
-// pub mod events;
-// pub mod limits;
-// pub mod merkle;
-// pub mod metrics;
-// pub mod operations;
-// pub mod provider_connection_tracker;
-// pub mod provider_lifecycle;
-// pub mod recovery;
-// pub mod resilience;
-// pub mod respawn;
-// pub mod service_helpers;
-// pub mod shutdown;
-// pub mod signals;
-// pub mod snapshot;
-// pub mod sync;
-// pub mod utils;
 
 // Re-export commonly used traits and types
 pub use adapters::repository::{VectorStoreChunkRepository, VectorStoreSearchRepository};

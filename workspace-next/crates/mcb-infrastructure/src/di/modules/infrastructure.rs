@@ -80,8 +80,8 @@ impl InfrastructureModule {
 impl<Ctx: ModuleBuildContext> Module<Ctx> for InfrastructureModule {
     fn build_context(self, ctx: &mut Ctx) -> Result<(), shaku::Error> {
         // Create cache provider
-        let cache_provider = if self.config.cache.enabled {
-            CacheProviderFactory::create_from_config(&self.config.cache)
+        let cache_provider = if self.config.infrastructure.cache.enabled {
+            CacheProviderFactory::create_from_config(&self.config.infrastructure.cache)
                 .map_err(|e| shaku::Error::Other(format!("Cache provider creation failed: {}", e)))?
         } else {
             CacheProviderFactory::create_null()

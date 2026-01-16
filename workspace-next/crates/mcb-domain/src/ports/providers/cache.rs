@@ -208,3 +208,16 @@ pub trait CacheProvider: Interface + Send + Sync + std::fmt::Debug {
     /// A string identifier for the provider (e.g., "moka", "redis", "null")
     fn provider_name(&self) -> &str;
 }
+
+/// Cache provider factory interface for dependency injection
+///
+/// This port defines the contract for creating cache providers from configuration.
+/// Used by the dependency injection container to create cache provider instances.
+#[async_trait]
+pub trait CacheProviderFactoryInterface: Send + Sync {
+    /// Create a cache provider from configuration
+    async fn create_from_config(&self, config: &crate::value_objects::config::CacheConfig) -> Result<std::sync::Arc<dyn CacheProvider>>;
+
+    /// Create a null cache provider for testing
+    fn create_null(&self) -> std::sync::Arc<dyn CacheProvider>;
+}

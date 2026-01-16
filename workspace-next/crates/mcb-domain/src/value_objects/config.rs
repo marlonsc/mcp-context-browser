@@ -4,7 +4,7 @@
 //! and system settings. These configurations define how the system
 //! interacts with external services.
 
-use crate::value_objects::types::{EmbeddingProviderKind, VectorStoreProviderKind};
+use crate::value_objects::types::{CacheProviderKind, EmbeddingProviderKind, VectorStoreProviderKind};
 use serde::{Deserialize, Serialize};
 
 /// Value Object: Embedding Provider Configuration
@@ -45,6 +45,26 @@ pub struct VectorStoreConfig {
     pub dimensions: Option<usize>,
     /// Request timeout in seconds
     pub timeout_secs: Option<u64>,
+}
+
+/// Value Object: Cache Configuration
+///
+/// Configuration for cache backend providers.
+/// Defines which cache provider to use and connection parameters.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct CacheConfig {
+    /// Provider name (moka, redis, null)
+    pub provider: CacheProviderKind,
+    /// Server address for remote providers (e.g., Redis)
+    pub address: Option<String>,
+    /// Authentication password for remote providers
+    pub password: Option<String>,
+    /// Database index for Redis
+    pub database: Option<u32>,
+    /// Maximum cache size in entries
+    pub max_size: Option<usize>,
+    /// Default TTL in seconds
+    pub ttl_secs: Option<u64>,
 }
 
 /// Value Object: Synchronization Batch

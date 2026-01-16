@@ -3,7 +3,7 @@
 //! Handles loading configuration from various sources including
 //! TOML files, environment variables, and default values.
 
-use crate::config::data::AppConfig;
+use crate::config::AppConfig;
 use crate::constants::*;
 use crate::error_ext::ErrorContext;
 use crate::logging::log_config_loaded;
@@ -196,7 +196,7 @@ fn validate_auth_config(config: &AppConfig) -> Result<()> {
 }
 
 fn validate_cache_config(config: &AppConfig) -> Result<()> {
-    if config.cache.enabled && config.cache.default_ttl_secs == 0 {
+    if config.system.infrastructure.cache.enabled && config.system.infrastructure.cache.default_ttl_secs == 0 {
         return Err(Error::Configuration {
             message: "Cache TTL cannot be 0 when cache is enabled".to_string(),
             source: None,
@@ -222,7 +222,7 @@ fn validate_limits_config(config: &AppConfig) -> Result<()> {
 }
 
 fn validate_daemon_config(config: &AppConfig) -> Result<()> {
-    if config.daemon.enabled && config.daemon.max_restart_attempts == 0 {
+    if config.operations_daemon.daemon.enabled && config.operations_daemon.daemon.max_restart_attempts == 0 {
         return Err(Error::Configuration {
             message: "Maximum restart attempts cannot be 0 when daemon is enabled".to_string(),
             source: None,
@@ -242,15 +242,15 @@ fn validate_backup_config(config: &AppConfig) -> Result<()> {
 }
 
 fn validate_operations_config(config: &AppConfig) -> Result<()> {
-    if config.operations.tracking_enabled {
-        if config.operations.cleanup_interval_secs == 0 {
+    if config.operations_daemon.operations.tracking_enabled {
+        if config.operations_daemon.operations.cleanup_interval_secs == 0 {
             return Err(Error::Configuration {
                 message: "Operations cleanup interval cannot be 0 when tracking is enabled"
                     .to_string(),
                 source: None,
             });
         }
-        if config.operations.retention_secs == 0 {
+        if config.operations_daemon.operations.retention_secs == 0 {
             return Err(Error::Configuration {
                 message: "Operations retention period cannot be 0 when tracking is enabled"
                     .to_string(),
@@ -298,7 +298,7 @@ impl ConfigBuilder {
         name: String,
         config: mcb_domain::value_objects::EmbeddingConfig,
     ) -> Self {
-        self.config.embedding.insert(name, config);
+        self.config.providers.embedding.insert(name, config);
         self
     }
 
@@ -308,7 +308,7 @@ impl ConfigBuilder {
         name: String,
         config: mcb_domain::value_objects::VectorStoreConfig,
     ) -> Self {
-        self.config.vector_store.insert(name, config);
+        self.config.providers.vector_store.insert(name, config);
         self
     }
 
@@ -320,7 +320,7 @@ impl ConfigBuilder {
 
     /// Set cache configuration
     pub fn with_cache(mut self, cache: crate::config::data::CacheConfig) -> Self {
-        self.config.cache = cache;
+        self.config.system.infrastructure.cache = cache;
         self
     }
 

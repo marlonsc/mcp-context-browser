@@ -16,6 +16,30 @@ use mcb_domain::ports::providers::{EmbeddingProvider, VectorStoreProvider};
 use std::sync::Arc;
 use tracing::info;
 
+/// Trait for accessing storage components (cache, crypto)
+pub trait StorageComponentsAccess {
+    fn cache(&self) -> &SharedCacheProvider;
+    fn crypto(&self) -> &CryptoService;
+}
+
+/// Trait for accessing provider components (embedding, vector store)
+pub trait ProviderComponentsAccess {
+    fn embedding_provider(&self) -> &Arc<dyn EmbeddingProvider>;
+    fn vector_store_provider(&self) -> &Arc<dyn VectorStoreProvider>;
+}
+
+/// Trait for accessing admin components (metrics, operations)
+pub trait AdminComponentsAccess {
+    fn performance_metrics(&self) -> &Arc<dyn PerformanceMetricsInterface>;
+    fn indexing_operations(&self) -> &Arc<dyn IndexingOperationsInterface>;
+}
+
+/// Trait for accessing configuration and health
+pub trait ConfigHealthAccess {
+    fn config(&self) -> &AppConfig;
+    fn health(&self) -> &HealthRegistry;
+}
+
 /// Storage and caching components
 #[derive(Clone)]
 pub struct StorageComponents {
@@ -74,8 +98,8 @@ impl InfrastructureComponents {
 
     /// Create cache provider from configuration
     async fn create_cache_provider(config: &AppConfig) -> Result<SharedCacheProvider> {
-        if config.cache.enabled {
-            CacheProviderFactory::create_from_config(&config.cache).await
+        if config.system.infrastructure.cache.enabled {
+            CacheProviderFactory::create_from_config(&config.system.infrastructure.cache).await
         } else {
             Ok(CacheProviderFactory::create_null())
         }
@@ -112,7 +136,7 @@ impl InfrastructureComponents {
 
     /// Create embedding provider from configuration
     fn create_embedding_provider(config: &AppConfig) -> Result<Arc<dyn EmbeddingProvider>> {
-        if let Some((name, embedding_config)) = config.embedding.iter().next() {
+        if let Some((name, embedding_config)) = config.providers.embedding.iter().next() {
             info!(provider = name, "Creating embedding provider from config");
             EmbeddingProviderFactory::create(embedding_config, None)
         } else {
@@ -126,7 +150,7 @@ impl InfrastructureComponents {
         config: &AppConfig,
         crypto: &CryptoService,
     ) -> Result<Arc<dyn VectorStoreProvider>> {
-        if let Some((name, vector_config)) = config.vector_store.iter().next() {
+        if let Some((name, vector_config)) = config.providers.vector_store.iter().next() {
             info!(
                 provider = name,
                 "Creating vector store provider from config"
@@ -148,64 +172,49 @@ impl InfrastructureComponents {
         (performance_metrics, indexing_operations)
     }
 
-    /// Get the cache provider
-    pub fn cache(&self) -> &SharedCacheProvider {
-        &self.cache
+}
+
+// Storage components access implementation
+impl StorageComponentsAccess for InfrastructureComponents {
+    fn cache(&self) -> &SharedCacheProvider {
+        &self.storage.cache
     }
 
-    /// Get the crypto service
-    pub fn crypto(&self) -> &CryptoService {
-        &self.crypto
+    fn crypto(&self) -> &CryptoService {
+        &self.storage.crypto
     }
+}
 
-    /// Get the health registry
-    pub fn health(&self) -> &HealthRegistry {
-        &self.health
-    }
-
-    /// Get the embedding provider
-    pub fn embedding_provider(&self) -> &Arc<dyn EmbeddingProvider> {
+// Provider components access implementation
+impl ProviderComponentsAccess for InfrastructureComponents {
+    fn embedding_provider(&self) -> &Arc<dyn EmbeddingProvider> {
         &self.providers.embedding_provider
     }
 
-    /// Get the vector store provider
-    pub fn vector_store_provider(&self) -> &Arc<dyn VectorStoreProvider> {
+    fn vector_store_provider(&self) -> &Arc<dyn VectorStoreProvider> {
         &self.providers.vector_store_provider
     }
+}
 
-    /// Get the performance metrics service
-    pub fn performance_metrics(&self) -> &Arc<dyn PerformanceMetricsInterface> {
+// Admin components access implementation
+impl AdminComponentsAccess for InfrastructureComponents {
+    fn performance_metrics(&self) -> &Arc<dyn PerformanceMetricsInterface> {
         &self.admin.performance_metrics
     }
 
-    /// Get the indexing operations service
-    pub fn indexing_operations(&self) -> &Arc<dyn IndexingOperationsInterface> {
+    fn indexing_operations(&self) -> &Arc<dyn IndexingOperationsInterface> {
         &self.admin.indexing_operations
     }
+}
 
-    /// Get the configuration
-    pub fn config(&self) -> &AppConfig {
+// Configuration and health access implementation
+impl ConfigHealthAccess for InfrastructureComponents {
+    fn config(&self) -> &AppConfig {
         &self.config
     }
 
-    /// Get the embedding provider
-    pub fn embedding_provider(&self) -> &Arc<dyn EmbeddingProvider> {
-        &self.embedding_provider
-    }
-
-    /// Get the vector store provider
-    pub fn vector_store_provider(&self) -> &Arc<dyn VectorStoreProvider> {
-        &self.vector_store_provider
-    }
-
-    /// Get the performance metrics tracker
-    pub fn performance_metrics(&self) -> &Arc<dyn PerformanceMetricsInterface> {
-        &self.performance_metrics
-    }
-
-    /// Get the indexing operations tracker
-    pub fn indexing_operations(&self) -> &Arc<dyn IndexingOperationsInterface> {
-        &self.indexing_operations
+    fn health(&self) -> &HealthRegistry {
+        &self.health
     }
 }
 
@@ -247,12 +256,12 @@ impl FullContainer {
             .build()
             .await?;
         let domain_services = super::modules::DomainServicesFactory::create_services(
-            infrastructure.cache.clone(),
-            infrastructure.crypto.clone(),
-            infrastructure.health.clone(),
+            infrastructure.cache().clone(),
+            infrastructure.crypto().clone(),
+            infrastructure.health().clone(),
             config,
-            infrastructure.embedding_provider.clone(),
-            infrastructure.vector_store_provider.clone(),
+            infrastructure.embedding_provider().clone(),
+            infrastructure.vector_store_provider().clone(),
         )
         .await?;
 

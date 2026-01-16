@@ -4,4 +4,4 @@
 //! for the MCP Context Browser system.
 
 // Re-export all configuration types from the types module
-pub use types::*;
+pub use crate::config::types::*;

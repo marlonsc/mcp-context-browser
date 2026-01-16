@@ -121,6 +121,11 @@ impl McpServerBuilder {
             Arc::new(ArcSwap::from_pointee(config))
         };
 
+        // Check if we're in stdio-only mode (used for testing)
+        let is_stdio_only = std::env::var("MCP__TRANSPORT__MODE")
+            .map(|s| s.to_lowercase() == "stdio")
+            .unwrap_or(false);
+
         // Resolve HTTP client first (needed for build_with_config)
         // Use a temporary container to get the default HTTP client if not provided
         let temp_container = DiContainer::build()
@@ -128,12 +133,20 @@ impl McpServerBuilder {
         let http_client: Arc<dyn crate::adapters::http_client::HttpClientProvider> =
             self.http_client.unwrap_or_else(|| temp_container.resolve());
 
-        // Build DI container with config-based providers (production mode)
-        // This uses actual providers based on configuration instead of null providers
-        let current_config = config_arc.load();
-        let container = DiContainer::build_with_config(&current_config, Arc::clone(&http_client))
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to build DI container with config: {}", e))?;
+        // Build DI container
+        let container = if is_stdio_only {
+            // For stdio-only mode (tests), use null providers to avoid external dependencies
+            tracing::info!("📡 Stdio-only mode detected in builder, using null providers for testing");
+            DiContainer::build()
+                .map_err(|e| anyhow::anyhow!("Failed to build DI container: {}", e))?
+        } else {
+            // For production/server mode, build with config-based providers
+            // This uses actual providers based on configuration instead of null providers
+            let current_config = config_arc.load();
+            DiContainer::build_with_config(&current_config, Arc::clone(&http_client))
+                .await
+                .map_err(|e| anyhow::anyhow!("Failed to build DI container with config: {}", e))?
+        };
 
         // Resolve EventBus from DI container if not explicitly provided
         let event_bus: crate::infrastructure::events::SharedEventBusProvider =

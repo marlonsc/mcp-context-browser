@@ -12,26 +12,59 @@ pub enum PasswordAlgorithm {
     Pbkdf2, // PBKDF2
 }
 
+/// JWT configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct JwtConfig {
+    /// JWT secret key
+    pub secret: String,
+
+    /// JWT expiration time in seconds
+    pub expiration_secs: u64,
+
+    /// JWT refresh token expiration in seconds
+    pub refresh_expiration_secs: u64,
+}
+
+impl Default for JwtConfig {
+    fn default() -> Self {
+        Self {
+            secret: crate::crypto::TokenGenerator::generate_secure_token(32),
+            expiration_secs: JWT_DEFAULT_EXPIRATION_SECS,
+            refresh_expiration_secs: JWT_REFRESH_EXPIRATION_SECS,
+        }
+    }
+}
+
+/// API key configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ApiKeyConfig {
+    /// API key authentication enabled
+    pub enabled: bool,
+
+    /// API key header name
+    pub header: String,
+}
+
+impl Default for ApiKeyConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            header: API_KEY_HEADER.to_string(),
+        }
+    }
+}
+
 /// Authentication configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AuthConfig {
     /// Enable authentication
     pub enabled: bool,
 
-    /// JWT secret key
-    pub jwt_secret: String,
+    /// JWT configuration
+    pub jwt: JwtConfig,
 
-    /// JWT expiration time in seconds
-    pub jwt_expiration_secs: u64,
-
-    /// JWT refresh token expiration in seconds
-    pub jwt_refresh_expiration_secs: u64,
-
-    /// API key authentication enabled
-    pub api_key_enabled: bool,
-
-    /// API key header name
-    pub api_key_header: String,
+    /// API key configuration
+    pub api_key: ApiKeyConfig,
 
     /// User database path
     pub user_db_path: Option<PathBuf>,
@@ -44,11 +77,8 @@ impl Default for AuthConfig {
     fn default() -> Self {
         Self {
             enabled: true,
-            jwt_secret: crate::crypto::TokenGenerator::generate_secure_token(32),
-            jwt_expiration_secs: JWT_DEFAULT_EXPIRATION_SECS,
-            jwt_refresh_expiration_secs: JWT_REFRESH_EXPIRATION_SECS,
-            api_key_enabled: true,
-            api_key_header: API_KEY_HEADER.to_string(),
+            jwt: JwtConfig::default(),
+            api_key: ApiKeyConfig::default(),
             user_db_path: None,
             password_algorithm: PasswordAlgorithm::Argon2,
         }

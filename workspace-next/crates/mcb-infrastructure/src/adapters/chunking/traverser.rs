@@ -43,6 +43,52 @@ impl<'a> AstTraverser<'a> {
         self
     }
 
+    /// Process a single extraction rule for a node
+    fn process_extraction_rule(
+        &self,
+        node: tree_sitter::Node,
+        rule: &NodeExtractionRule,
+        content: &str,
+        file_name: &str,
+        node_type: &str,
+        depth: usize,
+        chunks: &mut Vec<CodeChunk>,
+    ) {
+        let (code, context) = if rule.include_context {
+            Self::extract_node_with_context(node, content, 3)
+        } else {
+            (Self::extract_node_content(node, content).ok(), None)
+        };
+
+        if let Some(code) = code {
+            if code.len() >= rule.min_length && code.lines().count() >= rule.min_lines {
+                let chunk_params = ChunkParams {
+                    content: code,
+                    file_name,
+                    node_type,
+                    depth,
+                    priority: rule.priority,
+                    chunk_index: chunks.len(),
+                };
+                let mut chunk = self.create_chunk_from_node(node, chunk_params);
+                self.add_context_metadata(&mut chunk, &context);
+                chunks.push(chunk);
+            }
+        }
+    }
+
+    /// Add context metadata to a chunk if available
+    fn add_context_metadata(&self, chunk: &mut CodeChunk, context: &Option<Vec<String>>) {
+        if let Some(context_lines) = context {
+            if let Some(metadata) = chunk.metadata.as_object_mut() {
+                metadata.insert(
+                    "context_lines".to_string(),
+                    serde_json::json!(context_lines),
+                );
+            }
+        }
+    }
+
     /// Traverse the AST and extract code chunks according to the configured rules
     pub fn traverse_and_extract(
         &self,
@@ -64,40 +110,10 @@ impl<'a> AstTraverser<'a> {
             // Check if this node matches any extraction rule
             for rule in self.rules {
                 if rule.node_types.contains(&node_type.to_string()) {
-                    let (code, context) = if rule.include_context {
-                        Self::extract_node_with_context(node, content, 3)
-                    } else {
-                        (Self::extract_node_content(node, content).ok(), None)
-                    };
+                    self.process_extraction_rule(node, rule, content, file_name, node_type, depth, chunks);
 
-                    if let Some(code) = code {
-                        if code.len() >= rule.min_length && code.lines().count() >= rule.min_lines {
-                            let chunk_params = ChunkParams {
-                                content: code,
-                                file_name,
-                                node_type,
-                                depth,
-                                priority: rule.priority,
-                                chunk_index: chunks.len(),
-                            };
-                            let mut chunk = self.create_chunk_from_node(node, chunk_params);
-
-                            // Add context metadata if available
-                            if let Some(context_lines) = context {
-                                if let Some(metadata) = chunk.metadata.as_object_mut() {
-                                    metadata.insert(
-                                        "context_lines".to_string(),
-                                        serde_json::json!(context_lines),
-                                    );
-                                }
-                            }
-
-                            chunks.push(chunk);
-
-                            if chunks.len() >= self.max_chunks {
-                                return;
-                            }
-                        }
+                    if chunks.len() >= self.max_chunks {
+                        return;
                     }
                 }
             }

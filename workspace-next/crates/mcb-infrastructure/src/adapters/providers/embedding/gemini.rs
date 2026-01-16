@@ -14,6 +14,8 @@ use mcb_domain::value_objects::Embedding;
 use crate::adapters::http_client::HttpClientProvider;
 use crate::adapters::providers::embedding::helpers::constructor;
 use crate::constants::{CONTENT_TYPE_JSON, EMBEDDING_DIMENSION_GEMINI};
+
+/// Error message for request timeouts
 use crate::utils::HttpResponseUtils;
 
 /// Gemini embedding provider
@@ -156,7 +158,7 @@ impl EmbeddingProvider for GeminiEmbeddingProvider {
                 .await
                 .map_err(|e| {
                     if e.is_timeout() {
-                        Error::embedding(format!("Request timed out after {:?}", self.timeout))
+                        Error::embedding(format!("{} {:?}", crate::constants::ERROR_MSG_REQUEST_TIMEOUT, self.timeout))
                     } else {
                         Error::embedding(format!("HTTP request failed: {}", e))
                     }

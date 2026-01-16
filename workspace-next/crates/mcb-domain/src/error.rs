@@ -150,6 +150,7 @@ pub enum Error {
     },
 }
 
+// Basic error creation methods
 impl Error {
     /// Create a generic error
     pub fn generic<S: Into<String>>(message: S) -> Self {
@@ -183,7 +184,10 @@ impl Error {
             message: message.into(),
         }
     }
+}
 
+// I/O error creation methods
+impl Error {
     /// Create an I/O error
     pub fn io<S: Into<String>>(message: S) -> Self {
         Self::Io {
@@ -202,7 +206,10 @@ impl Error {
             source: Some(Box::new(source)),
         }
     }
+}
 
+// Configuration error creation methods
+impl Error {
     /// Create a configuration error (simple)
     pub fn config<S: Into<String>>(message: S) -> Self {
         Self::Config {
@@ -231,7 +238,10 @@ impl Error {
             source: Some(Box::new(source)),
         }
     }
+}
 
+// Authentication error creation methods
+impl Error {
     /// Create an authentication error
     pub fn authentication<S: Into<String>>(message: S) -> Self {
         Self::Authentication {
@@ -253,7 +263,10 @@ impl Error {
             source: Some(Box::new(source)),
         }
     }
+}
 
+// Network error creation methods
+impl Error {
     /// Create a network error
     pub fn network<S: Into<String>>(message: S) -> Self {
         Self::Network {
@@ -272,7 +285,10 @@ impl Error {
             source: Some(Box::new(source)),
         }
     }
+}
 
+// Database error creation methods
+impl Error {
     /// Create a database error
     pub fn database<S: Into<String>>(message: S) -> Self {
         Self::Database {
@@ -291,7 +307,10 @@ impl Error {
             source: Some(Box::new(source)),
         }
     }
+}
 
+// Internal and infrastructure error creation methods
+impl Error {
     /// Create an internal error
     pub fn internal<S: Into<String>>(message: S) -> Self {
         Self::Internal {

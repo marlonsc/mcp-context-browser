@@ -30,13 +30,9 @@ pub enum TransportMode {
     Hybrid,
 }
 
-/// Server configuration
+/// Network configuration for server
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ServerConfig {
-    /// Transport mode (stdio, http, hybrid)
-    #[serde(default)]
-    pub transport_mode: TransportMode,
-
+pub struct ServerNetworkConfig {
     /// Server host address
     pub host: String,
 
@@ -46,7 +42,11 @@ pub struct ServerConfig {
     /// Admin API port (separate from main server port)
     #[serde(default = "default_admin_port")]
     pub admin_port: u16,
+}
 
+/// SSL/TLS configuration for server
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ServerSslConfig {
     /// HTTPS enabled
     pub https: bool,
 
@@ -55,7 +55,11 @@ pub struct ServerConfig {
 
     /// SSL key path (if HTTPS enabled)
     pub ssl_key_path: Option<PathBuf>,
+}
 
+/// Timeout configuration for server
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ServerTimeoutConfig {
     /// Request timeout in seconds
     pub request_timeout_secs: u64,
 
@@ -64,7 +68,11 @@ pub struct ServerConfig {
 
     /// Maximum request body size in bytes
     pub max_request_body_size: usize,
+}
 
+/// CORS configuration for server
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ServerCorsConfig {
     /// Enable CORS
     pub cors_enabled: bool,
 
@@ -72,26 +80,79 @@ pub struct ServerConfig {
     pub cors_origins: Vec<String>,
 }
 
+/// Server configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ServerConfig {
+    /// Transport mode (stdio, http, hybrid)
+    #[serde(default)]
+    pub transport_mode: TransportMode,
+
+    /// Network configuration
+    pub network: ServerNetworkConfig,
+
+    /// SSL/TLS configuration
+    pub ssl: ServerSslConfig,
+
+    /// Timeout configuration
+    pub timeouts: ServerTimeoutConfig,
+
+    /// CORS configuration
+    pub cors: ServerCorsConfig,
+}
+
 /// Default admin port (9090)
 fn default_admin_port() -> u16 {
     9090
+}
+
+// Default implementations for config structs
+impl Default for ServerNetworkConfig {
+    fn default() -> Self {
+        Self {
+            host: DEFAULT_SERVER_HOST.to_string(),
+            port: DEFAULT_HTTP_PORT,
+            admin_port: default_admin_port(),
+        }
+    }
+}
+
+impl Default for ServerSslConfig {
+    fn default() -> Self {
+        Self {
+            https: false,
+            ssl_cert_path: None,
+            ssl_key_path: None,
+        }
+    }
+}
+
+impl Default for ServerTimeoutConfig {
+    fn default() -> Self {
+        Self {
+            request_timeout_secs: REQUEST_TIMEOUT_SECS,
+            connection_timeout_secs: CONNECTION_TIMEOUT_SECS,
+            max_request_body_size: MAX_REQUEST_BODY_SIZE,
+        }
+    }
+}
+
+impl Default for ServerCorsConfig {
+    fn default() -> Self {
+        Self {
+            cors_enabled: true,
+            cors_origins: vec!["*".to_string()],
+        }
+    }
 }
 
 impl Default for ServerConfig {
     fn default() -> Self {
         Self {
             transport_mode: TransportMode::default(),
-            host: DEFAULT_SERVER_HOST.to_string(),
-            port: DEFAULT_HTTP_PORT,
-            admin_port: default_admin_port(),
-            https: false,
-            ssl_cert_path: None,
-            ssl_key_path: None,
-            request_timeout_secs: REQUEST_TIMEOUT_SECS,
-            connection_timeout_secs: CONNECTION_TIMEOUT_SECS,
-            max_request_body_size: MAX_REQUEST_BODY_SIZE,
-            cors_enabled: true,
-            cors_origins: vec!["*".to_string()],
+            network: ServerNetworkConfig::default(),
+            ssl: ServerSslConfig::default(),
+            timeouts: ServerTimeoutConfig::default(),
+            cors: ServerCorsConfig::default(),
         }
     }
 }

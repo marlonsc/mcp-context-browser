@@ -21,24 +21,19 @@ pub use super::{
     sync::SyncConfig,
 };
 
-/// Main application configuration
+/// Provider configurations (embedding and vector store)
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct AppConfig {
-    /// Server configuration
-    pub server: ServerConfig,
-
+pub struct ProvidersConfig {
     /// Embedding provider configurations
     pub embedding: HashMap<String, EmbeddingConfig>,
 
     /// Vector store provider configurations
     pub vector_store: HashMap<String, VectorStoreConfig>,
+}
 
-    /// Logging configuration
-    pub logging: LoggingConfig,
-
-    /// Authentication configuration
-    pub auth: AuthConfig,
-
+/// Infrastructure configurations (cache, metrics, resilience, limits)
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct InfrastructureConfig {
     /// Cache configuration
     pub cache: CacheConfig,
 
@@ -50,19 +45,59 @@ pub struct AppConfig {
 
     /// Limits configuration
     pub limits: LimitsConfig,
+}
 
-    /// Daemon configuration
-    pub daemon: DaemonConfig,
-
-    /// Backup configuration
-    pub backup: BackupConfig,
-
+/// Data management configurations (snapshot, sync, backup)
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct DataConfig {
     /// Snapshot configuration
     pub snapshot: SnapshotConfig,
 
     /// Sync configuration
     pub sync: SyncConfig,
 
+    /// Backup configuration
+    pub backup: BackupConfig,
+}
+
+/// System infrastructure and data configurations
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct SystemConfig {
+    /// Infrastructure configurations
+    pub infrastructure: InfrastructureConfig,
+
+    /// Data management configurations
+    pub data: DataConfig,
+}
+
+/// Operations and daemon configurations combined
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct OperationsDaemonConfig {
+    /// Daemon configuration
+    pub daemon: DaemonConfig,
+
     /// Operations configuration
     pub operations: OperationsConfig,
+}
+
+/// Main application configuration
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct AppConfig {
+    /// Server configuration
+    pub server: ServerConfig,
+
+    /// Provider configurations
+    pub providers: ProvidersConfig,
+
+    /// Logging configuration
+    pub logging: LoggingConfig,
+
+    /// Authentication configuration
+    pub auth: AuthConfig,
+
+    /// System configurations (infrastructure and data)
+    pub system: SystemConfig,
+
+    /// Operations and daemon configurations
+    pub operations_daemon: OperationsDaemonConfig,
 }

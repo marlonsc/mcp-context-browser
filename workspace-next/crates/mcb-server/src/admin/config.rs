@@ -67,6 +67,7 @@ impl SanitizedConfig {
                 port: config.server.port,
                 transport_mode: format!("{:?}", config.server.transport_mode),
                 admin_port: config.server.admin_port,
+                https: config.server.https,
             },
             embedding: config
                 .embedding
@@ -75,7 +76,7 @@ impl SanitizedConfig {
                     (
                         k.clone(),
                         EmbeddingConfigView {
-                            provider: v.provider.clone(),
+                            provider: format!("{:?}", v.provider),
                             model: v.model.clone(),
                             dimensions: v.dimensions,
                             has_api_key: v.api_key.is_some(),
@@ -90,31 +91,33 @@ impl SanitizedConfig {
                     (
                         k.clone(),
                         VectorStoreConfigView {
-                            provider: v.provider.clone(),
+                            provider: format!("{:?}", v.provider),
                             dimensions: v.dimensions,
-                            storage_path: v.storage_path.clone(),
+                            collection: v.collection.clone(),
+                            has_address: v.address.is_some(),
                         },
                     )
                 })
                 .collect(),
             logging: LoggingConfigView {
                 level: config.logging.level.clone(),
-                format: config.logging.format.clone(),
-                file_path: config.logging.file_path.clone(),
+                json_format: config.logging.json_format,
+                file_output: config.logging.file_output.as_ref().map(|p| p.display().to_string()),
             },
             cache: CacheConfigView {
                 enabled: config.cache.enabled,
-                ttl_seconds: config.cache.ttl_seconds,
-                max_capacity: config.cache.max_capacity,
+                provider: format!("{:?}", config.cache.provider),
+                default_ttl_secs: config.cache.default_ttl_secs,
+                max_size: config.cache.max_size,
             },
             metrics: MetricsConfigView {
                 enabled: config.metrics.enabled,
                 collection_interval_secs: config.metrics.collection_interval_secs,
             },
             limits: LimitsConfigView {
-                max_file_size: config.limits.max_file_size,
-                max_concurrent_indexing: config.limits.max_concurrent_indexing,
-                max_results: config.limits.max_results,
+                memory_limit: config.limits.memory_limit,
+                cpu_limit: config.limits.cpu_limit,
+                max_connections: config.limits.max_connections,
             },
         }
     }

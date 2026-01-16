@@ -30,7 +30,7 @@ impl ComponentDispatcher {
     /// Create cache provider
     #[allow(dead_code)]
     async fn create_cache_provider(&self) -> Result<crate::cache::provider::SharedCacheProvider> {
-        let factory = DefaultCacheProviderFactory::new(self.config.cache.clone());
+        let factory = DefaultCacheProviderFactory::new(self.config.system.infrastructure.cache.clone());
         factory.create_cache_provider().await
     }
 

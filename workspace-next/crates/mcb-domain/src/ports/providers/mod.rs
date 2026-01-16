@@ -17,6 +17,8 @@
 
 /// Cache provider port
 pub mod cache;
+/// Config provider port
+pub mod config;
 /// Crypto provider port
 pub mod crypto;
 /// Embedding provider port
@@ -30,6 +32,7 @@ pub mod vector_store;
 
 // Re-export provider ports
 pub use cache::CacheProvider;
+pub use config::ProviderConfigManagerInterface;
 pub use crypto::{CryptoProvider, EncryptedData};
 pub use embedding::EmbeddingProvider;
 pub use hybrid_search::HybridSearchProvider;

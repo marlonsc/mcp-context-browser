@@ -142,6 +142,9 @@ pub const HTTP_CLIENT_IDLE_TIMEOUT_SECS: u64 = 90;
 /// HTTP TCP keep-alive interval in seconds
 pub const HTTP_KEEPALIVE_SECS: u64 = 60;
 
+/// HTTP request timeout error message template
+pub const ERROR_MSG_REQUEST_TIMEOUT: &str = "Request timed out after {:?}";
+
 // ============================================================================
 // TREE-SITTER NODE TYPE CONSTANTS
 // ============================================================================

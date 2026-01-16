@@ -23,7 +23,7 @@ pub mod search;
 pub mod types;
 
 // Re-export commonly used value objects
-pub use config::{EmbeddingConfig, VectorStoreConfig};
+pub use config::{CacheConfig, EmbeddingConfig, VectorStoreConfig};
 pub use embedding::Embedding;
 pub use search::SearchResult;
-pub use types::{EmbeddingProviderKind, Language, OperationType, VectorStoreProviderKind};
+pub use types::{CacheProviderKind, EmbeddingProviderKind, Language, OperationType, VectorStoreProviderKind};
