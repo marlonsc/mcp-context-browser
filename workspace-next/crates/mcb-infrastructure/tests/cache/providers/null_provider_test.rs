@@ -40,6 +40,7 @@ async fn test_null_provider_operations() {
 
 #[test]
 fn test_null_provider_default() {
-    let _provider = NullCacheProvider::default();
-    // Just verify it creates successfully via Default trait
+    let provider = NullCacheProvider::default();
+    // Verify default provider has correct debug representation
+    assert!(format!("{:?}", provider).contains("NullCacheProvider"));
 }

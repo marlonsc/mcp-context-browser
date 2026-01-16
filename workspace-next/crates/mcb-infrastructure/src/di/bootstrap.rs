@@ -3,12 +3,15 @@
 //! Provides the main dependency injection container that wires together
 //! all infrastructure components following Clean Architecture principles.
 
+use crate::adapters::providers::embedding::NullEmbeddingProvider;
+use crate::adapters::providers::vector_store::InMemoryVectorStoreProvider;
 use crate::cache::provider::SharedCacheProvider;
 use crate::cache::CacheProviderFactory;
 use crate::config::AppConfig;
 use crate::crypto::CryptoService;
 use crate::health::{checkers, HealthRegistry};
 use mcb_domain::error::Result;
+use mcb_domain::ports::providers::{EmbeddingProvider, VectorStoreProvider};
 use std::sync::Arc;
 
 /// Core infrastructure components container
@@ -18,6 +21,8 @@ pub struct InfrastructureComponents {
     pub crypto: CryptoService,
     pub health: HealthRegistry,
     pub config: AppConfig,
+    pub embedding_provider: Arc<dyn EmbeddingProvider>,
+    pub vector_store_provider: Arc<dyn VectorStoreProvider>,
 }
 
 impl InfrastructureComponents {
@@ -31,8 +36,10 @@ impl InfrastructureComponents {
         };
 
         // Create crypto service with master key from config or generate one
+        // AES-GCM requires exactly 32 bytes for the key
         let master_key = if config.auth.jwt_secret.len() >= 32 {
-            config.auth.jwt_secret.clone().into_bytes()
+            // Use first 32 bytes of the JWT secret as the master key
+            config.auth.jwt_secret.as_bytes()[..32].to_vec()
         } else {
             CryptoService::generate_master_key()
         };
@@ -51,11 +58,25 @@ impl InfrastructureComponents {
         // Register database health checker if configured
         // (This would be expanded based on actual database configuration)
 
+        // Create embedding provider based on configuration
+        // For now, use NullEmbeddingProvider as default (can be enhanced to
+        // create different providers based on config.embedding.provider)
+        let embedding_provider: Arc<dyn EmbeddingProvider> =
+            Arc::new(NullEmbeddingProvider::new());
+
+        // Create vector store provider based on configuration
+        // For now, use InMemoryVectorStoreProvider as default (can be enhanced to
+        // create different providers based on config.vector_store.provider)
+        let vector_store_provider: Arc<dyn VectorStoreProvider> =
+            Arc::new(InMemoryVectorStoreProvider::new());
+
         Ok(Self {
             cache,
             crypto,
             health,
             config,
+            embedding_provider,
+            vector_store_provider,
         })
     }
 
@@ -77,6 +98,16 @@ impl InfrastructureComponents {
     /// Get the configuration
     pub fn config(&self) -> &AppConfig {
         &self.config
+    }
+
+    /// Get the embedding provider
+    pub fn embedding_provider(&self) -> &Arc<dyn EmbeddingProvider> {
+        &self.embedding_provider
+    }
+
+    /// Get the vector store provider
+    pub fn vector_store_provider(&self) -> &Arc<dyn VectorStoreProvider> {
+        &self.vector_store_provider
     }
 }
 
@@ -122,6 +153,8 @@ impl FullContainer {
             infrastructure.crypto.clone(),
             infrastructure.health.clone(),
             config,
+            infrastructure.embedding_provider.clone(),
+            infrastructure.vector_store_provider.clone(),
         )
         .await?;
 

@@ -2855,6 +2855,7 @@ name = "mcb"
 version = "0.1.1"
 dependencies = [
  "mcb-domain",
+ "serde_json",
 ]
 
 [[package]]
@@ -2976,6 +2977,7 @@ dependencies = [
  "anyhow",
  "argon2",
  "async-nats",
+ "async-trait",
  "axum",
  "axum-extra",
  "base64 0.22.1",
@@ -3010,6 +3012,25 @@ dependencies = [
  "tracing-subscriber",
  "uuid",
  "validator",
+]
+
+[[package]]
+name = "mcb-validate"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "clap",
+ "glob",
+ "proc-macro2",
+ "regex",
+ "serde",
+ "serde_json",
+ "syn 2.0.114",
+ "tempfile",
+ "thiserror 2.0.17",
+ "toml",
+ "walkdir",
 ]
 
 [[package]]

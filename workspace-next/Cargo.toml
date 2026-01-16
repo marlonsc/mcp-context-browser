@@ -5,7 +5,7 @@ members = [
     "crates/mcb-domain",
     "crates/mcb-infrastructure",
     "crates/mcb-server",
-    # "crates/mcb-validate",  # Temporarily excluded - incomplete implementation
+    "crates/mcb-validate",
 ]
 
 [workspace.dependencies]

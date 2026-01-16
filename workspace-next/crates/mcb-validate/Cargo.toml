@@ -5,6 +5,9 @@ edition = "2021"
 description = "Architecture validation for MCP Context Browser workspace"
 license = "MIT"
 
+[lib]
+path = "src/lib.rs"
+
 [dependencies]
 # Rust AST parsing
 syn = { version = "2.0", features = ["full", "parsing", "visit"] }
@@ -28,6 +31,9 @@ toml.workspace = true
 thiserror.workspace = true
 anyhow.workspace = true
 
+# Date/time for timestamps
+chrono.workspace = true
+
 # CLI (optional)
 clap = { workspace = true, optional = true }
 
@@ -38,6 +44,7 @@ tempfile = "3.14"
 default = []
 cli = ["clap"]
 
-[[bin]]
-name = "mcb-validate"
-required-features = ["cli"]
+# Binary will be added when CLI feature is implemented
+# [[bin]]
+# name = "mcb-validate"
+# required-features = ["cli"]

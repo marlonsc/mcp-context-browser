@@ -20,5 +20,8 @@ fn test_null_pool_default() {
 #[test]
 fn test_null_pool_has_client() {
     let pool = NullHttpClientPool::new();
-    let _client = pool.client(); // Should not panic
+    // Verify that calling client() doesn't panic and returns a valid client
+    let _client = pool.client();
+    // Assert pool state remains consistent
+    assert!(!pool.is_enabled());
 }

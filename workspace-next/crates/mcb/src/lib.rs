@@ -16,7 +16,7 @@
 //! ## Example
 //!
 //! ```rust
-//! use mcb::domain::{CodeChunk, Language, Embedding};
+//! use mcb::domain::CodeChunk;
 //!
 //! // Domain types are available through the mcb facade
 //! let chunk = CodeChunk {
@@ -25,7 +25,7 @@
 //!     file_path: "example.rs".to_string(),
 //!     start_line: 1,
 //!     end_line: 1,
-//!     language: Language::Rust,
+//!     language: "rust".to_string(),  // Language is a String type alias
 //!     metadata: serde_json::json!({}),
 //! };
 //! ```

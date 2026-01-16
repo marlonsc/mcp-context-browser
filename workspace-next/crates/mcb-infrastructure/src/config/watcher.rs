@@ -10,6 +10,7 @@ use mcb_domain::error::{Error, Result};
 use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::PathBuf;
 use std::sync::Arc;
+use tokio::runtime::Handle;
 use tokio::sync::broadcast::{self, Receiver, Sender};
 use tokio::sync::RwLock;
 
@@ -105,6 +106,8 @@ impl ConfigWatcher {
         event_sender: Sender<ConfigWatchEvent>,
     ) -> Result<RecommendedWatcher> {
         let config_path_clone = config_path.clone();
+        // Capture the Tokio runtime handle to use from the notify callback thread
+        let runtime_handle = Handle::current();
 
         let watcher = RecommendedWatcher::new(
             move |res: notify::Result<Event>| {
@@ -113,7 +116,8 @@ impl ConfigWatcher {
                 let loader = loader.clone();
                 let event_sender = event_sender.clone();
 
-                tokio::spawn(async move {
+                // Use the captured runtime handle to spawn tasks from the notify thread
+                runtime_handle.spawn(async move {
                     match res {
                         Ok(event) => {
                             if Self::should_reload_config(&event) {

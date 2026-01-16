@@ -6,11 +6,11 @@
 //! - mcb-server: mcb-domain and mcb-infrastructure
 //! - mcb: mcb-domain only (facade)
 
-use crate::{Result, Severity, ValidationError};
+use crate::{Result, Severity};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use walkdir::WalkDir;
 
 /// Allowed dependencies for each crate in Clean Architecture
@@ -203,6 +203,11 @@ impl DependencyValidator {
                         continue;
                     }
 
+                    // Skip lines that are likely string literals (contain quotes)
+                    if line.contains('"') {
+                        continue;
+                    }
+
                     for cap in use_pattern.captures_iter(line) {
                         let used_crate = cap.get(1).map(|m| m.as_str()).unwrap_or("");
                         let used_crate_kebab = used_crate.replace('_', "-");
@@ -237,7 +242,7 @@ impl DependencyValidator {
         let mut graph: HashMap<String, HashSet<String>> = HashMap::new();
 
         // Build dependency graph from Cargo.toml files
-        for (crate_name, _) in &self.allowed_deps {
+        for crate_name in self.allowed_deps.keys() {
             let cargo_toml = self
                 .workspace_root
                 .join("crates")
@@ -277,6 +282,7 @@ impl DependencyValidator {
         Ok(violations)
     }
 
+    #[allow(clippy::only_used_in_recursion)]
     fn find_cycle(
         &self,
         graph: &HashMap<String, HashSet<String>>,

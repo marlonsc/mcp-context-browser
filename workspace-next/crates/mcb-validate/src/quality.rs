@@ -187,19 +187,16 @@ impl QualityValidator {
             {
                 let content = std::fs::read_to_string(entry.path())?;
                 let mut in_test_module = false;
-                let mut in_doc_comment = false;
-                let mut brace_depth = 0;
-                let mut test_module_brace_depth = 0;
+                let mut waiting_for_test_module = false;
+                let mut brace_depth: i32 = 0;
+                let mut test_module_brace_depth: i32 = 0;
 
                 for (line_num, line) in content.lines().enumerate() {
                     let trimmed = line.trim();
 
-                    // Track doc comments
+                    // Track doc comments - skip them
                     if trimmed.starts_with("///") || trimmed.starts_with("//!") {
-                        in_doc_comment = true;
                         continue;
-                    } else {
-                        in_doc_comment = false;
                     }
 
                     // Skip regular comments
@@ -207,28 +204,31 @@ impl QualityValidator {
                         continue;
                     }
 
-                    // Track test modules
+                    // Detect test module attribute
                     if trimmed.contains("#[cfg(test)]") {
-                        in_test_module = true;
-                        test_module_brace_depth = brace_depth;
+                        waiting_for_test_module = true;
                     }
 
                     // Track brace depth
-                    brace_depth += line.chars().filter(|c| *c == '{').count() as i32;
-                    brace_depth -= line.chars().filter(|c| *c == '}').count() as i32;
+                    let open_braces = line.chars().filter(|c| *c == '{').count() as i32;
+                    let close_braces = line.chars().filter(|c| *c == '}').count() as i32;
+                    brace_depth += open_braces;
+                    brace_depth -= close_braces;
 
-                    // Exit test module when braces close
-                    if in_test_module && brace_depth <= test_module_brace_depth {
+                    // Enter test module when we see the opening brace after #[cfg(test)]
+                    if waiting_for_test_module && open_braces > 0 {
+                        in_test_module = true;
+                        test_module_brace_depth = brace_depth;
+                        waiting_for_test_module = false;
+                    }
+
+                    // Exit test module when braces close below the starting depth
+                    if in_test_module && brace_depth < test_module_brace_depth {
                         in_test_module = false;
                     }
 
                     // Skip test modules
                     if in_test_module {
-                        continue;
-                    }
-
-                    // Skip doc comments
-                    if in_doc_comment {
                         continue;
                     }
 

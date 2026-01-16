@@ -16,6 +16,9 @@ rust-version = "1.89"
 # Domain layer - re-exported for public API
 mcb-domain = { path = "../mcb-domain" }
 
+# Re-export for doc examples
+serde_json = { workspace = true }
+
 # Re-export key domain types for convenience
 [package.metadata.docs.rs]
 all-features = true

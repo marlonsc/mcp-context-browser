@@ -5,7 +5,7 @@
 use crate::config::data::*;
 use crate::constants::*;
 use mcb_domain::error::{Error, Result};
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::net::{IpAddr, SocketAddr};
 use std::time::Duration;
 
 /// Server configuration utilities
@@ -49,24 +49,26 @@ impl ServerConfigUtils {
             });
         }
 
-        let cert_path = config.ssl_cert_path.as_ref().unwrap();
-        let key_path = config.ssl_key_path.as_ref().unwrap();
+        // Both paths validated above - use pattern match to avoid unwrap
+        if let (Some(cert_path), Some(key_path)) =
+            (&config.ssl_cert_path, &config.ssl_key_path)
+        {
+            if !cert_path.exists() {
+                return Err(Error::Configuration {
+                    message: format!(
+                        "SSL certificate file does not exist: {}",
+                        cert_path.display()
+                    ),
+                    source: None,
+                });
+            }
 
-        if !cert_path.exists() {
-            return Err(Error::Configuration {
-                message: format!(
-                    "SSL certificate file does not exist: {}",
-                    cert_path.display()
-                ),
-                source: None,
-            });
-        }
-
-        if !key_path.exists() {
-            return Err(Error::Configuration {
-                message: format!("SSL key file does not exist: {}", key_path.display()),
-                source: None,
-            });
+            if !key_path.exists() {
+                return Err(Error::Configuration {
+                    message: format!("SSL key file does not exist: {}", key_path.display()),
+                    source: None,
+                });
+            }
         }
 
         Ok(())

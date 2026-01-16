@@ -3,6 +3,7 @@
 //! Provides domain service implementations that can be injected into the server.
 //! These services implement domain interfaces using infrastructure components.
 
+use crate::adapters::chunking::{language_from_extension, IntelligentChunker};
 use crate::cache::provider::SharedCacheProvider;
 use crate::config::AppConfig;
 use crate::crypto::CryptoService;
@@ -12,8 +13,11 @@ use mcb_domain::domain_services::search::{
 };
 use mcb_domain::entities::CodeChunk;
 use mcb_domain::error::Result;
+use mcb_domain::ports::providers::{EmbeddingProvider, VectorStoreProvider};
 use mcb_domain::repositories::{chunk_repository::RepositoryStats, search_repository::SearchStats};
 use mcb_domain::value_objects::{Embedding, SearchResult};
+use serde_json::json;
+use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -35,17 +39,24 @@ impl DomainServicesFactory {
         crypto: CryptoService,
         _health: HealthRegistry,
         config: AppConfig,
+        embedding_provider: Arc<dyn EmbeddingProvider>,
+        vector_store_provider: Arc<dyn VectorStoreProvider>,
     ) -> Result<DomainServicesContainer> {
         // Create context service implementation
         let context_service: Arc<dyn ContextServiceInterface> = Arc::new(ContextServiceImpl::new(
             cache.clone(),
             crypto.clone(),
             config.clone(),
+            embedding_provider,
+            vector_store_provider,
         ));
 
         // Create search service implementation
-        let search_service: Arc<dyn SearchServiceInterface> =
-            Arc::new(SearchServiceImpl::new(cache.clone(), config.clone()));
+        let search_service: Arc<dyn SearchServiceInterface> = Arc::new(SearchServiceImpl::new(
+            cache.clone(),
+            config.clone(),
+            context_service.clone(),
+        ));
 
         // Create indexing service implementation (needs context_service)
         let indexing_service: Arc<dyn IndexingServiceInterface> =
@@ -71,14 +82,24 @@ pub struct ContextServiceImpl {
     crypto: CryptoService,
     #[allow(dead_code)]
     config: AppConfig,
+    embedding_provider: Arc<dyn EmbeddingProvider>,
+    vector_store_provider: Arc<dyn VectorStoreProvider>,
 }
 
 impl ContextServiceImpl {
-    pub fn new(cache: SharedCacheProvider, crypto: CryptoService, config: AppConfig) -> Self {
+    pub fn new(
+        cache: SharedCacheProvider,
+        crypto: CryptoService,
+        config: AppConfig,
+        embedding_provider: Arc<dyn EmbeddingProvider>,
+        vector_store_provider: Arc<dyn VectorStoreProvider>,
+    ) -> Self {
         Self {
             cache,
             crypto,
             config,
+            embedding_provider,
+            vector_store_provider,
         }
     }
 }
@@ -86,8 +107,13 @@ impl ContextServiceImpl {
 #[async_trait::async_trait]
 impl ContextServiceInterface for ContextServiceImpl {
     async fn initialize(&self, collection: &str) -> Result<()> {
-        // Initialize collection-specific resources
-        // For now, just ensure the collection key exists in cache
+        // Check if collection exists in vector store, create if not
+        if !self.vector_store_provider.collection_exists(collection).await? {
+            let dimensions = self.embedding_provider.dimensions();
+            self.vector_store_provider.create_collection(collection, dimensions).await?;
+        }
+
+        // Also track in cache for metadata
         let collection_key = format!("collection:{}", collection);
         self.cache
             .set_json(
@@ -100,19 +126,31 @@ impl ContextServiceInterface for ContextServiceImpl {
     }
 
     async fn store_chunks(&self, collection: &str, chunks: &[CodeChunk]) -> Result<()> {
-        // Store chunks in cache with collection prefix
-        for chunk in chunks {
-            let key = format!("chunk:{}:{}", collection, chunk.id);
-            self.cache
-                .set(
-                    &key,
-                    chunk,
-                    crate::cache::config::CacheEntryConfig::default(),
-                )
-                .await?;
-        }
+        // Generate embeddings for each chunk
+        let texts: Vec<String> = chunks.iter().map(|c| c.content.clone()).collect();
+        let embeddings = self.embedding_provider.embed_batch(&texts).await?;
 
-        // Update collection metadata
+        // Build metadata for each chunk
+        let metadata: Vec<HashMap<String, serde_json::Value>> = chunks
+            .iter()
+            .map(|chunk| {
+                let mut meta = HashMap::new();
+                meta.insert("id".to_string(), json!(chunk.id));
+                meta.insert("file_path".to_string(), json!(chunk.file_path));
+                meta.insert("content".to_string(), json!(chunk.content));
+                meta.insert("start_line".to_string(), json!(chunk.start_line));
+                meta.insert("end_line".to_string(), json!(chunk.end_line));
+                meta.insert("language".to_string(), json!(chunk.language));
+                meta
+            })
+            .collect();
+
+        // Insert into vector store
+        self.vector_store_provider
+            .insert_vectors(collection, &embeddings, metadata)
+            .await?;
+
+        // Update collection metadata in cache
         let meta_key = format!("collection:{}:meta", collection);
         let chunk_count = chunks.len();
         self.cache
@@ -128,44 +166,39 @@ impl ContextServiceInterface for ContextServiceImpl {
 
     async fn search_similar(
         &self,
-        _collection: &str,
-        _query: &str,
+        collection: &str,
+        query: &str,
         limit: usize,
     ) -> Result<Vec<SearchResult>> {
-        // Simple implementation: return cached chunks that contain the query
-        // In a real implementation, this would use vector similarity search
-        let results: Vec<SearchResult> = Vec::new();
+        // Generate embedding for the query
+        let query_embedding = self.embedding_provider.embed(query).await?;
 
-        // For now, return empty results as we don't have a full implementation
-        // This would need integration with vector stores and embeddings
-        Ok(results.into_iter().take(limit).collect())
+        // Search in vector store
+        let results = self.vector_store_provider
+            .search_similar(collection, &query_embedding.vector, limit, None)
+            .await?;
+
+        Ok(results)
     }
 
     async fn embed_text(&self, text: &str) -> Result<Embedding> {
-        // Generate a simple hash-based embedding for demonstration
-        // In a real implementation, this would use configured embedding providers
-        let hash = CryptoService::sha256(text.as_bytes());
-        let dimensions = 384; // Standard embedding dimension
-
-        // Convert hash bytes to f32 values for embedding
-        let mut values = Vec::with_capacity(dimensions);
-        for i in 0..dimensions {
-            let byte_idx = i % hash.len();
-            values.push((hash[byte_idx] as f32) / 255.0);
-        }
-
-        Ok(Embedding {
-            vector: values,
-            model: "simple-hash".to_string(),
-            dimensions,
-        })
+        // Use the configured embedding provider
+        self.embedding_provider.embed(text).await
     }
 
     async fn clear_collection(&self, collection: &str) -> Result<()> {
-        // In a real implementation, this would clear all collection data
-        // For now, just remove the collection metadata
+        // Delete the collection from vector store
+        if self.vector_store_provider.collection_exists(collection).await? {
+            self.vector_store_provider.delete_collection(collection).await?;
+        }
+
+        // Also clear cache metadata
+        let collection_key = format!("collection:{}", collection);
+        self.cache.delete(&collection_key).await?;
+
         let meta_key = format!("collection:{}:meta", collection);
         self.cache.delete(&meta_key).await?;
+
         Ok(())
     }
 
@@ -189,7 +222,7 @@ impl ContextServiceInterface for ContextServiceImpl {
     }
 
     fn embedding_dimensions(&self) -> usize {
-        384 // Standard dimension for demonstration
+        self.embedding_provider.dimensions()
     }
 }
 
@@ -199,11 +232,20 @@ pub struct SearchServiceImpl {
     cache: SharedCacheProvider,
     #[allow(dead_code)]
     config: AppConfig,
+    context_service: Arc<dyn ContextServiceInterface>,
 }
 
 impl SearchServiceImpl {
-    pub fn new(cache: SharedCacheProvider, config: AppConfig) -> Self {
-        Self { cache, config }
+    pub fn new(
+        cache: SharedCacheProvider,
+        config: AppConfig,
+        context_service: Arc<dyn ContextServiceInterface>,
+    ) -> Self {
+        Self {
+            cache,
+            config,
+            context_service,
+        }
     }
 }
 
@@ -211,22 +253,13 @@ impl SearchServiceImpl {
 impl SearchServiceInterface for SearchServiceImpl {
     async fn search(
         &self,
-        _collection: &str,
-        _query: &str,
+        collection: &str,
+        query: &str,
         limit: usize,
     ) -> Result<Vec<SearchResult>> {
-        // Simple text-based search implementation
-        // In a real implementation, this would use semantic search with embeddings
-        let results: Vec<SearchResult> = Vec::new();
-
-        // For demonstration, return empty results
-        // A full implementation would:
-        // 1. Generate embedding for query
-        // 2. Search vector store for similar chunks
-        // 3. Apply BM25 scoring
-        // 4. Combine and rank results
-
-        Ok(results.into_iter().take(limit).collect())
+        // Delegate to context service for semantic search
+        // Future: add BM25 scoring and hybrid ranking
+        self.context_service.search_similar(collection, query, limit).await
     }
 }
 
@@ -239,6 +272,7 @@ pub struct IndexingServiceImpl {
     #[allow(dead_code)]
     config: AppConfig,
     context_service: Arc<dyn ContextServiceInterface>,
+    chunker: IntelligentChunker,
 }
 
 impl IndexingServiceImpl {
@@ -253,6 +287,7 @@ impl IndexingServiceImpl {
             crypto,
             config,
             context_service,
+            chunker: IntelligentChunker::new(),
         }
     }
 }
@@ -363,35 +398,11 @@ impl IndexingServiceInterface for IndexingServiceImpl {
 
 impl IndexingServiceImpl {
     fn chunk_file_content(&self, content: &str, path: &Path) -> Vec<CodeChunk> {
-        // Simple chunking strategy - split by lines and create chunks
-        let lines: Vec<&str> = content.lines().collect();
-        let chunk_size = 50; // lines per chunk
+        // Use AST-based intelligent chunking when possible
+        let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+        let language = language_from_extension(ext);
+        let file_name = path.to_string_lossy().to_string();
 
-        lines
-            .chunks(chunk_size)
-            .enumerate()
-            .map(|(i, chunk_lines)| {
-                let start_line = (i * chunk_size + 1) as u32;
-                let end_line = (start_line as usize + chunk_lines.len() - 1) as u32;
-                let content = chunk_lines.join("\n");
-
-                CodeChunk {
-                    id: format!("{}_{}", path.display(), i),
-                    file_path: path.to_string_lossy().to_string(),
-                    content,
-                    start_line,
-                    end_line,
-                    language: path
-                        .extension()
-                        .and_then(|ext| ext.to_str())
-                        .unwrap_or("unknown")
-                        .to_string(),
-                    metadata: serde_json::json!({
-                        "chunk_index": i,
-                        "total_lines": lines.len()
-                    }),
-                }
-            })
-            .collect()
+        self.chunker.chunk_code(content, &file_name, &language)
     }
 }

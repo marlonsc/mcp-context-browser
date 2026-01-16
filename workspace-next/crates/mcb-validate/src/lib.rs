@@ -7,13 +7,17 @@
 //! - Test organization (no inline tests)
 //! - Documentation completeness
 //! - Naming conventions
+//! - SOLID principles (SRP, OCP, LSP, ISP, DIP)
+//! - Code organization (constants centralization, file placement)
 
 pub mod dependency;
 pub mod documentation;
 pub mod naming;
+pub mod organization;
 pub mod patterns;
 pub mod quality;
 pub mod reporter;
+pub mod solid;
 pub mod tests_org;
 
 use std::path::{Path, PathBuf};
@@ -22,9 +26,11 @@ use thiserror::Error;
 pub use dependency::{DependencyValidator, DependencyViolation};
 pub use documentation::{DocumentationValidator, DocumentationViolation};
 pub use naming::{NamingValidator, NamingViolation};
+pub use organization::{OrganizationValidator, OrganizationViolation};
 pub use patterns::{PatternValidator, PatternViolation};
 pub use quality::{QualityValidator, QualityViolation};
 pub use reporter::{Reporter, ValidationReport, ValidationSummary};
+pub use solid::{SolidValidator, SolidViolation};
 pub use tests_org::{TestValidator, TestViolation};
 
 /// Result type for validation operations
@@ -63,6 +69,8 @@ pub struct ArchitectureValidator {
     tests: TestValidator,
     documentation: DocumentationValidator,
     naming: NamingValidator,
+    solid: SolidValidator,
+    organization: OrganizationValidator,
 }
 
 impl ArchitectureValidator {
@@ -76,6 +84,8 @@ impl ArchitectureValidator {
             tests: TestValidator::new(root.clone()),
             documentation: DocumentationValidator::new(root.clone()),
             naming: NamingValidator::new(root.clone()),
+            solid: SolidValidator::new(root.clone()),
+            organization: OrganizationValidator::new(root.clone()),
             workspace_root: root,
         }
     }
@@ -88,13 +98,17 @@ impl ArchitectureValidator {
         let test_violations = self.tests.validate_all()?;
         let doc_violations = self.documentation.validate_all()?;
         let naming_violations = self.naming.validate_all()?;
+        let solid_violations = self.solid.validate_all()?;
+        let organization_violations = self.organization.validate_all()?;
 
         let total = dependency_violations.len()
             + quality_violations.len()
             + pattern_violations.len()
             + test_violations.len()
             + doc_violations.len()
-            + naming_violations.len();
+            + naming_violations.len()
+            + solid_violations.len()
+            + organization_violations.len();
 
         let summary = ValidationSummary {
             total_violations: total,
@@ -104,6 +118,8 @@ impl ArchitectureValidator {
             test_count: test_violations.len(),
             documentation_count: doc_violations.len(),
             naming_count: naming_violations.len(),
+            solid_count: solid_violations.len(),
+            organization_count: organization_violations.len(),
             passed: total == 0,
         };
 
@@ -117,6 +133,8 @@ impl ArchitectureValidator {
             test_violations,
             documentation_violations: doc_violations,
             naming_violations,
+            solid_violations,
+            organization_violations,
         })
     }
 
@@ -148,6 +166,16 @@ impl ArchitectureValidator {
     /// Run only naming validation
     pub fn validate_naming(&mut self) -> Result<Vec<NamingViolation>> {
         self.naming.validate_all()
+    }
+
+    /// Run only SOLID principle validation
+    pub fn validate_solid(&mut self) -> Result<Vec<SolidViolation>> {
+        self.solid.validate_all()
+    }
+
+    /// Run only organization validation
+    pub fn validate_organization(&mut self) -> Result<Vec<OrganizationViolation>> {
+        self.organization.validate_all()
     }
 }
 

@@ -83,11 +83,11 @@
 //! ```rust,no_run
 //! use std::sync::Arc;
 //! use mcb_infrastructure::cache::SharedCacheProvider;
-//! use mcb_infrastructure::auth::AuthService;
+//! use mcb_infrastructure::crypto::CryptoService;
 //!
 //! struct MyService {
 //!     cache: SharedCacheProvider,
-//!     auth: Arc<AuthService>,
+//!     crypto: Arc<CryptoService>,
 //! }
 //! ```
 

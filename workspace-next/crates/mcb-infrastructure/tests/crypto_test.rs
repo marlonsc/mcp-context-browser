@@ -47,8 +47,8 @@ fn test_token_generator() {
 fn test_hash_utils_hmac() {
     let key = b"secret_key";
     let data = b"test_data";
-    let hmac1 = HashUtils::hmac_sha256(key, data);
-    let hmac2 = HashUtils::hmac_sha256(key, data);
+    let hmac1 = HashUtils::hmac_sha256(key, data).expect("HMAC should succeed");
+    let hmac2 = HashUtils::hmac_sha256(key, data).expect("HMAC should succeed");
 
     assert_eq!(hmac1, hmac2);
     assert_eq!(hmac1.len(), 32); // SHA256 output size

@@ -1,7 +1,6 @@
 //! Configuration Loader Tests
 
 use mcb_infrastructure::config::loader::{ConfigBuilder, ConfigLoader};
-use mcb_infrastructure::config::AppConfig;
 use mcb_infrastructure::constants::{DEFAULT_HTTP_PORT, DEFAULT_LOG_LEVEL};
 use tempfile::TempDir;
 

@@ -253,13 +253,17 @@ pub struct HashUtils;
 
 impl HashUtils {
     /// Compute HMAC-SHA256
-    pub fn hmac_sha256(key: &[u8], data: &[u8]) -> Vec<u8> {
+    pub fn hmac_sha256(key: &[u8], data: &[u8]) -> Result<Vec<u8>> {
         use hmac::{Hmac, Mac};
         type HmacSha256 = Hmac<Sha256>;
-        let mut mac =
-            <HmacSha256 as Mac>::new_from_slice(key).expect("HMAC key size should be valid");
+        let mut mac = <HmacSha256 as Mac>::new_from_slice(key).map_err(|e| {
+            Error::Infrastructure {
+                message: format!("HMAC initialization failed: {}", e),
+                source: None,
+            }
+        })?;
         mac.update(data);
-        mac.finalize().into_bytes().to_vec()
+        Ok(mac.finalize().into_bytes().to_vec())
     }
 
     /// Constant-time comparison for cryptographic values

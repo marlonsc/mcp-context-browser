@@ -114,7 +114,8 @@ impl CacheProvider for MokaCacheProvider {
     }
 
     async fn stats(&self) -> Result<CacheStats> {
-        // Moka doesn't provide detailed stats, so we return basic info
+        // Run pending tasks to ensure entry_count is accurate
+        self.cache.run_pending_tasks().await;
         let entries = self.cache.entry_count();
 
         Ok(CacheStats {
@@ -127,6 +128,8 @@ impl CacheProvider for MokaCacheProvider {
     }
 
     async fn size(&self) -> Result<usize> {
+        // Run pending tasks to ensure entry_count is accurate
+        self.cache.run_pending_tasks().await;
         Ok(self.cache.entry_count() as usize)
     }
 }
