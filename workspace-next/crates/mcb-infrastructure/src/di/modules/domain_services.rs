@@ -32,24 +32,42 @@ pub struct DomainServicesContainer {
 pub struct DomainServicesFactory;
 
 impl DomainServicesFactory {
-    /// Create domain services using DI container
-    ///
-    /// Note: This factory now expects the services to be resolved from a DI container
-    /// that has been properly configured with the application use cases.
-    pub fn create_services_from_container(
-        container: &(impl shaku::HasComponent<dyn ContextServiceInterface>
-            + shaku::HasComponent<dyn SearchServiceInterface>
-            + shaku::HasComponent<dyn IndexingServiceInterface>),
-    ) -> DomainServicesContainer {
-        let context_service = container.resolve_ref();
-        let search_service = container.resolve_ref();
-        let indexing_service = container.resolve_ref();
+    /// Create domain services using infrastructure components
+    pub async fn create_services(
+        cache: SharedCacheProvider,
+        _crypto: CryptoService,
+        _config: AppConfig,
+        embedding_provider: Arc<dyn EmbeddingProvider>,
+        vector_store_provider: Arc<dyn VectorStoreProvider>,
+        language_chunker: Arc<dyn mcb_domain::ports::providers::LanguageChunkingProvider>,
+    ) -> Result<DomainServicesContainer> {
+        // Create context service with dependencies
+        let context_service: Arc<dyn ContextServiceInterface> = Arc::new(
+            mcb_application::use_cases::ContextServiceImpl::new(
+                cache.into(),
+                embedding_provider,
+                vector_store_provider,
+            )
+        );
 
-        DomainServicesContainer {
-            context_service: Arc::clone(context_service),
-            search_service: Arc::clone(search_service),
-            indexing_service: Arc::clone(indexing_service),
-        }
+        // Create search service with context service dependency
+        let search_service: Arc<dyn SearchServiceInterface> = Arc::new(
+            mcb_application::use_cases::SearchServiceImpl::new(Arc::clone(&context_service))
+        );
+
+        // Create indexing service with context service and language chunker dependency
+        let indexing_service: Arc<dyn IndexingServiceInterface> = Arc::new(
+            mcb_application::use_cases::IndexingServiceImpl::new(
+                Arc::clone(&context_service),
+                language_chunker,
+            )
+        );
+
+        Ok(DomainServicesContainer {
+            context_service,
+            search_service,
+            indexing_service,
+        })
     }
 }
 

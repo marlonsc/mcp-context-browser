@@ -5,10 +5,10 @@
 //!
 //! ## Services Provided
 //!
+//! - Cache provider (with null fallback for testing)
 //! - Embedding provider (with null fallback for testing)
 //! - Vector store provider (with null fallback for testing)
-//! - Chunk repository for data persistence
-//! - Search repository for semantic search operations
+//! - Language chunking provider (universal implementation)
 //!
 //! ## Clean Architecture Note
 //!
@@ -19,6 +19,7 @@
 use shaku::module;
 
 // Import null providers from mcb-providers crate
+use mcb_providers::cache::NullCacheProvider;
 use mcb_providers::embedding::NullEmbeddingProvider;
 use mcb_providers::language::UniversalLanguageChunkingProvider;
 use mcb_providers::vector_store::NullVectorStoreProvider;
@@ -55,6 +56,7 @@ module! {
     pub AdaptersModuleImpl: AdaptersModule {
         components = [
             // Null providers (testing fallbacks, overridden in production)
+            NullCacheProvider,
             NullEmbeddingProvider,
             NullVectorStoreProvider,
             UniversalLanguageChunkingProvider

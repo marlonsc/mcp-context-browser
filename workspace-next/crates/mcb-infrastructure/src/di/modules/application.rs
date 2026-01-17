@@ -1,41 +1,45 @@
-//! Application Module Implementation - Use Cases and Business Logic
+//! Application Module Implementation - Placeholder for Shaku Module Hierarchy
 //!
-//! This module provides application services (use cases) that orchestrate
-//! business logic and coordinate between domain entities and external ports.
+//! This module is a **placeholder** for the Shaku module hierarchy.
 //!
-//! ## Services Provided
+//! ## Why Services Are NOT Registered Here
 //!
-//! - ContextService: Manages embeddings and vector storage for semantic understanding
-//! - SearchService: Provides semantic search capabilities
-//! - IndexingService: Handles code indexing and ingestion operations
+//! Application services (ContextService, SearchService, IndexingService) have complex
+//! dependencies that cannot be resolved through Shaku's static module system:
 //!
-//! ## Dependencies
+//! - They depend on runtime-configured providers (embedding, vector store)
+//! - They depend on infrastructure components that require async initialization
+//! - They need dependencies from multiple modules that can't be wired at compile-time
 //!
-//! Application services depend on:
-//! - Cache providers (from AdaptersModule)
-//! - Embedding providers (from AdaptersModule)
-//! - Vector store providers (from AdaptersModule)
-//! - Language chunking providers (from AdaptersModule)
+//! ## Correct Pattern
+//!
+//! Services are created at runtime via `DomainServicesFactory::create_services()` in
+//! `domain_services.rs`. This allows:
+//!
+//! - Async initialization of dependencies
+//! - Runtime configuration of providers
+//! - Proper dependency injection without Shaku limitations
+//!
+//! ## Usage
+//!
+//! ```rust,ignore
+//! // 1. Build Shaku modules (placeholder only)
+//! let application = ApplicationModuleImpl::builder().build();
+//!
+//! // 2. Create services via factory (with runtime dependencies)
+//! let services = DomainServicesFactory::create_services_from_container(&container);
+//! ```
 
 use shaku::module;
-
-// Import application use cases
-use mcb_application::use_cases::{ContextServiceImpl, IndexingServiceImpl, SearchServiceImpl};
 
 // Import traits
 use super::traits::ApplicationModule;
 
-/// Application module implementation - Use Cases and Business Logic
+/// Application module implementation - **Placeholder only**.
 ///
-/// This module provides application services that orchestrate business logic.
-/// Services depend on providers from the adapters module.
-///
-/// ## Dependencies
-///
-/// - Cache providers (from AdaptersModule)
-/// - Embedding providers (from AdaptersModule)
-/// - Vector store providers (from AdaptersModule)
-/// - Language chunking providers (from AdaptersModule)
+/// This module exists to satisfy the Shaku module hierarchy but
+/// does NOT register any components. Application services are
+/// created via `DomainServicesFactory` at runtime.
 ///
 /// ## Construction
 ///
@@ -44,12 +48,7 @@ use super::traits::ApplicationModule;
 /// ```
 module! {
     pub ApplicationModuleImpl: ApplicationModule {
-        components = [
-            // Application use cases - business logic orchestration
-            ContextServiceImpl,
-            SearchServiceImpl,
-            IndexingServiceImpl
-        ],
+        components = [],
         providers = []
     }
 }

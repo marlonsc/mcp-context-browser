@@ -318,6 +318,9 @@ impl FullContainer {
             &infrastructure.crypto,
         )?;
 
+        // Create language chunking provider
+        let language_chunker = Arc::new(mcb_providers::language::UniversalLanguageChunkingProvider::new());
+
         // Create domain services
         let services = DomainServicesFactory::create_services(
             infrastructure.cache.clone(),
@@ -325,6 +328,7 @@ impl FullContainer {
             config,
             embedding_provider,
             vector_store_provider,
+            language_chunker,
         )
         .await?;
 

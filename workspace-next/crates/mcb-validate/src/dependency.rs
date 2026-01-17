@@ -18,17 +18,19 @@ use walkdir::WalkDir;
 ///
 /// Architecture layers:
 /// - mcb-domain: Pure domain layer (ports, entities, value objects) - no internal deps
+/// - mcb-application: Use cases and business logic orchestration - depends on mcb-domain
 /// - mcb-providers: Adapter implementations of domain ports - depends on mcb-domain
-/// - mcb-infrastructure: DI composition root and cross-cutting concerns - depends on mcb-domain and mcb-providers for wiring
-/// - mcb-server: Transport layer - depends on mcb-domain and mcb-infrastructure
+/// - mcb-infrastructure: DI composition root and cross-cutting concerns - depends on mcb-domain, mcb-application, and mcb-providers
+/// - mcb-server: Transport layer - depends on mcb-domain, mcb-application, and mcb-infrastructure
 /// - mcb: Facade crate that re-exports the entire public API
 /// - mcb-validate: Development tool, not part of runtime dependency graph
 const ALLOWED_DEPS: &[(&str, &[&str])] = &[
     ("mcb-domain", &[]),
+    ("mcb-application", &["mcb-domain"]),
     ("mcb-providers", &["mcb-domain"]),
-    ("mcb-infrastructure", &["mcb-domain", "mcb-providers"]),
-    ("mcb-server", &["mcb-domain", "mcb-infrastructure", "mcb-providers"]),
-    ("mcb", &["mcb-domain", "mcb-infrastructure", "mcb-server", "mcb-providers"]),
+    ("mcb-infrastructure", &["mcb-domain", "mcb-application", "mcb-providers"]),
+    ("mcb-server", &["mcb-domain", "mcb-application", "mcb-infrastructure"]),
+    ("mcb", &["mcb-domain", "mcb-application", "mcb-infrastructure", "mcb-server", "mcb-providers"]),
     ("mcb-validate", &[]),
 ];
 

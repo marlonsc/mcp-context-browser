@@ -79,11 +79,16 @@ use std::sync::Arc;
 // Import provider traits from mcb-domain
 use mcb_domain::ports::providers::{EmbeddingProvider, VectorStoreProvider};
 
+// TODO: Implement AppModule for clean composition
+// Currently using McpModule for compatibility
+
 // ============================================================================
 // Root Module Definition
 // ============================================================================
 
-/// Root dependency injection module following Shaku hierarchical pattern.
+/// Legacy root dependency injection module.
+///
+/// **Deprecated**: Use `AppModule` instead for cleaner composition.
 ///
 /// This module composes all domain modules into a single container.
 /// It uses `use dyn ModuleTrait` to import services from submodules,
