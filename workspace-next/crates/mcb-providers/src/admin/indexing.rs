@@ -13,6 +13,8 @@ use uuid::Uuid;
 /// Default indexing operations tracker
 ///
 /// Thread-safe implementation using DashMap for concurrent access.
+///
+/// **Note**: This type can be used in Shaku DI modules.
 #[derive(shaku::Component)]
 #[shaku(interface = mcb_domain::ports::admin::IndexingOperationsInterface)]
 pub struct DefaultIndexingOperations {

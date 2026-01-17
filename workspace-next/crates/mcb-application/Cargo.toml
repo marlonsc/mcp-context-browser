@@ -1,0 +1,48 @@
+[package]
+name = "mcb-application"
+version = "0.1.1"
+edition = "2021"
+authors = ["Marlon Costa <marlonsc@gmail.com>"]
+license = "MIT"
+keywords = ["application", "use-cases", "mcp", "semantic-search"]
+categories = ["development-tools", "api-bindings"]
+description = "Application layer for MCP Context Browser - Use cases and business logic orchestration"
+readme = "README.md"
+repository = "https://github.com/marlonsc/mcp-context-browser"
+homepage = "https://github.com/marlonsc/mcp-context-browser"
+rust-version = "1.89"
+
+[lib]
+name = "mcb_application"
+path = "src/lib.rs"
+
+[dependencies]
+# Domain layer - core business logic and port traits
+mcb-domain = { path = "../mcb-domain" }
+
+# Core async runtime
+tokio = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Error handling
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+
+# Async traits
+async-trait = { workspace = true }
+
+# Dependency injection
+shaku = { workspace = true }
+
+# Utilities
+uuid = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3.10"
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }

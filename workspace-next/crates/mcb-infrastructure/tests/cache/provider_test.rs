@@ -3,13 +3,13 @@
 //! Tests for SharedCacheProvider and namespacing.
 
 use mcb_domain::ports::providers::cache::CacheEntryConfig;
-use mcb_infrastructure::cache::provider::{CacheProviderType, SharedCacheProvider};
+use mcb_infrastructure::cache::provider::SharedCacheProvider;
 use mcb_providers::cache::NullCacheProvider;
 use std::time::Duration;
 
 #[tokio::test]
 async fn test_shared_cache_provider_basic_operations() {
-    let provider = SharedCacheProvider::new(CacheProviderType::Null(NullCacheProvider::new()));
+    let provider = SharedCacheProvider::new(NullCacheProvider::new());
 
     // Test basic operations (NullCacheProvider always returns None/Ok)
     assert_eq!(provider.get::<String>("test").await.unwrap(), None);
@@ -24,7 +24,7 @@ async fn test_shared_cache_provider_basic_operations() {
 
 #[tokio::test]
 async fn test_shared_cache_provider_namespacing() {
-    let provider = SharedCacheProvider::new(CacheProviderType::Null(NullCacheProvider::new()));
+    let provider = SharedCacheProvider::new(NullCacheProvider::new());
 
     // Test namespaced operations
     let namespaced = provider.namespaced("test_ns");

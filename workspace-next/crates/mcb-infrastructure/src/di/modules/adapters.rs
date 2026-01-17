@@ -18,11 +18,9 @@
 
 use shaku::module;
 
-// Import null providers from local adapters module (not mcb-providers!)
-use crate::adapters::providers::{NullEmbeddingProvider, NullVectorStoreProvider};
-
-// Import null repositories from adapters bridge
-use crate::adapters::repository::{NullChunkRepository, NullSearchRepository};
+// Import null providers from mcb-providers crate
+use mcb_providers::embedding::NullEmbeddingProvider;
+use mcb_providers::vector_store::NullVectorStoreProvider;
 
 // Import traits
 use super::traits::AdaptersModule;

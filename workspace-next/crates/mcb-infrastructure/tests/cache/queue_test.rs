@@ -1,13 +1,13 @@
 //! Cache Queue and Batch Processing Tests
 
 use mcb_domain::ports::providers::cache::CacheEntryConfig;
-use mcb_infrastructure::cache::provider::{CacheProviderType, SharedCacheProvider};
+use mcb_infrastructure::cache::provider::SharedCacheProvider;
 use mcb_providers::cache::NullCacheProvider;
 use mcb_infrastructure::cache::queue::{CacheAsideHelper, CacheBatchProcessor};
 
 #[tokio::test]
 async fn test_batch_processor_basic_operations() {
-    let provider = SharedCacheProvider::new(CacheProviderType::Null(NullCacheProvider::new()));
+    let provider = SharedCacheProvider::new(NullCacheProvider::new());
     let processor = CacheBatchProcessor::new(provider, 10);
 
     // Queue operations
@@ -26,7 +26,7 @@ async fn test_batch_processor_basic_operations() {
 
 #[tokio::test]
 async fn test_batch_processor_auto_flush() {
-    let provider = SharedCacheProvider::new(CacheProviderType::Null(NullCacheProvider::new()));
+    let provider = SharedCacheProvider::new(NullCacheProvider::new());
     let processor = CacheBatchProcessor::new(provider, 2); // Small batch size
 
     // Add operations that should trigger auto-flush
@@ -46,7 +46,7 @@ async fn test_batch_processor_auto_flush() {
 
 #[tokio::test]
 async fn test_cache_aside_helper() {
-    let provider = SharedCacheProvider::new(CacheProviderType::Null(NullCacheProvider::new()));
+    let provider = SharedCacheProvider::new(NullCacheProvider::new());
     let helper = CacheAsideHelper::new(provider);
 
     let mut call_count = 0;

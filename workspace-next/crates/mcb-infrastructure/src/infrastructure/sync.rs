@@ -1,12 +1,73 @@
-//! Distributed Lock Adapter
+//! Sync and Lock Provider Adapters
 //!
-//! Null implementation of the distributed lock port for testing.
+//! Null implementations for both file sync coordination and distributed locking.
 
 use async_trait::async_trait;
 use mcb_domain::error::Result;
-use mcb_domain::ports::infrastructure::{LockGuard, LockProvider};
+use mcb_domain::ports::infrastructure::{LockGuard, LockProvider, SyncProvider};
+use mcb_domain::value_objects::config::SyncBatch;
+use std::path::Path;
+use std::time::Duration;
 
-/// Null implementation for testing and Shaku DI default
+// ============================================================================
+// Sync Provider (File Sync Coordination)
+// ============================================================================
+
+/// Null sync provider for testing and Shaku DI default
+///
+/// Returns default values without performing actual file system operations.
+#[derive(shaku::Component)]
+#[shaku(interface = SyncProvider)]
+pub struct NullSyncProvider;
+
+impl NullSyncProvider {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+impl Default for NullSyncProvider {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[async_trait]
+impl SyncProvider for NullSyncProvider {
+    async fn should_debounce(&self, _codebase_path: &Path) -> Result<bool> {
+        Ok(false)
+    }
+
+    async fn update_last_sync(&self, _codebase_path: &Path) {
+        // No-op for null implementation
+    }
+
+    async fn acquire_sync_slot(&self, _codebase_path: &Path) -> Result<Option<SyncBatch>> {
+        Ok(None)
+    }
+
+    async fn release_sync_slot(&self, _codebase_path: &Path, _batch: SyncBatch) -> Result<()> {
+        Ok(())
+    }
+
+    async fn get_changed_files(&self, _codebase_path: &Path) -> Result<Vec<String>> {
+        Ok(Vec::new())
+    }
+
+    fn sync_interval(&self) -> Duration {
+        Duration::from_secs(60)
+    }
+
+    fn debounce_interval(&self) -> Duration {
+        Duration::from_secs(5)
+    }
+}
+
+// ============================================================================
+// Lock Provider (Distributed Locking)
+// ============================================================================
+
+/// Null lock provider for testing and Shaku DI default
 #[derive(shaku::Component)]
 #[shaku(interface = LockProvider)]
 pub struct NullLockProvider;

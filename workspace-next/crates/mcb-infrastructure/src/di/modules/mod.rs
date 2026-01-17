@@ -114,12 +114,11 @@ module! {
         // Infrastructure services (COMPLETE - all with Component derive)
         use dyn InfrastructureModule {
             components = [
-                dyn mcb_domain::ports::providers::cache::CacheProvider,
                 dyn mcb_domain::ports::infrastructure::AuthServiceInterface,
                 dyn mcb_domain::ports::infrastructure::EventBusProvider,
                 dyn mcb_domain::ports::infrastructure::SystemMetricsCollectorInterface,
-                dyn mcb_domain::ports::infrastructure::StateStoreProvider,
-                dyn mcb_domain::ports::infrastructure::LockProvider
+                dyn mcb_domain::ports::infrastructure::SnapshotProvider,
+                dyn mcb_domain::ports::infrastructure::SyncProvider
             ],
             providers = []
         },

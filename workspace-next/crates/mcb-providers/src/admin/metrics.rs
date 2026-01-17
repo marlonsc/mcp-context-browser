@@ -12,6 +12,8 @@ use std::time::Instant;
 ///
 /// Thread-safe implementation of PerformanceMetricsInterface using atomic operations.
 /// Tracks queries, response times, cache hits, and active connections.
+///
+/// **Note**: This type can be used in Shaku DI modules.
 #[derive(shaku::Component)]
 #[shaku(interface = mcb_domain::ports::admin::PerformanceMetricsInterface)]
 pub struct AtomicPerformanceMetrics {

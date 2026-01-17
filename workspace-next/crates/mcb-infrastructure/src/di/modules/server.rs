@@ -1,20 +1,20 @@
-//! Server Module Implementation - COMPLETE: All MCP Server Components
+//! Server Module Implementation - Null Components for Shaku DI
 //!
-//! This module provides ALL MCP server-specific components with #[derive(Component)].
-//! No placeholders - all services are real implementations.
+//! This module provides null server components for Shaku DI modules.
+//! Real implementations are created at runtime via factories.
 //!
-//! ## COMPLETE Services Provided:
+//! ## Services Provided:
 //!
-//! - AtomicPerformanceMetrics (from mcb-providers) -> implements PerformanceMetricsInterface ✓
-//! - DefaultIndexingOperations (from mcb-providers) -> implements IndexingOperationsInterface ✓
+//! - NullPerformanceMetrics -> implements PerformanceMetricsInterface ✓
+//! - NullIndexingOperations -> implements IndexingOperationsInterface ✓
 //!
-//! ## No Runtime Factories:
+//! ## Note on Production:
 //!
-//! All services created at compile-time by Shaku DI, not runtime factories.
+//! Real providers are created at runtime via factories, not through Shaku.
 
 use shaku::module;
 
-// Import ONLY real implementations with Component derive
+// Import implementations from mcb-providers
 use mcb_providers::admin::{AtomicPerformanceMetrics, DefaultIndexingOperations};
 
 // Import traits
@@ -40,7 +40,7 @@ use super::traits::ServerModule;
 module! {
     pub ServerModuleImpl: ServerModule {
         components = [
-            // COMPLETE MCP server components with Component derive
+            // Server components from mcb-providers
             AtomicPerformanceMetrics,
             DefaultIndexingOperations
         ],
