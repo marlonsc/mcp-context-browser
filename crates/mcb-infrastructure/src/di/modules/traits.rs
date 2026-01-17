@@ -1,12 +1,13 @@
 //! Module Trait Interfaces - Shaku Strict Pattern
 //!
-//! These traits define the interfaces for domain-specific DI modules.
-//! Each trait represents a bounded context in the Clean Architecture.
+//! These traits define the interfaces for internal infrastructure DI modules.
+//! External providers (embedding, vector_store, cache, language) are resolved
+//! via the registry system in `di/resolver.rs`.
 //!
-//! ## Note on Runtime Services
+//! ## Note on Provider Resolution
 //!
-//! Many services are created at runtime via DomainServicesFactory rather than
-//! through Shaku DI, because they require runtime configuration.
+//! External providers are resolved dynamically via `resolve_providers()`.
+//! Only internal infrastructure services use Shaku DI.
 
 use shaku::HasComponent;
 
@@ -37,40 +38,6 @@ pub trait InfrastructureModule:
 pub trait ServerModule:
     HasComponent<dyn mcb_application::ports::admin::PerformanceMetricsInterface>
     + HasComponent<dyn mcb_application::ports::admin::IndexingOperationsInterface>
-{
-}
-
-// ============================================================================
-// Context Modules (Clean Architecture Pattern)
-// ============================================================================
-
-/// Cache module trait - caching services.
-pub trait CacheModule:
-    HasComponent<dyn mcb_application::ports::providers::cache::CacheProvider>
-{
-}
-
-/// Embedding module trait - text embedding services.
-pub trait EmbeddingModule:
-    HasComponent<dyn mcb_application::ports::providers::EmbeddingProvider>
-{
-}
-
-/// Data module trait - data persistence services.
-pub trait DataModule:
-    HasComponent<dyn mcb_application::ports::providers::VectorStoreProvider>
-{
-}
-
-/// Language module trait - code processing services.
-pub trait LanguageModule:
-    HasComponent<dyn mcb_application::ports::providers::LanguageChunkingProvider>
-{
-}
-
-/// Routing module trait - provider routing and selection services.
-pub trait RoutingModule:
-    HasComponent<dyn mcb_application::ports::infrastructure::ProviderRouter>
 {
 }
 

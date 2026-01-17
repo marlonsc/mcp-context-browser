@@ -1,148 +1,140 @@
 //! DI Container Bootstrap - Clean Architecture Composition Root
 //!
 //! Provides the composition root for the dependency injection system following
-//! Clean Architecture principles with Shaku modules.
+//! Clean Architecture principles.
 //!
-//! ## Architecture (Shaku DI)
+//! ## Architecture
 //!
-//! All providers are registered as Shaku Components in their respective modules.
-//! The bootstrap composes modules with their default Components (NullProviders).
-//!
-//! For production providers, use `with_component_override` when building modules
-//! in the server layer (mcb-server/init.rs).
+//! External providers (embedding, vector_store, cache, language) are resolved
+//! dynamically via the registry system. Internal infrastructure services use
+//! Shaku DI modules.
 //!
 //! ## Usage
 //!
 //! ```rust,ignore
-//! // Create AppContainer with default providers (NullProviders for testing)
-//! let app_container = init_app(AppConfig::default()).await?;
+//! // Create AppContext with resolved providers
+//! let context = init_app(AppConfig::default()).await?;
 //!
-//! // Resolve providers via Shaku DI
-//! let embedding: Arc<dyn EmbeddingProvider> = app_container.embedding.resolve();
-//! let vector_store: Arc<dyn VectorStoreProvider> = app_container.data.resolve();
+//! // Use providers
+//! let embedding = context.providers.embedding.embed("hello").await?;
 //! ```
 
 use crate::config::AppConfig;
+use crate::di::resolver::{resolve_providers, ResolvedProviders};
 use mcb_domain::error::Result;
 use tracing::info;
 
-// Import Shaku module implementations
+// Import Shaku module implementations for internal infrastructure
 use super::modules::{
-    admin::AdminModuleImpl, cache_module::CacheModuleImpl, data_module::DataModuleImpl,
-    embedding_module::EmbeddingModuleImpl, infrastructure::InfrastructureModuleImpl,
-    language_module::LanguageModuleImpl, server::ServerModuleImpl,
+    admin::AdminModuleImpl, infrastructure::InfrastructureModuleImpl, server::ServerModuleImpl,
 };
 
-/// Type alias for the root DI container (AppContainer with Shaku modules).
-pub type DiContainer = AppContainer;
+/// Application context with resolved providers and infrastructure modules
+///
+/// This is the composition root that combines:
+/// - External providers resolved from registry (embedding, vector_store, cache, language)
+/// - Internal infrastructure services via Shaku modules
+pub struct AppContext {
+    /// Application configuration
+    pub config: AppConfig,
+    /// Resolved external providers
+    pub providers: ResolvedProviders,
+    /// Infrastructure module (auth, events, metrics, sync, snapshot)
+    pub infrastructure: InfrastructureModuleImpl,
+    /// Server module (performance metrics, indexing operations)
+    pub server: ServerModuleImpl,
+    /// Admin module (marker for future admin services)
+    pub admin: AdminModuleImpl,
+}
 
-/// Container builder for Shaku-based DI system.
+impl std::fmt::Debug for AppContext {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AppContext")
+            .field("providers", &self.providers)
+            .finish_non_exhaustive()
+    }
+}
+
+/// Initialize application context with resolved providers
 ///
-/// Builds the hierarchical module structure with null providers as defaults.
-/// For production usage, create providers via factories and pass to DomainServicesFactory.
+/// Resolves external providers from registry and builds internal Shaku modules.
 ///
-/// ## Example (Testing)
-/// ```rust,ignore
-/// let container = DiContainerBuilder::new().build().await?;
-/// // Uses null providers from Shaku modules
+/// ## Example
+///
+/// ```ignore
+/// let context = init_app(config).await?;
+/// let embedding = context.providers.embedding;
 /// ```
+pub async fn init_app(config: AppConfig) -> Result<AppContext> {
+    info!("Initializing application context");
+
+    // Resolve external providers from registry
+    let providers = resolve_providers(&config)?;
+    info!("Resolved providers: {:?}", providers);
+
+    // Build internal infrastructure modules via Shaku
+    let infrastructure = InfrastructureModuleImpl::builder().build();
+    let server = ServerModuleImpl::builder().build();
+    let admin = AdminModuleImpl::builder().build();
+
+    info!("Application context initialized");
+
+    Ok(AppContext {
+        config,
+        providers,
+        infrastructure,
+        server,
+        admin,
+    })
+}
+
+/// Initialize application for testing
 ///
-/// ## Example (Production)
-/// See `mcb_server::init::run_server` for the complete production flow.
+/// Uses null/test providers by default.
+pub async fn init_test_app() -> Result<AppContext> {
+    let config = AppConfig::default();
+    init_app(config).await
+}
+
+// ============================================================================
+// Legacy Types (for backward compatibility during migration)
+// ============================================================================
+
+/// Type alias for backward compatibility
+pub type DiContainer = AppContext;
+
+/// Legacy container builder (deprecated, use init_app directly)
+#[deprecated(note = "Use init_app() directly")]
 pub struct DiContainerBuilder {
     config: Option<AppConfig>,
 }
 
+#[allow(deprecated)]
 impl DiContainerBuilder {
-    /// Create a new container builder (null providers by default)
     pub fn new() -> Self {
         Self { config: None }
     }
 
-    /// Create a container builder with configuration
     pub fn with_config(config: AppConfig) -> Self {
         Self {
             config: Some(config),
         }
     }
 
-    /// Build the DI container with hierarchical module composition
-    pub async fn build(self) -> Result<DiContainer> {
+    pub async fn build(self) -> Result<AppContext> {
         let config = self.config.unwrap_or_default();
         init_app(config).await
     }
 }
 
+#[allow(deprecated)]
 impl Default for DiContainerBuilder {
     fn default() -> Self {
         Self::new()
     }
 }
 
-/// Convenience function to create DI container for testing
-pub async fn create_test_container() -> Result<DiContainer> {
-    DiContainerBuilder::new().build().await
-}
-
-// ============================================================================
-// Clean Architecture App Module (Hierarchical Composition)
-// ============================================================================
-
-/// Application container using Clean Architecture modules
-///
-/// Contains only the essential modules following Clean Architecture:
-/// - Context modules: cache, embedding, data, language (provider implementations)
-/// - Infrastructure modules: infrastructure (cross-cutting), server (MCP), admin
-pub struct AppContainer {
-    /// Cache provider module (NullCacheProvider by default)
-    pub cache: CacheModuleImpl,
-    /// Embedding provider module (NullEmbeddingProvider by default)
-    pub embedding: EmbeddingModuleImpl,
-    /// Data/vector store provider module (NullVectorStoreProvider by default)
-    pub data: DataModuleImpl,
-    /// Language chunking module (UniversalLanguageChunkingProvider)
-    pub language: LanguageModuleImpl,
-    /// Core infrastructure services (auth, events, metrics, sync, snapshot)
-    pub infrastructure: InfrastructureModuleImpl,
-    /// MCP server components (performance metrics, indexing operations)
-    pub server: ServerModuleImpl,
-    /// Admin services (performance metrics, shutdown coordination)
-    pub admin: AdminModuleImpl,
-}
-
-/// Initialize the application with Shaku DI modules
-///
-/// All providers are resolved via Shaku - uses default Components (NullProviders).
-/// For production providers, build modules with `with_component_override` in mcb-server.
-///
-/// ## Example
-///
-/// ```ignore
-/// // Uses default NullProviders
-/// let container = init_app(AppConfig::default()).await?;
-/// ```
-pub async fn init_app(_config: AppConfig) -> Result<AppContainer> {
-    info!("Initializing Shaku DI modules");
-
-    // Build all modules with Shaku - uses default Components (NullProviders)
-    let cache = CacheModuleImpl::builder().build();
-    let embedding = EmbeddingModuleImpl::builder().build();
-    let data = DataModuleImpl::builder().build();
-    let language = LanguageModuleImpl::builder().build();
-    let infrastructure = InfrastructureModuleImpl::builder().build();
-    let server = ServerModuleImpl::builder().build();
-    let admin = AdminModuleImpl::builder().build();
-
-    let app_container = AppContainer {
-        cache,
-        embedding,
-        data,
-        language,
-        infrastructure,
-        server,
-        admin,
-    };
-
-    info!("Shaku DI modules initialized");
-    Ok(app_container)
+/// Convenience function to create context for testing
+pub async fn create_test_container() -> Result<AppContext> {
+    init_test_app().await
 }

@@ -20,10 +20,9 @@ use mcb_application::ports::providers::{
 };
 use mcb_application::use_cases::{ContextServiceImpl, IndexingServiceImpl, SearchServiceImpl};
 use mcb_domain::error::Result;
-use shaku::HasComponent;
 use std::sync::Arc;
 
-use super::super::bootstrap::AppContainer;
+use super::super::bootstrap::AppContext;
 
 /// Domain services container
 #[derive(Clone)]
@@ -85,16 +84,15 @@ impl DomainServicesFactory {
         })
     }
 
-    /// Create indexing service from app container
+    /// Create indexing service from app context
     pub async fn create_indexing_service(
-        app_container: &AppContainer,
+        app_context: &AppContext,
     ) -> Result<Arc<dyn IndexingServiceInterface>> {
-        // Get dependencies from modules
-        let _cache_provider = app_container.cache.resolve();
-        let language_chunker = app_container.language.resolve();
+        // Get providers from resolved providers
+        let language_chunker = Arc::clone(&app_context.providers.language);
 
         // Create context service first (dependency)
-        let context_service = Self::create_context_service(app_container).await?;
+        let context_service = Self::create_context_service(app_context).await?;
 
         Ok(Arc::new(IndexingServiceImpl::new(
             context_service,
@@ -102,14 +100,14 @@ impl DomainServicesFactory {
         )))
     }
 
-    /// Create context service from app container
+    /// Create context service from app context
     pub async fn create_context_service(
-        app_container: &AppContainer,
+        app_context: &AppContext,
     ) -> Result<Arc<dyn ContextServiceInterface>> {
-        // Get dependencies from modules
-        let cache_provider = app_container.cache.resolve();
-        let embedding_provider = app_container.embedding.resolve();
-        let vector_store_provider = app_container.data.resolve();
+        // Get providers from resolved providers
+        let cache_provider = Arc::clone(&app_context.providers.cache);
+        let embedding_provider = Arc::clone(&app_context.providers.embedding);
+        let vector_store_provider = Arc::clone(&app_context.providers.vector_store);
 
         Ok(Arc::new(ContextServiceImpl::new(
             cache_provider,
@@ -118,12 +116,12 @@ impl DomainServicesFactory {
         )))
     }
 
-    /// Create search service from app container
+    /// Create search service from app context
     pub async fn create_search_service(
-        app_container: &AppContainer,
+        app_context: &AppContext,
     ) -> Result<Arc<dyn SearchServiceInterface>> {
         // Create context service first (dependency)
-        let context_service = Self::create_context_service(app_container).await?;
+        let context_service = Self::create_context_service(app_context).await?;
 
         Ok(Arc::new(SearchServiceImpl::new(context_service)))
     }

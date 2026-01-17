@@ -36,6 +36,8 @@
 pub mod bootstrap;
 pub mod dispatch;
 pub mod modules;
+pub mod resolver;
 
 pub use bootstrap::*;
 pub use dispatch::*;
+pub use resolver::{resolve_providers, ResolvedProviders};

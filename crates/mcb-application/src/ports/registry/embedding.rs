@@ -111,14 +111,14 @@ pub fn resolve_embedding_provider(
 ) -> Result<Arc<dyn EmbeddingProvider>, String> {
     let provider_name = &config.provider;
 
-    for entry in inventory::iter::<EmbeddingProviderEntry> {
+    for entry in inventory::iter::<EmbeddingProviderEntry>() {
         if entry.name == provider_name {
             return (entry.factory)(config);
         }
     }
 
     // List available providers for helpful error message
-    let available: Vec<&str> = inventory::iter::<EmbeddingProviderEntry>
+    let available: Vec<&str> = inventory::iter::<EmbeddingProviderEntry>()
         .map(|e| e.name)
         .collect();
 
@@ -136,7 +136,7 @@ pub fn resolve_embedding_provider(
 /// # Returns
 /// Vector of (name, description) tuples for all registered providers
 pub fn list_embedding_providers() -> Vec<(&'static str, &'static str)> {
-    inventory::iter::<EmbeddingProviderEntry>
+    inventory::iter::<EmbeddingProviderEntry>()
         .map(|e| (e.name, e.description))
         .collect()
 }

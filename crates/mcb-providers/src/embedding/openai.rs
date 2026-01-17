@@ -213,6 +213,7 @@ inventory::submit! {
         factory: |config: &EmbeddingProviderConfig| {
             let api_key = config.api_key.clone()
                 .ok_or_else(|| "OpenAI requires api_key".to_string())?;
+            let base_url = config.base_url.clone();
             let model = config.model.clone()
                 .unwrap_or_else(|| "text-embedding-3-small".to_string());
             let timeout = Duration::from_secs(30);
@@ -222,7 +223,7 @@ inventory::submit! {
                 .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
             
             Ok(std::sync::Arc::new(OpenAIEmbeddingProvider::new(
-                api_key, model, timeout, http_client
+                api_key, base_url, model, timeout, http_client
             )))
         },
     }

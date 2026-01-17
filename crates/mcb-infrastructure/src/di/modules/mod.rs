@@ -1,47 +1,36 @@
 //! DI Module Organization - Clean Architecture Modules (Shaku Strict Pattern)
 //!
-//! This module implements a strict Shaku-based hierarchical module system
-//! following Clean Architecture and Domain-Driven Design principles.
+//! This module provides Shaku modules for internal infrastructure services only.
+//! External providers (embedding, vector_store, cache, language) are resolved
+//! dynamically via the registry system in `di/resolver.rs`.
 //!
 //! ## Module Hierarchy
 //!
 //! ```text
-//! AppContainer (composition root)
-//! ├── Context Modules (provider implementations)
-//! │   ├── CacheModule (NullCacheProvider)
-//! │   ├── EmbeddingModule (NullEmbeddingProvider)
-//! │   ├── DataModule (NullVectorStoreProvider)
-//! │   └── LanguageModule (UniversalLanguageChunkingProvider)
+//! AppContext (composition root)
+//! ├── ResolvedProviders (from registry - embedding, vector_store, cache, language)
 //! │
-//! └── Infrastructure Modules (cross-cutting services)
-//!     ├── InfrastructureModule (auth, events, metrics, sync, snapshot)
-//!     ├── RoutingModule (provider routing and selection)
+//! └── Infrastructure Modules (internal services via Shaku)
+//!     ├── InfrastructureModule (auth, metrics, sync, snapshot, shutdown)
 //!     ├── ServerModule (performance metrics, indexing operations)
 //!     └── AdminModule (marker module for future admin services)
 //! ```
 //!
 //! ## Design Notes
 //!
-//! - Services requiring runtime configuration are created via `DomainServicesFactory`
-//! - Shaku modules provide null providers as defaults, overridable at runtime
-//! - Context modules can be overridden with production providers via builder pattern
+//! - External providers are resolved via `di::resolver::resolve_providers()`
+//! - Internal infrastructure services use Shaku DI
+//! - No imports from mcb_providers in this module
 
 /// Domain module traits (interfaces for Shaku HasComponent)
 pub mod traits;
 
-/// Context modules (Clean Architecture - provider implementations)
-pub mod cache_module;
-pub mod data_module;
-pub mod embedding_module;
-pub mod language_module;
-
 /// Admin services (marker module for future admin-specific services)
 pub mod admin;
-/// Infrastructure modules
-/// Core infrastructure services (auth, events, metrics, sync, snapshot)
+
+/// Core infrastructure services (auth, metrics, sync, snapshot, shutdown)
 pub mod infrastructure;
-/// Provider routing and selection services
-pub mod routing_module;
+
 /// MCP server components (performance metrics, indexing operations)
 pub mod server;
 
@@ -50,19 +39,11 @@ pub mod domain_services;
 
 // Re-export module implementations
 pub use admin::AdminModuleImpl;
-pub use cache_module::CacheModuleImpl;
-pub use data_module::DataModuleImpl;
-pub use embedding_module::EmbeddingModuleImpl;
 pub use infrastructure::InfrastructureModuleImpl;
-pub use language_module::LanguageModuleImpl;
-pub use routing_module::RoutingModuleImpl;
 pub use server::ServerModuleImpl;
 
 // Re-export module traits
-pub use traits::{
-    AdminModule, CacheModule, DataModule, EmbeddingModule, InfrastructureModule, LanguageModule,
-    RoutingModule, ServerModule,
-};
+pub use traits::{AdminModule, InfrastructureModule, ServerModule};
 
 // Re-export Shaku for convenience
 pub use shaku::{module, HasComponent};

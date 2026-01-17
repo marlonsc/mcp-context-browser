@@ -297,3 +297,19 @@ impl mcb_application::ports::providers::LanguageChunkingProvider
         "universal-intelligent-chunker"
     }
 }
+
+// ============================================================================
+// Auto-registration via inventory
+// ============================================================================
+
+use mcb_application::ports::registry::{LanguageProviderConfig, LanguageProviderEntry};
+
+inventory::submit! {
+    LanguageProviderEntry {
+        name: "universal",
+        description: "Universal language chunker supporting all languages via tree-sitter",
+        factory: |_config: &LanguageProviderConfig| {
+            Ok(std::sync::Arc::new(UniversalLanguageChunkingProvider::new()))
+        },
+    }
+}

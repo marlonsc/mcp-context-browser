@@ -94,14 +94,14 @@ pub fn resolve_language_provider(
 ) -> Result<Arc<dyn LanguageChunkingProvider>, String> {
     let provider_name = &config.provider;
 
-    for entry in inventory::iter::<LanguageProviderEntry> {
+    for entry in inventory::iter::<LanguageProviderEntry>() {
         if entry.name == provider_name {
             return (entry.factory)(config);
         }
     }
 
     // List available providers for helpful error message
-    let available: Vec<&str> = inventory::iter::<LanguageProviderEntry>
+    let available: Vec<&str> = inventory::iter::<LanguageProviderEntry>()
         .map(|e| e.name)
         .collect();
 
@@ -116,7 +116,7 @@ pub fn resolve_language_provider(
 /// Returns a list of (name, description) tuples for all registered
 /// language chunking providers. Useful for CLI help and admin UI.
 pub fn list_language_providers() -> Vec<(&'static str, &'static str)> {
-    inventory::iter::<LanguageProviderEntry>
+    inventory::iter::<LanguageProviderEntry>()
         .map(|e| (e.name, e.description))
         .collect()
 }

@@ -102,14 +102,14 @@ pub fn resolve_cache_provider(
 ) -> Result<Arc<dyn CacheProvider>, String> {
     let provider_name = &config.provider;
 
-    for entry in inventory::iter::<CacheProviderEntry> {
+    for entry in inventory::iter::<CacheProviderEntry>() {
         if entry.name == provider_name {
             return (entry.factory)(config);
         }
     }
 
     // List available providers for helpful error message
-    let available: Vec<&str> = inventory::iter::<CacheProviderEntry>
+    let available: Vec<&str> = inventory::iter::<CacheProviderEntry>()
         .map(|e| e.name)
         .collect();
 
@@ -124,7 +124,7 @@ pub fn resolve_cache_provider(
 /// Returns a list of (name, description) tuples for all registered
 /// cache providers. Useful for CLI help and admin UI.
 pub fn list_cache_providers() -> Vec<(&'static str, &'static str)> {
-    inventory::iter::<CacheProviderEntry>
+    inventory::iter::<CacheProviderEntry>()
         .map(|e| (e.name, e.description))
         .collect()
 }

@@ -177,10 +177,11 @@ inventory::submit! {
         name: "moka",
         description: "Moka high-performance in-memory cache",
         factory: |config: &CacheProviderConfig| {
-            let mut provider = MokaCacheProvider::new();
-            if let Some(max_size) = config.max_size {
-                provider = MokaCacheProvider::with_max_capacity(max_size as u64);
-            }
+            let provider = if let Some(max_size) = config.max_size {
+                MokaCacheProvider::with_capacity(max_size)
+            } else {
+                MokaCacheProvider::new()
+            };
             Ok(std::sync::Arc::new(provider))
         },
     }
