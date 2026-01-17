@@ -8,12 +8,15 @@ exports/
 .idea/
 *.swp
 *.swo
-*.md
-!./README.md
-!./CLAUDE.md
+# Private directories
 thoughts/
+
+# Docs exclusions (plans, archive, backups)
 docs/plans/
 docs/archive/
+docs/**/*backup*
+docs/**/*bak*
+docs/**/*old*
 .claude/
 
 # OS files

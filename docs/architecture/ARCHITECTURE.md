@@ -530,6 +530,151 @@ All 14 domain port traits extend `shaku::Interface` for DI container integration
 
 ---
 
+## Clean Architecture & Dependency Injection
+
+### Clean Architecture Principles
+
+MCP Context Browser implements Robert C. Martin's Clean Architecture with strict layer separation. The key principles are:
+
+1. **Dependency Rule**: Dependencies only point inward (toward the domain)
+2. **Abstraction Rule**: Inner layers define interfaces (ports), outer layers implement (adapters)
+3. **Entity Rule**: Domain entities have no external dependencies
+4. **Use Case Rule**: Application layer orchestrates without implementing infrastructure
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                      Server Layer                        │
+│                    (mcb-server)                         │
+├─────────────────────────────────────────────────────────┤
+│                 Infrastructure Layer                     │
+│               (mcb-infrastructure)                       │
+├────────────────────┬────────────────────────────────────┤
+│   Providers Layer  │      Application Layer             │
+│  (mcb-providers)   │     (mcb-application)              │
+├────────────────────┴────────────────────────────────────┤
+│                      Domain Layer                        │
+│                    (mcb-domain)                          │
+└─────────────────────────────────────────────────────────┘
+         Dependencies flow inward (toward domain)
+```
+
+For complete architectural details, see [ADR-013: Clean Architecture Crate Separation](../adr/013-clean-architecture-crate-separation.md).
+
+### Two-Layer DI Strategy
+
+The dependency injection system uses a **two-layer approach** documented in [ADR-012: Two-Layer DI Strategy](../adr/012-di-strategy-two-layer-approach.md):
+
+#### Layer 1: Shaku Modules (Compile-Time Defaults)
+
+Shaku modules provide **null implementations** as testing defaults:
+
+```rust
+// Infrastructure module provides null adapters
+module! {
+    pub InfrastructureModuleImpl: InfrastructureModule {
+        components = [NullAuthService, NullEventBus, NullSystemMetricsCollector],
+        providers = []
+    }
+}
+```
+
+**Shaku Modules** (in `mcb-infrastructure/src/di/modules/`):
+- `CacheModuleImpl`: NullCacheProvider for testing
+- `EmbeddingModuleImpl`: NullEmbeddingProvider for testing
+- `DataModuleImpl`: NullVectorStoreProvider for testing
+- `LanguageModuleImpl`: UniversalLanguageChunkingProvider
+- `InfrastructureModuleImpl`: Auth, events, metrics services
+- `ServerModuleImpl`: MCP protocol components
+- `AdminModuleImpl`: Admin API services
+
+#### Layer 2: Runtime Factories (Production Providers)
+
+Production providers are created at runtime via factories configured from `AppConfig`:
+
+```rust
+// Production flow in mcb-server/init.rs:
+// 1. Create Shaku modules (null providers as defaults)
+let app_container = init_app(config.clone()).await?;
+
+// 2. Create production providers from configuration
+let embedding_provider = EmbeddingProviderFactory::create(&config.embedding, None)?;
+let vector_store_provider = VectorStoreProviderFactory::create(&config.vector_store, crypto)?;
+
+// 3. Create domain services with production providers
+let services = DomainServicesFactory::create_services(
+    cache, crypto, config, embedding, vector_store, chunker
+).await?;
+```
+
+**Why Two Layers?**
+
+| Aspect | Shaku Modules | Runtime Factories |
+|--------|---------------|-------------------|
+| **When** | Compile time | Runtime |
+| **Purpose** | Testing defaults | Production providers |
+| **Configuration** | None needed | API keys, URLs, endpoints |
+| **Async Init** | Not supported | Fully supported |
+
+### Port/Adapter Pattern
+
+The system enforces dependency inversion through port traits (interfaces) defined in the domain layer:
+
+```rust
+// Port trait (mcb-domain/src/ports/providers/embedding.rs)
+#[async_trait]
+pub trait EmbeddingProvider: Interface + Send + Sync {
+    async fn embed(&self, text: &str) -> Result<Embedding>;
+    async fn embed_batch(&self, texts: &[String]) -> Result<Vec<Embedding>>;
+    fn dimensions(&self) -> usize;
+}
+
+// Adapter implementation (mcb-providers/src/embedding/ollama.rs)
+pub struct OllamaEmbeddingProvider {
+    client: reqwest::Client,
+    config: OllamaConfig,
+}
+
+#[async_trait]
+impl EmbeddingProvider for OllamaEmbeddingProvider {
+    async fn embed(&self, text: &str) -> Result<Embedding> {
+        // Production implementation
+    }
+}
+```
+
+**Port Categories**:
+
+| Category | Location | Examples |
+|----------|----------|----------|
+| Provider Ports | `mcb-domain/src/ports/providers/` | EmbeddingProvider, VectorStoreProvider, CacheProvider |
+| Infrastructure Ports | `mcb-domain/src/ports/infrastructure/` | SyncProvider, SnapshotProvider, EventPublisher |
+| Admin Ports | `mcb-domain/src/ports/admin.rs` | PerformanceMetrics, IndexingOperations |
+
+### Testing with DI
+
+The two-layer approach enables clean testing patterns:
+
+```rust
+// Unit testing (application layer) - manual mocks
+#[tokio::test]
+async fn test_search_service() {
+    let embedding = Arc::new(MockEmbeddingProvider::new());
+    let vector_store = Arc::new(MockVectorStoreProvider::new());
+    let service = SearchService::new(embedding, vector_store);
+    // Test without infrastructure dependencies
+}
+
+// Integration testing - Shaku null providers
+#[tokio::test]
+async fn test_full_flow() {
+    let container = DiContainerBuilder::new().build().await?;
+    // Uses NullCacheProvider, NullEmbeddingProvider, etc.
+    // Safe for CI/CD without external services
+}
+```
+
+---
+
 ## Module Architecture
 
 ### Crate Structure (Clean Architecture Monorepo)
@@ -1620,6 +1765,41 @@ impl QualityGateChecker {
 \1-   ✅ Cost optimization through provider selection
 \1-   ⚠️ Configuration complexity
 \1-   ⚠️ Testing complexity across providers
+
+#### ADR-012: Two-Layer DI Strategy
+
+**Status**: Accepted
+
+**Context**: Shaku's compile-time DI doesn't fit all service creation needs - production providers require runtime configuration, async initialization, and configuration-driven selection.
+
+**Decision**: Use two-layer approach: Shaku modules for infrastructure defaults (null providers), runtime factories for production providers.
+
+**Consequences**:
+
+\1-   ✅ Clear mental model: Shaku = defaults, Factories = production
+\1-   ✅ Easy testing with null providers from Shaku modules
+\1-   ✅ Configuration-driven provider selection at runtime
+\1-   ⚠️ Two patterns to understand (Shaku and factories)
+
+See [ADR-012](../adr/012-di-strategy-two-layer-approach.md) for full details.
+
+#### ADR-013: Clean Architecture Crate Separation
+
+**Status**: Implemented (v0.1.1)
+
+**Context**: Monolithic architecture created coupling, testability, and compilation challenges as the system grew.
+
+**Decision**: Organize into seven Cargo workspace crates following Clean Architecture principles with strict layer separation.
+
+**Consequences**:
+
+\1-   ✅ Clear boundaries and responsibilities per crate
+\1-   ✅ Testability without infrastructure dependencies
+\1-   ✅ Parallel compilation, incremental builds
+\1-   ⚠️ Seven crates require coordination
+\1-   ⚠️ Learning curve for Clean Architecture concepts
+
+See [ADR-013](../adr/013-clean-architecture-crate-separation.md) for full details.
 
 ### ADR Maintenance Process
 

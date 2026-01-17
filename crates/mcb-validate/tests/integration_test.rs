@@ -170,15 +170,23 @@ fn test_full_validation_report() {
 #[test]
 fn test_validation_with_legacy() {
     let workspace_root = get_workspace_root();
+    let legacy_path = workspace_root.join("src.legacy");
+
+    // Skip if legacy code has been removed
+    if !legacy_path.exists() {
+        println!("Skipping test: src.legacy/ not found (legacy code removed)");
+        return;
+    }
+
     let config = ValidationConfig::new(&workspace_root)
-        .with_additional_path("../src") // Parent's src/
+        .with_additional_path("src.legacy") // Archived legacy src/
         .with_exclude_pattern("target/");
 
     let mut validator = ArchitectureValidator::with_config(config);
     let report = validator.validate_all().unwrap();
 
     println!("\n{}", "=".repeat(60));
-    println!("COMBINED VALIDATION: workspace-next + ../src");
+    println!("COMBINED VALIDATION: crates + src.legacy");
     println!("{}", "=".repeat(60));
     println!("{}", Reporter::to_human_readable(&report));
 
@@ -195,16 +203,24 @@ fn test_validation_with_legacy() {
 #[test]
 fn test_legacy_only() {
     let workspace_root = get_workspace_root();
+    let legacy_path = workspace_root.join("src.legacy");
+
+    // Skip if legacy code has been removed
+    if !legacy_path.exists() {
+        println!("Skipping test: src.legacy/ not found (legacy code removed)");
+        return;
+    }
+
     let config = ValidationConfig::new(&workspace_root)
-        .with_additional_path("../src")
+        .with_additional_path("src.legacy")
         .with_exclude_pattern("target/");
 
     let mut validator = ArchitectureValidator::with_config(config);
     let report = validator.validate_all().unwrap();
 
-    // Filter to show only legacy violations (those containing "src/" in path)
+    // Filter to show only legacy violations (those containing "src.legacy" in path)
     println!("\n{}", "=".repeat(60));
-    println!("LEGACY VIOLATIONS (../src only)");
+    println!("LEGACY VIOLATIONS (src.legacy only)");
     println!("{}", "=".repeat(60));
 
     // Quality violations from legacy
@@ -213,12 +229,12 @@ fn test_legacy_only() {
         .iter()
         .filter(|v| {
             let display = format!("{}", v);
-            display.contains("/src/") && !display.contains("/crates/")
+            display.contains("src.legacy") && !display.contains("/crates/")
         })
         .collect();
 
     if !legacy_quality.is_empty() {
-        println!("\nQuality violations in ../src: {}", legacy_quality.len());
+        println!("\nQuality violations in src.legacy: {}", legacy_quality.len());
         for v in legacy_quality.iter().take(10) {
             println!("  [{:?}] {}", v.severity(), v);
         }
@@ -228,7 +244,7 @@ fn test_legacy_only() {
     }
 
     println!(
-        "\nTotal violations: {} (showing subset from ../src)",
+        "\nTotal violations: {} (showing subset from src.legacy)",
         report.summary.total_violations
     );
 }
@@ -237,7 +253,7 @@ fn test_legacy_only() {
 fn test_validation_config() {
     let workspace_root = get_workspace_root();
     let config = ValidationConfig::new(&workspace_root)
-        .with_additional_path("../src")
+        .with_additional_path("src.legacy")
         .with_exclude_pattern("target/");
 
     println!("\n{}", "=".repeat(60));

@@ -1,7 +1,7 @@
 # =============================================================================
 # Documentation Pipeline - Uses Makefile as Single Source of Truth
 # =============================================================================
-# Triggered on docs/ or src/ changes
+# Triggered on docs/ or crates/ changes
 # =============================================================================
 
 name: Documentation
@@ -11,7 +11,7 @@ on:
     branches: [main, develop]
     paths:
       - "docs/**"
-      - "src/**"
+      - "crates/**"
       - "scripts/docs/**"
       - "Makefile"
       - "make/*.mk"
@@ -19,7 +19,7 @@ on:
     branches: [main, develop]
     paths:
       - "docs/**"
-      - "src/**"
+      - "crates/**"
       - "scripts/docs/**"
 
 jobs:
