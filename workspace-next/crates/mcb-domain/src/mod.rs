@@ -51,6 +51,8 @@ pub mod entities;
 pub mod error;
 /// Domain event interfaces
 pub mod events;
+/// Repository interfaces
+pub mod repositories;
 /// Immutable value objects
 pub mod value_objects;
 

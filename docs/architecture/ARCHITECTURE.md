@@ -1,6 +1,6 @@
 # MCP Context Browser - Comprehensive Architecture Documentation
 
-[![Version](https://img.shields.io/badge/version-0.1.0-blue)](https://github.com/marlonsc/mcp-context-browser/releases)
+[![Version](https://img.shields.io/badge/version-0.1.1-blue)](https://github.com/marlonsc/mcp-context-browser/releases)
 [![Rust](https://img.shields.io/badge/rust-1.89%2B-orange)](https://www.rust-lang.org/)
 [![MCP](https://img.shields.io/badge/MCP-2024--11--05-blue)](https://modelcontextprotocol.io/)
 
@@ -49,7 +49,7 @@ MCP Context Browser is a high-performance, extensible Model Context Protocol (MC
 
 ### Current Status
 
-**Version**: 0.1.0 (First Stable Release)
+**Version**: 0.1.1 (First Stable Release)
 **Architecture Maturity**: ✅ **100% Complete DI Implementation**
 **DI Status**: ✅ 14 Domain Port Traits, ✅ Provider Registry, ✅ Service Factory, ✅ Full Port/Adapter Wiring
 **Port Traits**: `src/domain/ports/` - All traits extend `shaku::Interface` for DI compatibility

@@ -1552,7 +1552,7 @@ mod tests {
                 r#"
 [package]
 name = "{}"
-version = "0.1.0"
+version = "0.1.1"
 "#,
                 name
             ),
@@ -1603,7 +1603,7 @@ pub const BUFFER_SIZE: usize = 163840;
             r#"
 [package]
 name = "mcb-test"
-version = "0.1.0"
+version = "0.1.1"
 "#,
         )
         .unwrap();

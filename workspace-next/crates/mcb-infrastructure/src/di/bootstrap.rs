@@ -1,163 +1,94 @@
-//! DI Container Bootstrap - Shaku Strict Pattern
+//! DI Container Bootstrap - Clean Architecture Composition Root
 //!
-//! Provides the composition root for the Shaku-based dependency injection system.
-//! This follows the strict Shaku hierarchical module pattern with no manual wiring.
+//! Provides the composition root for the dependency injection system following
+//! Clean Architecture principles with Shaku modules for infrastructure services.
 //!
-//! ## Shaku Strict Architecture
+//! ## Architecture Strategy (see ADR-010)
 //!
-//! - **Module Hierarchy**: Uses `module!` macro with `use dyn ModuleTrait` for composition
-//! - **No Manual Wiring**: All dependencies resolved through module interfaces
-//! - **Provider Overrides**: Runtime component overrides for production configuration
-//! - **Trait-based DI**: All dependencies injected as `Arc<dyn Trait>`
+//! The DI system uses a two-layer approach:
 //!
-//! ## Construction Pattern
+//! 1. **Shaku Modules** (Infrastructure Layer): Provide null implementations as defaults
+//!    for infrastructure services (auth, events, metrics, sync, snapshot).
+//!    These are resolved via trait-based DI at compile time.
+//!
+//! 2. **Runtime Factory** (Application Layer): Creates domain services with production
+//!    providers configured from `AppConfig`. This is necessary because:
+//!    - Provider implementations require runtime configuration (API keys, URLs)
+//!    - Async initialization patterns don't fit Shaku's static composition
+//!    - Different providers need different construction parameters
+//!
+//! ## Production Flow
 //!
 //! ```rust,ignore
-//! // Build all modules (simplified - no dependencies between them)
-//! let infrastructure = Arc::new(InfrastructureModuleImpl::builder().build());
-//! let server = Arc::new(ServerModuleImpl::builder().build());
-//! let adapters = Arc::new(AdaptersModuleImpl::builder().build());
-//! let application = Arc::new(ApplicationModuleImpl::builder().build());
-//! let admin = Arc::new(AdminModuleImpl::builder().build());
+//! // 1. Create AppContainer with Shaku modules (null providers as defaults)
+//! let app_container = init_app(config).await?;
 //!
-//! // Build root container
-//! let container = McpModule::builder(infrastructure, server, adapters, application, admin).build();
+//! // 2. Create production providers from config
+//! let embedding = EmbeddingProviderFactory::create(&config.embedding, None)?;
+//! let vector_store = VectorStoreProviderFactory::create(&config.vector_store, crypto)?;
+//!
+//! // 3. Create domain services with production providers
+//! let services = DomainServicesFactory::create_services(
+//!     cache, crypto, config, embedding, vector_store, chunker
+//! ).await?;
 //! ```
 //!
-//! ## Note
+//! ## Testing Flow
 //!
-//! Most services are created at runtime via DomainServicesFactory (in domain_services.rs)
-//! rather than through Shaku DI, because they require runtime configuration.
-//! The Shaku modules primarily hold null providers as defaults.
+//! ```rust,ignore
+//! // Use null providers from Shaku modules
+//! let app_container = init_app(AppConfig::default()).await?;
+//! let services = DomainServicesFactory::create_context_service(&app_container).await?;
+//! ```
 
 use crate::config::AppConfig;
-use crate::crypto::CryptoService;
 use mcb_domain::error::Result;
-use std::sync::Arc;
 use tracing::info;
 
 // Import module implementations (Clean Architecture - no empty placeholder modules)
 use super::modules::{
-    cache_module::CacheModuleImpl,
-    data_module::DataModuleImpl,
-    embedding_module::EmbeddingModuleImpl,
-    language_module::LanguageModuleImpl,
-    infrastructure::InfrastructureModuleImpl,
-    server::ServerModuleImpl,
-    admin::AdminModuleImpl,
+    admin::AdminModuleImpl, cache_module::CacheModuleImpl, data_module::DataModuleImpl,
+    embedding_module::EmbeddingModuleImpl, infrastructure::InfrastructureModuleImpl,
+    language_module::LanguageModuleImpl, server::ServerModuleImpl,
 };
 
-// Import factories for provider overrides (production configuration)
-use super::factory::{EmbeddingProviderFactory, VectorStoreProviderFactory};
+// Re-export factories for production provider creation (used by mcb-server)
+pub use super::factory::{EmbeddingProviderFactory, VectorStoreProviderFactory};
 
-/// Shaku-based DI Container following strict hierarchical pattern.
-///
-/// This container holds the AppContainer and provides access to all services
-/// through the module resolution system. No manual component management.
-///
-/// ## Usage
-///
-/// ```rust,ignore
-/// // Create container with production config
-/// let container = DiContainer::build_with_config(config, http_client).await?;
-///
-/// // Resolve provider through trait-based access
-/// let embedding_provider: Arc<dyn EmbeddingProvider> = container.resolve();
-/// ```
+/// Type alias for the root DI container (AppContainer with Shaku modules).
 pub type DiContainer = AppContainer;
-
-/// Provider configuration overrides for production setup.
-///
-/// This struct provides methods to create configured providers
-/// that can be injected into the module hierarchy at runtime.
-pub struct ProviderOverrides;
-
-impl ProviderOverrides {
-    /// Create embedding provider from configuration
-    pub fn create_embedding_provider(config: &AppConfig) -> Result<Arc<dyn mcb_application::ports::providers::EmbeddingProvider>> {
-        if let Some((name, embedding_config)) = config.providers.embedding.iter().next() {
-            info!(provider = name, "Creating embedding provider from config");
-            EmbeddingProviderFactory::create(embedding_config, None)
-        } else {
-            info!("No embedding provider configured, using null provider");
-            Ok(EmbeddingProviderFactory::create_null())
-        }
-    }
-
-    /// Create vector store provider from configuration
-    pub fn create_vector_store_provider(
-        config: &AppConfig,
-        crypto: &CryptoService,
-    ) -> Result<Arc<dyn mcb_application::ports::providers::VectorStoreProvider>> {
-        if let Some((name, vector_config)) = config.providers.vector_store.iter().next() {
-            info!(
-                provider = name,
-                "Creating vector store provider from config"
-            );
-            // Wrap CryptoService as Arc<dyn CryptoProvider> for DI
-            let crypto_provider: Arc<dyn mcb_application::ports::providers::CryptoProvider> = Arc::new(crypto.clone());
-            VectorStoreProviderFactory::create(vector_config, Some(crypto_provider))
-        } else {
-            info!("No vector store provider configured, using in-memory provider");
-            Ok(VectorStoreProviderFactory::create_in_memory())
-        }
-    }
-}
 
 /// Container builder for Shaku-based DI system.
 ///
-/// Builds the hierarchical module structure following the strict Shaku pattern.
-/// Provides both testing (null providers) and production (configured providers) setups.
+/// Builds the hierarchical module structure with null providers as defaults.
+/// For production usage, create providers via factories and pass to DomainServicesFactory.
+///
+/// ## Example (Testing)
+/// ```rust,ignore
+/// let container = DiContainerBuilder::new().build().await?;
+/// // Uses null providers from Shaku modules
+/// ```
+///
+/// ## Example (Production)
+/// See `mcb_server::init::run_server` for the complete production flow.
 pub struct DiContainerBuilder {
-    #[allow(dead_code)]
     config: Option<AppConfig>,
-    #[allow(dead_code)]
-    embedding_override: Option<Arc<dyn mcb_application::ports::providers::EmbeddingProvider>>,
-    #[allow(dead_code)]
-    vector_store_override: Option<Arc<dyn mcb_application::ports::providers::VectorStoreProvider>>,
 }
 
 impl DiContainerBuilder {
-    /// Create a new container builder for testing (null providers)
+    /// Create a new container builder (null providers by default)
     pub fn new() -> Self {
-        Self {
-            config: None,
-            embedding_override: None,
-            vector_store_override: None,
-        }
+        Self { config: None }
     }
 
-    /// Create a container builder with production configuration
+    /// Create a container builder with configuration
     pub fn with_config(config: AppConfig) -> Self {
         Self {
             config: Some(config),
-            embedding_override: None,
-            vector_store_override: None,
         }
     }
 
-    /// Override the embedding provider (for production configuration)
-    pub fn with_embedding_provider(
-        mut self,
-        provider: Arc<dyn mcb_application::ports::providers::EmbeddingProvider>,
-    ) -> Self {
-        self.embedding_override = Some(provider);
-        self
-    }
-
-    /// Override the vector store provider (for production configuration)
-    pub fn with_vector_store_provider(
-        mut self,
-        provider: Arc<dyn mcb_application::ports::providers::VectorStoreProvider>,
-    ) -> Self {
-        self.vector_store_override = Some(provider);
-        self
-    }
-
     /// Build the DI container with hierarchical module composition
-    ///
-    /// This method delegates to the new Clean Architecture init_app function.
-    /// The old McpModule approach has been replaced with proper hierarchical modules.
     pub async fn build(self) -> Result<DiContainer> {
         let config = self.config.unwrap_or_default();
         init_app(config).await
@@ -173,26 +104,6 @@ impl Default for DiContainerBuilder {
 /// Convenience function to create DI container for testing
 pub async fn create_test_container() -> Result<DiContainer> {
     DiContainerBuilder::new().build().await
-}
-
-/// Convenience function to create DI container with production configuration
-pub async fn create_production_container(config: AppConfig) -> Result<DiContainer> {
-    // Create configured providers
-    let embedding_provider = ProviderOverrides::create_embedding_provider(&config)?;
-    let crypto = CryptoService::new(
-        if config.auth.jwt.secret.len() >= 32 {
-            config.auth.jwt.secret.as_bytes()[..32].to_vec()
-        } else {
-            CryptoService::generate_master_key()
-        }
-    )?;
-    let vector_store_provider = ProviderOverrides::create_vector_store_provider(&config, &crypto)?;
-
-    DiContainerBuilder::with_config(config)
-        .with_embedding_provider(embedding_provider)
-        .with_vector_store_provider(vector_store_provider)
-        .build()
-        .await
 }
 
 // ============================================================================

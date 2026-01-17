@@ -48,3 +48,6 @@ pub mod infrastructure;
 // Re-export commonly used types
 pub use error_ext::ErrorContext;
 pub use utils::TimedOperation;
+
+// Re-export Shaku traits for DI resolution (used by mcb-server)
+pub use shaku::HasComponent;

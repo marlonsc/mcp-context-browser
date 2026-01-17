@@ -254,6 +254,7 @@ impl CodeChunker for IntelligentChunker {
 #[derive(shaku::Component)]
 #[shaku(interface = mcb_application::ports::providers::LanguageChunkingProvider)]
 pub struct UniversalLanguageChunkingProvider {
+    #[shaku(default)]
     chunker: IntelligentChunker,
 }
 

@@ -362,7 +362,7 @@ members = ["crates/mcb-domain", "crates/mcb-infrastructure"]
             r#"
 [package]
 name = "mcb-domain"
-version = "0.1.0"
+version = "0.1.1"
 
 [dependencies]
 serde = "1.0"
@@ -379,7 +379,7 @@ serde = "1.0"
             r#"
 [package]
 name = "mcb-infrastructure"
-version = "0.1.0"
+version = "0.1.1"
 
 [dependencies]
 mcb-domain = { path = "../mcb-domain" }
@@ -420,7 +420,7 @@ mcb-domain = { path = "../mcb-domain" }
             r#"
 [package]
 name = "mcb-domain"
-version = "0.1.0"
+version = "0.1.1"
 
 [dependencies]
 mcb-infrastructure = { path = "../mcb-infrastructure" }
@@ -458,7 +458,7 @@ mcb-infrastructure = { path = "../mcb-infrastructure" }
             r#"
 [package]
 name = "mcb-domain"
-version = "0.1.0"
+version = "0.1.1"
 "#,
         )
         .unwrap();

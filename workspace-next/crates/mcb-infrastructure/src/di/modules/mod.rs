@@ -61,7 +61,7 @@ pub use traits::{
 };
 
 // Re-export Shaku for convenience
-pub use shaku::module;
+pub use shaku::{module, HasComponent};
 
 // Re-export domain services
 pub use domain_services::{DomainServicesContainer, DomainServicesFactory};

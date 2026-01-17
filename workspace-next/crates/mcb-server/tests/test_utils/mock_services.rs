@@ -7,8 +7,6 @@ use mcb_application::domain_services::search::{
 };
 use mcb_domain::entities::CodeChunk;
 use mcb_domain::error::Result;
-use mcb_domain::repositories::chunk_repository::RepositoryStats;
-use mcb_domain::repositories::search_repository::SearchStats;
 use mcb_domain::value_objects::{Embedding, SearchResult};
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -271,26 +269,14 @@ impl ContextServiceInterface for MockContextService {
         Ok(())
     }
 
-    async fn get_stats(&self) -> Result<(RepositoryStats, SearchStats)> {
+    async fn get_stats(&self) -> Result<(i64, i64)> {
         if self.should_fail.load(Ordering::SeqCst) {
             let msg = self.error_message.lock().expect("Lock poisoned").clone();
             return Err(mcb_domain::error::Error::internal(msg));
         }
 
-        Ok((
-            RepositoryStats {
-                total_chunks: 100,
-                total_collections: 1,
-                storage_size_bytes: 1024,
-                avg_chunk_size_bytes: 512.0,
-            },
-            SearchStats {
-                total_queries: 10,
-                avg_response_time_ms: 50.0,
-                cache_hit_rate: 0.8,
-                indexed_documents: 100,
-            },
-        ))
+        // Return (total_chunks, total_queries)
+        Ok((100, 10))
     }
 
     fn embedding_dimensions(&self) -> usize {

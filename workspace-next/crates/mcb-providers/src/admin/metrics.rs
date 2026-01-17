@@ -13,9 +13,8 @@ use std::time::Instant;
 /// Thread-safe implementation of PerformanceMetricsInterface using atomic operations.
 /// Tracks queries, response times, cache hits, and active connections.
 ///
-/// **Note**: This type can be used in Shaku DI modules.
-#[derive(shaku::Component)]
-#[shaku(interface = mcb_application::ports::admin::PerformanceMetricsInterface)]
+/// **Note**: This type is created via `new()` at runtime, not through Shaku DI.
+/// For Shaku DI testing, use `NullPerformanceMetrics` from mcb-infrastructure.
 pub struct AtomicPerformanceMetrics {
     /// Server start time for uptime calculation
     start_time: Instant,

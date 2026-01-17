@@ -3,6 +3,16 @@
 //! Handles server startup, dependency injection setup, and graceful shutdown.
 //! Integrates with the infrastructure layer for configuration and DI container setup.
 //!
+//! # Architecture (Clean Architecture + Shaku DI)
+//!
+//! The server initialization follows a two-layer DI approach:
+//!
+//! 1. **Shaku Modules** (Infrastructure): Provides null providers as defaults
+//! 2. **Runtime Factory** (Application): Creates domain services with production providers
+//!
+//! Production providers are created from `AppConfig` using `EmbeddingProviderFactory`
+//! and `VectorStoreProviderFactory`, then injected into `DomainServicesFactory`.
+//!
 //! # Transport Modes
 //!
 //! The server supports three transport modes configured via `ServerConfig.transport_mode`:
@@ -20,7 +30,11 @@
 use std::path::Path;
 use std::sync::Arc;
 
+use mcb_infrastructure::cache::provider::SharedCacheProvider;
 use mcb_infrastructure::config::TransportMode;
+use mcb_infrastructure::crypto::CryptoService;
+use mcb_infrastructure::di::{EmbeddingProviderFactory, VectorStoreProviderFactory};
+use mcb_infrastructure::HasComponent;
 use tracing::{error, info};
 
 use crate::transport::http::{HttpTransport, HttpTransportConfig};
@@ -70,12 +84,37 @@ pub async fn run_server(config_path: Option<&Path>) -> Result<(), Box<dyn std::e
     let http_host = config.server.network.host.clone();
     let http_port = config.server.network.port;
 
-    let app_container = mcb_infrastructure::di::bootstrap::init_app(config).await?;
+    // Step 1: Create AppContainer with Shaku modules (infrastructure services)
+    let app_container = mcb_infrastructure::di::bootstrap::init_app(config.clone()).await?;
 
-    // Resolve use cases directly from the DI container
-    let indexing_service = mcb_infrastructure::di::modules::domain_services::DomainServicesFactory::create_indexing_service(&app_container).await?;
-    let context_service = mcb_infrastructure::di::modules::domain_services::DomainServicesFactory::create_context_service(&app_container).await?;
-    let search_service = mcb_infrastructure::di::modules::domain_services::DomainServicesFactory::create_search_service(&app_container).await?;
+    // Step 2: Create production providers from configuration
+    let embedding_provider = create_embedding_provider(&config)?;
+    let vector_store_provider = create_vector_store_provider(&config)?;
+
+    // Step 3: Get infrastructure dependencies from Shaku modules
+    let cache_provider: Arc<dyn mcb_application::ports::providers::cache::CacheProvider> =
+        app_container.cache.resolve();
+    let language_chunker: Arc<dyn mcb_application::ports::providers::LanguageChunkingProvider> =
+        app_container.language.resolve();
+
+    // Create shared cache provider (conversion for domain services factory)
+    let shared_cache = SharedCacheProvider::from_arc(cache_provider);
+    let crypto = CryptoService::new(CryptoService::generate_master_key())?;
+
+    // Step 4: Create domain services with production providers
+    let services = mcb_infrastructure::di::modules::domain_services::DomainServicesFactory::create_services(
+        shared_cache,
+        crypto,
+        config,
+        embedding_provider,
+        vector_store_provider,
+        language_chunker,
+    )
+    .await?;
+
+    let indexing_service = services.indexing_service;
+    let context_service = services.context_service;
+    let search_service = services.search_service;
 
     let server = McpServerBuilder::new()
         .with_indexing_service(indexing_service)
@@ -190,4 +229,43 @@ async fn run_hybrid_transport(
     }
 
     Ok(())
+}
+
+// =============================================================================
+// Provider Factory Helpers
+// =============================================================================
+
+/// Create embedding provider from configuration
+///
+/// Uses the first configured embedding provider, or null provider if none configured.
+fn create_embedding_provider(
+    config: &mcb_infrastructure::config::AppConfig,
+) -> Result<Arc<dyn mcb_application::ports::providers::EmbeddingProvider>, Box<dyn std::error::Error>>
+{
+    if let Some((name, embedding_config)) = config.providers.embedding.iter().next() {
+        info!(provider = name, "Creating embedding provider from config");
+        EmbeddingProviderFactory::create(embedding_config, None)
+            .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })
+    } else {
+        info!("No embedding provider configured, using null provider");
+        Ok(EmbeddingProviderFactory::create_null())
+    }
+}
+
+/// Create vector store provider from configuration
+///
+/// Uses the first configured vector store provider, or in-memory provider if none configured.
+fn create_vector_store_provider(
+    config: &mcb_infrastructure::config::AppConfig,
+) -> Result<Arc<dyn mcb_application::ports::providers::VectorStoreProvider>, Box<dyn std::error::Error>>
+{
+    if let Some((name, vector_config)) = config.providers.vector_store.iter().next() {
+        info!(provider = name, "Creating vector store provider from config");
+        // For encrypted provider, would need crypto - skip for now (use in-memory as fallback)
+        VectorStoreProviderFactory::create(vector_config, None)
+            .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })
+    } else {
+        info!("No vector store provider configured, using in-memory provider");
+        Ok(VectorStoreProviderFactory::create_in_memory())
+    }
 }

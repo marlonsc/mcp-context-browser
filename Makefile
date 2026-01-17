@@ -14,6 +14,7 @@ include make/Makefile.release.mk
 include make/Makefile.documentation.mk
 include make/Makefile.maintenance.mk
 include make/Makefile.git.mk
+include make/Makefile.version.mk
 include make/Makefile.aliases.mk
 
 # Default target

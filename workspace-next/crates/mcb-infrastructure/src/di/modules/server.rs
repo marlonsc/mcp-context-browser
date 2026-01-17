@@ -14,8 +14,8 @@
 
 use shaku::module;
 
-// Import implementations from mcb-providers
-use mcb_providers::admin::{AtomicPerformanceMetrics, DefaultIndexingOperations};
+// Import null implementations from infrastructure (for Shaku DI defaults)
+use crate::infrastructure::{NullIndexingOperations, NullPerformanceMetrics};
 
 // Import traits
 use super::traits::ServerModule;
@@ -23,9 +23,9 @@ use super::traits::ServerModule;
 module! {
     pub ServerModuleImpl: ServerModule {
         components = [
-            // Server components from mcb-providers
-            AtomicPerformanceMetrics,
-            DefaultIndexingOperations
+            // Null server components for testing defaults
+            NullPerformanceMetrics,
+            NullIndexingOperations
         ],
         providers = []
     }

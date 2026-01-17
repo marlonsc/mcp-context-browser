@@ -1,6 +1,6 @@
 # Quickstart Guide
 
-Get MCP Context Browser v0.1.0 running in 5 minutes.
+Get MCP Context Browser v0.1.1 running in 5 minutes.
 
 ## 1. Download
 
