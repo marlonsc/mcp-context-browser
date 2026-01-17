@@ -2,105 +2,22 @@
 //!
 //! Infrastructure wrapper for cache providers from mcb-providers.
 //! Types come from mcb-domain (SOURCE OF TRUTH).
+//!
+//! **ARCHITECTURE**: Uses `Arc<dyn CacheProvider>` directly to follow OCP.
+//! No enum wrapper - new cache providers can be added without modification.
 
 use mcb_domain::error::Result;
 use mcb_domain::ports::providers::cache::{CacheEntryConfig, CacheProvider, CacheStats};
-use mcb_providers::cache::{MokaCacheProvider, NullCacheProvider, RedisCacheProvider};
 use std::fmt;
 use std::sync::Arc;
-
-/// Cache provider types
-#[derive(Clone)]
-pub enum CacheProviderType {
-    /// Moka in-memory cache
-    Moka(MokaCacheProvider),
-    /// Redis distributed cache
-    Redis(RedisCacheProvider),
-    /// Null cache (no-op)
-    Null(NullCacheProvider),
-}
-
-#[async_trait::async_trait]
-impl CacheProvider for CacheProviderType {
-    async fn get_json(&self, key: &str) -> Result<Option<String>> {
-        match self {
-            CacheProviderType::Moka(provider) => provider.get_json(key).await,
-            CacheProviderType::Redis(provider) => provider.get_json(key).await,
-            CacheProviderType::Null(provider) => provider.get_json(key).await,
-        }
-    }
-
-    async fn set_json(&self, key: &str, value: &str, config: CacheEntryConfig) -> Result<()> {
-        match self {
-            CacheProviderType::Moka(provider) => provider.set_json(key, value, config).await,
-            CacheProviderType::Redis(provider) => provider.set_json(key, value, config).await,
-            CacheProviderType::Null(provider) => provider.set_json(key, value, config).await,
-        }
-    }
-
-    async fn delete(&self, key: &str) -> Result<bool> {
-        match self {
-            CacheProviderType::Moka(provider) => provider.delete(key).await,
-            CacheProviderType::Redis(provider) => provider.delete(key).await,
-            CacheProviderType::Null(provider) => provider.delete(key).await,
-        }
-    }
-
-    async fn exists(&self, key: &str) -> Result<bool> {
-        match self {
-            CacheProviderType::Moka(provider) => provider.exists(key).await,
-            CacheProviderType::Redis(provider) => provider.exists(key).await,
-            CacheProviderType::Null(provider) => provider.exists(key).await,
-        }
-    }
-
-    async fn clear(&self) -> Result<()> {
-        match self {
-            CacheProviderType::Moka(provider) => provider.clear().await,
-            CacheProviderType::Redis(provider) => provider.clear().await,
-            CacheProviderType::Null(provider) => provider.clear().await,
-        }
-    }
-
-    async fn stats(&self) -> Result<CacheStats> {
-        match self {
-            CacheProviderType::Moka(provider) => provider.stats().await,
-            CacheProviderType::Redis(provider) => provider.stats().await,
-            CacheProviderType::Null(provider) => provider.stats().await,
-        }
-    }
-
-    async fn size(&self) -> Result<usize> {
-        match self {
-            CacheProviderType::Moka(provider) => provider.size().await,
-            CacheProviderType::Redis(provider) => provider.size().await,
-            CacheProviderType::Null(provider) => provider.size().await,
-        }
-    }
-
-    fn provider_name(&self) -> &str {
-        match self {
-            CacheProviderType::Moka(provider) => provider.provider_name(),
-            CacheProviderType::Redis(provider) => provider.provider_name(),
-            CacheProviderType::Null(provider) => provider.provider_name(),
-        }
-    }
-}
-
-impl std::fmt::Debug for CacheProviderType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            CacheProviderType::Moka(_) => write!(f, "CacheProviderType::Moka"),
-            CacheProviderType::Redis(_) => write!(f, "CacheProviderType::Redis"),
-            CacheProviderType::Null(_) => write!(f, "CacheProviderType::Null"),
-        }
-    }
-}
 
 /// Shared cache provider wrapper
 ///
 /// This provides thread-safe access to a cache provider and includes
 /// additional features like metrics collection and error handling.
+///
+/// **Architecture Note**: Uses `Arc<dyn CacheProvider>` directly
+/// to follow OCP - new providers can be added without modification.
 #[derive(Clone)]
 pub struct SharedCacheProvider {
     provider: Arc<dyn CacheProvider>,
@@ -109,15 +26,25 @@ pub struct SharedCacheProvider {
 
 impl SharedCacheProvider {
     /// Create a new shared cache provider
-    pub fn new(provider: CacheProviderType) -> Self {
+    ///
+    /// Accepts any type implementing CacheProvider trait.
+    pub fn new<P: CacheProvider + 'static>(provider: P) -> Self {
         Self {
             provider: Arc::new(provider),
             namespace: None,
         }
     }
 
+    /// Create a new shared cache provider from Arc
+    pub fn from_arc(provider: Arc<dyn CacheProvider>) -> Self {
+        Self {
+            provider,
+            namespace: None,
+        }
+    }
+
     /// Create a new shared cache provider with a default namespace
-    pub fn with_namespace<S: Into<String>>(provider: CacheProviderType, namespace: S) -> Self {
+    pub fn with_namespace<P: CacheProvider + 'static, S: Into<String>>(provider: P, namespace: S) -> Self {
         Self {
             provider: Arc::new(provider),
             namespace: Some(namespace.into()),
@@ -132,6 +59,11 @@ impl SharedCacheProvider {
     /// Clear the default namespace
     pub fn clear_namespace(&mut self) {
         self.namespace = None;
+    }
+
+    /// Get the underlying cache provider as an Arc
+    pub fn as_provider(&self) -> Arc<dyn CacheProvider> {
+        self.provider.clone()
     }
 
     /// Get a namespaced key
@@ -281,5 +213,16 @@ impl NamespacedCacheProvider {
     pub async fn exists(&self, key: &str) -> Result<bool> {
         let namespaced_key = format!("{}:{}", self.namespace, key);
         self.provider.exists(&namespaced_key).await
+    }
+
+    /// Get the inner cache provider for DI injection
+    pub fn inner(&self) -> Arc<dyn CacheProvider> {
+        self.provider.clone()
+    }
+}
+
+impl From<SharedCacheProvider> for Arc<dyn CacheProvider> {
+    fn from(shared: SharedCacheProvider) -> Self {
+        shared.provider
     }
 }

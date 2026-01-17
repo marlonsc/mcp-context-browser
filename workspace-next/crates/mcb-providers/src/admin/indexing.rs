@@ -13,6 +13,8 @@ use uuid::Uuid;
 /// Default indexing operations tracker
 ///
 /// Thread-safe implementation using DashMap for concurrent access.
+#[derive(shaku::Component)]
+#[shaku(interface = mcb_domain::ports::admin::IndexingOperationsInterface)]
 pub struct DefaultIndexingOperations {
     /// Active indexing operations by ID
     operations: Arc<DashMap<String, IndexingOperation>>,

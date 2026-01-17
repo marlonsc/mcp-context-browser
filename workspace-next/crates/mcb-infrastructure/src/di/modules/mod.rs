@@ -1,6 +1,4 @@
 //! DI Module Organization - Hierarchical by Domain (Shaku Strict Pattern)
-
-#![allow(missing_docs)]
 //!
 //! This module implements a strict Shaku-based hierarchical module system
 //! following Clean Architecture and Domain-Driven Design principles.
@@ -8,12 +6,19 @@
 //! ## Shaku Module Hierarchy Pattern
 //!
 //! ```text
-//! ApplicationModule (Root - depends on all)
+//! McpModule (Root - composes all modules)
 //! ├── InfrastructureModule (core services - no dependencies)
 //! ├── ServerModule (MCP server components - no dependencies)
 //! ├── AdaptersModule (external integrations - no dependencies)
-//! └── AdminModule (admin services - depends on all above)
+//! ├── ApplicationModule (business logic - placeholder)
+//! └── AdminModule (admin services - placeholder)
 //! ```
+//!
+//! ## Note on Current Implementation
+//!
+//! Many services are created via factory patterns at runtime (see domain_services.rs)
+//! rather than through Shaku DI, because they require runtime configuration.
+//! The Shaku modules here provide the foundation, with null providers as defaults.
 //!
 //! ## Module Construction Pattern
 //!
@@ -21,33 +26,16 @@
 //! use std::sync::Arc;
 //! use mcb_infrastructure::di::modules::*;
 //!
-//! // 1. Build leaf modules (no dependencies)
+//! // Build leaf modules
 //! let infrastructure = Arc::new(InfrastructureModuleImpl::builder().build());
 //! let server = Arc::new(ServerModuleImpl::builder().build());
 //! let adapters = Arc::new(AdaptersModuleImpl::builder().build());
+//! let application = Arc::new(ApplicationModuleImpl::builder().build());
+//! let admin = Arc::new(AdminModuleImpl::builder().build());
 //!
-//! // 2. Build application module (depends on adapters)
-//! let application = Arc::new(ApplicationModuleImpl::builder(adapters.clone()).build());
-//!
-//! // 3. Build admin module (depends on all)
-//! let admin = Arc::new(AdminModuleImpl::builder(
-//!     infrastructure.clone(),
-//!     server.clone(),
-//!     adapters.clone(),
-//!     application.clone()
-//! ).build());
-//!
-//! // 4. Build root module (depends on all)
+//! // Build root module
 //! let root = McpModule::builder(infrastructure, server, adapters, application, admin).build();
 //! ```
-//!
-//! ## Shaku Best Practices
-//!
-//! 1. **Trait-based Interfaces**: All module interactions via traits
-//! 2. **Submodule Composition**: `use dyn ModuleTrait` for dependencies
-//! 3. **Component Registration**: Concrete types only in `module!` macros
-//! 4. **Provider Defaults**: Null providers as fallbacks for testing
-//! 5. **Runtime Overrides**: Component overrides for production configuration
 
 /// Domain module traits (interfaces)
 pub mod traits;
@@ -63,6 +51,9 @@ mod application;
 /// Admin module implementation (admin services)
 mod admin;
 
+/// Domain services factory (runtime service creation)
+pub mod domain_services;
+
 pub use adapters::AdaptersModuleImpl;
 pub use admin::AdminModuleImpl;
 pub use application::ApplicationModuleImpl;
@@ -75,32 +66,18 @@ pub use traits::{
 // Re-export Shaku for convenience
 pub use shaku::module;
 
+// Re-export domain services
+pub use domain_services::{DomainServicesContainer, DomainServicesFactory};
+
 // ============================================================================
 // Root Module Definition (Shaku Strict Pattern)
 // ============================================================================
 
-use shaku::{HasComponent, HasProvider, Interface};
+use shaku::Interface;
 use std::sync::Arc;
 
-// Import all required traits and interfaces
-use crate::adapters::http_client::HttpClientProvider;
-use crate::adapters::repository::{ChunkRepository, SearchRepository};
-use crate::application::admin::AdminService;
-use crate::cache::provider::CacheProvider;
-use crate::crypto::CryptoService;
-use crate::health::HealthRegistry;
-use crate::infrastructure::auth::AuthServiceInterface;
-use crate::infrastructure::events::EventBusProvider;
-use crate::infrastructure::metrics::system::SystemMetricsCollectorInterface;
-use crate::infrastructure::snapshot::SnapshotProvider;
-use crate::infrastructure::sync::SyncProvider;
-
-use mcb_domain::domain_services::search::{
-    ContextServiceInterface, IndexingServiceInterface, SearchServiceInterface,
-};
-use mcb_domain::ports::admin::{IndexingOperationsInterface, PerformanceMetricsInterface};
+// Import provider traits from mcb-domain
 use mcb_domain::ports::providers::{EmbeddingProvider, VectorStoreProvider};
-use mcb_domain::ports::{ChunkingOrchestratorInterface, CodeChunker};
 
 // ============================================================================
 // Root Module Definition
@@ -112,14 +89,20 @@ use mcb_domain::ports::{ChunkingOrchestratorInterface, CodeChunker};
 /// It uses `use dyn ModuleTrait` to import services from submodules,
 /// following Shaku's strict submodule composition pattern.
 ///
+/// ## Note
+///
+/// Most services are created via runtime factories (DomainServicesFactory)
+/// rather than through Shaku resolution, because they need runtime config.
+/// The Shaku modules primarily hold null/default providers for testing.
+///
 /// ## Construction
 ///
 /// ```rust,ignore
 /// let infrastructure = Arc::new(InfrastructureModuleImpl::builder().build());
 /// let server = Arc::new(ServerModuleImpl::builder().build());
 /// let adapters = Arc::new(AdaptersModuleImpl::builder().build());
-/// let application = Arc::new(ApplicationModuleImpl::builder(adapters.clone()).build());
-/// let admin = Arc::new(AdminModuleImpl::builder(infrastructure.clone(), server.clone(), adapters.clone(), application.clone()).build());
+/// let application = Arc::new(ApplicationModuleImpl::builder().build());
+/// let admin = Arc::new(AdminModuleImpl::builder().build());
 ///
 /// let root = McpModule::builder(infrastructure, server, adapters, application, admin).build();
 /// ```
@@ -128,55 +111,39 @@ module! {
         components = [],
         providers = [],
 
-        // Infrastructure services (core, no dependencies)
+        // Infrastructure services (COMPLETE - all with Component derive)
         use dyn InfrastructureModule {
             components = [
-                dyn CacheProvider,
-                dyn CryptoService,
-                dyn HealthRegistry,
-                dyn AuthServiceInterface,
-                dyn EventBusProvider,
-                dyn SystemMetricsCollectorInterface,
-                dyn SnapshotProvider,
-                dyn SyncProvider
+                dyn mcb_domain::ports::providers::cache::CacheProvider,
+                dyn crate::infrastructure::auth::AuthServiceInterface,
+                dyn crate::infrastructure::events::EventBusProvider,
+                dyn crate::infrastructure::metrics::system::SystemMetricsCollectorInterface,
+                dyn crate::infrastructure::snapshot::SnapshotProvider,
+                dyn crate::infrastructure::sync::SyncProvider
             ],
             providers = []
         },
 
-        // Server components (MCP server, no dependencies)
+        // Server components (COMPLETE - all with Component derive)
         use dyn ServerModule {
-            components = [dyn PerformanceMetricsInterface, dyn IndexingOperationsInterface],
+            components = [
+                dyn mcb_domain::ports::admin::PerformanceMetricsInterface,
+                dyn mcb_domain::ports::admin::IndexingOperationsInterface
+            ],
             providers = []
         },
 
         // External adapters (providers, repositories, no dependencies)
         use dyn AdaptersModule {
             components = [
-                dyn HttpClientProvider,
                 dyn EmbeddingProvider,
-                dyn VectorStoreProvider,
-                dyn ChunkRepository,
-                dyn SearchRepository
+                dyn VectorStoreProvider
             ],
-            providers = []
-        },
-
-        // Business logic services (depends on adapters)
-        use dyn ApplicationModule {
-            components = [
-                dyn ContextServiceInterface,
-                dyn SearchServiceInterface,
-                dyn IndexingServiceInterface,
-                dyn ChunkingOrchestratorInterface,
-                dyn CodeChunker
-            ],
-            providers = []
-        },
-
-        // Admin services (depends on all modules above)
-        use dyn AdminModule {
-            components = [dyn AdminService],
             providers = []
         }
+
+        // NOTE: ApplicationModule and AdminModule are NOT included here.
+        // They are placeholder modules for the hierarchy - services are created
+        // at runtime via DomainServicesFactory, not through Shaku resolution.
     }
 }

@@ -3,9 +3,9 @@
 //! Provides the main IntelligentChunker that orchestrates language-specific
 //! chunking using tree-sitter and fallback methods.
 
-use super::constants::CHUNK_SIZE_GENERIC;
-use super::language_helpers::{is_language_supported, language_from_extension};
-use crate::language::{
+use super::common::constants::CHUNK_SIZE_GENERIC;
+use super::helpers::{is_language_supported, language_from_extension};
+use super::{
     CProcessor, CSharpProcessor, CppProcessor, GoProcessor, JavaProcessor, JavaScriptProcessor,
     KotlinProcessor, LanguageProcessor, PhpProcessor, PythonProcessor, RubyProcessor,
     RustProcessor, SwiftProcessor,

@@ -5,7 +5,6 @@
 //!
 //! ## Services Provided
 //!
-//! - HTTP client provider for external API calls
 //! - Embedding provider (with null fallback for testing)
 //! - Vector store provider (with null fallback for testing)
 //! - Chunk repository for data persistence
@@ -13,13 +12,12 @@
 
 use shaku::module;
 
-// Import concrete implementations
-use crate::adapters::http_client::HttpClientPool;
-use crate::adapters::repository::{VectorStoreChunkRepository, VectorStoreSearchRepository};
-
 // Import null providers from mcb-providers for testing fallbacks
 use mcb_providers::embedding::NullEmbeddingProvider;
 use mcb_providers::vector_store::NullVectorStoreProvider;
+
+// Import null repositories from adapters bridge
+use crate::adapters::repository::{NullChunkRepository, NullSearchRepository};
 
 // Import traits
 use super::traits::AdaptersModule;
@@ -33,7 +31,7 @@ use super::traits::AdaptersModule;
 ///
 /// - **Null Providers as Defaults**: `NullEmbeddingProvider`, `NullVectorStoreProvider`
 /// - **Runtime Overrides**: Production providers injected via `with_component_override()`
-/// - **Repository Injection**: Repositories inject the providers they depend on
+/// - **Null Repositories**: For testing, can be overridden for production
 ///
 /// ## Construction
 ///
@@ -52,16 +50,13 @@ use super::traits::AdaptersModule;
 module! {
     pub AdaptersModuleImpl: AdaptersModule {
         components = [
-            // HTTP client for external APIs
-            HttpClientPool,
-
             // Null providers (testing fallbacks, overridden in production)
             NullEmbeddingProvider,
             NullVectorStoreProvider,
 
-            // Repositories (inject providers above)
-            VectorStoreChunkRepository,
-            VectorStoreSearchRepository
+            // Null repositories (testing fallbacks)
+            NullChunkRepository,
+            NullSearchRepository
         ],
         providers = []
     }

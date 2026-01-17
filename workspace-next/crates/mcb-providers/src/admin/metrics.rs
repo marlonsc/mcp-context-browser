@@ -12,6 +12,8 @@ use std::time::Instant;
 ///
 /// Thread-safe implementation of PerformanceMetricsInterface using atomic operations.
 /// Tracks queries, response times, cache hits, and active connections.
+#[derive(shaku::Component)]
+#[shaku(interface = mcb_domain::ports::admin::PerformanceMetricsInterface)]
 pub struct AtomicPerformanceMetrics {
     /// Server start time for uptime calculation
     start_time: Instant,

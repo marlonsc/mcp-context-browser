@@ -20,7 +20,7 @@ use mcb_domain::error::Result;
 #[async_trait]
 pub trait InfrastructureFactory: Send + Sync {
     /// Create infrastructure components from configuration
-    async fn create_components(&self) -> Result<crate::di::bootstrap::InfrastructureComponents>;
+    async fn create_components(&self) -> Result<crate::di::bootstrap::DiContainer>;
 }
 
 /// Factory for creating cache providers

@@ -5,7 +5,6 @@
 //!
 //! Benchmark functions and helper functions are registered via criterion_group! macro
 //! and thus appear as unused by static analysis, but are actually called at runtime.
-#![allow(dead_code)]
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use mcp_context_browser::adapters::repository::{RepositoryStats, SearchStats};

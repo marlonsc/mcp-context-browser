@@ -1,7 +1,7 @@
 //! Intelligent code chunking adapter using tree-sitter for structural parsing
 //!
-//! Provides language-aware chunking that respects code structure rather than
-//! naive line-based or character-based splitting.
+//! This module re-exports the chunking functionality from `crate::language`.
+//! The `language` module is the single source of truth for all code chunking.
 //!
 //! ## Overview
 //!
@@ -17,30 +17,22 @@
 //!
 //! ## Architecture
 //!
-//! This adapter implements the `CodeChunker` port trait from mcb-domain,
-//! providing the actual AST-based chunking implementation using tree-sitter.
-//!
-//! Language-specific processors are provided by the `crate::language` module.
+//! All implementations live in `crate::language`. This module provides
+//! re-exports for backward compatibility and clearer API.
 
-// Chunking-specific constants
-pub mod constants;
-
-// Language detection utilities
-pub mod language_helpers;
-
-// Core chunking engine
-pub mod engine;
-
-// Public re-exports
-pub use constants::*;
-pub use engine::IntelligentChunker;
-pub use language_helpers::{
-    get_chunk_size, is_language_supported, language_from_extension, supported_languages,
-};
-
-// Re-export language processors from the language module
+// Re-export everything from the language module (single source of truth)
 pub use crate::language::{
-    BaseProcessor, CProcessor, CSharpProcessor, CppProcessor, GoProcessor, JavaProcessor,
-    JavaScriptProcessor, KotlinProcessor, LanguageConfig, LanguageProcessor, NodeExtractionRule,
-    PhpProcessor, PythonProcessor, RubyProcessor, RustProcessor, SwiftProcessor,
+    // Engine
+    IntelligentChunker,
+    // Helpers
+    get_chunk_size, is_language_supported, language_from_extension, supported_languages,
+    // Base types
+    BaseProcessor, LanguageConfig, LanguageProcessor, NodeExtractionRule,
+    // Language processors
+    CProcessor, CSharpProcessor, CppProcessor, GoProcessor, JavaProcessor,
+    JavaScriptProcessor, KotlinProcessor, PhpProcessor, PythonProcessor,
+    RubyProcessor, RustProcessor, SwiftProcessor,
 };
+
+// Re-export constants from language/common
+pub use crate::language::common::constants::*;

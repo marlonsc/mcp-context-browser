@@ -2,7 +2,6 @@
 //!
 //! Contains admin service with dependencies on infrastructure and server modules.
 
-#![allow(missing_docs)]
 
 use shaku::module;
 

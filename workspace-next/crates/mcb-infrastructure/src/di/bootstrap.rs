@@ -13,27 +13,25 @@
 //! ## Construction Pattern
 //!
 //! ```rust,ignore
-//! // 1. Build leaf modules (no dependencies)
+//! // Build all modules (simplified - no dependencies between them)
 //! let infrastructure = Arc::new(InfrastructureModuleImpl::builder().build());
 //! let server = Arc::new(ServerModuleImpl::builder().build());
 //! let adapters = Arc::new(AdaptersModuleImpl::builder().build());
+//! let application = Arc::new(ApplicationModuleImpl::builder().build());
+//! let admin = Arc::new(AdminModuleImpl::builder().build());
 //!
-//! // 2. Build application module (depends on adapters)
-//! let application = Arc::new(ApplicationModuleImpl::builder(adapters.clone()).build());
-//!
-//! // 3. Build admin module (depends on all)
-//! let admin = Arc::new(AdminModuleImpl::builder(
-//!     infrastructure.clone(),
-//!     server.clone(),
-//!     adapters.clone(),
-//!     application.clone()
-//! ).build());
-//!
-//! // 4. Build root container
+//! // Build root container
 //! let container = McpModule::builder(infrastructure, server, adapters, application, admin).build();
 //! ```
+//!
+//! ## Note
+//!
+//! Most services are created at runtime via DomainServicesFactory (in domain_services.rs)
+//! rather than through Shaku DI, because they require runtime configuration.
+//! The Shaku modules primarily hold null providers as defaults.
 
 use crate::config::AppConfig;
+use crate::crypto::CryptoService;
 use mcb_domain::error::Result;
 use std::sync::Arc;
 use tracing::info;
@@ -59,8 +57,7 @@ use super::factory::{EmbeddingProviderFactory, VectorStoreProviderFactory};
 /// // Create container with production config
 /// let container = DiContainer::build_with_config(config, http_client).await?;
 ///
-/// // Resolve any service through trait-based access
-/// let search_service: Arc<dyn SearchServiceInterface> = container.resolve();
+/// // Resolve provider through trait-based access
 /// let embedding_provider: Arc<dyn EmbeddingProvider> = container.resolve();
 /// ```
 pub type DiContainer = McpModule;
@@ -73,7 +70,7 @@ pub struct ProviderOverrides;
 
 impl ProviderOverrides {
     /// Create embedding provider from configuration
-    pub fn create_embedding_provider(config: &AppConfig) -> Result<Box<dyn mcb_domain::ports::providers::EmbeddingProvider>> {
+    pub fn create_embedding_provider(config: &AppConfig) -> Result<Arc<dyn mcb_domain::ports::providers::EmbeddingProvider>> {
         if let Some((name, embedding_config)) = config.providers.embedding.iter().next() {
             info!(provider = name, "Creating embedding provider from config");
             EmbeddingProviderFactory::create(embedding_config, None)
@@ -87,7 +84,7 @@ impl ProviderOverrides {
     pub fn create_vector_store_provider(
         config: &AppConfig,
         crypto: &CryptoService,
-    ) -> Result<Box<dyn mcb_domain::ports::providers::VectorStoreProvider>> {
+    ) -> Result<Arc<dyn mcb_domain::ports::providers::VectorStoreProvider>> {
         if let Some((name, vector_config)) = config.providers.vector_store.iter().next() {
             info!(
                 provider = name,
@@ -108,9 +105,12 @@ impl ProviderOverrides {
 /// Builds the hierarchical module structure following the strict Shaku pattern.
 /// Provides both testing (null providers) and production (configured providers) setups.
 pub struct DiContainerBuilder {
+    #[allow(dead_code)]
     config: Option<AppConfig>,
-    embedding_override: Option<Box<dyn mcb_domain::ports::providers::EmbeddingProvider>>,
-    vector_store_override: Option<Box<dyn mcb_domain::ports::providers::VectorStoreProvider>>,
+    #[allow(dead_code)]
+    embedding_override: Option<Arc<dyn mcb_domain::ports::providers::EmbeddingProvider>>,
+    #[allow(dead_code)]
+    vector_store_override: Option<Arc<dyn mcb_domain::ports::providers::VectorStoreProvider>>,
 }
 
 impl DiContainerBuilder {
@@ -135,7 +135,7 @@ impl DiContainerBuilder {
     /// Override the embedding provider (for production configuration)
     pub fn with_embedding_provider(
         mut self,
-        provider: Box<dyn mcb_domain::ports::providers::EmbeddingProvider>,
+        provider: Arc<dyn mcb_domain::ports::providers::EmbeddingProvider>,
     ) -> Self {
         self.embedding_override = Some(provider);
         self
@@ -144,51 +144,38 @@ impl DiContainerBuilder {
     /// Override the vector store provider (for production configuration)
     pub fn with_vector_store_provider(
         mut self,
-        provider: Box<dyn mcb_domain::ports::providers::VectorStoreProvider>,
+        provider: Arc<dyn mcb_domain::ports::providers::VectorStoreProvider>,
     ) -> Self {
         self.vector_store_override = Some(provider);
         self
     }
 
     /// Build the DI container with hierarchical module composition
+    ///
+    /// Note: Provider overrides are stored but not used by Shaku modules directly.
+    /// Instead, use `ProviderOverrides` methods and pass providers to `DomainServicesFactory`
+    /// at runtime for actual service creation.
+    ///
+    /// ApplicationModule and AdminModule are placeholders - their services are created
+    /// at runtime via DomainServicesFactory, not through Shaku resolution.
     pub async fn build(self) -> Result<DiContainer> {
-        // 1. Build leaf modules (no dependencies)
+        // Build leaf modules (no dependencies)
+        // Note: Shaku modules use null providers as defaults.
+        // Real providers are created via DomainServicesFactory at runtime.
         let infrastructure: Arc<dyn InfrastructureModule> =
             Arc::new(InfrastructureModuleImpl::builder().build());
         let server: Arc<dyn ServerModule> = Arc::new(ServerModuleImpl::builder().build());
+        let adapters: Arc<dyn AdaptersModule> = Arc::new(AdaptersModuleImpl::builder().build());
 
-        // 2. Build adapters module with provider overrides if configured
-        let mut adapters_builder = AdaptersModuleImpl::builder();
+        // Build root container with core modules only
+        // ApplicationModule and AdminModule are NOT included - they're runtime-only
+        Ok(McpModule::builder(infrastructure, server, adapters).build())
+    }
+}
 
-        if let Some(embedding_provider) = self.embedding_override {
-            adapters_builder = adapters_builder
-                .with_component_override::<dyn mcb_domain::ports::providers::EmbeddingProvider>(embedding_provider);
-        }
-
-        if let Some(vector_store_provider) = self.vector_store_override {
-            adapters_builder = adapters_builder
-                .with_component_override::<dyn mcb_domain::ports::providers::VectorStoreProvider>(vector_store_provider);
-        }
-
-        let adapters: Arc<dyn AdaptersModule> = Arc::new(adapters_builder.build());
-
-        // 3. Build application module (depends on adapters)
-        let application: Arc<dyn ApplicationModule> =
-            Arc::new(ApplicationModuleImpl::builder(Arc::clone(&adapters)).build());
-
-        // 4. Build admin module (depends on all other modules)
-        let admin: Arc<dyn AdminModule> = Arc::new(
-            AdminModuleImpl::builder(
-                Arc::clone(&infrastructure),
-                Arc::clone(&server),
-                Arc::clone(&adapters),
-                Arc::clone(&application),
-            )
-            .build(),
-        );
-
-        // 5. Build root container with all modules
-        Ok(McpModule::builder(infrastructure, server, adapters, application, admin).build())
+impl Default for DiContainerBuilder {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -201,11 +188,11 @@ pub async fn create_test_container() -> Result<DiContainer> {
 pub async fn create_production_container(config: AppConfig) -> Result<DiContainer> {
     // Create configured providers
     let embedding_provider = ProviderOverrides::create_embedding_provider(&config)?;
-    let crypto = crate::crypto::CryptoService::new(
+    let crypto = CryptoService::new(
         if config.auth.jwt.secret.len() >= 32 {
             config.auth.jwt.secret.as_bytes()[..32].to_vec()
         } else {
-            crate::crypto::CryptoService::generate_master_key()
+            CryptoService::generate_master_key()
         }
     )?;
     let vector_store_provider = ProviderOverrides::create_vector_store_provider(&config, &crypto)?;
@@ -227,4 +214,138 @@ pub async fn create_production_container(config: AppConfig) -> Result<DiContaine
 )]
 pub async fn create_full_container(config: AppConfig) -> Result<DiContainer> {
     create_production_container(config).await
+}
+
+// ============================================================================
+// Legacy Compatibility Types (for gradual migration)
+// ============================================================================
+
+/// Infrastructure components container for backward compatibility
+///
+/// **Note**: This exists for gradual migration from the old API.
+/// New code should use `create_production_container()` and Shaku modules.
+#[derive(Clone)]
+pub struct InfrastructureComponents {
+    /// Shared cache provider
+    pub cache: crate::cache::provider::SharedCacheProvider,
+    /// Crypto service
+    pub crypto: CryptoService,
+    /// Health registry
+    pub health: crate::health::HealthRegistry,
+}
+
+impl InfrastructureComponents {
+    /// Create infrastructure components from configuration
+    pub async fn new(config: AppConfig) -> Result<Self> {
+        InfrastructureContainerBuilder::new(config).build().await
+    }
+}
+
+/// Builder for infrastructure components (backward compatibility)
+///
+/// **Note**: This exists for gradual migration from the old API.
+pub struct InfrastructureContainerBuilder {
+    config: AppConfig,
+}
+
+impl InfrastructureContainerBuilder {
+    /// Create a new builder
+    pub fn new(config: AppConfig) -> Self {
+        Self { config }
+    }
+
+    /// Build infrastructure components
+    pub async fn build(self) -> Result<InfrastructureComponents> {
+        // Create cache provider
+        let cache = crate::cache::factory::CacheProviderFactory::create_from_config(
+            &self.config.system.infrastructure.cache,
+        )
+        .await?;
+
+        // Create crypto service with 32-byte key
+        let master_key = if self.config.auth.jwt.secret.len() >= 32 {
+            self.config.auth.jwt.secret.as_bytes()[..32].to_vec()
+        } else {
+            CryptoService::generate_master_key()
+        };
+        let crypto = CryptoService::new(master_key)?;
+
+        // Create health registry
+        let health = crate::health::HealthRegistry::new();
+        let system_checker = crate::health::checkers::SystemHealthChecker::new();
+        health.register_checker("system".to_string(), system_checker).await;
+
+        Ok(InfrastructureComponents {
+            cache,
+            crypto,
+            health,
+        })
+    }
+}
+
+// ============================================================================
+// Legacy FullContainer (for mcb-server backward compatibility)
+// ============================================================================
+
+use super::modules::DomainServicesContainer;
+use super::modules::DomainServicesFactory;
+use mcb_domain::domain_services::search::{
+    ContextServiceInterface, IndexingServiceInterface, SearchServiceInterface,
+};
+
+/// Full container for backward compatibility with mcb-server.
+///
+/// **Note**: This exists for gradual migration from the old API.
+/// It combines InfrastructureComponents with DomainServicesContainer.
+#[derive(Clone)]
+pub struct FullContainer {
+    /// Infrastructure components
+    pub infrastructure: InfrastructureComponents,
+    /// Domain services
+    pub services: DomainServicesContainer,
+}
+
+impl FullContainer {
+    /// Create a full container from configuration
+    pub async fn new(config: AppConfig) -> Result<Self> {
+        // Create infrastructure components
+        let infrastructure = InfrastructureComponents::new(config.clone()).await?;
+
+        // Create embedding and vector store providers
+        let embedding_provider = ProviderOverrides::create_embedding_provider(&config)?;
+        let vector_store_provider = ProviderOverrides::create_vector_store_provider(
+            &config,
+            &infrastructure.crypto,
+        )?;
+
+        // Create domain services
+        let services = DomainServicesFactory::create_services(
+            infrastructure.cache.clone(),
+            infrastructure.crypto.clone(),
+            config,
+            embedding_provider,
+            vector_store_provider,
+        )
+        .await?;
+
+        Ok(Self {
+            infrastructure,
+            services,
+        })
+    }
+
+    /// Get the indexing service
+    pub fn indexing_service(&self) -> Arc<dyn IndexingServiceInterface> {
+        self.services.indexing_service.clone()
+    }
+
+    /// Get the context service
+    pub fn context_service(&self) -> Arc<dyn ContextServiceInterface> {
+        self.services.context_service.clone()
+    }
+
+    /// Get the search service
+    pub fn search_service(&self) -> Arc<dyn SearchServiceInterface> {
+        self.services.search_service.clone()
+    }
 }

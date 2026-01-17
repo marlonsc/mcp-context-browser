@@ -3,7 +3,7 @@
 //! Provides domain service implementations that can be injected into the server.
 //! These services implement domain interfaces using infrastructure components.
 
-use mcb_providers::chunking::{language_from_extension, IntelligentChunker};
+use mcb_providers::language::{language_from_extension, IntelligentChunker};
 use mcb_domain::ports::providers::cache::CacheEntryConfig;
 use crate::cache::provider::SharedCacheProvider;
 use crate::config::AppConfig;
@@ -36,35 +36,22 @@ impl DomainServicesFactory {
     /// Create domain services using infrastructure components
     pub async fn create_services(
         cache: SharedCacheProvider,
-        crypto: CryptoService,
-        config: AppConfig,
+        _crypto: CryptoService,
+        _config: AppConfig,
         embedding_provider: Arc<dyn EmbeddingProvider>,
         vector_store_provider: Arc<dyn VectorStoreProvider>,
     ) -> Result<DomainServicesContainer> {
+        // Get the underlying cache provider
+        let cache_provider = cache.as_provider();
+
         // Create context service implementation
-        let context_service: Arc<dyn ContextServiceInterface> = Arc::new(ContextServiceImpl::new(
-            cache.clone(),
-            crypto.clone(),
-            config.clone(),
-            embedding_provider,
-            vector_store_provider,
-        ));
+        let context_service: Arc<dyn ContextServiceInterface> = Arc::new(ContextServiceImpl::new());
 
         // Create search service implementation
-        let search_service: Arc<dyn SearchServiceInterface> = Arc::new(SearchServiceImpl::new(
-            cache.clone(),
-            config.clone(),
-            context_service.clone(),
-        ));
+        let search_service: Arc<dyn SearchServiceInterface> = Arc::new(SearchServiceImpl::new());
 
-        // Create indexing service implementation (needs context_service)
-        let indexing_service: Arc<dyn IndexingServiceInterface> =
-            Arc::new(IndexingServiceImpl::new(
-                cache.clone(),
-                crypto.clone(),
-                config.clone(),
-                context_service.clone(),
-            ));
+        // Create indexing service implementation
+        let indexing_service: Arc<dyn IndexingServiceInterface> = Arc::new(IndexingServiceImpl::new());
 
         Ok(DomainServicesContainer {
             context_service,
@@ -74,32 +61,19 @@ impl DomainServicesFactory {
     }
 }
 
-/// Context service implementation
+/// Context service implementation for complete Shaku DI
+#[derive(shaku::Component)]
+#[shaku(interface = ContextServiceInterface)]
 pub struct ContextServiceImpl {
     cache: SharedCacheProvider,
-    #[allow(dead_code)]
-    crypto: CryptoService,
-    #[allow(dead_code)]
-    config: AppConfig,
     embedding_provider: Arc<dyn EmbeddingProvider>,
     vector_store_provider: Arc<dyn VectorStoreProvider>,
 }
 
 impl ContextServiceImpl {
-    pub fn new(
-        cache: SharedCacheProvider,
-        crypto: CryptoService,
-        config: AppConfig,
-        embedding_provider: Arc<dyn EmbeddingProvider>,
-        vector_store_provider: Arc<dyn VectorStoreProvider>,
-    ) -> Self {
-        Self {
-            cache,
-            crypto,
-            config,
-            embedding_provider,
-            vector_store_provider,
-        }
+    /// Create new context service (Shaku DI compatible)
+    pub fn new() -> Self {
+        Self
     }
 }
 
@@ -159,9 +133,9 @@ impl ContextServiceInterface for ContextServiceImpl {
         let meta_key = format!("collection:{}:meta", collection);
         let chunk_count = chunks.len();
         self.cache
-            .set(
+            .set_json(
                 &meta_key,
-                &chunk_count,
+                &chunk_count.to_string(),
                 CacheEntryConfig::default(),
             )
             .await?;
@@ -238,26 +212,15 @@ impl ContextServiceInterface for ContextServiceImpl {
     }
 }
 
-/// Search service implementation
-pub struct SearchServiceImpl {
-    #[allow(dead_code)]
-    cache: SharedCacheProvider,
-    #[allow(dead_code)]
-    config: AppConfig,
-    context_service: Arc<dyn ContextServiceInterface>,
-}
+/// Search service implementation for Shaku DI
+#[derive(shaku::Component)]
+#[shaku(interface = SearchServiceInterface)]
+pub struct SearchServiceImpl;
 
 impl SearchServiceImpl {
-    pub fn new(
-        cache: SharedCacheProvider,
-        config: AppConfig,
-        context_service: Arc<dyn ContextServiceInterface>,
-    ) -> Self {
-        Self {
-            cache,
-            config,
-            context_service,
-        }
+    /// Create new search service (Shaku DI compatible)
+    pub fn new() -> Self {
+        Self
     }
 }
 
@@ -277,32 +240,15 @@ impl SearchServiceInterface for SearchServiceImpl {
     }
 }
 
-/// Indexing service implementation
-pub struct IndexingServiceImpl {
-    #[allow(dead_code)]
-    cache: SharedCacheProvider,
-    #[allow(dead_code)]
-    crypto: CryptoService,
-    #[allow(dead_code)]
-    config: AppConfig,
-    context_service: Arc<dyn ContextServiceInterface>,
-    chunker: IntelligentChunker,
-}
+/// Indexing service implementation for Shaku DI
+#[derive(shaku::Component)]
+#[shaku(interface = IndexingServiceInterface)]
+pub struct IndexingServiceImpl;
 
 impl IndexingServiceImpl {
-    pub fn new(
-        cache: SharedCacheProvider,
-        crypto: CryptoService,
-        config: AppConfig,
-        context_service: Arc<dyn ContextServiceInterface>,
-    ) -> Self {
-        Self {
-            cache,
-            crypto,
-            config,
-            context_service,
-            chunker: IntelligentChunker::new(),
-        }
+    /// Create new indexing service (Shaku DI compatible)
+    pub fn new() -> Self {
+        Self
     }
 
     /// Discover files recursively from a path
@@ -423,6 +369,8 @@ impl IndexingServiceImpl {
         let language = language_from_extension(ext);
         let file_name = path.to_string_lossy().to_string();
 
-        self.chunker.chunk_code(content, &file_name, &language)
+        // Create chunker inline - it's stateless and cheap to create
+        let chunker = IntelligentChunker::new();
+        chunker.chunk_code(content, &file_name, &language)
     }
 }

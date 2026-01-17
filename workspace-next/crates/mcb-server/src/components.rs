@@ -9,7 +9,6 @@
 //! - Hot reload support
 //! - Dynamic component registration
 
-#![allow(dead_code)]
 
 /// Server component utilities (placeholder)
 pub struct ServerComponents;

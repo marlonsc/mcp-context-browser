@@ -508,8 +508,8 @@ impl ShakuValidator {
                     || file_name == "mcp_server.rs"  // Composition root for MCP server
                     || file_name == "server.rs"  // Server composition roots
                     || file_name == "main.rs"  // Application entry point
-                    || path_str.contains("/di/modules/")  // All DI module files
-                    || path_str.contains("/di/factory/")  // All DI factory files
+                    || path_str.contains("/di/modules/")  // All DI module files - ALLOWED for Shaku modules
+                    || path_str.contains("/di/factory/")  // All DI factory files - ALLOWED for factories
                 {
                     continue;
                 }
@@ -1365,7 +1365,7 @@ impl ShakuValidator {
     /// Check for forbidden cross-crate concrete imports from mcb-providers in infrastructure/server
     pub fn validate_cross_crate_imports(&self) -> Result<Vec<ShakuViolation>> {
         let mut violations = Vec::new();
-        // Pattern: use mcb_providers::xxx::ConcreteType;
+        // Regex matches imports like: use mcb_providers::module::Type
         let import_pattern = Regex::new(r"use\s+mcb_providers::([a-z_]+)::([A-Z][a-zA-Z0-9_,\s]*)").expect("Invalid regex");
         let type_pattern = Regex::new(r"([A-Z][a-zA-Z0-9_]+)").expect("Invalid regex");
 

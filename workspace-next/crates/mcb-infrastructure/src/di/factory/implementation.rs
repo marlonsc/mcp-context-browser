@@ -6,7 +6,7 @@
 use crate::cache::factory::CacheProviderFactory as CacheFactory;
 use crate::config::AppConfig;
 use crate::crypto::CryptoService;
-use crate::di::bootstrap::{InfrastructureComponents, InfrastructureContainerBuilder};
+use crate::di::bootstrap::{DiContainer, DiContainerBuilder};
 use crate::di::factory::traits::*;
 use crate::health::HealthRegistry;
 use async_trait::async_trait;
@@ -26,8 +26,8 @@ impl DefaultInfrastructureFactory {
 
 #[async_trait]
 impl InfrastructureFactory for DefaultInfrastructureFactory {
-    async fn create_components(&self) -> Result<InfrastructureComponents> {
-        InfrastructureContainerBuilder::new(self.config.clone())
+    async fn create_components(&self) -> Result<DiContainer> {
+        DiContainerBuilder::with_config(self.config.clone())
             .build()
             .await
     }

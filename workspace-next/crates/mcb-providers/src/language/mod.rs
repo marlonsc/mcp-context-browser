@@ -1,11 +1,20 @@
 //! Language Chunking Provider Implementations
 //!
 //! Provides AST-based code parsing for various programming languages.
+//! This is the single source of truth for all language-related
+//! chunking functionality, including processors and the intelligent chunker.
 //!
-//! ## Available Providers
+//! ## Architecture
 //!
-//! | Provider | Language | Status |
-//! |----------|----------|--------|
+//! - `common/` - Shared utilities (BaseProcessor, LanguageConfig, constants)
+//! - `helpers` - Language detection and utility functions
+//! - `engine` - IntelligentChunker that orchestrates language processors
+//! - Language-specific processors (rust.rs, python.rs, etc.)
+//!
+//! ## Available Processors
+//!
+//! | Processor | Language | Status |
+//! |-----------|----------|--------|
 //! | [`RustProcessor`] | Rust | Complete |
 //! | [`PythonProcessor`] | Python | Complete |
 //! | [`JavaScriptProcessor`] | JavaScript/TypeScript | Complete |
@@ -21,6 +30,12 @@
 
 /// Common utilities and base types for language processors
 pub mod common;
+
+/// Language detection and helper utilities
+pub mod helpers;
+
+/// Intelligent chunking engine using tree-sitter
+pub mod engine;
 
 // Language-specific processors
 pub mod c;
@@ -50,3 +65,7 @@ pub use python::PythonProcessor;
 pub use ruby::RubyProcessor;
 pub use rust::RustProcessor;
 pub use swift::SwiftProcessor;
+
+// Re-export engine and helpers
+pub use engine::IntelligentChunker;
+pub use helpers::{get_chunk_size, is_language_supported, language_from_extension, supported_languages};

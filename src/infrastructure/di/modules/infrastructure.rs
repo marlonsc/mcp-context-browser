@@ -2,7 +2,6 @@
 //!
 //! Contains system metrics, service providers, event bus, auth, and core infrastructure.
 
-#![allow(missing_docs)]
 
 use shaku::module;
 

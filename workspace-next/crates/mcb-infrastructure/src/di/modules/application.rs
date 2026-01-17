@@ -1,67 +1,56 @@
-//! Application Module Implementation - Business Logic Services
+//! Application Module Implementation - Placeholder for Shaku Module Hierarchy
 //!
-//! This module provides business logic services following Clean Architecture.
-//! It depends on adapters for data access but has no infrastructure dependencies.
+//! This module is a **placeholder** for the Shaku module hierarchy.
 //!
-//! ## Services Provided
+//! ## Why Services Are NOT Registered Here
 //!
-//! - Context service for codebase context management
-//! - Search service for semantic search operations
-//! - Indexing service for background indexing
-//! - Chunking orchestrator for code chunking coordination
-//! - Code chunker for AST-based code parsing
+//! Application services (ContextService, SearchService, IndexingService) have complex
+//! dependencies that cannot be resolved through Shaku's static module system:
+//!
+//! - They depend on runtime-configured providers (embedding, vector store)
+//! - They depend on infrastructure components that require async initialization
+//! - They need dependencies from multiple modules that can't be wired at compile-time
+//!
+//! ## Correct Pattern
+//!
+//! Services are created at runtime via `DomainServicesFactory::create_services()` in
+//! `domain_services.rs`. This allows:
+//!
+//! - Async initialization of dependencies
+//! - Runtime configuration of providers
+//! - Proper dependency injection without Shaku limitations
+//!
+//! ## Usage
+//!
+//! ```rust,ignore
+//! // 1. Build Shaku modules (placeholder only)
+//! let application = ApplicationModuleImpl::builder().build();
+//!
+//! // 2. Create services via factory (with runtime dependencies)
+//! let services = DomainServicesFactory::create_services(
+//!     cache, crypto, config, embedding_provider, vector_store_provider
+//! ).await?;
+//! ```
 
 use shaku::module;
 
-// Import concrete implementations from domain services
-use mcb_domain::domain_services::search::{
-    ContextServiceImpl, IndexingServiceImpl, SearchServiceImpl,
-};
-
-// Import chunking services
-use mcb_domain::chunking::{ChunkingOrchestratorImpl, LanguageChunker};
-
 // Import traits
-use super::traits::{AdaptersModule, ApplicationModule};
+use super::traits::ApplicationModule;
 
-/// Application module implementation following Shaku strict pattern.
+/// Application module implementation - **Placeholder only**.
 ///
-/// This module provides business logic services that depend on adapters.
-/// Uses `use dyn AdaptersModule` to import required external services.
-///
-/// ## Dependencies
-///
-/// Depends on `AdaptersModule` for:
-/// - Embedding and vector store providers
-/// - Repository services for data persistence
+/// This module exists to satisfy the Shaku module hierarchy but
+/// does NOT register any components. Application services are
+/// created via `DomainServicesFactory` at runtime.
 ///
 /// ## Construction
 ///
 /// ```rust,ignore
-/// let adapters = Arc::new(AdaptersModuleImpl::builder().build());
-/// let application = ApplicationModuleImpl::builder(adapters).build();
+/// let application = ApplicationModuleImpl::builder().build();
 /// ```
 module! {
     pub ApplicationModuleImpl: ApplicationModule {
-        components = [
-            // Business logic services
-            ContextServiceImpl,
-            SearchServiceImpl,
-            IndexingServiceImpl,
-            ChunkingOrchestratorImpl,
-            LanguageChunker
-        ],
-        providers = [],
-
-        // Dependencies from adapters module
-        use dyn AdaptersModule {
-            components = [
-                dyn mcb_domain::ports::providers::EmbeddingProvider,
-                dyn mcb_domain::ports::providers::VectorStoreProvider,
-                dyn crate::adapters::repository::ChunkRepository,
-                dyn crate::adapters::repository::SearchRepository
-            ],
-            providers = []
-        }
+        components = [],
+        providers = []
     }
 }

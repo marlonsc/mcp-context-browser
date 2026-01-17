@@ -2,7 +2,6 @@
 //!
 //! Contains business logic services (ContextService, SearchService, IndexingService).
 
-#![allow(missing_docs)]
 //!
 //! ## Service Hierarchy
 //!

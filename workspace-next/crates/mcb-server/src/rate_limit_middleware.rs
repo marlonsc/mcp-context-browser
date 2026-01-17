@@ -10,7 +10,6 @@
 //! - IP-based rate limiting
 //! - Integration with admin API for dynamic configuration
 
-#![allow(dead_code)]
 
 /// Rate limiting middleware (placeholder)
 pub struct RateLimitMiddleware;

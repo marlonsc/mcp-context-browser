@@ -10,7 +10,6 @@
 //! - Security headers middleware
 //! - Audit logging
 
-#![allow(dead_code)]
 
 /// Security utilities for server operations (placeholder)
 pub struct SecurityUtils;

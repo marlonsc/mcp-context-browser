@@ -9,7 +9,6 @@
 //! - Operation queuing
 //! - Progress tracking
 
-#![allow(dead_code)]
 
 /// Server operations coordinator (placeholder)
 pub struct ServerOperations;

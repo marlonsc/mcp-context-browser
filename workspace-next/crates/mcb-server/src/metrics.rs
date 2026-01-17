@@ -9,7 +9,6 @@
 //! - OpenTelemetry integration
 //! - Custom metric types for MCP operations
 
-#![allow(dead_code)]
 
 /// Metrics collector for server operations (placeholder)
 pub struct MetricsCollector;

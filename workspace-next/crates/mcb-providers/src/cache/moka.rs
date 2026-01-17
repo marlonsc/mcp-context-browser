@@ -28,7 +28,8 @@ use std::time::Duration;
 ///
 /// Uses the Moka crate for high-performance concurrent caching.
 /// Supports configurable capacity and TTL.
-#[derive(Clone)]
+#[derive(Clone, shaku::Component)]
+#[shaku(interface = mcb_domain::ports::providers::cache::CacheProvider)]
 pub struct MokaCacheProvider {
     cache: Cache<String, Vec<u8>>,
     max_size: usize,

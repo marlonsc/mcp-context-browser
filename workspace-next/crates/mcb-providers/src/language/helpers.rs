@@ -3,7 +3,7 @@
 //! Provides functions to detect programming languages from file extensions
 //! and other utility functions for working with language identifiers.
 
-use super::constants::*;
+use super::common::constants::*;
 
 /// Extension to language mapping table
 const EXTENSION_LANG_MAP: &[(&[&str], &str)] = &[
@@ -98,5 +98,3 @@ pub fn supported_languages() -> Vec<String> {
         LANG_KOTLIN.to_string(),
     ]
 }
-
-// Tests moved to tests/adapters/chunking/language_helpers_test.rs

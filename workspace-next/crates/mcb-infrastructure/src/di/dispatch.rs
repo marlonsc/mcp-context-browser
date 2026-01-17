@@ -4,7 +4,7 @@
 //! ensuring proper dependency order and lifecycle management.
 
 use crate::config::AppConfig;
-use crate::di::bootstrap::InfrastructureComponents;
+use crate::di::bootstrap::{DiContainer, DiContainerBuilder};
 use crate::di::factory::implementation::*;
 use crate::di::factory::traits::{
     CacheProviderFactory, CryptoServiceFactory, HealthRegistryFactory,
@@ -23,8 +23,8 @@ impl ComponentDispatcher {
     }
 
     /// Dispatch and initialize all infrastructure components
-    pub async fn dispatch(&self) -> Result<InfrastructureComponents> {
-        InfrastructureComponents::new(self.config.clone()).await
+    pub async fn dispatch(&self) -> Result<DiContainer> {
+        DiContainerBuilder::with_config(self.config.clone()).build().await
     }
 
     /// Create cache provider
@@ -71,7 +71,7 @@ impl InfrastructureInitializer {
     }
 
     /// Initialize all infrastructure components
-    pub async fn initialize(&self) -> Result<InfrastructureComponents> {
+    pub async fn initialize(&self) -> Result<DiContainer> {
         // Initialize logging first
         self.initialize_logging()?;
 

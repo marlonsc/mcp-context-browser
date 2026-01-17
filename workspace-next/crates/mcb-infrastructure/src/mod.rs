@@ -41,6 +41,11 @@ pub mod health;
 pub mod logging;
 pub mod utils;
 
+// DI bridge modules (re-exports for module composition)
+pub mod adapters;
+pub mod application;
+pub mod infrastructure;
+
 // Re-export commonly used types
 pub use error_ext::ErrorContext;
 pub use utils::TimedOperation;

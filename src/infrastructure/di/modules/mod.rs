@@ -1,6 +1,5 @@
 //! DI Module Organization - Hierarchical by Domain
 
-#![allow(missing_docs)]
 //!
 //! This module organizes DI components by domain following Clean Architecture:
 //!
