@@ -205,13 +205,13 @@ pub trait LifecycleManaged: Interface + Send + Sync {
     fn state(&self) -> ServiceState;
 
     /// Start the service
-    async fn start(&self) -> crate::error::Result<()>;
+    async fn start(&self) -> mcb_domain::error::Result<()>;
 
     /// Stop the service gracefully
-    async fn stop(&self) -> crate::error::Result<()>;
+    async fn stop(&self) -> mcb_domain::error::Result<()>;
 
     /// Restart the service
-    async fn restart(&self) -> crate::error::Result<()> {
+    async fn restart(&self) -> mcb_domain::error::Result<()> {
         self.stop().await?;
         self.start().await
     }

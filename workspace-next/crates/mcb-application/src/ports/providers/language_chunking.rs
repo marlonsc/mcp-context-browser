@@ -10,8 +10,8 @@
 //! [`VectorStoreProvider`], enabling consistent provider registration,
 //! factory creation, and feature-flag based compilation.
 
-use crate::entities::CodeChunk;
-use crate::value_objects::Language;
+use mcb_domain::entities::CodeChunk;
+use mcb_domain::value_objects::Language;
 use shaku::Interface;
 
 /// Language-Specific Code Chunking Provider

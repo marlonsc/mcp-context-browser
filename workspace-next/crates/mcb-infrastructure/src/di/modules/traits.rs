@@ -38,13 +38,51 @@ pub trait ServerModule:
 {}
 
 // ============================================================================
-// Adapters Module (External Integrations)
+// Context Modules (Clean Architecture Pattern)
+// ============================================================================
+
+/// Cache module trait - caching services.
+pub trait CacheModule:
+    HasComponent<dyn mcb_application::ports::providers::cache::CacheProvider>
+{
+}
+
+/// Embedding module trait - text embedding services.
+pub trait EmbeddingModule:
+    HasComponent<dyn mcb_application::ports::providers::EmbeddingProvider>
+{
+}
+
+/// Data module trait - data persistence services.
+pub trait DataModule:
+    HasComponent<dyn mcb_application::ports::providers::VectorStoreProvider>
+{
+}
+
+/// Language module trait - code processing services.
+pub trait LanguageModule:
+    HasComponent<dyn mcb_application::ports::providers::LanguageChunkingProvider>
+{
+}
+
+/// Use case module trait - application business logic.
+pub trait UseCaseModule:
+    HasComponent<dyn mcb_application::domain_services::search::ContextServiceInterface>
+    + HasComponent<dyn mcb_application::domain_services::search::SearchServiceInterface>
+    + HasComponent<dyn mcb_application::domain_services::search::IndexingServiceInterface>
+{
+}
+
+// ============================================================================
+// Legacy Modules (Compatibility)
 // ============================================================================
 
 /// Adapters module trait - external service integrations.
 pub trait AdaptersModule:
-    HasComponent<dyn mcb_application::ports::providers::EmbeddingProvider>
+    HasComponent<dyn mcb_application::ports::providers::cache::CacheProvider>
+    + HasComponent<dyn mcb_application::ports::providers::EmbeddingProvider>
     + HasComponent<dyn mcb_application::ports::providers::VectorStoreProvider>
+    + HasComponent<dyn mcb_application::ports::providers::LanguageChunkingProvider>
 {
 }
 

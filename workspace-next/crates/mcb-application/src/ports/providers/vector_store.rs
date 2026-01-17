@@ -1,5 +1,5 @@
-use crate::error::Result;
-use crate::value_objects::{Embedding, SearchResult};
+use mcb_domain::error::Result;
+use mcb_domain::value_objects::{Embedding, SearchResult};
 use async_trait::async_trait;
 use serde_json::Value;
 use shaku::Interface;

@@ -11,7 +11,7 @@ use super::{
     RustProcessor, SwiftProcessor,
 };
 use async_trait::async_trait;
-use mcb_domain::domain_services::chunking::{ChunkingOptions, ChunkingResult, CodeChunker};
+use mcb_application::domain_services::chunking::{ChunkingOptions, ChunkingResult, CodeChunker};
 use mcb_domain::entities::CodeChunk;
 use mcb_domain::error::{Error, Result};
 use mcb_domain::value_objects::Language;

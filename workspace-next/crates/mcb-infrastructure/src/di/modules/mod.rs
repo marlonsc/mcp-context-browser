@@ -40,6 +40,14 @@
 /// Domain module traits (interfaces)
 pub mod traits;
 
+/// Context modules (Clean Architecture pattern)
+pub mod cache_module;
+pub mod embedding_module;
+pub mod data_module;
+pub mod language_module;
+pub mod usecase_module;
+
+/// Legacy modules (compatibility)
 /// Infrastructure module implementation (core infrastructure)
 mod infrastructure;
 /// Server module implementation (MCP server components)

@@ -7,7 +7,6 @@ use crate::domain_services::search::{ContextServiceInterface, IndexingServiceInt
 use mcb_domain::entities::CodeChunk;
 use mcb_domain::error::Result;
 use crate::ports::providers::LanguageChunkingProvider;
-use shaku::Component;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -95,7 +94,7 @@ impl IndexingServiceInterface for IndexingServiceImpl {
         &self,
         path: &Path,
         collection: &str,
-    ) -> Result<mcb_domain::domain_services::search::IndexingResult> {
+    ) -> Result<crate::domain_services::search::IndexingResult> {
         use tokio::fs;
 
         self.context_service.initialize(collection).await?;
@@ -128,7 +127,7 @@ impl IndexingServiceInterface for IndexingServiceImpl {
             chunks_created += chunks.len();
         }
 
-        Ok(mcb_domain::domain_services::search::IndexingResult {
+        Ok(crate::domain_services::search::IndexingResult {
             files_processed,
             chunks_created,
             files_skipped,
@@ -136,8 +135,8 @@ impl IndexingServiceInterface for IndexingServiceImpl {
         })
     }
 
-    fn get_status(&self) -> mcb_domain::domain_services::search::IndexingStatus {
-        mcb_domain::domain_services::search::IndexingStatus {
+    fn get_status(&self) -> crate::domain_services::search::IndexingStatus {
+        crate::domain_services::search::IndexingStatus {
             is_indexing: false,
             progress: 0.0,
             current_file: None,

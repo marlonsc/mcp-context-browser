@@ -6,7 +6,6 @@
 use crate::domain_services::search::{ContextServiceInterface, SearchServiceInterface};
 use mcb_domain::error::Result;
 use mcb_domain::value_objects::SearchResult;
-use shaku::Component;
 use std::sync::Arc;
 
 /// Search service implementation - delegates to context service

@@ -4,10 +4,10 @@
 //! These traits are implemented by the application services and
 //! used by the presentation layer (handlers).
 
-use crate::entities::CodeChunk;
-use crate::error::Result;
-use crate::repositories::{chunk_repository::RepositoryStats, search_repository::SearchStats};
-use crate::value_objects::{Embedding, SearchResult};
+use mcb_domain::entities::CodeChunk;
+use mcb_domain::error::Result;
+// Note: Stats types moved or removed
+use mcb_domain::value_objects::{Embedding, SearchResult};
 use async_trait::async_trait;
 use shaku::Interface;
 use std::path::Path;
@@ -23,7 +23,7 @@ use std::path::Path;
 /// # Example
 ///
 /// ```ignore
-/// use mcb_domain::domain_services::ContextServiceInterface;
+/// use crate::domain_services::ContextServiceInterface;
 ///
 /// // Initialize collection for a project
 /// context.initialize("my-project").await?;
@@ -60,7 +60,7 @@ pub trait ContextServiceInterface: Interface + Send + Sync {
     async fn clear_collection(&self, collection: &str) -> Result<()>;
 
     /// Get combined stats for the service
-    async fn get_stats(&self) -> Result<(RepositoryStats, SearchStats)>;
+    async fn get_stats(&self) -> Result<(i64, i64)>;
 
     /// Get embedding dimensions
     fn embedding_dimensions(&self) -> usize;
@@ -77,7 +77,7 @@ pub trait ContextServiceInterface: Interface + Send + Sync {
 /// # Example
 ///
 /// ```ignore
-/// use mcb_domain::domain_services::SearchServiceInterface;
+/// use crate::domain_services::SearchServiceInterface;
 ///
 /// // Perform semantic code search
 /// let results = search.search("my-project", "error handling", 5).await?;
@@ -107,7 +107,7 @@ pub trait SearchServiceInterface: Interface + Send + Sync {
 /// # Example
 ///
 /// ```ignore
-/// use mcb_domain::domain_services::IndexingServiceInterface;
+/// use crate::domain_services::IndexingServiceInterface;
 ///
 /// // Index a codebase
 /// let result = indexing.index_codebase(Path::new("./src"), "my-project").await?;
@@ -171,7 +171,7 @@ pub struct IndexingStatus {
 /// # Example
 ///
 /// ```ignore
-/// use mcb_domain::domain_services::ChunkingOrchestratorInterface;
+/// use crate::domain_services::ChunkingOrchestratorInterface;
 ///
 /// // Chunk a single file
 /// let chunks = orchestrator.chunk_file(Path::new("src/main.rs")).await?;

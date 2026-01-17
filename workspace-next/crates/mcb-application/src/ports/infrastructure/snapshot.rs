@@ -4,9 +4,9 @@
 //! by the application layer. These are cross-cutting concerns that support
 //! business logic operations.
 
-use crate::entities::codebase::{CodebaseSnapshot, SnapshotChanges};
-use crate::error::Result;
-use crate::value_objects::config::SyncBatch;
+use mcb_domain::entities::codebase::{CodebaseSnapshot, SnapshotChanges};
+use mcb_domain::error::Result;
+use mcb_domain::value_objects::config::SyncBatch;
 use async_trait::async_trait;
 use shaku::Interface;
 use std::path::Path;

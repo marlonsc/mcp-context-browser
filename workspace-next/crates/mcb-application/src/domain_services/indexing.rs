@@ -3,9 +3,9 @@
 //! Interface for the indexing service that handles code ingestion,
 //! processing, and indexing operations.
 
-use crate::entities::CodeChunk;
-use crate::error::Result;
-use crate::value_objects::{config::SyncBatch, types::OperationType};
+use mcb_domain::entities::CodeChunk;
+use mcb_domain::error::Result;
+use mcb_domain::value_objects::{config::SyncBatch, types::OperationType};
 use async_trait::async_trait;
 use shaku::Interface;
 use std::path::Path;
@@ -23,7 +23,7 @@ use std::path::Path;
 /// # Example
 ///
 /// ```ignore
-/// use mcb_domain::domain_services::BatchIndexingServiceInterface;
+/// use crate::domain_services::BatchIndexingServiceInterface;
 ///
 /// // Index a directory
 /// batch_indexer.index_directory(Path::new("./src")).await?;

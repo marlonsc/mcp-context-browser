@@ -8,10 +8,9 @@ use mcb_domain::entities::CodeChunk;
 use mcb_domain::error::Result;
 use crate::ports::providers::cache::CacheEntryConfig;
 use crate::ports::providers::{EmbeddingProvider, VectorStoreProvider};
-use mcb_domain::repositories::{chunk_repository::RepositoryStats, search_repository::SearchStats};
+// Note: Stats moved to domain_services
 use mcb_domain::value_objects::{Embedding, SearchResult};
 use serde_json::json;
-use shaku::Component;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -20,7 +19,7 @@ use std::sync::Arc;
 #[shaku(interface = crate::domain_services::search::ContextServiceInterface)]
 pub struct ContextServiceImpl {
     #[shaku(inject)]
-    cache: Arc<dyn mcb_domain::ports::providers::cache::CacheProvider>,
+    cache: Arc<dyn crate::ports::providers::cache::CacheProvider>,
 
     #[shaku(inject)]
     embedding_provider: Arc<dyn EmbeddingProvider>,
@@ -32,7 +31,7 @@ pub struct ContextServiceImpl {
 impl ContextServiceImpl {
     /// Create new context service with injected dependencies
     pub fn new(
-        cache: Arc<dyn mcb_domain::ports::providers::cache::CacheProvider>,
+        cache: Arc<dyn crate::ports::providers::cache::CacheProvider>,
         embedding_provider: Arc<dyn EmbeddingProvider>,
         vector_store_provider: Arc<dyn VectorStoreProvider>,
     ) -> Self {
@@ -155,23 +154,9 @@ impl ContextServiceInterface for ContextServiceImpl {
         Ok(())
     }
 
-    async fn get_stats(&self) -> Result<(RepositoryStats, SearchStats)> {
-        // Return placeholder stats
-        let repo_stats = RepositoryStats {
-            total_chunks: 0,
-            total_collections: 0,
-            storage_size_bytes: 0,
-            avg_chunk_size_bytes: 0.0,
-        };
-
-        let search_stats = SearchStats {
-            total_queries: 0,
-            avg_response_time_ms: 0.0,
-            cache_hit_rate: 0.0,
-            indexed_documents: 0,
-        };
-
-        Ok((repo_stats, search_stats))
+    async fn get_stats(&self) -> Result<(i64, i64)> {
+        // Return placeholder stats - simplified
+        Ok((0, 0))
     }
 
     fn embedding_dimensions(&self) -> usize {

@@ -4,9 +4,9 @@
 //! enables services to chunk code files without coupling to specific AST parsing
 //! or language-specific implementations.
 
-use crate::entities::CodeChunk;
-use crate::error::Result;
-use crate::value_objects::Language;
+use mcb_domain::entities::CodeChunk;
+use mcb_domain::error::Result;
+use mcb_domain::value_objects::Language;
 use async_trait::async_trait;
 use shaku::Interface;
 use std::path::Path;
@@ -77,7 +77,7 @@ impl ChunkingResult {
 /// # Example
 ///
 /// ```rust,no_run
-/// use mcb_domain::domain_services::chunking::{CodeChunker, ChunkingOptions};
+/// use crate::domain_services::chunking::{CodeChunker, ChunkingOptions};
 /// use std::path::Path;
 ///
 /// async fn process_file(

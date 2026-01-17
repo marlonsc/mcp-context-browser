@@ -2,7 +2,7 @@
 //!
 //! Defines the contract for simple key-value state persistence.
 
-use crate::error::Result;
+use mcb_domain::error::Result;
 use async_trait::async_trait;
 use shaku::Interface;
 

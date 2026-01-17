@@ -2,8 +2,8 @@
 //!
 //! Port for configuration management of providers.
 
-use crate::error::Result;
-use crate::value_objects::{EmbeddingConfig, VectorStoreConfig};
+use mcb_domain::error::Result;
+use mcb_domain::value_objects::{EmbeddingConfig, VectorStoreConfig};
 use shaku::Interface;
 
 /// Provider configuration manager interface
