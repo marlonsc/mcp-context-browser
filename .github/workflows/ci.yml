@@ -92,7 +92,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo install cargo-tarpaulin --locked
       - run: make coverage LCOV=1
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
           file: ./coverage/lcov.info
           fail_ci_if_error: false
