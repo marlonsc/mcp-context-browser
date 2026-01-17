@@ -44,8 +44,7 @@ fn test_auth_config_jwt_secret_length() {
     // JWT secret should be at least 32 characters (256 bits)
     assert!(
         default_auth.jwt.secret.len() >= 32,
-        "JWT secret should be at least 32 characters, got {}",
-        default_auth.jwt.secret.len()
+        "JWT secret should be at least 32 characters"
     );
 
     // Custom secret can be set
