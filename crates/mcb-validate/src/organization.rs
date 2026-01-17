@@ -692,112 +692,101 @@ impl OrganizationValidator {
             "1000000",
         ];
 
-        for crate_dir in self.get_crate_dirs()? {
-            let src_dir = crate_dir.join("src");
-            if !src_dir.exists() {
-                continue;
+        self.for_each_crate_rs_path(|path, _src_dir, _crate_name| {
+            // Skip constants.rs files (they're allowed to have numbers)
+            let file_name = path.file_name().and_then(|n| n.to_str());
+            if file_name.is_some_and(|n| n.contains("constant") || n.contains("config")) {
+                return Ok(());
             }
 
-            for entry in WalkDir::new(&src_dir)
-                .into_iter()
-                .filter_map(|e| e.ok())
-                .filter(|e| e.path().extension().is_some_and(|ext| ext == "rs"))
-            {
-                // Skip constants.rs files (they're allowed to have numbers)
-                let file_name = entry.path().file_name().and_then(|n| n.to_str());
-                if file_name.is_some_and(|n| n.contains("constant") || n.contains("config")) {
+            // Skip test files
+            let path_str = path.to_string_lossy();
+            if Self::is_test_path(&path_str) {
+                return Ok(());
+            }
+
+            let content = std::fs::read_to_string(path)?;
+            let mut in_test_module = false;
+
+            for (line_num, line) in content.lines().enumerate() {
+                let trimmed = line.trim();
+
+                // Skip comments
+                if trimmed.starts_with("//") {
                     continue;
                 }
 
-                // Skip test files
-                let path_str = entry.path().to_string_lossy();
-                if path_str.contains("_test.rs") || path_str.contains("/tests/") {
+                // Track test module context
+                if trimmed.contains("#[cfg(test)]") {
+                    in_test_module = true;
                     continue;
                 }
 
-                let content = std::fs::read_to_string(entry.path())?;
-                let mut in_test_module = false;
+                // Skip test modules
+                if in_test_module {
+                    continue;
+                }
 
-                for (line_num, line) in content.lines().enumerate() {
-                    let trimmed = line.trim();
+                // Skip const/static definitions (they're creating constants)
+                if trimmed.starts_with("const ")
+                    || trimmed.starts_with("pub const ")
+                    || trimmed.starts_with("static ")
+                    || trimmed.starts_with("pub static ")
+                {
+                    continue;
+                }
 
-                    // Skip comments
-                    if trimmed.starts_with("//") {
+                // Skip attribute macros (derive, cfg, etc.)
+                if trimmed.starts_with("#[") {
+                    continue;
+                }
+
+                // Skip doc comments
+                if trimmed.starts_with("///") || trimmed.starts_with("//!") {
+                    continue;
+                }
+
+                // Skip assert macros (often use expected values)
+                if trimmed.contains("assert") {
+                    continue;
+                }
+
+                for cap in magic_pattern.captures_iter(line) {
+                    let num = cap.get(1).map(|m| m.as_str()).unwrap_or("");
+
+                    // Skip allowed numbers
+                    if allowed.contains(&num) {
                         continue;
                     }
 
-                    // Track test module context
-                    if trimmed.contains("#[cfg(test)]") {
-                        in_test_module = true;
+                    // Skip numbers that are clearly part of a constant reference
+                    // e.g., _1024, SIZE_16384
+                    if line.contains(&format!("_{}", num)) || line.contains(&format!("{}_", num)) {
                         continue;
                     }
 
-                    // Skip test modules
-                    if in_test_module {
+                    // Skip underscored numbers (100_000) - they're usually constants
+                    if line.contains(&format!(
+                        "{}_{}",
+                        &num[..num.len().min(3)],
+                        &num[num.len().min(3)..]
+                    )) {
                         continue;
                     }
 
-                    // Skip const/static definitions (they're creating constants)
-                    if trimmed.starts_with("const ")
-                        || trimmed.starts_with("pub const ")
-                        || trimmed.starts_with("static ")
-                        || trimmed.starts_with("pub static ")
-                    {
-                        continue;
-                    }
-
-                    // Skip attribute macros (derive, cfg, etc.)
-                    if trimmed.starts_with("#[") {
-                        continue;
-                    }
-
-                    // Skip doc comments
-                    if trimmed.starts_with("///") || trimmed.starts_with("//!") {
-                        continue;
-                    }
-
-                    // Skip assert macros (often use expected values)
-                    if trimmed.contains("assert") {
-                        continue;
-                    }
-
-                    for cap in magic_pattern.captures_iter(line) {
-                        let num = cap.get(1).map(|m| m.as_str()).unwrap_or("");
-
-                        // Skip allowed numbers
-                        if allowed.contains(&num) {
-                            continue;
-                        }
-
-                        // Skip numbers that are clearly part of a constant reference
-                        // e.g., _1024, SIZE_16384
-                        if line.contains(&format!("_{}", num))
-                            || line.contains(&format!("{}_", num))
-                        {
-                            continue;
-                        }
-
-                        // Skip underscored numbers (100_000) - they're usually constants
-                        if line.contains(&format!(
-                            "{}_{}",
-                            &num[..num.len().min(3)],
-                            &num[num.len().min(3)..]
-                        )) {
-                            continue;
-                        }
-
-                        violations.push(OrganizationViolation::MagicNumber {
-                            file: entry.path().to_path_buf(),
-                            line: line_num + 1,
-                            value: num.to_string(),
-                            context: trimmed.to_string(),
-                            suggestion: "Consider using a named constant".to_string(),
-                            severity: Severity::Info,
-                        });
-                    }
+                    violations.push(OrganizationViolation::MagicNumber {
+                        file: path.to_path_buf(),
+                        line: line_num + 1,
+                        value: num.to_string(),
+                        context: trimmed.to_string(),
+                        suggestion: "Consider using a named constant".to_string(),
+                        severity: Severity::Info,
+                    });
                 }
             }
-        }
+
+            Ok(())
+        })?;
 
         Ok(violations)
     }
@@ -810,98 +799,89 @@ impl OrganizationValidator {
         // Pattern for string literals (15+ chars to reduce noise)
         let string_pattern = Regex::new(r#""([^"\\]{15,})""#).expect("Invalid regex");
 
-        for crate_dir in self.get_crate_dirs()? {
-            let src_dir = crate_dir.join("src");
-            if !src_dir.exists() {
-                continue;
+        self.for_each_crate_rs_path(|path, _src_dir, _crate_name| {
+            // Skip constants files (they define string constants)
+            let file_name = path.file_name().and_then(|n| n.to_str());
+            if file_name.is_some_and(|n| n.contains("constant")) {
+                return Ok(());
             }
 
-            for entry in WalkDir::new(&src_dir)
-                .into_iter()
-                .filter_map(|e| e.ok())
-                .filter(|e| e.path().extension().is_some_and(|ext| ext == "rs"))
-            {
-                // Skip constants files (they define string constants)
-                let file_name = entry.path().file_name().and_then(|n| n.to_str());
-                if file_name.is_some_and(|n| n.contains("constant")) {
+            // Skip test files
+            let path_str = path.to_string_lossy();
+            if Self::is_test_path(&path_str) {
+                return Ok(());
+            }
+
+            let content = std::fs::read_to_string(path)?;
+            let mut in_test_module = false;
+
+            for (line_num, line) in content.lines().enumerate() {
+                let trimmed = line.trim();
+
+                // Skip comments and doc strings
+                if trimmed.starts_with("//") || trimmed.starts_with("#[") {
                     continue;
                 }
 
-                // Skip test files
-                let path_str = entry.path().to_string_lossy();
-                if path_str.contains("_test.rs") || path_str.contains("/tests/") {
+                // Track test module context
+                if trimmed.contains("#[cfg(test)]") {
+                    in_test_module = true;
                     continue;
                 }
 
-                let content = std::fs::read_to_string(entry.path())?;
-                let mut in_test_module = false;
+                // Skip test modules
+                if in_test_module {
+                    continue;
+                }
 
-                for (line_num, line) in content.lines().enumerate() {
-                    let trimmed = line.trim();
+                // Skip const/static definitions
+                if trimmed.starts_with("const ")
+                    || trimmed.starts_with("pub const ")
+                    || trimmed.starts_with("static ")
+                    || trimmed.starts_with("pub static ")
+                {
+                    continue;
+                }
 
-                    // Skip comments and doc strings
-                    if trimmed.starts_with("//") || trimmed.starts_with("#[") {
-                        continue;
-                    }
+                for cap in string_pattern.captures_iter(line) {
+                    let string_val = cap.get(1).map(|m| m.as_str()).unwrap_or("");
 
-                    // Track test module context
-                    if trimmed.contains("#[cfg(test)]") {
-                        in_test_module = true;
-                        continue;
-                    }
-
-                    // Skip test modules
-                    if in_test_module {
-                        continue;
-                    }
-
-                    // Skip const/static definitions
-                    if trimmed.starts_with("const ")
-                        || trimmed.starts_with("pub const ")
-                        || trimmed.starts_with("static ")
-                        || trimmed.starts_with("pub static ")
+                    // Skip common patterns that are OK to repeat
+                    if string_val.contains("{}")           // Format strings
+                        || string_val.starts_with("test_")  // Test names
+                        || string_val.starts_with("Error")  // Error messages
+                        || string_val.starts_with("error")
+                        || string_val.starts_with("Failed")
+                        || string_val.starts_with("Invalid")
+                        || string_val.starts_with("Cannot")
+                        || string_val.starts_with("Unable")
+                        || string_val.starts_with("Missing")
+                        || string_val.contains("://")       // URLs
+                        || string_val.contains(".rs")       // File paths
+                        || string_val.contains(".json")
+                        || string_val.contains(".toml")
+                        || string_val.ends_with("_id")      // ID fields
+                        || string_val.ends_with("_key")     // Key fields
+                        || string_val.starts_with("pub ")   // Code patterns
+                        || string_val.starts_with("fn ")
+                        || string_val.starts_with("let ")
+                        || string_val.starts_with("CARGO_") // env!() macros
+                        || string_val.contains("serde_json")// Code patterns
+                        || string_val.contains(".to_string()")
+                    // Method chains
                     {
                         continue;
                     }
 
-                    for cap in string_pattern.captures_iter(line) {
-                        let string_val = cap.get(1).map(|m| m.as_str()).unwrap_or("");
-
-                        // Skip common patterns that are OK to repeat
-                        if string_val.contains("{}")           // Format strings
-                            || string_val.starts_with("test_")  // Test names
-                            || string_val.starts_with("Error")  // Error messages
-                            || string_val.starts_with("error")
-                            || string_val.starts_with("Failed")
-                            || string_val.starts_with("Invalid")
-                            || string_val.starts_with("Cannot")
-                            || string_val.starts_with("Unable")
-                            || string_val.starts_with("Missing")
-                            || string_val.contains("://")       // URLs
-                            || string_val.contains(".rs")       // File paths
-                            || string_val.contains(".json")
-                            || string_val.contains(".toml")
-                            || string_val.ends_with("_id")      // ID fields
-                            || string_val.ends_with("_key")     // Key fields
-                            || string_val.starts_with("pub ")   // Code patterns
-                            || string_val.starts_with("fn ")
-                            || string_val.starts_with("let ")
-                            || string_val.starts_with("CARGO_") // env!() macros
-                            || string_val.contains("serde_json")// Code patterns
-                            || string_val.contains(".to_string()")
-                        // Method chains
-                        {
-                            continue;
-                        }
-
-                        string_occurrences
-                            .entry(string_val.to_string())
-                            .or_default()
-                            .push((entry.path().to_path_buf(), line_num + 1));
-                    }
+                    string_occurrences
+                        .entry(string_val.to_string())
+                        .or_default()
+                        .push((path.to_path_buf(), line_num + 1));
                 }
             }
-        }
+
+            Ok(())
+        })?;
 
         // Report strings that appear in 4+ files (higher threshold)
         for (value, occurrences) in string_occurrences {
@@ -923,88 +903,73 @@ impl OrganizationValidator {
     pub fn validate_file_placement(&self) -> Result<Vec<OrganizationViolation>> {
         let mut violations = Vec::new();
 
-        for crate_dir in self.get_crate_dirs()? {
-            let src_dir = crate_dir.join("src");
-            if !src_dir.exists() {
-                continue;
+        self.for_each_crate_rs_path(|path, src_dir, crate_name| {
+            let rel_path = path.strip_prefix(src_dir).ok();
+            let path_str = path.to_string_lossy();
+            let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+
+            // Check for adapter implementations in domain crate
+            if crate_name.contains("domain") && path_str.contains("/adapters/") {
+                violations.push(OrganizationViolation::FileInWrongLocation {
+                    file: path.to_path_buf(),
+                    current_location: "domain/adapters".to_string(),
+                    expected_location: "infrastructure/adapters".to_string(),
+                    reason: "Adapters belong in infrastructure layer".to_string(),
+                    severity: Severity::Error,
+                });
             }
 
-            let crate_name = crate_dir.file_name().and_then(|n| n.to_str()).unwrap_or("");
+            // Check for port definitions in infrastructure
+            if crate_name.contains("infrastructure") && path_str.contains("/ports/") {
+                violations.push(OrganizationViolation::FileInWrongLocation {
+                    file: path.to_path_buf(),
+                    current_location: "infrastructure/ports".to_string(),
+                    expected_location: "domain/ports".to_string(),
+                    reason: "Ports (interfaces) belong in domain layer".to_string(),
+                    severity: Severity::Error,
+                });
+            }
 
-            for entry in WalkDir::new(&src_dir)
-                .into_iter()
-                .filter_map(|e| e.ok())
-                .filter(|e| e.path().extension().is_some_and(|ext| ext == "rs"))
+            // Check for config files outside config directories
+            // Exclude handler files (e.g., config_handlers.rs) - these are HTTP handlers, not config files
+            if file_name.contains("config")
+                && !file_name.contains("handler")
+                && !path_str.contains("/config/")
+                && !path_str.contains("/config.rs")
+                && !path_str.contains("/admin/")
+            // Admin config handlers are valid
             {
-                let rel_path = entry.path().strip_prefix(&src_dir).ok();
-                let path_str = entry.path().to_string_lossy();
-                let file_name = entry
-                    .path()
-                    .file_name()
-                    .and_then(|n| n.to_str())
-                    .unwrap_or("");
-
-                // Check for adapter implementations in domain crate
-                if crate_name.contains("domain") && path_str.contains("/adapters/") {
+                // Allow config.rs at root level
+                if rel_path.is_some_and(|p| p.components().count() > 1) {
                     violations.push(OrganizationViolation::FileInWrongLocation {
-                        file: entry.path().to_path_buf(),
-                        current_location: "domain/adapters".to_string(),
-                        expected_location: "infrastructure/adapters".to_string(),
-                        reason: "Adapters belong in infrastructure layer".to_string(),
-                        severity: Severity::Error,
+                        file: path.to_path_buf(),
+                        current_location: "scattered".to_string(),
+                        expected_location: "config/ directory".to_string(),
+                        reason: "Configuration should be centralized".to_string(),
+                        severity: Severity::Info,
                     });
-                }
-
-                // Check for port definitions in infrastructure
-                if crate_name.contains("infrastructure") && path_str.contains("/ports/") {
-                    violations.push(OrganizationViolation::FileInWrongLocation {
-                        file: entry.path().to_path_buf(),
-                        current_location: "infrastructure/ports".to_string(),
-                        expected_location: "domain/ports".to_string(),
-                        reason: "Ports (interfaces) belong in domain layer".to_string(),
-                        severity: Severity::Error,
-                    });
-                }
-
-                // Check for config files outside config directories
-                // Exclude handler files (e.g., config_handlers.rs) - these are HTTP handlers, not config files
-                if file_name.contains("config")
-                    && !file_name.contains("handler")
-                    && !path_str.contains("/config/")
-                    && !path_str.contains("/config.rs")
-                    && !path_str.contains("/admin/")
-                // Admin config handlers are valid
-                {
-                    // Allow config.rs at root level
-                    if rel_path.is_some_and(|p| p.components().count() > 1) {
-                        violations.push(OrganizationViolation::FileInWrongLocation {
-                            file: entry.path().to_path_buf(),
-                            current_location: "scattered".to_string(),
-                            expected_location: "config/ directory".to_string(),
-                            reason: "Configuration should be centralized".to_string(),
-                            severity: Severity::Info,
-                        });
-                    }
-                }
-
-                // Check for error handling spread across modules
-                if file_name == "error.rs" {
-                    // Check that it's at the crate root or in a designated error module
-                    if rel_path.is_some_and(|p| {
-                        let depth = p.components().count();
-                        depth > 2 && !path_str.contains("/error/")
-                    }) {
-                        violations.push(OrganizationViolation::FileInWrongLocation {
-                            file: entry.path().to_path_buf(),
-                            current_location: "nested error.rs".to_string(),
-                            expected_location: "crate root or error/ module".to_string(),
-                            reason: "Error types should be centralized".to_string(),
-                            severity: Severity::Info,
-                        });
-                    }
                 }
             }
-        }
+
+            // Check for error handling spread across modules
+            if file_name == "error.rs" {
+                // Check that it's at the crate root or in a designated error module
+                if rel_path.is_some_and(|p| {
+                    let depth = p.components().count();
+                    depth > 2 && !path_str.contains("/error/")
+                }) {
+                    violations.push(OrganizationViolation::FileInWrongLocation {
+                        file: path.to_path_buf(),
+                        current_location: "nested error.rs".to_string(),
+                        expected_location: "crate root or error/ module".to_string(),
+                        reason: "Error types should be centralized".to_string(),
+                        severity: Severity::Info,
+                    });
+                }
+            }
+
+            Ok(())
+        })?;
 
         Ok(violations)
     }
@@ -1056,123 +1021,112 @@ impl OrganizationValidator {
             "Component", // DI component traits
         ];
 
-        for crate_dir in self.get_crate_dirs()? {
-            let src_dir = crate_dir.join("src");
-            if !src_dir.exists() {
-                continue;
-            }
-
-            let crate_name = crate_dir.file_name().and_then(|n| n.to_str()).unwrap_or("");
-
+        self.for_each_crate_rs_path(|path, _src_dir, crate_name| {
             // Skip domain crate (traits are allowed there)
             if crate_name.contains("domain") {
-                continue;
+                return Ok(());
             }
 
-            for entry in WalkDir::new(&src_dir)
-                .into_iter()
-                .filter_map(|e| e.ok())
-                .filter(|e| e.path().extension().is_some_and(|ext| ext == "rs"))
-            {
-                let path_str = entry.path().to_string_lossy();
+            let path_str = path.to_string_lossy();
 
-                // Skip if in ports directory (re-exports are OK)
-                if path_str.contains("/ports/") {
+            // Skip if in ports directory (re-exports are OK)
+            if path_str.contains("/ports/") {
+                return Ok(());
+            }
+
+            // Skip DI modules (they often define internal traits)
+            if path_str.contains("/di/") {
+                return Ok(());
+            }
+
+            // Skip test files
+            if Self::is_test_path(&path_str) {
+                return Ok(());
+            }
+
+            let content = std::fs::read_to_string(path)?;
+            let mut in_test_module = false;
+
+            for (line_num, line) in content.lines().enumerate() {
+                let trimmed = line.trim();
+
+                // Skip comments
+                if trimmed.starts_with("//") {
                     continue;
                 }
 
-                // Skip DI modules (they often define internal traits)
-                if path_str.contains("/di/") {
+                // Track test module context
+                if trimmed.contains("#[cfg(test)]") {
+                    in_test_module = true;
                     continue;
                 }
 
-                // Skip test files
-                if path_str.contains("_test.rs") || path_str.contains("/tests/") {
+                // Skip traits in test modules
+                if in_test_module {
                     continue;
                 }
 
-                let content = std::fs::read_to_string(entry.path())?;
-                let mut in_test_module = false;
+                if let Some(cap) = trait_pattern.captures(line) {
+                    let trait_name = cap.get(1).map(|m| m.as_str()).unwrap_or("");
 
-                for (line_num, line) in content.lines().enumerate() {
-                    let trimmed = line.trim();
-
-                    // Skip comments
-                    if trimmed.starts_with("//") {
+                    // Skip allowed traits
+                    if allowed_traits.contains(&trait_name) {
                         continue;
                     }
 
-                    // Track test module context
-                    if trimmed.contains("#[cfg(test)]") {
-                        in_test_module = true;
+                    // Skip internal/private traits (starts with underscore)
+                    if trait_name.starts_with('_') {
                         continue;
                     }
 
-                    // Skip traits in test modules
-                    if in_test_module {
+                    // Skip traits with allowed suffixes
+                    if allowed_suffixes
+                        .iter()
+                        .any(|suffix| trait_name.ends_with(suffix))
+                    {
                         continue;
                     }
 
-                    if let Some(cap) = trait_pattern.captures(line) {
-                        let trait_name = cap.get(1).map(|m| m.as_str()).unwrap_or("");
+                    // Skip traits that are clearly internal (private trait declarations)
+                    if trimmed.starts_with("trait ") && !trimmed.starts_with("pub trait ") {
+                        continue;
+                    }
 
-                        // Skip allowed traits
-                        if allowed_traits.contains(&trait_name) {
-                            continue;
-                        }
+                    // Infrastructure-specific provider traits that are OK outside ports
+                    // These are implementation details, not domain contracts
+                    let infra_provider_patterns = [
+                        "CacheProvider",      // Caching is infrastructure
+                        "HttpClientProvider", // HTTP client is infrastructure
+                        "ConfigProvider",     // Config loading is infrastructure
+                        "LogProvider",        // Logging is infrastructure
+                        "MetricsProvider",    // Metrics is infrastructure
+                        "TracingProvider",    // Tracing is infrastructure
+                        "StorageProvider",    // Low-level storage is infra
+                    ];
 
-                        // Skip internal/private traits (starts with underscore)
-                        if trait_name.starts_with('_') {
-                            continue;
-                        }
+                    // Skip infrastructure-specific providers
+                    if infra_provider_patterns.contains(&trait_name) {
+                        continue;
+                    }
 
-                        // Skip traits with allowed suffixes
-                        if allowed_suffixes
-                            .iter()
-                            .any(|suffix| trait_name.ends_with(suffix))
-                        {
-                            continue;
-                        }
-
-                        // Skip traits that are clearly internal (private trait declarations)
-                        if trimmed.starts_with("trait ") && !trimmed.starts_with("pub trait ") {
-                            continue;
-                        }
-
-                        // Infrastructure-specific provider traits that are OK outside ports
-                        // These are implementation details, not domain contracts
-                        let infra_provider_patterns = [
-                            "CacheProvider",      // Caching is infrastructure
-                            "HttpClientProvider", // HTTP client is infrastructure
-                            "ConfigProvider",     // Config loading is infrastructure
-                            "LogProvider",        // Logging is infrastructure
-                            "MetricsProvider",    // Metrics is infrastructure
-                            "TracingProvider",    // Tracing is infrastructure
-                            "StorageProvider",    // Low-level storage is infra
-                        ];
-
-                        // Skip infrastructure-specific providers
-                        if infra_provider_patterns.contains(&trait_name) {
-                            continue;
-                        }
-
-                        // Only flag Provider/Service/Repository traits that look like ports
-                        if trait_name.contains("Provider")
-                            || trait_name.contains("Service")
-                            || trait_name.contains("Repository")
-                            || trait_name.ends_with("Interface")
-                        {
-                            violations.push(OrganizationViolation::TraitOutsidePorts {
-                                file: entry.path().to_path_buf(),
-                                line: line_num + 1,
-                                trait_name: trait_name.to_string(),
-                                severity: Severity::Warning,
-                            });
-                        }
+                    // Only flag Provider/Service/Repository traits that look like ports
+                    if trait_name.contains("Provider")
+                        || trait_name.contains("Service")
+                        || trait_name.contains("Repository")
+                        || trait_name.ends_with("Interface")
+                    {
+                        violations.push(OrganizationViolation::TraitOutsidePorts {
+                            file: path.to_path_buf(),
+                            line: line_num + 1,
+                            trait_name: trait_name.to_string(),
+                            severity: Severity::Warning,
+                        });
                     }
                 }
             }
-        }
+
+            Ok(())
+        })?;
 
         Ok(violations)
     }
@@ -1193,59 +1147,50 @@ impl OrganizationValidator {
         let trait_pattern =
             Regex::new(r"(?:pub\s+)?trait\s+([A-Z][a-zA-Z0-9_]*)").expect("Invalid regex");
 
-        for crate_dir in self.get_crate_dirs()? {
-            let src_dir = crate_dir.join("src");
-            if !src_dir.exists() {
-                continue;
-            }
+        self.for_each_crate_rs_path(|path, _src_dir, _crate_name| {
+            let content = std::fs::read_to_string(path)?;
 
-            for entry in WalkDir::new(&src_dir)
-                .into_iter()
-                .filter_map(|e| e.ok())
-                .filter(|e| e.path().extension().is_some_and(|ext| ext == "rs"))
-            {
-                let content = std::fs::read_to_string(entry.path())?;
+            for (line_num, line) in content.lines().enumerate() {
+                let trimmed = line.trim();
 
-                for (line_num, line) in content.lines().enumerate() {
-                    let trimmed = line.trim();
+                // Skip comments
+                if trimmed.starts_with("//") {
+                    continue;
+                }
 
-                    // Skip comments
-                    if trimmed.starts_with("//") {
-                        continue;
-                    }
+                // Check structs
+                if let Some(cap) = struct_pattern.captures(line) {
+                    let name = cap.get(1).map(|m| m.as_str()).unwrap_or("");
+                    declarations.entry(name.to_string()).or_default().push((
+                        path.to_path_buf(),
+                        line_num + 1,
+                        "struct".to_string(),
+                    ));
+                }
 
-                    // Check structs
-                    if let Some(cap) = struct_pattern.captures(line) {
-                        let name = cap.get(1).map(|m| m.as_str()).unwrap_or("");
-                        declarations.entry(name.to_string()).or_default().push((
-                            entry.path().to_path_buf(),
-                            line_num + 1,
-                            "struct".to_string(),
-                        ));
-                    }
+                // Check enums
+                if let Some(cap) = enum_pattern.captures(line) {
+                    let name = cap.get(1).map(|m| m.as_str()).unwrap_or("");
+                    declarations.entry(name.to_string()).or_default().push((
+                        path.to_path_buf(),
+                        line_num + 1,
+                        "enum".to_string(),
+                    ));
+                }
 
-                    // Check enums
-                    if let Some(cap) = enum_pattern.captures(line) {
-                        let name = cap.get(1).map(|m| m.as_str()).unwrap_or("");
-                        declarations.entry(name.to_string()).or_default().push((
-                            entry.path().to_path_buf(),
-                            line_num + 1,
-                            "enum".to_string(),
-                        ));
-                    }
-
-                    // Check traits
-                    if let Some(cap) = trait_pattern.captures(line) {
-                        let name = cap.get(1).map(|m| m.as_str()).unwrap_or("");
-                        declarations.entry(name.to_string()).or_default().push((
-                            entry.path().to_path_buf(),
-                            line_num + 1,
-                            "trait".to_string(),
-                        ));
-                    }
+                // Check traits
+                if let Some(cap) = trait_pattern.captures(line) {
+                    let name = cap.get(1).map(|m| m.as_str()).unwrap_or("");
+                    declarations.entry(name.to_string()).or_default().push((
+                        path.to_path_buf(),
+                        line_num + 1,
+                        "trait".to_string(),
+                    ));
                 }
             }
-        }
+
+            Ok(())
+        })?;
 
         // Report names with multiple declarations
         for (name, locations) in declarations {
@@ -1287,9 +1232,133 @@ impl OrganizationValidator {
         let server_import_pattern =
             Regex::new(r"use\s+(?:crate::|super::)*server::").expect("Invalid regex");
 
+        self.for_each_scan_dir_rs_path(true, |path, _src_dir| {
+            let path_str = path.to_string_lossy();
+
+            // Skip test files
+            if Self::is_test_path(&path_str) {
+                return Ok(());
+            }
+
+            // Determine current layer
+            let is_server_layer = path_str.contains("/server/");
+            let is_application_layer = path_str.contains("/application/");
+            let is_infrastructure_layer = path_str.contains("/infrastructure/");
+
+            let content = std::fs::read_to_string(path)?;
+            let lines: Vec<&str> = content.lines().collect();
+
+            // Track test modules to skip
+            let mut in_test_module = false;
+            let mut test_brace_depth: i32 = 0;
+            let mut brace_depth: i32 = 0;
+
+            for (line_num, line) in lines.iter().enumerate() {
+                let trimmed = line.trim();
+
+                // Track test module boundaries
+                if trimmed.contains("#[cfg(test)]") {
+                    in_test_module = true;
+                    test_brace_depth = brace_depth;
+                }
+
+                // Track brace depth
+                brace_depth += line.chars().filter(|c| *c == '{').count() as i32;
+                brace_depth -= line.chars().filter(|c| *c == '}').count() as i32;
+
+                // Exit test module when braces close (use < not <= to avoid premature exit)
+                if in_test_module && brace_depth < test_brace_depth {
+                    in_test_module = false;
+                }
+
+                // Skip test modules
+                if in_test_module {
+                    continue;
+                }
+
+                // Skip comments
+                if trimmed.starts_with("//") {
+                    continue;
+                }
+
+                // Check: Server layer creating services directly
+                if is_server_layer {
+                    if let Some(cap) = arc_new_service_pattern.captures(line) {
+                        let service_name = cap.get(1).map(|m| m.as_str()).unwrap_or("");
+
+                        // Skip if it's in a builder or factory file
+                        let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+                        if file_name.contains("builder")
+                            || file_name.contains("factory")
+                            || file_name.contains("bootstrap")
+                        {
+                            continue;
+                        }
+
+                        violations.push(OrganizationViolation::ServerCreatingServices {
+                            file: path.to_path_buf(),
+                            line: line_num + 1,
+                            service_name: service_name.to_string(),
+                            suggestion: "Use DI container to resolve services".to_string(),
+                            severity: Severity::Warning,
+                        });
+                    }
+                }
+
+                // Check: Application layer importing from server
+                if (is_application_layer || is_infrastructure_layer)
+                    && server_import_pattern.is_match(line)
+                    && !trimmed.contains("pub use")
+                {
+                    violations.push(OrganizationViolation::ApplicationImportsServer {
+                        file: path.to_path_buf(),
+                        line: line_num + 1,
+                        import_statement: trimmed.to_string(),
+                        severity: Severity::Warning,
+                    });
+                }
+            }
+
+            Ok(())
+        })?;
+
+        Ok(violations)
+    }
+
+    fn get_crate_dirs(&self) -> Result<Vec<PathBuf>> {
+        self.config.get_source_dirs()
+    }
+
+    fn for_each_crate_rs_path<F>(&self, mut f: F) -> Result<()>
+    where
+        F: FnMut(&std::path::Path, &std::path::Path, &str) -> Result<()>,
+    {
+        for crate_dir in self.get_crate_dirs()? {
+            let src_dir = crate_dir.join("src");
+            if !src_dir.exists() {
+                continue;
+            }
+
+            let crate_name = crate_dir.file_name().and_then(|n| n.to_str()).unwrap_or("");
+
+            for entry in WalkDir::new(&src_dir)
+                .into_iter()
+                .filter_map(|e| e.ok())
+                .filter(|e| e.path().extension().is_some_and(|ext| ext == "rs"))
+            {
+                f(entry.path(), &src_dir, crate_name)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    fn for_each_scan_dir_rs_path<F>(&self, skip_validate_crate: bool, mut f: F) -> Result<()>
+    where
+        F: FnMut(&std::path::Path, &std::path::Path) -> Result<()>,
+    {
         for src_dir in self.config.get_scan_dirs()? {
-            // Skip mcb-validate itself
-            if src_dir.to_string_lossy().contains("mcb-validate") {
+            if skip_validate_crate && src_dir.to_string_lossy().contains("mcb-validate") {
                 continue;
             }
 
@@ -1298,100 +1367,15 @@ impl OrganizationValidator {
                 .filter_map(|e| e.ok())
                 .filter(|e| e.path().extension().is_some_and(|ext| ext == "rs"))
             {
-                let path = entry.path();
-                let path_str = path.to_string_lossy();
-
-                // Skip test files
-                if path_str.contains("_test.rs") || path_str.contains("/tests/") {
-                    continue;
-                }
-
-                // Determine current layer
-                let is_server_layer = path_str.contains("/server/");
-                let is_application_layer = path_str.contains("/application/");
-                let is_infrastructure_layer = path_str.contains("/infrastructure/");
-
-                let content = std::fs::read_to_string(path)?;
-                let lines: Vec<&str> = content.lines().collect();
-
-                // Track test modules to skip
-                let mut in_test_module = false;
-                let mut test_brace_depth: i32 = 0;
-                let mut brace_depth: i32 = 0;
-
-                for (line_num, line) in lines.iter().enumerate() {
-                    let trimmed = line.trim();
-
-                    // Track test module boundaries
-                    if trimmed.contains("#[cfg(test)]") {
-                        in_test_module = true;
-                        test_brace_depth = brace_depth;
-                    }
-
-                    // Track brace depth
-                    brace_depth += line.chars().filter(|c| *c == '{').count() as i32;
-                    brace_depth -= line.chars().filter(|c| *c == '}').count() as i32;
-
-                    // Exit test module when braces close (use < not <= to avoid premature exit)
-                    if in_test_module && brace_depth < test_brace_depth {
-                        in_test_module = false;
-                    }
-
-                    // Skip test modules
-                    if in_test_module {
-                        continue;
-                    }
-
-                    // Skip comments
-                    if trimmed.starts_with("//") {
-                        continue;
-                    }
-
-                    // Check: Server layer creating services directly
-                    if is_server_layer {
-                        if let Some(cap) = arc_new_service_pattern.captures(line) {
-                            let service_name = cap.get(1).map(|m| m.as_str()).unwrap_or("");
-
-                            // Skip if it's in a builder or factory file
-                            let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
-                            if file_name.contains("builder")
-                                || file_name.contains("factory")
-                                || file_name.contains("bootstrap")
-                            {
-                                continue;
-                            }
-
-                            violations.push(OrganizationViolation::ServerCreatingServices {
-                                file: path.to_path_buf(),
-                                line: line_num + 1,
-                                service_name: service_name.to_string(),
-                                suggestion: "Use DI container to resolve services".to_string(),
-                                severity: Severity::Warning,
-                            });
-                        }
-                    }
-
-                    // Check: Application layer importing from server
-                    if (is_application_layer || is_infrastructure_layer)
-                        && server_import_pattern.is_match(line)
-                        && !trimmed.contains("pub use")
-                    {
-                        violations.push(OrganizationViolation::ApplicationImportsServer {
-                            file: path.to_path_buf(),
-                            line: line_num + 1,
-                            import_statement: trimmed.to_string(),
-                            severity: Severity::Warning,
-                        });
-                    }
-                }
+                f(entry.path(), &src_dir)?;
             }
         }
 
-        Ok(violations)
+        Ok(())
     }
 
-    fn get_crate_dirs(&self) -> Result<Vec<PathBuf>> {
-        self.config.get_source_dirs()
+    fn is_test_path(path: &str) -> bool {
+        path.contains("_test.rs") || path.contains("/tests/")
     }
 
     /// Check if a path is from legacy/additional source directories
@@ -1421,130 +1405,120 @@ impl OrganizationValidator {
             r"impl\s+(?:async\s+)?([A-Z][a-zA-Z0-9_]*(?:Provider|Repository))\s+for\s+([A-Z][a-zA-Z0-9_]*)"
         ).expect("Invalid regex");
 
-        for src_dir in self.config.get_scan_dirs()? {
-            // Skip mcb-validate itself
-            if src_dir.to_string_lossy().contains("mcb-validate") {
-                continue;
-            }
-
+        self.for_each_scan_dir_rs_path(true, |path, src_dir| {
             let is_domain_crate = src_dir.to_string_lossy().contains("domain");
             let is_infrastructure_crate = src_dir.to_string_lossy().contains("infrastructure");
             let is_server_crate = src_dir.to_string_lossy().contains("server");
 
-            for entry in WalkDir::new(&src_dir)
-                .into_iter()
-                .filter_map(|e| e.ok())
-                .filter(|e| e.path().extension().is_some_and(|ext| ext == "rs"))
-            {
-                let path = entry.path();
-                let path_str = path.to_string_lossy();
+            let path_str = path.to_string_lossy();
 
-                // Skip test files
-                if path_str.contains("/tests/") || path_str.contains("_test.rs") {
-                    continue;
-                }
+            // Skip test files
+            if Self::is_test_path(&path_str) {
+                return Ok(());
+            }
 
-                // Skip mod.rs and lib.rs (aggregator files)
-                let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
-                if file_name == "mod.rs" || file_name == "lib.rs" {
-                    continue;
-                }
+            // Skip mod.rs and lib.rs (aggregator files)
+            let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+            if file_name == "mod.rs" || file_name == "lib.rs" {
+                return Ok(());
+            }
 
-                let content = std::fs::read_to_string(path)?;
+            let content = std::fs::read_to_string(path)?;
 
-                // Check for port traits outside allowed directories
-                if is_domain_crate {
-                    for (line_num, line) in content.lines().enumerate() {
-                        if let Some(cap) = port_trait_pattern.captures(line) {
-                            let trait_name = cap.get(1).map(|m| m.as_str()).unwrap_or("");
+            // Check for port traits outside allowed directories
+            if is_domain_crate {
+                for (line_num, line) in content.lines().enumerate() {
+                    if let Some(cap) = port_trait_pattern.captures(line) {
+                        let trait_name = cap.get(1).map(|m| m.as_str()).unwrap_or("");
 
-                            // Allowed in: ports/, domain_services/, repositories/
-                            // Domain service interfaces belong in domain_services
-                            // Repository interfaces belong in repositories
-                            let in_allowed_dir = path_str.contains("/ports/")
-                                || path_str.contains("/domain_services/")
-                                || path_str.contains("/repositories/");
+                        // Allowed in: ports/, domain_services/, repositories/
+                        // Domain service interfaces belong in domain_services
+                        // Repository interfaces belong in repositories
+                        let in_allowed_dir = path_str.contains("/ports/")
+                            || path_str.contains("/domain_services/")
+                            || path_str.contains("/repositories/");
 
-                            if !in_allowed_dir {
-                                violations.push(OrganizationViolation::PortOutsidePorts {
-                                    file: path.to_path_buf(),
-                                    line: line_num + 1,
-                                    trait_name: trait_name.to_string(),
-                                    severity: Severity::Warning,
-                                });
-                            }
-                        }
-                    }
-                }
-
-                // Check for handlers outside allowed directories
-                if is_server_crate {
-                    for (line_num, line) in content.lines().enumerate() {
-                        if let Some(cap) = handler_struct_pattern.captures(line) {
-                            let handler_name = cap.get(1).map(|m| m.as_str()).unwrap_or("");
-
-                            // Allowed in: handlers/, admin/, tools/, and cross-cutting files
-                            // Admin handlers belong in admin/
-                            // Tool handlers belong in tools/
-                            // Auth handlers are cross-cutting concerns
-                            let in_allowed_location = path_str.contains("/handlers/")
-                                || path_str.contains("/admin/")
-                                || path_str.contains("/tools/")
-                                || file_name == "auth.rs"
-                                || file_name == "middleware.rs";
-
-                            if !in_allowed_location {
-                                violations.push(OrganizationViolation::HandlerOutsideHandlers {
-                                    file: path.to_path_buf(),
-                                    line: line_num + 1,
-                                    handler_name: handler_name.to_string(),
-                                    severity: Severity::Warning,
-                                });
-                            }
-                        }
-                    }
-                }
-
-                // Check for adapter implementations outside allowed directories
-                if is_infrastructure_crate {
-                    for line in content.lines() {
-                        if let Some(cap) = adapter_impl_pattern.captures(line) {
-                            let _trait_name = cap.get(1).map(|m| m.as_str()).unwrap_or("");
-                            let _impl_name = cap.get(2).map(|m| m.as_str()).unwrap_or("");
-
-                            // Allowed in: adapters/, di/, and cross-cutting concern directories
-                            // crypto/, cache/, health/, events/ are infrastructure cross-cutting concerns
-                            let in_allowed_dir = path_str.contains("/adapters/")
-                                || path_str.contains("/di/")
-                                || path_str.contains("/crypto/")
-                                || path_str.contains("/cache/")
-                                || path_str.contains("/health/")
-                                || path_str.contains("/events/")
-                                || path_str.contains("/sync/")
-                                || path_str.contains("/config/")
-                                || path_str.contains("/infrastructure/")  // Null impls for DI
-                                || file_name.contains("factory")
-                                || file_name.contains("bootstrap");
-
-                            if !in_allowed_dir {
-                                let current_dir = path
-                                    .parent()
-                                    .map(|p| p.to_string_lossy().to_string())
-                                    .unwrap_or_default();
-
-                                violations.push(OrganizationViolation::StrictDirectoryViolation {
-                                    file: path.to_path_buf(),
-                                    component_type: ComponentType::Adapter,
-                                    current_directory: current_dir,
-                                    expected_directory: "infrastructure/adapters/".to_string(),
-                                    severity: Severity::Warning,
-                                });
-                            }
+                        if !in_allowed_dir {
+                            violations.push(OrganizationViolation::PortOutsidePorts {
+                                file: path.to_path_buf(),
+                                line: line_num + 1,
+                                trait_name: trait_name.to_string(),
+                                severity: Severity::Warning,
+                            });
                         }
                     }
                 }
             }
-        }
+
+            // Check for handlers outside allowed directories
+            if is_server_crate {
+                for (line_num, line) in content.lines().enumerate() {
+                    if let Some(cap) = handler_struct_pattern.captures(line) {
+                        let handler_name = cap.get(1).map(|m| m.as_str()).unwrap_or("");
+
+                        // Allowed in: handlers/, admin/, tools/, and cross-cutting files
+                        // Admin handlers belong in admin/
+                        // Tool handlers belong in tools/
+                        // Auth handlers are cross-cutting concerns
+                        let in_allowed_location = path_str.contains("/handlers/")
+                            || path_str.contains("/admin/")
+                            || path_str.contains("/tools/")
+                            || file_name == "auth.rs"
+                            || file_name == "middleware.rs";
+
+                        if !in_allowed_location {
+                            violations.push(OrganizationViolation::HandlerOutsideHandlers {
+                                file: path.to_path_buf(),
+                                line: line_num + 1,
+                                handler_name: handler_name.to_string(),
+                                severity: Severity::Warning,
+                            });
+                        }
+                    }
+                }
+            }
+
+            // Check for adapter implementations outside allowed directories
+            if is_infrastructure_crate {
+                for line in content.lines() {
+                    if let Some(cap) = adapter_impl_pattern.captures(line) {
+                        let _trait_name = cap.get(1).map(|m| m.as_str()).unwrap_or("");
+                        let _impl_name = cap.get(2).map(|m| m.as_str()).unwrap_or("");
+
+                        // Allowed in: adapters/, di/, and cross-cutting concern directories
+                        // crypto/, cache/, health/, events/ are infrastructure cross-cutting concerns
+                        let in_allowed_dir = path_str.contains("/adapters/")
+                            || path_str.contains("/di/")
+                            || path_str.contains("/crypto/")
+                            || path_str.contains("/cache/")
+                            || path_str.contains("/health/")
+                            || path_str.contains("/events/")
+                            || path_str.contains("/sync/")
+                            || path_str.contains("/config/")
+                            || path_str.contains("/infrastructure/") // Null impls for DI
+                            || file_name.contains("factory")
+                            || file_name.contains("bootstrap");
+
+                        if !in_allowed_dir {
+                            let current_dir = path
+                                .parent()
+                                .map(|p| p.to_string_lossy().to_string())
+                                .unwrap_or_default();
+
+                            violations.push(OrganizationViolation::StrictDirectoryViolation {
+                                file: path.to_path_buf(),
+                                component_type: ComponentType::Adapter,
+                                current_directory: current_dir,
+                                expected_directory: "infrastructure/adapters/".to_string(),
+                                severity: Severity::Warning,
+                            });
+                        }
+                    }
+                }
+            }
+
+            Ok(())
+        })?;
 
         Ok(violations)
     }
@@ -1595,100 +1569,95 @@ impl OrganizationValidator {
             "from_", "into_", "as_", "to_", "get_", "is_", "has_", "with_",
         ];
 
-        for src_dir in self.config.get_scan_dirs()? {
+        self.for_each_scan_dir_rs_path(false, |path, src_dir| {
             // Only check domain crate
             if !src_dir.to_string_lossy().contains("domain") {
-                continue;
+                return Ok(());
             }
 
-            for entry in WalkDir::new(&src_dir)
-                .into_iter()
-                .filter_map(|e| e.ok())
-                .filter(|e| e.path().extension().is_some_and(|ext| ext == "rs"))
-            {
-                let path = entry.path();
-                let path_str = path.to_string_lossy();
+            let path_str = path.to_string_lossy();
 
-                // Skip test files
-                if path_str.contains("/tests/") || path_str.contains("_test.rs") {
+            // Skip test files
+            if Self::is_test_path(&path_str) {
+                return Ok(());
+            }
+
+            // Skip ports (trait definitions expected there)
+            if path_str.contains("/ports/") {
+                return Ok(());
+            }
+
+            let content = std::fs::read_to_string(path)?;
+            let lines: Vec<&str> = content.lines().collect();
+
+            let mut in_impl_block = false;
+            let mut impl_name = String::new();
+            let mut brace_depth = 0;
+            let mut impl_start_brace = 0;
+
+            for (line_num, line) in lines.iter().enumerate() {
+                let trimmed = line.trim();
+
+                // Skip comments
+                if trimmed.starts_with("//") {
                     continue;
                 }
 
-                // Skip ports (trait definitions expected there)
-                if path_str.contains("/ports/") {
-                    continue;
+                // Track impl blocks
+                if let Some(cap) = impl_block_pattern.captures(line) {
+                    if !trimmed.contains("trait ") {
+                        in_impl_block = true;
+                        impl_name = cap.get(1).map(|m| m.as_str()).unwrap_or("").to_string();
+                        impl_start_brace = brace_depth;
+                    }
                 }
 
-                let content = std::fs::read_to_string(path)?;
-                let lines: Vec<&str> = content.lines().collect();
+                // Track brace depth
+                brace_depth += line.chars().filter(|c| *c == '{').count() as i32;
+                brace_depth -= line.chars().filter(|c| *c == '}').count() as i32;
 
-                let mut in_impl_block = false;
-                let mut impl_name = String::new();
-                let mut brace_depth = 0;
-                let mut impl_start_brace = 0;
+                // Exit impl block when braces close
+                if in_impl_block && brace_depth <= impl_start_brace {
+                    in_impl_block = false;
+                }
 
-                for (line_num, line) in lines.iter().enumerate() {
-                    let trimmed = line.trim();
+                // Check methods in impl blocks
+                if in_impl_block {
+                    if let Some(cap) = method_pattern.captures(line) {
+                        let method_name = cap.get(1).map(|m| m.as_str()).unwrap_or("");
 
-                    // Skip comments
-                    if trimmed.starts_with("//") {
-                        continue;
-                    }
-
-                    // Track impl blocks
-                    if let Some(cap) = impl_block_pattern.captures(line) {
-                        if !trimmed.contains("trait ") {
-                            in_impl_block = true;
-                            impl_name = cap.get(1).map(|m| m.as_str()).unwrap_or("").to_string();
-                            impl_start_brace = brace_depth;
+                        // Skip allowed methods
+                        if allowed_methods.contains(&method_name) {
+                            continue;
                         }
-                    }
 
-                    // Track brace depth
-                    brace_depth += line.chars().filter(|c| *c == '{').count() as i32;
-                    brace_depth -= line.chars().filter(|c| *c == '}').count() as i32;
-
-                    // Exit impl block when braces close
-                    if in_impl_block && brace_depth <= impl_start_brace {
-                        in_impl_block = false;
-                    }
-
-                    // Check methods in impl blocks
-                    if in_impl_block {
-                        if let Some(cap) = method_pattern.captures(line) {
-                            let method_name = cap.get(1).map(|m| m.as_str()).unwrap_or("");
-
-                            // Skip allowed methods
-                            if allowed_methods.contains(&method_name) {
-                                continue;
-                            }
-
-                            // Skip if method name starts with allowed prefix
-                            if method_name.starts_with("get_")
-                                || method_name.starts_with("is_")
-                                || method_name.starts_with("has_")
-                                || method_name.starts_with("to_")
-                                || method_name.starts_with("as_")
-                                || method_name.starts_with("with_")
-                                || method_name.starts_with("from_")
-                                || method_name.starts_with("into_")
-                            {
-                                continue;
-                            }
-
-                            // This looks like business logic in domain layer
-                            violations.push(OrganizationViolation::DomainLayerImplementation {
-                                file: path.to_path_buf(),
-                                line: line_num + 1,
-                                impl_type: "method".to_string(),
-                                type_name: format!("{}::{}", impl_name, method_name),
-                                severity: Severity::Info,
-                            });
+                        // Skip if method name starts with allowed prefix
+                        if method_name.starts_with("get_")
+                            || method_name.starts_with("is_")
+                            || method_name.starts_with("has_")
+                            || method_name.starts_with("to_")
+                            || method_name.starts_with("as_")
+                            || method_name.starts_with("with_")
+                            || method_name.starts_with("from_")
+                            || method_name.starts_with("into_")
+                        {
+                            continue;
                         }
+
+                        // This looks like business logic in domain layer
+                        violations.push(OrganizationViolation::DomainLayerImplementation {
+                            file: path.to_path_buf(),
+                            line: line_num + 1,
+                            impl_type: "method".to_string(),
+                            type_name: format!("{}::{}", impl_name, method_name),
+                            severity: Severity::Info,
+                        });
                     }
                 }
             }
-        }
+
+            Ok(())
+        })?;
 
         Ok(violations)
     }

@@ -44,7 +44,7 @@ async fn test_null_sync_provider_get_changed_files() {
 
 #[test]
 fn test_null_sync_provider_intervals() {
-    let provider = NullSyncProvider::default();
+    let provider = NullSyncProvider::new();
 
     // Test that interval methods return expected defaults
     assert_eq!(provider.sync_interval(), Duration::from_secs(60));

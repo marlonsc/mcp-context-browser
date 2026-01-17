@@ -25,7 +25,6 @@ async fn test_config_watcher_creation() {
 }
 
 #[tokio::test]
-#[ignore] // Flaky: notify watcher callback uses tokio::spawn on non-tokio thread when test ends
 async fn test_manual_reload() {
     let temp_dir = TempDir::new().unwrap();
     let config_path = temp_dir.path().join("test_config.toml");
@@ -43,6 +42,9 @@ async fn test_manual_reload() {
     new_config.server.network.port = 9999;
     loader.save_to_file(&new_config, &config_path).unwrap();
 
+    // Small delay to ensure file is written
+    tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
+
     // Reload manually
     let reloaded_config = watcher.reload().await.unwrap();
     assert_eq!(reloaded_config.server.network.port, 9999);
@@ -50,6 +52,9 @@ async fn test_manual_reload() {
     // Check current config was updated
     let current_config = watcher.get_config().await;
     assert_eq!(current_config.server.network.port, 9999);
+
+    // Drop watcher explicitly before temp_dir to avoid race conditions
+    drop(watcher);
 }
 
 #[test]

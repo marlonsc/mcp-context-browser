@@ -2,7 +2,8 @@
 //!
 //! Provides factory functions for creating test data and temporary directories.
 
-use mcb_domain::Language;
+#![allow(dead_code)]
+
 use mcb_domain::SearchResult;
 
 /// Create a single test search result
@@ -18,7 +19,7 @@ pub fn create_test_search_result(
         start_line,
         content: content.to_string(),
         score,
-        language: Language::Rust,
+        language: "rust".to_string(),
     }
 }
 

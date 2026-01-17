@@ -33,7 +33,6 @@ async fn test_factory_moka_provider() {
 }
 
 #[tokio::test]
-#[ignore] // Requires Redis server
 async fn test_factory_redis_provider() {
     let provider = CacheProviderFactory::create_redis("redis://localhost:6379")
         .await

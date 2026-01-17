@@ -44,8 +44,8 @@ async fn test_null_snapshot_provider_get_changed_files() {
 }
 
 #[test]
-fn test_null_snapshot_provider_default() {
-    let provider = NullSnapshotProvider::default();
-    // Test that default implementation can be created
+fn test_null_snapshot_provider_new() {
+    let provider = NullSnapshotProvider::new();
+    // Test that new implementation can be created
     assert!(std::any::type_name_of_val(&provider).contains("NullSnapshotProvider"));
 }

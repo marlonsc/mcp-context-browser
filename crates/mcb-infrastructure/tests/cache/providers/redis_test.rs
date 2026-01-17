@@ -14,7 +14,6 @@ struct TestValue {
 }
 
 #[tokio::test]
-#[ignore] // Requires Redis server
 async fn test_redis_provider_basic_operations() {
     let provider = RedisCacheProvider::with_host_port("localhost", 6379).unwrap();
 

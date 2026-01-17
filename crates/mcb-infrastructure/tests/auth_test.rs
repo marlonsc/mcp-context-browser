@@ -30,10 +30,10 @@ async fn test_null_auth_service_generate_token() {
 }
 
 #[tokio::test]
-async fn test_null_auth_service_default() {
-    let service = NullAuthService::default();
+async fn test_null_auth_service_new() {
+    let service = NullAuthService::new();
 
-    // Test that default implementation works
+    // Test that new implementation works
     let result = service.validate_token("token").await;
     assert!(result.is_ok());
 }
