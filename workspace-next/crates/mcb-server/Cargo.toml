@@ -108,3 +108,4 @@ async-stream = { workspace = true }
 [dev-dependencies]
 tempfile = "3.10"
 async-trait = { workspace = true }
+mcb-providers = { path = "../mcb-providers", features = ["full"] }

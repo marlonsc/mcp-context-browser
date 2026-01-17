@@ -595,6 +595,11 @@ impl KissValidator {
                             continue;
                         }
 
+                        // Skip trait function declarations (no body, ends with ;)
+                        if self.is_trait_fn_declaration(&lines, line_num) {
+                            continue;
+                        }
+
                         // Count lines in function
                         let line_count = self.count_function_lines(&lines, line_num);
 
@@ -700,6 +705,29 @@ impl KissValidator {
         }
 
         optional_count
+    }
+
+    /// Check if a function declaration is a trait method without a body
+    /// (ends with `;` before any `{`)
+    fn is_trait_fn_declaration(&self, lines: &[&str], start_line: usize) -> bool {
+        // Look at the function signature lines until we find either { or ;
+        // If we find ; first, it's a trait function declaration without a body
+        for line in &lines[start_line..] {
+            // Check for opening brace (function body starts)
+            if line.contains('{') {
+                return false;
+            }
+            // Check for semicolon (trait function declaration ends)
+            if line.trim().ends_with(';') {
+                return true;
+            }
+            // Check for semicolon after return type annotation
+            // e.g., "fn foo(&self) -> Result<T>;"
+            if line.contains(';') && !line.contains('{') {
+                return true;
+            }
+        }
+        false
     }
 
     /// Count lines in a function

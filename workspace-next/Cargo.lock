@@ -3065,6 +3065,7 @@ dependencies = [
  "jsonwebtoken",
  "mcb-domain",
  "mcb-infrastructure",
+ "mcb-providers",
  "metrics",
  "metrics-exporter-prometheus",
  "notify",

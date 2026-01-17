@@ -50,10 +50,7 @@ impl DefaultShutdownCoordinator {
     /// Wait for shutdown with a timeout
     ///
     /// Returns true if shutdown was signaled, false if timeout occurred.
-    pub async fn wait_for_shutdown_timeout(
-        &self,
-        timeout: std::time::Duration,
-    ) -> bool {
+    pub async fn wait_for_shutdown_timeout(&self, timeout: std::time::Duration) -> bool {
         let mut rx = self.subscribe();
         tokio::select! {
             _ = rx.recv() => true,

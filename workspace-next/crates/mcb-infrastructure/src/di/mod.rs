@@ -5,17 +5,14 @@
 //! that resolves dependencies and creates the application container.
 //!
 //! **ARCHITECTURE**: This module contains ONLY wiring logic.
-//! Admin service implementations live in crate::di::admin.
-//! Provider adapters are in mcb-providers crate.
+//! Provider adapters and admin services are in mcb-providers crate.
 
-pub mod admin;
 pub mod bootstrap;
 pub mod dispatch;
 pub mod factory;
 pub mod modules;
 pub mod registry;
 
-pub use admin::*;
 pub use bootstrap::*;
 pub use dispatch::*;
 pub use factory::*;

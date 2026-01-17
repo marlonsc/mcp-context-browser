@@ -7,6 +7,8 @@
 
 pub mod indexing;
 pub mod metrics;
+pub mod shutdown;
 
 pub use indexing::DefaultIndexingOperations;
 pub use metrics::AtomicPerformanceMetrics;
+pub use shutdown::DefaultShutdownCoordinator;

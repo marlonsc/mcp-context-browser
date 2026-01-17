@@ -4,9 +4,6 @@
 //! Following Clean Architecture: adapters implement domain interfaces.
 //!
 //! **ARCHITECTURE**:
-//! - admin/    → Admin service implementations (metrics, indexing, shutdown)
-//! - services/ → Domain service implementations (future)
-//!
-//! Provider implementations are in mcb-providers crate, NOT here.
-
-pub mod admin;
+//! - Provider implementations are in mcb-providers crate
+//! - Admin service implementations are in mcb-providers crate
+//! - This module is for future infrastructure-specific adapters
