@@ -1,51 +1,32 @@
 //! DI Container Bootstrap - Clean Architecture Composition Root
 //!
 //! Provides the composition root for the dependency injection system following
-//! Clean Architecture principles with Shaku modules for infrastructure services.
+//! Clean Architecture principles with Shaku modules.
 //!
-//! ## Architecture Strategy (see ADR-010)
+//! ## Architecture (Shaku DI)
 //!
-//! The DI system uses a two-layer approach:
+//! All providers are registered as Shaku Components in their respective modules.
+//! The bootstrap composes modules with their default Components (NullProviders).
 //!
-//! 1. **Shaku Modules** (Infrastructure Layer): Provide null implementations as defaults
-//!    for infrastructure services (auth, events, metrics, sync, snapshot).
-//!    These are resolved via trait-based DI at compile time.
+//! For production providers, use `with_component_override` when building modules
+//! in the server layer (mcb-server/init.rs).
 //!
-//! 2. **Runtime Factory** (Application Layer): Creates domain services with production
-//!    providers configured from `AppConfig`. This is necessary because:
-//!    - Provider implementations require runtime configuration (API keys, URLs)
-//!    - Async initialization patterns don't fit Shaku's static composition
-//!    - Different providers need different construction parameters
-//!
-//! ## Production Flow
+//! ## Usage
 //!
 //! ```rust,ignore
-//! // 1. Create AppContainer with Shaku modules (null providers as defaults)
-//! let app_container = init_app(config).await?;
-//!
-//! // 2. Create production providers from config
-//! let embedding = EmbeddingProviderFactory::create(&config.embedding, None)?;
-//! let vector_store = VectorStoreProviderFactory::create(&config.vector_store, crypto)?;
-//!
-//! // 3. Create domain services with production providers
-//! let services = DomainServicesFactory::create_services(
-//!     cache, crypto, config, embedding, vector_store, chunker
-//! ).await?;
-//! ```
-//!
-//! ## Testing Flow
-//!
-//! ```rust,ignore
-//! // Use null providers from Shaku modules
+//! // Create AppContainer with default providers (NullProviders for testing)
 //! let app_container = init_app(AppConfig::default()).await?;
-//! let services = DomainServicesFactory::create_context_service(&app_container).await?;
+//!
+//! // Resolve providers via Shaku DI
+//! let embedding: Arc<dyn EmbeddingProvider> = app_container.embedding.resolve();
+//! let vector_store: Arc<dyn VectorStoreProvider> = app_container.data.resolve();
 //! ```
 
 use crate::config::AppConfig;
 use mcb_domain::error::Result;
 use tracing::info;
 
-// Import module implementations (Clean Architecture - no empty placeholder modules)
+// Import Shaku module implementations
 use super::modules::{
     admin::AdminModuleImpl, cache_module::CacheModuleImpl, data_module::DataModuleImpl,
     embedding_module::EmbeddingModuleImpl, infrastructure::InfrastructureModuleImpl,
@@ -129,22 +110,21 @@ pub struct AppContainer {
     pub admin: AdminModuleImpl,
 }
 
-/// Initialize the application using Clean Architecture modules
+/// Initialize the application with Shaku DI modules
 ///
-/// This replaces the old FullContainer approach with pure Shaku DI.
-/// Uses hierarchical modules following the Clean Architecture pattern.
-/// All providers are resolved via DI - no concrete types instantiated here.
+/// All providers are resolved via Shaku - uses default Components (NullProviders).
+/// For production providers, build modules with `with_component_override` in mcb-server.
 ///
 /// ## Example
 ///
 /// ```ignore
+/// // Uses default NullProviders
 /// let container = init_app(AppConfig::default()).await?;
 /// ```
 pub async fn init_app(_config: AppConfig) -> Result<AppContainer> {
-    info!("Initializing Clean Architecture application modules");
+    info!("Initializing Shaku DI modules");
 
-    // All modules use their DI-registered default providers
-    // Provider selection is handled by the Shaku modules themselves
+    // Build all modules with Shaku - uses default Components (NullProviders)
     let cache = CacheModuleImpl::builder().build();
     let embedding = EmbeddingModuleImpl::builder().build();
     let data = DataModuleImpl::builder().build();
@@ -163,6 +143,6 @@ pub async fn init_app(_config: AppConfig) -> Result<AppContainer> {
         admin,
     };
 
-    info!("Clean Architecture application initialized successfully");
+    info!("Shaku DI modules initialized");
     Ok(app_container)
 }

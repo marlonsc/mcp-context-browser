@@ -55,6 +55,7 @@ toml = "0.9"
 
 # Dependency injection
 shaku = "0.6"
+inventory = "0.3"
 
 # HTTP client
 reqwest = { version = "0.13", features = ["json", "__tls"] }

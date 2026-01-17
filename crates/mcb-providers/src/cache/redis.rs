@@ -238,3 +238,28 @@ impl std::fmt::Debug for RedisCacheProvider {
             .finish()
     }
 }
+
+// ============================================================================
+// Auto-registration via inventory
+// ============================================================================
+
+use mcb_application::ports::registry::{CacheProviderConfig, CacheProviderEntry};
+
+inventory::submit! {
+    CacheProviderEntry {
+        name: "redis",
+        description: "Redis distributed cache",
+        factory: |config: &CacheProviderConfig| {
+            let uri = config.uri.clone()
+                .unwrap_or_else(|| "redis://localhost:6379".to_string());
+            
+            let provider = tokio::task::block_in_place(|| {
+                tokio::runtime::Handle::current().block_on(async {
+                    RedisCacheProvider::new(&uri).await
+                })
+            }).map_err(|e| format!("Failed to create Redis provider: {}", e))?;
+            
+            Ok(std::sync::Arc::new(provider))
+        },
+    }
+}

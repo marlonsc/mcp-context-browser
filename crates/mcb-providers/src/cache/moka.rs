@@ -165,3 +165,23 @@ impl<M: shaku::Module> shaku::Component<M> for MokaCacheProvider {
         Box::new(MokaCacheProvider::new())
     }
 }
+
+// ============================================================================
+// Auto-registration via inventory
+// ============================================================================
+
+use mcb_application::ports::registry::{CacheProviderConfig, CacheProviderEntry};
+
+inventory::submit! {
+    CacheProviderEntry {
+        name: "moka",
+        description: "Moka high-performance in-memory cache",
+        factory: |config: &CacheProviderConfig| {
+            let mut provider = MokaCacheProvider::new();
+            if let Some(max_size) = config.max_size {
+                provider = MokaCacheProvider::with_max_capacity(max_size as u64);
+            }
+            Ok(std::sync::Arc::new(provider))
+        },
+    }
+}

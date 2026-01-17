@@ -78,3 +78,19 @@ impl CacheProvider for NullCacheProvider {
         "null"
     }
 }
+
+// ============================================================================
+// Auto-registration via inventory
+// ============================================================================
+
+use mcb_application::ports::registry::{CacheProviderConfig, CacheProviderEntry};
+
+inventory::submit! {
+    CacheProviderEntry {
+        name: "null",
+        description: "Null cache provider for testing (no-op operations)",
+        factory: |_config: &CacheProviderConfig| {
+            Ok(std::sync::Arc::new(NullCacheProvider::new()))
+        },
+    }
+}

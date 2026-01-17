@@ -110,6 +110,7 @@ base64 = { workspace = true }
 
 # Dependency injection
 shaku = { workspace = true }
+inventory = { workspace = true }
 
 # Concurrent data structures
 dashmap = { workspace = true }

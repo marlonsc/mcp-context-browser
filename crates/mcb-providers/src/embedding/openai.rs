@@ -199,3 +199,31 @@ impl EmbeddingProvider for OpenAIEmbeddingProvider {
         "openai"
     }
 }
+
+// ============================================================================
+// Auto-registration via inventory
+// ============================================================================
+
+use mcb_application::ports::registry::{EmbeddingProviderConfig, EmbeddingProviderEntry};
+
+inventory::submit! {
+    EmbeddingProviderEntry {
+        name: "openai",
+        description: "OpenAI embedding provider (text-embedding-3-small/large, ada-002)",
+        factory: |config: &EmbeddingProviderConfig| {
+            let api_key = config.api_key.clone()
+                .ok_or_else(|| "OpenAI requires api_key".to_string())?;
+            let model = config.model.clone()
+                .unwrap_or_else(|| "text-embedding-3-small".to_string());
+            let timeout = Duration::from_secs(30);
+            let http_client = Client::builder()
+                .timeout(timeout)
+                .build()
+                .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
+            
+            Ok(std::sync::Arc::new(OpenAIEmbeddingProvider::new(
+                api_key, model, timeout, http_client
+            )))
+        },
+    }
+}

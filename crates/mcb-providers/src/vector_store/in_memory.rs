@@ -288,3 +288,19 @@ fn cosine_similarity_with_norm(a: &[f32], b: &[f32], norm_a: f32) -> f32 {
         (dot_product / (norm_a * norm_b) + 1.0) / 2.0
     }
 }
+
+// ============================================================================
+// Auto-registration via inventory
+// ============================================================================
+
+use mcb_application::ports::registry::{VectorStoreProviderConfig, VectorStoreProviderEntry};
+
+inventory::submit! {
+    VectorStoreProviderEntry {
+        name: "memory",
+        description: "In-memory vector store (fast, non-persistent)",
+        factory: |_config: &VectorStoreProviderConfig| {
+            Ok(std::sync::Arc::new(InMemoryVectorStoreProvider::new()))
+        },
+    }
+}

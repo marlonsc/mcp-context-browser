@@ -5,7 +5,6 @@
 #![allow(dead_code)] // Test utilities may not all be used in every test file
 
 use std::fs;
-use std::path::Path;
 use tempfile::TempDir;
 
 /// Create a minimal crate structure for testing

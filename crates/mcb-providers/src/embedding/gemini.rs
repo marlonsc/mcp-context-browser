@@ -200,3 +200,31 @@ impl EmbeddingProvider for GeminiEmbeddingProvider {
         "gemini"
     }
 }
+
+// ============================================================================
+// Auto-registration via inventory
+// ============================================================================
+
+use mcb_application::ports::registry::{EmbeddingProviderConfig, EmbeddingProviderEntry};
+
+inventory::submit! {
+    EmbeddingProviderEntry {
+        name: "gemini",
+        description: "Google Gemini embedding provider (gemini-embedding-001, text-embedding-004)",
+        factory: |config: &EmbeddingProviderConfig| {
+            let api_key = config.api_key.clone()
+                .ok_or_else(|| "Gemini requires api_key".to_string())?;
+            let model = config.model.clone()
+                .unwrap_or_else(|| "text-embedding-004".to_string());
+            let timeout = std::time::Duration::from_secs(30);
+            let http_client = reqwest::Client::builder()
+                .timeout(timeout)
+                .build()
+                .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
+            
+            Ok(std::sync::Arc::new(GeminiEmbeddingProvider::new(
+                api_key, model, timeout, http_client
+            )))
+        },
+    }
+}

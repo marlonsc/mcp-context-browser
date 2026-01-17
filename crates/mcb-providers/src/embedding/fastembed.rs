@@ -175,3 +175,26 @@ impl FastEmbedActor {
         }
     }
 }
+
+// ============================================================================
+// Auto-registration via inventory
+// ============================================================================
+
+use mcb_application::ports::registry::{EmbeddingProviderConfig, EmbeddingProviderEntry};
+
+inventory::submit! {
+    EmbeddingProviderEntry {
+        name: "fastembed",
+        description: "FastEmbed local provider (AllMiniLML6V2, BGESmallEN, etc.)",
+        factory: |config: &EmbeddingProviderConfig| {
+            let model = config.model.clone()
+                .unwrap_or_else(|| "AllMiniLML6V2".to_string());
+            
+            // FastEmbed requires sync initialization in the actor
+            let provider = FastEmbedProvider::new(&model)
+                .map_err(|e| format!("Failed to create FastEmbed provider: {}", e))?;
+            
+            Ok(std::sync::Arc::new(provider))
+        },
+    }
+}

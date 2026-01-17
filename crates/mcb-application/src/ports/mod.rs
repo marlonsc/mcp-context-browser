@@ -8,6 +8,7 @@
 //!
 //! - **providers/** - External service providers (embeddings, vector stores, search)
 //! - **infrastructure/** - Infrastructure services (sync, snapshots)
+//! - **registry/** - Auto-registration system for plugin providers
 //! - **services.rs** - Application service interfaces (context, search, indexing)
 //! - **admin.rs** - Administrative interfaces for system management
 
@@ -17,6 +18,8 @@ pub mod admin;
 pub mod infrastructure;
 /// External service provider ports
 pub mod providers;
+/// Provider registry for dynamic provider discovery
+pub mod registry;
 /// Application service interfaces
 pub mod services;
 

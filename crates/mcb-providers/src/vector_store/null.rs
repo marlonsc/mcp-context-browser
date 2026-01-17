@@ -128,3 +128,19 @@ impl VectorStoreProvider for NullVectorStoreProvider {
         Ok(Vec::new())
     }
 }
+
+// ============================================================================
+// Auto-registration via inventory
+// ============================================================================
+
+use mcb_application::ports::registry::{VectorStoreProviderConfig, VectorStoreProviderEntry};
+
+inventory::submit! {
+    VectorStoreProviderEntry {
+        name: "null",
+        description: "Null vector store for testing (no-op operations)",
+        factory: |_config: &VectorStoreProviderConfig| {
+            Ok(std::sync::Arc::new(NullVectorStoreProvider::new()))
+        },
+    }
+}

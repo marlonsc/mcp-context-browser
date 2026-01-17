@@ -95,3 +95,19 @@ impl NullEmbeddingProvider {
         512
     }
 }
+
+// ============================================================================
+// Auto-registration via inventory
+// ============================================================================
+
+use mcb_application::ports::registry::{EmbeddingProviderConfig, EmbeddingProviderEntry};
+
+inventory::submit! {
+    EmbeddingProviderEntry {
+        name: "null",
+        description: "Null provider for testing (deterministic hash-based embeddings)",
+        factory: |_config: &EmbeddingProviderConfig| {
+            Ok(std::sync::Arc::new(NullEmbeddingProvider::new()))
+        },
+    }
+}

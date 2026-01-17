@@ -172,3 +172,31 @@ impl EmbeddingProvider for VoyageAIEmbeddingProvider {
         "voyageai"
     }
 }
+
+// ============================================================================
+// Auto-registration via inventory
+// ============================================================================
+
+use mcb_application::ports::registry::{EmbeddingProviderConfig, EmbeddingProviderEntry};
+
+inventory::submit! {
+    EmbeddingProviderEntry {
+        name: "voyageai",
+        description: "VoyageAI embedding provider (voyage-code-3, etc.)",
+        factory: |config: &EmbeddingProviderConfig| {
+            let api_key = config.api_key.clone()
+                .ok_or_else(|| "VoyageAI requires api_key".to_string())?;
+            let model = config.model.clone()
+                .unwrap_or_else(|| "voyage-code-3".to_string());
+            let timeout = std::time::Duration::from_secs(30);
+            let http_client = reqwest::Client::builder()
+                .timeout(timeout)
+                .build()
+                .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
+            
+            Ok(std::sync::Arc::new(VoyageAIEmbeddingProvider::new(
+                api_key, model, timeout, http_client
+            )))
+        },
+    }
+}

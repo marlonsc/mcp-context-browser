@@ -33,10 +33,6 @@ use std::sync::Arc;
 use mcb_infrastructure::cache::provider::SharedCacheProvider;
 use mcb_infrastructure::config::TransportMode;
 use mcb_infrastructure::crypto::CryptoService;
-use mcb_infrastructure::di::{
-    CryptoServiceFactory, DefaultCryptoServiceFactory, EmbeddingProviderFactory,
-    VectorStoreProviderFactory,
-};
 use mcb_infrastructure::HasComponent;
 use tracing::{error, info};
 
@@ -93,14 +89,14 @@ fn load_config(
 async fn create_mcp_server(
     config: mcb_infrastructure::config::AppConfig,
 ) -> Result<McpServer, Box<dyn std::error::Error>> {
-    // Create AppContainer with Shaku modules (infrastructure services)
+    // Create AppContainer with Shaku modules (all providers resolved via DI)
     let app_container = mcb_infrastructure::di::bootstrap::init_app(config.clone()).await?;
 
-    // Create production providers from configuration
-    let embedding_provider = create_embedding_provider(&config)?;
-    let vector_store_provider = create_vector_store_provider(&config)?;
-
-    // Get infrastructure dependencies from Shaku modules
+    // Resolve all providers via Shaku DI - no direct instantiation
+    let embedding_provider: Arc<dyn mcb_application::ports::providers::EmbeddingProvider> =
+        app_container.embedding.resolve();
+    let vector_store_provider: Arc<dyn mcb_application::ports::providers::VectorStoreProvider> =
+        app_container.data.resolve();
     let cache_provider: Arc<dyn mcb_application::ports::providers::cache::CacheProvider> =
         app_container.cache.resolve();
     let language_chunker: Arc<dyn mcb_application::ports::providers::LanguageChunkingProvider> =
@@ -110,7 +106,7 @@ async fn create_mcp_server(
     let shared_cache = SharedCacheProvider::from_arc(cache_provider);
     let crypto = create_crypto_service(&config).await?;
 
-    // Create domain services with production providers
+    // Create domain services with providers from Shaku DI
     let deps = mcb_infrastructure::di::modules::domain_services::ServiceDependencies {
         cache: shared_cache,
         crypto,
@@ -247,50 +243,10 @@ async fn run_hybrid_transport(
 }
 
 // =============================================================================
-// Provider Factory Helpers
+// Crypto Service Creation - Only service not yet in Shaku modules
 // =============================================================================
 
-/// Create embedding provider from configuration
-///
-/// Uses the first configured embedding provider, or null provider if none configured.
-fn create_embedding_provider(
-    config: &mcb_infrastructure::config::AppConfig,
-) -> Result<Arc<dyn mcb_application::ports::providers::EmbeddingProvider>, Box<dyn std::error::Error>>
-{
-    if let Some((name, embedding_config)) = config.providers.embedding.iter().next() {
-        info!(provider = name, "Creating embedding provider from config");
-        EmbeddingProviderFactory::create(embedding_config, None)
-            .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })
-    } else {
-        info!("No embedding provider configured, using null provider");
-        Ok(EmbeddingProviderFactory::create_null())
-    }
-}
-
-/// Create vector store provider from configuration
-///
-/// Uses the first configured vector store provider, or in-memory provider if none configured.
-fn create_vector_store_provider(
-    config: &mcb_infrastructure::config::AppConfig,
-) -> Result<
-    Arc<dyn mcb_application::ports::providers::VectorStoreProvider>,
-    Box<dyn std::error::Error>,
-> {
-    if let Some((name, vector_config)) = config.providers.vector_store.iter().next() {
-        info!(
-            provider = name,
-            "Creating vector store provider from config"
-        );
-        // For encrypted provider, would need crypto - skip for now (use in-memory as fallback)
-        VectorStoreProviderFactory::create(vector_config, None)
-            .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })
-    } else {
-        info!("No vector store provider configured, using in-memory provider");
-        Ok(VectorStoreProviderFactory::create_in_memory())
-    }
-}
-
-/// Create crypto service from configuration using DI factory pattern
+/// Create crypto service from configuration
 ///
 /// Uses JWT secret from config if available (32+ bytes), otherwise generates a random key.
 async fn create_crypto_service(
@@ -303,9 +259,5 @@ async fn create_crypto_service(
         CryptoService::generate_master_key()
     };
 
-    let factory = DefaultCryptoServiceFactory::with_master_key(master_key);
-    factory
-        .create_crypto_service()
-        .await
-        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })
+    CryptoService::new(master_key).map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })
 }

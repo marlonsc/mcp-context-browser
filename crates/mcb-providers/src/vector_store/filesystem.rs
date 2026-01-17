@@ -745,3 +745,22 @@ impl VectorStoreProvider for FilesystemVectorStore {
         Ok(results)
     }
 }
+
+// ============================================================================
+// Auto-registration via inventory
+// ============================================================================
+
+use mcb_application::ports::registry::{VectorStoreProviderConfig, VectorStoreProviderEntry};
+
+inventory::submit! {
+    VectorStoreProviderEntry {
+        name: "filesystem",
+        description: "Filesystem-based vector store (persistent, sharded)",
+        factory: |config: &VectorStoreProviderConfig| {
+            let base_path = config.uri.clone()
+                .unwrap_or_else(|| "./data/vectors".to_string());
+            let path = std::path::PathBuf::from(base_path);
+            Ok(std::sync::Arc::new(FilesystemVectorStore::new(path)))
+        },
+    }
+}

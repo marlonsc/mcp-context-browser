@@ -23,9 +23,6 @@ mcb-domain = { path = "../mcb-domain" }
 # Application layer - use cases and business logic orchestration
 mcb-application = { path = "../mcb-application" }
 
-# Provider implementations - adapters for embedding, vector store, cache, language chunking
-mcb-providers = { path = "../mcb-providers", features = ["full"] }
-
 # Core async runtime
 tokio = { workspace = true }
 
@@ -72,9 +69,6 @@ tera = { workspace = true }
 # Markdown processing
 pulldown-cmark = { workspace = true }
 
-# Redis
-redis = { workspace = true }
-
 # Cryptography
 aes-gcm = { workspace = true }
 rand = { workspace = true }
@@ -110,22 +104,6 @@ tower-http = { workspace = true }
 sysinfo = { workspace = true }
 nix = { workspace = true }
 
-# Code analysis and AST parsing
-tree-sitter = { workspace = true }
-tree-sitter-c = { workspace = true }
-tree-sitter-cpp = { workspace = true }
-tree-sitter-c-sharp = { workspace = true }
-tree-sitter-rust = { workspace = true }
-tree-sitter-python = { workspace = true }
-tree-sitter-javascript = { workspace = true }
-tree-sitter-typescript = { workspace = true }
-tree-sitter-java = { workspace = true }
-tree-sitter-go = { workspace = true }
-tree-sitter-ruby = { workspace = true }
-tree-sitter-php = { workspace = true }
-tree-sitter-swift = { workspace = true }
-tree-sitter-kotlin-ng = { workspace = true }
-
 # Fast globbing
 glob = { workspace = true }
 
@@ -156,9 +134,6 @@ tokio-util = { workspace = true }
 dashmap = { workspace = true }
 health = { workspace = true }
 
-# EdgeVec high-performance vector database
-edgevec = { workspace = true }
-
 # Additional dependencies
 async-trait = { workspace = true }
 downcast-rs = { workspace = true }
@@ -168,12 +143,6 @@ futures-util = { workspace = true }
 itertools = { workspace = true }
 humantime = { workspace = true }
 
-# Event bus providers
-async-nats = { workspace = true }
-
-# Local embeddings without external services
-fastembed = { workspace = true }
-
 # Shell expansion
 shellexpand = { workspace = true }
 
@@ -181,9 +150,6 @@ shellexpand = { workspace = true }
 flate2 = { workspace = true }
 tar = { workspace = true }
 seahash = { workspace = true }
-
-# Caching
-moka = { workspace = true }
 
 # Additional crypto
 pbkdf2 = { workspace = true }
@@ -194,11 +160,6 @@ tracing-appender = { workspace = true }
 
 # Benchmarking
 criterion = { workspace = true }
-
-[features]
-default = []
-# Enable NATS event bus provider (requires mcb-providers events-nats feature)
-events-nats = ["mcb-providers/events-nats"]
 
 [dev-dependencies]
 tempfile = "3.10"
