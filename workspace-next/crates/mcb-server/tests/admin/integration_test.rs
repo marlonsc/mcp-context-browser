@@ -22,6 +22,10 @@ fn create_shared_test_state() -> (
     let state = AdminState {
         metrics: metrics.clone(),
         indexing: indexing.clone(),
+        config_watcher: None,
+        config_path: None,
+        shutdown_coordinator: None,
+        shutdown_timeout_secs: 30,
     };
     (state, metrics, indexing)
 }

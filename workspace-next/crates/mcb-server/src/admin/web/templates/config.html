@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration - MCP Context Browser Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
+    <style>
+        .card { background: white; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 1.5rem; }
+        .btn { padding: 0.5rem 1rem; border-radius: 0.375rem; font-weight: 500; transition: background-color 0.2s; cursor: pointer; border: none; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-secondary { background: #e5e7eb; color: #374151; }
+        .btn-secondary:hover { background: #d1d5db; }
+        .btn-success { background: #16a34a; color: white; }
+        .btn-success:hover { background: #15803d; }
+        pre { background: #1f2937; color: #f3f4f6; padding: 1rem; border-radius: 0.375rem; overflow-x: auto; font-size: 0.875rem; }
+        .config-section { margin-bottom: 1rem; padding: 1rem; border: 1px solid #e5e7eb; border-radius: 0.375rem; }
+        .config-section h4 { font-weight: 600; margin-bottom: 0.5rem; }
+        .input-field { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; }
+        .input-field:focus { outline: none; border-color: #2563eb; ring: 2px; ring-color: #2563eb20; }
+        .notification { padding: 1rem; border-radius: 0.375rem; margin-bottom: 1rem; }
+        .notification-success { background: #dcfce7; color: #166534; }
+        .notification-error { background: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <nav class="bg-gray-800 text-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-bold">MCP Context Browser</span>
+                    <span class="ml-2 text-sm text-gray-400">Admin</span>
+                </div>
+                <div class="flex space-x-4">
+                    <a href="/" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Dashboard</a>
+                    <a href="/ui/config" class="px-3 py-2 rounded-md text-sm font-medium bg-gray-900">Config</a>
+                    <a href="/ui/health" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Health</a>
+                    <a href="/ui/indexing" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Indexing</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Configuration</h1>
+            <p class="mt-2 text-gray-600">View and manage server configuration</p>
+        </div>
+
+        <!-- Notification area -->
+        <div id="notification-area"></div>
+
+        <!-- Actions -->
+        <div class="card mb-6">
+            <div class="flex justify-between items-center">
+                <h2 class="text-lg font-semibold text-gray-900">Configuration Actions</h2>
+                <div class="flex space-x-4">
+                    <button class="btn btn-secondary"
+                            hx-get="/config"
+                            hx-target="#config-display"
+                            hx-swap="innerHTML">
+                        Refresh
+                    </button>
+                    <button class="btn btn-primary"
+                            hx-post="/config/reload"
+                            hx-swap="none"
+                            hx-confirm="Reload configuration from file? This will apply any changes made to the config file."
+                            _="on htmx:afterRequest
+                               if event.detail.successful
+                                 put '<div class=\"notification notification-success\">Configuration reloaded successfully!</div>' into #notification-area
+                                 trigger configReloaded
+                               else
+                                 put '<div class=\"notification notification-error\">Failed to reload configuration</div>' into #notification-area
+                               end
+                               wait 3s then put '' into #notification-area">
+                        Reload from File
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Configuration -->
+        <div class="card mb-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Current Configuration</h2>
+            <div id="config-display" hx-get="/config" hx-trigger="load, configReloaded from:body">
+                <div class="animate-pulse">
+                    <div class="h-64 bg-gray-200 rounded"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Editors -->
+        <div class="card">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Update Configuration Section</h2>
+            <p class="text-gray-600 mb-4">Modify individual configuration sections. Changes are applied immediately.</p>
+
+            <div class="config-section">
+                <h4>Cache Configuration</h4>
+                <form hx-patch="/config/cache"
+                      hx-swap="none"
+                      _="on htmx:afterRequest
+                         if event.detail.successful
+                           put '<div class=\"notification notification-success\">Cache configuration updated!</div>' into #notification-area
+                           trigger configReloaded
+                         else
+                           put '<div class=\"notification notification-error\">Failed to update cache configuration</div>' into #notification-area
+                         end
+                         wait 3s then put '' into #notification-area">
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Enabled</label>
+                            <select name="enabled" class="input-field">
+                                <option value="true">Yes</option>
+                                <option value="false">No</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Max Size (bytes)</label>
+                            <input type="number" name="max_size" class="input-field" value="104857600" min="0">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success">Apply Cache Settings</button>
+                </form>
+            </div>
+
+            <div class="config-section">
+                <h4>Server Configuration</h4>
+                <form hx-patch="/config/server"
+                      hx-swap="none"
+                      _="on htmx:afterRequest
+                         if event.detail.successful
+                           put '<div class=\"notification notification-success\">Server configuration updated!</div>' into #notification-area
+                           trigger configReloaded
+                         else
+                           put '<div class=\"notification notification-error\">Failed to update server configuration</div>' into #notification-area
+                         end
+                         wait 3s then put '' into #notification-area">
+                    <div class="grid grid-cols-3 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Host</label>
+                            <input type="text" name="host" class="input-field" value="127.0.0.1">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Port</label>
+                            <input type="number" name="port" class="input-field" value="8080" min="1" max="65535">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Admin Port</label>
+                            <input type="number" name="admin_port" class="input-field" value="9090" min="1" max="65535">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success">Apply Server Settings</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-gray-400 py-4 mt-8">
+        <div class="max-w-7xl mx-auto px-4 text-center text-sm">
+            MCP Context Browser v0.1.1 | Admin Panel
+        </div>
+    </footer>
+
+    <script>
+        // Format config display
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+            if (evt.detail.target.id === 'config-display') {
+                try {
+                    const data = JSON.parse(evt.detail.xhr.responseText);
+                    const formatted = JSON.stringify(data, null, 2);
+                    document.getElementById('config-display').innerHTML = `<pre>${escapeHtml(formatted)}</pre>`;
+                } catch (e) {
+                    // Response might already be formatted, leave as-is
+                }
+            }
+        });
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

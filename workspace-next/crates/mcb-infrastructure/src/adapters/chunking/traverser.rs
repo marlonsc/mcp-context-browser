@@ -20,6 +20,14 @@ struct ChunkParams<'a> {
     chunk_index: usize,
 }
 
+/// Context for extraction rule processing
+struct ExtractionContext<'a> {
+    content: &'a str,
+    file_name: &'a str,
+    node_type: &'a str,
+    depth: usize,
+}
+
 /// Generic AST node traverser with configurable rules
 pub struct AstTraverser<'a> {
     rules: &'a [NodeExtractionRule],
@@ -48,25 +56,22 @@ impl<'a> AstTraverser<'a> {
         &self,
         node: tree_sitter::Node,
         rule: &NodeExtractionRule,
-        content: &str,
-        file_name: &str,
-        node_type: &str,
-        depth: usize,
+        ctx: &ExtractionContext,
         chunks: &mut Vec<CodeChunk>,
     ) {
         let (code, context) = if rule.include_context {
-            Self::extract_node_with_context(node, content, 3)
+            Self::extract_node_with_context(node, ctx.content, 3)
         } else {
-            (Self::extract_node_content(node, content).ok(), None)
+            (Self::extract_node_content(node, ctx.content).ok(), None)
         };
 
         if let Some(code) = code {
             if code.len() >= rule.min_length && code.lines().count() >= rule.min_lines {
                 let chunk_params = ChunkParams {
                     content: code,
-                    file_name,
-                    node_type,
-                    depth,
+                    file_name: ctx.file_name,
+                    node_type: ctx.node_type,
+                    depth: ctx.depth,
                     priority: rule.priority,
                     chunk_index: chunks.len(),
                 };
@@ -110,7 +115,13 @@ impl<'a> AstTraverser<'a> {
             // Check if this node matches any extraction rule
             for rule in self.rules {
                 if rule.node_types.contains(&node_type.to_string()) {
-                    self.process_extraction_rule(node, rule, content, file_name, node_type, depth, chunks);
+                    let ctx = ExtractionContext {
+                        content,
+                        file_name,
+                        node_type,
+                        depth,
+                    };
+                    self.process_extraction_rule(node, rule, &ctx, chunks);
 
                     if chunks.len() >= self.max_chunks {
                         return;
@@ -157,7 +168,7 @@ impl<'a> AstTraverser<'a> {
         node: tree_sitter::Node,
         content: &str,
         context_lines: usize,
-    ) -> (Option<String>, Option<usize>) {
+    ) -> (Option<String>, Option<Vec<String>>) {
         let start = node.start_byte();
         let end = node.end_byte();
 
@@ -178,8 +189,12 @@ impl<'a> AstTraverser<'a> {
         let context_end = (end_line + context_lines).min(lines.len());
 
         let context = lines[context_start..context_end].join("\n");
+        let context_vec: Vec<String> = lines[context_start..context_end]
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
 
-        (Some(context), Some(context_lines))
+        (Some(context), Some(context_vec))
     }
 
     fn create_chunk_from_node(&self, node: tree_sitter::Node, params: ChunkParams) -> CodeChunk {

@@ -118,3 +118,149 @@ pub trait IndexingOperationsInterface: Interface + Send + Sync {
     /// Get the map of ongoing indexing operations
     fn get_operations(&self) -> HashMap<String, IndexingOperation>;
 }
+
+// ============================================================================
+// Service Lifecycle Management
+// ============================================================================
+
+/// Health status for a service dependency
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum DependencyHealth {
+    /// Service is healthy and responsive
+    Healthy,
+    /// Service is degraded but functional
+    Degraded,
+    /// Service is unhealthy or unresponsive
+    Unhealthy,
+    /// Health status is unknown (not checked)
+    Unknown,
+}
+
+impl Default for DependencyHealth {
+    fn default() -> Self {
+        Self::Unknown
+    }
+}
+
+/// Detailed health check result for a service dependency
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct DependencyHealthCheck {
+    /// Name of the dependency
+    pub name: String,
+    /// Health status
+    pub status: DependencyHealth,
+    /// Optional message providing more details
+    pub message: Option<String>,
+    /// Latency in milliseconds (if applicable)
+    pub latency_ms: Option<u64>,
+    /// Last check timestamp (Unix timestamp)
+    pub last_check: u64,
+}
+
+/// Service lifecycle state
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+pub enum ServiceState {
+    /// Service is starting up
+    Starting,
+    /// Service is running normally
+    Running,
+    /// Service is shutting down
+    Stopping,
+    /// Service is stopped
+    Stopped,
+}
+
+impl Default for ServiceState {
+    fn default() -> Self {
+        Self::Stopped
+    }
+}
+
+/// Lifecycle management interface for services
+///
+/// Domain port for managing service lifecycle including start, stop,
+/// restart, and health checks.
+///
+/// # Example
+///
+/// ```ignore
+/// use mcb_domain::ports::admin::LifecycleManaged;
+///
+/// // Check service state
+/// if service.state() == ServiceState::Running {
+///     // Perform health check
+///     let health = service.health_check().await;
+///     println!("Service health: {:?}", health.status);
+/// }
+///
+/// // Graceful shutdown
+/// service.stop().await;
+/// ```
+#[async_trait::async_trait]
+pub trait LifecycleManaged: Send + Sync {
+    /// Get the service name
+    fn name(&self) -> &str;
+
+    /// Get the current service state
+    fn state(&self) -> ServiceState;
+
+    /// Start the service
+    async fn start(&self) -> crate::error::Result<()>;
+
+    /// Stop the service gracefully
+    async fn stop(&self) -> crate::error::Result<()>;
+
+    /// Restart the service
+    async fn restart(&self) -> crate::error::Result<()> {
+        self.stop().await?;
+        self.start().await
+    }
+
+    /// Perform a health check on this service
+    async fn health_check(&self) -> DependencyHealthCheck;
+}
+
+// ============================================================================
+// Shutdown Coordination
+// ============================================================================
+
+/// Shutdown coordinator for managing graceful server shutdown
+///
+/// This interface allows components to signal and check shutdown status.
+/// The actual signaling mechanism is implementation-specific (e.g., broadcast channels).
+///
+/// # Example
+///
+/// ```ignore
+/// use mcb_domain::ports::admin::ShutdownCoordinator;
+///
+/// // Check if shutdown has been requested
+/// if coordinator.is_shutting_down() {
+///     println!("Shutdown in progress, stopping work");
+/// }
+///
+/// // To trigger shutdown (e.g., from admin API)
+/// coordinator.signal_shutdown();
+/// ```
+pub trait ShutdownCoordinator: Send + Sync {
+    /// Signal all components to begin shutdown
+    fn signal_shutdown(&self);
+
+    /// Check if shutdown has been signaled
+    fn is_shutting_down(&self) -> bool;
+}
+
+/// Extended health check response including dependency status
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExtendedHealthResponse {
+    /// Overall server status
+    pub status: &'static str,
+    /// Server uptime in seconds
+    pub uptime_seconds: u64,
+    /// Number of active indexing operations
+    pub active_indexing_operations: usize,
+    /// Health checks for dependencies
+    pub dependencies: Vec<DependencyHealthCheck>,
+    /// Overall dependencies health status
+    pub dependencies_status: DependencyHealth,
+}

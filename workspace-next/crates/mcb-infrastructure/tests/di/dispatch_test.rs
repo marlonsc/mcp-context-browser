@@ -3,6 +3,7 @@
 //! Tests for the component dispatcher and infrastructure initializer.
 
 use mcb_infrastructure::config::ConfigBuilder;
+use mcb_infrastructure::di::bootstrap::{ConfigHealthAccess, StorageComponentsAccess};
 use mcb_infrastructure::di::dispatch::{ComponentDispatcher, InfrastructureInitializer};
 
 #[tokio::test]

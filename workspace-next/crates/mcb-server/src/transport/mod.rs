@@ -94,8 +94,8 @@ impl TransportConfig {
     pub fn from_server_config(config: &mcb_infrastructure::config::ServerConfig) -> Self {
         Self {
             mode: config.transport_mode,
-            http_port: Some(config.port),
-            http_host: Some(config.host.clone()),
+            http_port: Some(config.network.port),
+            http_host: Some(config.network.host.clone()),
         }
     }
 }

@@ -21,7 +21,7 @@ async fn test_config_watcher_creation() {
         .unwrap();
     let config = watcher.get_config().await;
 
-    assert_eq!(config.server.port, DEFAULT_HTTP_PORT);
+    assert_eq!(config.server.network.port, DEFAULT_HTTP_PORT);
 }
 
 #[tokio::test]
@@ -40,16 +40,16 @@ async fn test_manual_reload() {
 
     // Modify config file
     let mut new_config = AppConfig::default();
-    new_config.server.port = 9999;
+    new_config.server.network.port = 9999;
     loader.save_to_file(&new_config, &config_path).unwrap();
 
     // Reload manually
     let reloaded_config = watcher.reload().await.unwrap();
-    assert_eq!(reloaded_config.server.port, 9999);
+    assert_eq!(reloaded_config.server.network.port, 9999);
 
     // Check current config was updated
     let current_config = watcher.get_config().await;
-    assert_eq!(current_config.server.port, 9999);
+    assert_eq!(current_config.server.network.port, 9999);
 }
 
 #[test]

@@ -9,20 +9,18 @@ fn test_config_loader_default() {
     let loader = ConfigLoader::new();
     let config = loader.load().unwrap();
 
-    assert_eq!(config.server.port, DEFAULT_HTTP_PORT);
+    assert_eq!(config.server.network.port, DEFAULT_HTTP_PORT);
     assert_eq!(config.logging.level, DEFAULT_LOG_LEVEL);
 }
 
 #[test]
 fn test_config_builder() {
-    let config = ConfigBuilder::new()
-        .with_server(mcb_infrastructure::config::data::ServerConfig {
-            port: 9090,
-            ..Default::default()
-        })
-        .build();
+    let mut server_config = mcb_infrastructure::config::data::ServerConfig::default();
+    server_config.network.port = 9090;
 
-    assert_eq!(config.server.port, 9090);
+    let config = ConfigBuilder::new().with_server(server_config).build();
+
+    assert_eq!(config.server.network.port, 9090);
 }
 
 // Note: validate_config is private, so we test the public API instead
@@ -38,12 +36,10 @@ fn test_config_save_load() {
     let config_path = temp_dir.path().join("test_config.toml");
 
     let loader = ConfigLoader::new();
-    let original_config = ConfigBuilder::new()
-        .with_server(mcb_infrastructure::config::data::ServerConfig {
-            port: 9999,
-            ..Default::default()
-        })
-        .build();
+    let mut server_config = mcb_infrastructure::config::data::ServerConfig::default();
+    server_config.network.port = 9999;
+
+    let original_config = ConfigBuilder::new().with_server(server_config).build();
 
     // Save config
     loader.save_to_file(&original_config, &config_path).unwrap();
@@ -54,5 +50,5 @@ fn test_config_save_load() {
         .load()
         .unwrap();
 
-    assert_eq!(loaded_config.server.port, 9999);
+    assert_eq!(loaded_config.server.network.port, 9999);
 }

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}} - MCP Context Browser Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
+    <style>
+        [hx-indicator] .htmx-indicator {
+            display: none;
+        }
+        [hx-indicator].htmx-request .htmx-indicator {
+            display: inline;
+        }
+        .card {
+            @apply bg-white rounded-lg shadow-md p-6;
+        }
+        .btn {
+            @apply px-4 py-2 rounded-md font-medium transition-colors;
+        }
+        .btn-primary {
+            @apply bg-blue-600 text-white hover:bg-blue-700;
+        }
+        .btn-danger {
+            @apply bg-red-600 text-white hover:bg-red-700;
+        }
+        .btn-secondary {
+            @apply bg-gray-200 text-gray-800 hover:bg-gray-300;
+        }
+        .status-healthy {
+            @apply text-green-600;
+        }
+        .status-degraded {
+            @apply text-yellow-600;
+        }
+        .status-unhealthy {
+            @apply text-red-600;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <nav class="bg-gray-800 text-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-bold">MCP Context Browser</span>
+                    <span class="ml-2 text-sm text-gray-400">Admin</span>
+                </div>
+                <div class="flex space-x-4">
+                    <a href="/" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 {{#if is_dashboard}}bg-gray-900{{/if}}">Dashboard</a>
+                    <a href="/config" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 {{#if is_config}}bg-gray-900{{/if}}">Config</a>
+                    <a href="/health" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 {{#if is_health}}bg-gray-900{{/if}}">Health</a>
+                    <a href="/indexing" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 {{#if is_indexing}}bg-gray-900{{/if}}">Indexing</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {{content}}
+    </main>
+
+    <footer class="bg-gray-800 text-gray-400 py-4 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center text-sm">
+            MCP Context Browser v0.1.1 | Admin Panel
+        </div>
+    </footer>
+</body>
+</html>

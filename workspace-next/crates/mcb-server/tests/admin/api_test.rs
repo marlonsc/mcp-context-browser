@@ -15,6 +15,10 @@ fn create_test_state() -> AdminState {
     AdminState {
         metrics: Arc::new(AtomicPerformanceMetrics::new()),
         indexing: Arc::new(DefaultIndexingOperations::new()),
+        config_watcher: None,
+        config_path: None,
+        shutdown_coordinator: None,
+        shutdown_timeout_secs: 30,
     }
 }
 
@@ -113,6 +117,10 @@ async fn test_indexing_endpoint_with_operations() {
     let state = AdminState {
         metrics: Arc::new(AtomicPerformanceMetrics::new()),
         indexing: indexing.clone(),
+        config_watcher: None,
+        config_path: None,
+        shutdown_coordinator: None,
+        shutdown_timeout_secs: 30,
     };
 
     // Start an indexing operation
@@ -247,6 +255,10 @@ async fn test_health_with_active_operations() {
     let state = AdminState {
         metrics: Arc::new(AtomicPerformanceMetrics::new()),
         indexing: indexing.clone(),
+        config_watcher: None,
+        config_path: None,
+        shutdown_coordinator: None,
+        shutdown_timeout_secs: 30,
     };
 
     // Start two indexing operations

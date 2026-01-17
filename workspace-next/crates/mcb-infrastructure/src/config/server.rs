@@ -14,35 +14,35 @@ pub struct ServerConfigUtils;
 impl ServerConfigUtils {
     /// Parse server address from configuration
     pub fn parse_address(config: &ServerConfig) -> Result<SocketAddr> {
-        let ip: IpAddr = config.host.parse().map_err(|_| Error::Configuration {
-            message: format!("Invalid server host: {}", config.host),
+        let ip: IpAddr = config.network.host.parse().map_err(|_| Error::Configuration {
+            message: format!("Invalid server host: {}", config.network.host),
             source: None,
         })?;
 
-        Ok(SocketAddr::new(ip, config.port))
+        Ok(SocketAddr::new(ip, config.network.port))
     }
 
     /// Get the server URL for the given configuration
     pub fn get_server_url(config: &ServerConfig) -> String {
-        let protocol = if config.https { "https" } else { "http" };
+        let protocol = if config.ssl.https { "https" } else { "http" };
         // Use host:port directly - works for both IP addresses and domain names
-        format!("{}://{}:{}", protocol, config.host, config.port)
+        format!("{}://{}:{}", protocol, config.network.host, config.network.port)
     }
 
     /// Validate SSL configuration
     pub fn validate_ssl_config(config: &ServerConfig) -> Result<()> {
-        if !config.https {
+        if !config.ssl.https {
             return Ok(());
         }
 
-        if config.ssl_cert_path.is_none() {
+        if config.ssl.ssl_cert_path.is_none() {
             return Err(Error::Configuration {
                 message: "SSL certificate path is required when HTTPS is enabled".to_string(),
                 source: None,
             });
         }
 
-        if config.ssl_key_path.is_none() {
+        if config.ssl.ssl_key_path.is_none() {
             return Err(Error::Configuration {
                 message: "SSL key path is required when HTTPS is enabled".to_string(),
                 source: None,
@@ -50,7 +50,7 @@ impl ServerConfigUtils {
         }
 
         // Both paths validated above - use pattern match to avoid unwrap
-        if let (Some(cert_path), Some(key_path)) = (&config.ssl_cert_path, &config.ssl_key_path) {
+        if let (Some(cert_path), Some(key_path)) = (&config.ssl.ssl_cert_path, &config.ssl.ssl_key_path) {
             if !cert_path.exists() {
                 return Err(Error::Configuration {
                     message: format!(
@@ -74,22 +74,22 @@ impl ServerConfigUtils {
 
     /// Get request timeout duration
     pub fn request_timeout(config: &ServerConfig) -> Duration {
-        Duration::from_secs(config.request_timeout_secs)
+        Duration::from_secs(config.timeouts.request_timeout_secs)
     }
 
     /// Get connection timeout duration
     pub fn connection_timeout(config: &ServerConfig) -> Duration {
-        Duration::from_secs(config.connection_timeout_secs)
+        Duration::from_secs(config.timeouts.connection_timeout_secs)
     }
 
     /// Check if CORS is enabled and get allowed origins
     pub fn cors_settings(config: &ServerConfig) -> (bool, Vec<String>) {
-        (config.cors_enabled, config.cors_origins.clone())
+        (config.cors.cors_enabled, config.cors.cors_origins.clone())
     }
 
     /// Get the maximum request body size in bytes
     pub fn max_request_body_size(config: &ServerConfig) -> usize {
-        config.max_request_body_size
+        config.timeouts.max_request_body_size
     }
 }
 
@@ -109,51 +109,51 @@ impl ServerConfigBuilder {
 
     /// Set the server host
     pub fn host<S: Into<String>>(mut self, host: S) -> Self {
-        self.config.host = host.into();
+        self.config.network.host = host.into();
         self
     }
 
     /// Set the server port
     pub fn port(mut self, port: u16) -> Self {
-        self.config.port = port;
+        self.config.network.port = port;
         self
     }
 
     /// Enable HTTPS
     pub fn https(mut self, enabled: bool) -> Self {
-        self.config.https = enabled;
+        self.config.ssl.https = enabled;
         self
     }
 
     /// Set SSL certificate and key paths
     pub fn ssl_paths<P: Into<std::path::PathBuf>>(mut self, cert_path: P, key_path: P) -> Self {
-        self.config.ssl_cert_path = Some(cert_path.into());
-        self.config.ssl_key_path = Some(key_path.into());
+        self.config.ssl.ssl_cert_path = Some(cert_path.into());
+        self.config.ssl.ssl_key_path = Some(key_path.into());
         self
     }
 
     /// Set request timeout in seconds
     pub fn request_timeout(mut self, seconds: u64) -> Self {
-        self.config.request_timeout_secs = seconds;
+        self.config.timeouts.request_timeout_secs = seconds;
         self
     }
 
     /// Set connection timeout in seconds
     pub fn connection_timeout(mut self, seconds: u64) -> Self {
-        self.config.connection_timeout_secs = seconds;
+        self.config.timeouts.connection_timeout_secs = seconds;
         self
     }
 
     /// Set maximum request body size
     pub fn max_request_body_size(mut self, size: usize) -> Self {
-        self.config.max_request_body_size = size;
+        self.config.timeouts.max_request_body_size = size;
         self
     }
 
     /// Configure CORS
     pub fn cors(mut self, enabled: bool, origins: Vec<String>) -> Self {
-        self.config.cors_enabled = enabled;
-        self.config.cors_origins = origins;
+        self.config.cors.cors_enabled = enabled;
+        self.config.cors.cors_origins = origins;
         self
     }
 

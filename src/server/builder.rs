@@ -136,7 +136,9 @@ impl McpServerBuilder {
         // Build DI container
         let container = if is_stdio_only {
             // For stdio-only mode (tests), use null providers to avoid external dependencies
-            tracing::info!("📡 Stdio-only mode detected in builder, using null providers for testing");
+            tracing::info!(
+                "📡 Stdio-only mode detected in builder, using null providers for testing"
+            );
             DiContainer::build()
                 .map_err(|e| anyhow::anyhow!("Failed to build DI container: {}", e))?
         } else {

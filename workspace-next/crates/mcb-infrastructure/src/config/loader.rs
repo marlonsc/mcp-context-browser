@@ -160,14 +160,14 @@ fn validate_app_config(config: &AppConfig) -> Result<()> {
 }
 
 fn validate_server_config(config: &AppConfig) -> Result<()> {
-    if config.server.port == 0 {
+    if config.server.network.port == 0 {
         return Err(Error::Configuration {
             message: "Server port cannot be 0".to_string(),
             source: None,
         });
     }
-    if config.server.https
-        && (config.server.ssl_cert_path.is_none() || config.server.ssl_key_path.is_none())
+    if config.server.ssl.https
+        && (config.server.ssl.ssl_cert_path.is_none() || config.server.ssl.ssl_key_path.is_none())
     {
         return Err(Error::Configuration {
             message: "SSL certificate and key paths are required when HTTPS is enabled".to_string(),
@@ -179,13 +179,13 @@ fn validate_server_config(config: &AppConfig) -> Result<()> {
 
 fn validate_auth_config(config: &AppConfig) -> Result<()> {
     if config.auth.enabled {
-        if config.auth.jwt_secret.is_empty() {
+        if config.auth.jwt.secret.is_empty() {
             return Err(Error::Configuration {
                 message: "JWT secret cannot be empty when authentication is enabled".to_string(),
                 source: None,
             });
         }
-        if config.auth.jwt_secret.len() < 32 {
+        if config.auth.jwt.secret.len() < 32 {
             return Err(Error::Configuration {
                 message: "JWT secret should be at least 32 characters long".to_string(),
                 source: None,
@@ -206,13 +206,13 @@ fn validate_cache_config(config: &AppConfig) -> Result<()> {
 }
 
 fn validate_limits_config(config: &AppConfig) -> Result<()> {
-    if config.limits.memory_limit == 0 {
+    if config.system.infrastructure.limits.memory_limit == 0 {
         return Err(Error::Configuration {
             message: "Memory limit cannot be 0".to_string(),
             source: None,
         });
     }
-    if config.limits.cpu_limit == 0 {
+    if config.system.infrastructure.limits.cpu_limit == 0 {
         return Err(Error::Configuration {
             message: "CPU limit cannot be 0".to_string(),
             source: None,
@@ -232,7 +232,7 @@ fn validate_daemon_config(config: &AppConfig) -> Result<()> {
 }
 
 fn validate_backup_config(config: &AppConfig) -> Result<()> {
-    if config.backup.enabled && config.backup.interval_secs == 0 {
+    if config.system.data.backup.enabled && config.system.data.backup.interval_secs == 0 {
         return Err(Error::Configuration {
             message: "Backup interval cannot be 0 when backup is enabled".to_string(),
             source: None,

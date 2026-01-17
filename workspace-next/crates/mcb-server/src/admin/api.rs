@@ -67,6 +67,8 @@ impl AdminApi {
                 indexing,
                 config_watcher: None,
                 config_path: None,
+                shutdown_coordinator: None,
+                shutdown_timeout_secs: 30,
             },
         }
     }
@@ -86,6 +88,8 @@ impl AdminApi {
                 indexing,
                 config_watcher: Some(config_watcher),
                 config_path: Some(config_path),
+                shutdown_coordinator: None,
+                shutdown_timeout_secs: 30,
             },
         }
     }

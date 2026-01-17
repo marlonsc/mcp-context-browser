@@ -61,14 +61,14 @@ pub async fn run_server(config_path: Option<&Path>) -> Result<(), Box<dyn std::e
 
     info!(
         transport_mode = ?config.server.transport_mode,
-        host = %config.server.host,
-        port = %config.server.port,
+        host = %config.server.network.host,
+        port = %config.server.network.port,
         "Starting MCP Context Browser server"
     );
 
     let transport_mode = config.server.transport_mode;
-    let http_host = config.server.host.clone();
-    let http_port = config.server.port;
+    let http_host = config.server.network.host.clone();
+    let http_port = config.server.network.port;
 
     let container = mcb_infrastructure::di::bootstrap::FullContainer::new(config).await?;
 

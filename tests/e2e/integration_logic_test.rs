@@ -449,6 +449,7 @@ mod tests {
         // Start MCP server process using rmcp client infrastructure
         let cmd = {
             let mut c = Command::new("./target/debug/mcp-context-browser");
+            c.env("MCP__TRANSPORT__MODE", "stdio");
             c.env("MCP_METRICS_ENABLED", "false");
             c.env("RUST_LOG", "off");
             c

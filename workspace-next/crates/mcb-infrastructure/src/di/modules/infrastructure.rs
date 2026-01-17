@@ -88,12 +88,9 @@ impl<Ctx: ModuleBuildContext> Module<Ctx> for InfrastructureModule {
         };
 
         // Create crypto service
-        let master_key = if let Some(secret) = &self.config.auth.jwt_secret {
-            if secret.len() >= 32 {
-                secret.clone().into_bytes()
-            } else {
-                CryptoService::generate_master_key()
-            }
+        let secret = &self.config.auth.jwt.secret;
+        let master_key = if secret.len() >= 32 {
+            secret.as_bytes()[..32].to_vec()
         } else {
             CryptoService::generate_master_key()
         };

@@ -1,38 +1,51 @@
 //! Configuration Types Tests
+//!
+//! Note: ConfigKey, ConfigProfile, and ValidationResult types were removed
+//! during the configuration refactoring. These tests are retained as a
+//! placeholder for future configuration type testing.
 
-use mcb_infrastructure::config::types::{ConfigKey, ConfigProfile, ValidationResult};
+use mcb_infrastructure::config::data::{ServerConfig, ServerNetworkConfig, ServerSslConfig};
 
 #[test]
-fn test_config_key_utilities() {
-    assert_eq!(ConfigKey::join(&["server", "port"]), "server.port");
-    assert_eq!(ConfigKey::split("server.port"), vec!["server", "port"]);
-    assert!(ConfigKey::is_under_prefix("server.port", "server"));
-    assert_eq!(ConfigKey::parent("server.port"), Some("server".to_string()));
-    assert_eq!(ConfigKey::last_component("server.port"), "port");
+fn test_server_config_defaults() {
+    let config = ServerConfig::default();
+
+    // Network defaults
+    assert!(!config.network.host.is_empty());
+    assert!(config.network.port > 0);
+
+    // SSL defaults to disabled
+    assert!(!config.ssl.https);
+    assert!(config.ssl.ssl_cert_path.is_none());
+    assert!(config.ssl.ssl_key_path.is_none());
+
+    // CORS defaults
+    assert!(config.cors.cors_enabled);
+    assert!(!config.cors.cors_origins.is_empty());
 }
 
 #[test]
-fn test_validation_result() {
-    let valid = ValidationResult::valid();
-    assert!(valid.is_valid);
-    assert!(!valid.has_errors());
+fn test_server_network_config() {
+    let network = ServerNetworkConfig {
+        host: "0.0.0.0".to_string(),
+        port: 9000,
+        admin_port: 9001,
+    };
 
-    let invalid = ValidationResult::invalid(vec!["error1".to_string()]).with_warning("warning1");
-    assert!(!invalid.is_valid);
-    assert!(invalid.has_errors());
-    assert!(invalid.has_warnings());
+    assert_eq!(network.host, "0.0.0.0");
+    assert_eq!(network.port, 9000);
+    assert_eq!(network.admin_port, 9001);
 }
 
 #[test]
-fn test_config_profile() {
-    let dev_profile = ConfigProfile::Development;
-    let overrides = dev_profile.overrides();
-    assert!(overrides.contains_key("logging.level"));
+fn test_server_ssl_config() {
+    let ssl = ServerSslConfig {
+        https: true,
+        ssl_cert_path: Some(std::path::PathBuf::from("/path/to/cert.pem")),
+        ssl_key_path: Some(std::path::PathBuf::from("/path/to/key.pem")),
+    };
 
-    let prod_profile = ConfigProfile::Production;
-    let prod_overrides = prod_profile.overrides();
-    assert_eq!(
-        prod_overrides.get("logging.level").unwrap(),
-        &serde_json::Value::String("info".to_string())
-    );
+    assert!(ssl.https);
+    assert!(ssl.ssl_cert_path.is_some());
+    assert!(ssl.ssl_key_path.is_some());
 }

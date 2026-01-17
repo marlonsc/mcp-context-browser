@@ -54,6 +54,35 @@ impl Default for ApiKeyConfig {
     }
 }
 
+/// Admin API key configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AdminApiKeyConfig {
+    /// Admin API key authentication enabled
+    pub enabled: bool,
+
+    /// Header name for admin API key
+    #[serde(default = "default_admin_key_header")]
+    pub header: String,
+
+    /// The actual admin API key (can be set via config or MCB_ADMIN_API_KEY env var)
+    #[serde(default)]
+    pub key: Option<String>,
+}
+
+fn default_admin_key_header() -> String {
+    "X-Admin-Key".to_string()
+}
+
+impl Default for AdminApiKeyConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false, // Disabled by default for safety
+            header: default_admin_key_header(),
+            key: std::env::var("MCB_ADMIN_API_KEY").ok(),
+        }
+    }
+}
+
 /// Authentication configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AuthConfig {
@@ -65,6 +94,10 @@ pub struct AuthConfig {
 
     /// API key configuration
     pub api_key: ApiKeyConfig,
+
+    /// Admin API key configuration
+    #[serde(default)]
+    pub admin: AdminApiKeyConfig,
 
     /// User database path
     pub user_db_path: Option<PathBuf>,
@@ -79,6 +112,7 @@ impl Default for AuthConfig {
             enabled: true,
             jwt: JwtConfig::default(),
             api_key: ApiKeyConfig::default(),
+            admin: AdminApiKeyConfig::default(),
             user_db_path: None,
             password_algorithm: PasswordAlgorithm::Argon2,
         }

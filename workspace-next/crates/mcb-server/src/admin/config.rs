@@ -63,13 +63,14 @@ impl SanitizedConfig {
     pub fn from_app_config(config: &AppConfig) -> Self {
         Self {
             server: ServerConfigView {
-                host: config.server.host.clone(),
-                port: config.server.port,
+                host: config.server.network.host.clone(),
+                port: config.server.network.port,
                 transport_mode: format!("{:?}", config.server.transport_mode),
-                admin_port: config.server.admin_port,
-                https: config.server.https,
+                admin_port: config.server.network.admin_port,
+                https: config.server.ssl.https,
             },
             embedding: config
+                .providers
                 .embedding
                 .iter()
                 .map(|(k, v)| {
@@ -85,6 +86,7 @@ impl SanitizedConfig {
                 })
                 .collect(),
             vector_store: config
+                .providers
                 .vector_store
                 .iter()
                 .map(|(k, v)| {
@@ -105,19 +107,19 @@ impl SanitizedConfig {
                 file_output: config.logging.file_output.as_ref().map(|p| p.display().to_string()),
             },
             cache: CacheConfigView {
-                enabled: config.cache.enabled,
-                provider: format!("{:?}", config.cache.provider),
-                default_ttl_secs: config.cache.default_ttl_secs,
-                max_size: config.cache.max_size,
+                enabled: config.system.infrastructure.cache.enabled,
+                provider: format!("{:?}", config.system.infrastructure.cache.provider),
+                default_ttl_secs: config.system.infrastructure.cache.default_ttl_secs,
+                max_size: config.system.infrastructure.cache.max_size,
             },
             metrics: MetricsConfigView {
-                enabled: config.metrics.enabled,
-                collection_interval_secs: config.metrics.collection_interval_secs,
+                enabled: config.system.infrastructure.metrics.enabled,
+                collection_interval_secs: config.system.infrastructure.metrics.collection_interval_secs,
             },
             limits: LimitsConfigView {
-                memory_limit: config.limits.memory_limit,
-                cpu_limit: config.limits.cpu_limit,
-                max_connections: config.limits.max_connections,
+                memory_limit: config.system.infrastructure.limits.memory_limit,
+                cpu_limit: config.system.infrastructure.limits.cpu_limit,
+                max_connections: config.system.infrastructure.limits.max_connections,
             },
         }
     }

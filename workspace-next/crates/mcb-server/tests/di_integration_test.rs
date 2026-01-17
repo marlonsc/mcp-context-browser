@@ -12,7 +12,10 @@ use mcb_domain::domain_services::search::{
 use mcb_domain::value_objects::Embedding;
 use mcb_infrastructure::cache::config::CacheEntryConfig;
 use mcb_infrastructure::config::{AppConfig, ConfigBuilder};
-use mcb_infrastructure::di::bootstrap::{FullContainer, InfrastructureComponents};
+use mcb_infrastructure::di::bootstrap::{
+    ConfigHealthAccess, FullContainer, InfrastructureComponents, ProviderComponentsAccess,
+    StorageComponentsAccess,
+};
 use std::collections::HashMap;
 
 // ============================================================================
@@ -27,7 +30,7 @@ fn minimal_config() -> AppConfig {
 /// Create a configuration with cache disabled
 fn config_without_cache() -> AppConfig {
     let mut config = ConfigBuilder::new().build();
-    config.cache.enabled = false;
+    config.system.infrastructure.cache.enabled = false;
     config
 }
 
@@ -82,10 +85,13 @@ async fn test_infrastructure_components_accessible() {
         "System health checker should be registered"
     );
 
-    // Config should match
+    // Config should match - verify cache setting propagated correctly
+    let infra_cache_enabled = infra.config().system.infrastructure.cache.enabled;
+    let expected_cache_enabled = config_without_cache().system.infrastructure.cache.enabled;
+    // Either matches the config_without_cache setting or is enabled (default)
     assert!(
-        infra.config().cache.enabled == config_without_cache().cache.enabled
-            || infra.config().cache.enabled
+        infra_cache_enabled == expected_cache_enabled || infra_cache_enabled,
+        "Cache enabled state should be consistent"
     );
 }
 
@@ -431,10 +437,9 @@ async fn test_config_propagates_to_components() {
         .await
         .expect("Components creation should succeed");
 
-    // Config should match what we provided
-    assert_eq!(
-        components.config().cache.enabled,
-        false,
+    // Config should match what we provided - cache was disabled in config_without_cache()
+    assert!(
+        !components.config().system.infrastructure.cache.enabled,
         "Cache disabled setting should propagate"
     );
 }

@@ -108,9 +108,9 @@ impl InfrastructureComponents {
     /// Create crypto service from configuration
     fn create_crypto_service(config: &AppConfig) -> Result<CryptoService> {
         // AES-GCM requires exactly 32 bytes for the key
-        let master_key = if config.auth.jwt_secret.len() >= 32 {
+        let master_key = if config.auth.jwt.secret.len() >= 32 {
             // Use first 32 bytes of the JWT secret as the master key
-            config.auth.jwt_secret.as_bytes()[..32].to_vec()
+            config.auth.jwt.secret.as_bytes()[..32].to_vec()
         } else {
             CryptoService::generate_master_key()
         };

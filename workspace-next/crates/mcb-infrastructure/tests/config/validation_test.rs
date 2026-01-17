@@ -2,7 +2,7 @@
 //!
 //! Tests for configuration validation across all config types.
 
-use mcb_infrastructure::config::data::{AuthConfig, CacheConfig, CacheProvider, ServerConfig};
+use mcb_infrastructure::config::data::{AuthConfig, CacheConfig, CacheProvider, ServerConfig, ServerSslConfig};
 use mcb_infrastructure::config::server::{ServerConfigBuilder, ServerConfigPresets, ServerConfigUtils};
 use std::path::PathBuf;
 
@@ -10,19 +10,19 @@ use std::path::PathBuf;
 fn test_server_config_port_validation() {
     // Port 0 is valid for random port allocation
     let random_port_config = ServerConfigBuilder::new().port(0).build();
-    assert_eq!(random_port_config.port, 0);
+    assert_eq!(random_port_config.network.port, 0);
 
     // Standard HTTP port
     let http_config = ServerConfigBuilder::new().port(80).build();
-    assert_eq!(http_config.port, 80);
+    assert_eq!(http_config.network.port, 80);
 
     // Standard HTTPS port
     let https_config = ServerConfigBuilder::new().port(443).build();
-    assert_eq!(https_config.port, 443);
+    assert_eq!(https_config.network.port, 443);
 
     // High port number (valid)
     let high_port_config = ServerConfigBuilder::new().port(65535).build();
-    assert_eq!(high_port_config.port, 65535);
+    assert_eq!(high_port_config.network.port, 65535);
 
     // Verify address parsing works with different ports
     let config = ServerConfigBuilder::new().host("127.0.0.1").port(8080).build();
@@ -36,21 +36,19 @@ fn test_auth_config_jwt_secret_length() {
     let default_auth = AuthConfig::default();
     // JWT secret should be at least 32 characters (256 bits)
     assert!(
-        default_auth.jwt_secret.len() >= 32,
+        default_auth.jwt.secret.len() >= 32,
         "JWT secret should be at least 32 characters, got {}",
-        default_auth.jwt_secret.len()
+        default_auth.jwt.secret.len()
     );
 
     // Custom secret can be set
-    let custom_auth = AuthConfig {
-        jwt_secret: "custom_secret_at_least_32_chars_long!".to_string(),
-        ..Default::default()
-    };
-    assert_eq!(custom_auth.jwt_secret.len(), 37);
+    let mut custom_auth = AuthConfig::default();
+    custom_auth.jwt.secret = "custom_secret_at_least_32_chars_long!".to_string();
+    assert_eq!(custom_auth.jwt.secret.len(), 37);
 
     // Expiration times should be reasonable
-    assert!(default_auth.jwt_expiration_secs > 0);
-    assert!(default_auth.jwt_refresh_expiration_secs > default_auth.jwt_expiration_secs);
+    assert!(default_auth.jwt.expiration_secs > 0);
+    assert!(default_auth.jwt.refresh_expiration_secs > default_auth.jwt.expiration_secs);
 }
 
 #[test]
@@ -103,11 +101,11 @@ fn test_cache_config_ttl_when_enabled() {
 #[test]
 fn test_ssl_cert_required_for_https() {
     // HTTPS without SSL paths should fail validation
-    let https_no_ssl = ServerConfig {
+    let mut https_no_ssl = ServerConfig::default();
+    https_no_ssl.ssl = ServerSslConfig {
         https: true,
         ssl_cert_path: None,
         ssl_key_path: None,
-        ..Default::default()
     };
     let result = ServerConfigUtils::validate_ssl_config(&https_no_ssl);
     assert!(result.is_err());
@@ -117,22 +115,22 @@ fn test_ssl_cert_required_for_https() {
         .contains("certificate path is required"));
 
     // HTTPS with only cert path should fail
-    let https_cert_only = ServerConfig {
+    let mut https_cert_only = ServerConfig::default();
+    https_cert_only.ssl = ServerSslConfig {
         https: true,
         ssl_cert_path: Some(PathBuf::from("/path/to/cert.pem")),
         ssl_key_path: None,
-        ..Default::default()
     };
     let result = ServerConfigUtils::validate_ssl_config(&https_cert_only);
     assert!(result.is_err());
     assert!(result.unwrap_err().to_string().contains("key path is required"));
 
     // HTTP config doesn't require SSL
-    let http_config = ServerConfig {
+    let mut http_config = ServerConfig::default();
+    http_config.ssl = ServerSslConfig {
         https: false,
         ssl_cert_path: None,
         ssl_key_path: None,
-        ..Default::default()
     };
     let result = ServerConfigUtils::validate_ssl_config(&http_config);
     assert!(result.is_ok());
@@ -167,8 +165,8 @@ fn test_default_config_is_valid() {
 
     // Default auth config should have valid values
     let auth_config = AuthConfig::default();
-    assert!(auth_config.jwt_secret.len() >= 32);
-    assert!(auth_config.jwt_expiration_secs > 0);
+    assert!(auth_config.jwt.secret.len() >= 32);
+    assert!(auth_config.jwt.expiration_secs > 0);
 
     // Default cache config should have valid values
     let cache_config = CacheConfig::default();
@@ -201,8 +199,8 @@ fn test_server_url_generation() {
 fn test_cors_configuration() {
     // CORS disabled
     let no_cors = ServerConfigBuilder::new().cors(false, vec![]).build();
-    assert!(!no_cors.cors_enabled);
-    assert!(no_cors.cors_origins.is_empty());
+    assert!(!no_cors.cors.cors_enabled);
+    assert!(no_cors.cors.cors_origins.is_empty());
 
     // CORS with specific origins
     let cors_config = ServerConfigBuilder::new()
@@ -214,8 +212,8 @@ fn test_cors_configuration() {
             ],
         )
         .build();
-    assert!(cors_config.cors_enabled);
-    assert_eq!(cors_config.cors_origins.len(), 2);
+    assert!(cors_config.cors.cors_enabled);
+    assert_eq!(cors_config.cors.cors_origins.len(), 2);
 
     // Development preset has permissive CORS
     let dev_config = ServerConfigPresets::development();

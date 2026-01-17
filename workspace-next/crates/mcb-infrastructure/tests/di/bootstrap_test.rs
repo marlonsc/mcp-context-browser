@@ -3,7 +3,9 @@
 //! Tests for the infrastructure container bootstrap process.
 
 use mcb_infrastructure::config::ConfigBuilder;
-use mcb_infrastructure::di::bootstrap::InfrastructureContainerBuilder;
+use mcb_infrastructure::di::bootstrap::{
+    ConfigHealthAccess, InfrastructureContainerBuilder, StorageComponentsAccess,
+};
 
 #[tokio::test]
 async fn test_infrastructure_container_creation() {

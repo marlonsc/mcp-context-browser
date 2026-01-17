@@ -45,7 +45,7 @@ pub struct ServerNetworkConfig {
 }
 
 /// SSL/TLS configuration for server
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ServerSslConfig {
     /// HTTPS enabled
     pub https: bool,
@@ -81,7 +81,7 @@ pub struct ServerCorsConfig {
 }
 
 /// Server configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ServerConfig {
     /// Transport mode (stdio, http, hybrid)
     #[serde(default)]
@@ -116,16 +116,6 @@ impl Default for ServerNetworkConfig {
     }
 }
 
-impl Default for ServerSslConfig {
-    fn default() -> Self {
-        Self {
-            https: false,
-            ssl_cert_path: None,
-            ssl_key_path: None,
-        }
-    }
-}
-
 impl Default for ServerTimeoutConfig {
     fn default() -> Self {
         Self {
@@ -141,18 +131,6 @@ impl Default for ServerCorsConfig {
         Self {
             cors_enabled: true,
             cors_origins: vec!["*".to_string()],
-        }
-    }
-}
-
-impl Default for ServerConfig {
-    fn default() -> Self {
-        Self {
-            transport_mode: TransportMode::default(),
-            network: ServerNetworkConfig::default(),
-            ssl: ServerSslConfig::default(),
-            timeouts: ServerTimeoutConfig::default(),
-            cors: ServerCorsConfig::default(),
         }
     }
 }

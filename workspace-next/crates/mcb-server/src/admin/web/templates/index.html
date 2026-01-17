@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - MCP Context Browser Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
+    <style>
+        .status-healthy { color: #16a34a; }
+        .status-degraded { color: #ca8a04; }
+        .status-unhealthy { color: #dc2626; }
+        .card { background: white; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 1.5rem; }
+        .btn { padding: 0.5rem 1rem; border-radius: 0.375rem; font-weight: 500; transition: background-color 0.2s; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-danger { background: #dc2626; color: white; }
+        .btn-danger:hover { background: #b91c1c; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <nav class="bg-gray-800 text-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-bold">MCP Context Browser</span>
+                    <span class="ml-2 text-sm text-gray-400">Admin</span>
+                </div>
+                <div class="flex space-x-4">
+                    <a href="/" class="px-3 py-2 rounded-md text-sm font-medium bg-gray-900">Dashboard</a>
+                    <a href="/ui/config" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Config</a>
+                    <a href="/ui/health" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Health</a>
+                    <a href="/ui/indexing" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Indexing</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
+            <p class="mt-2 text-gray-600">System overview and real-time metrics</p>
+        </div>
+
+        <!-- Health Status Card -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="card" id="health-card" hx-get="/health" hx-trigger="load, every 5s" hx-swap="innerHTML">
+                <div class="animate-pulse">
+                    <div class="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+                    <div class="h-8 bg-gray-200 rounded w-1/2"></div>
+                </div>
+            </div>
+
+            <div class="card" id="uptime-card">
+                <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Uptime</h3>
+                <p class="mt-2 text-3xl font-semibold text-gray-900" id="uptime-value">--</p>
+            </div>
+
+            <div class="card" id="active-ops-card">
+                <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Active Operations</h3>
+                <p class="mt-2 text-3xl font-semibold text-gray-900" id="active-ops-value">--</p>
+            </div>
+        </div>
+
+        <!-- Metrics Section -->
+        <div class="card mb-8" id="metrics-section" hx-get="/metrics" hx-trigger="load, every 5s" hx-swap="innerHTML">
+            <div class="animate-pulse">
+                <div class="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+                <div class="grid grid-cols-4 gap-4">
+                    <div class="h-16 bg-gray-200 rounded"></div>
+                    <div class="h-16 bg-gray-200 rounded"></div>
+                    <div class="h-16 bg-gray-200 rounded"></div>
+                    <div class="h-16 bg-gray-200 rounded"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+            <div class="flex space-x-4">
+                <button class="btn btn-primary"
+                        hx-post="/config/reload"
+                        hx-swap="none"
+                        hx-confirm="Reload configuration from file?">
+                    Reload Config
+                </button>
+                <button class="btn btn-danger"
+                        hx-post="/shutdown"
+                        hx-vals='{"timeout_secs": 30, "reason": "Admin panel shutdown"}'
+                        hx-confirm="Are you sure you want to shutdown the server?"
+                        hx-swap="none">
+                    Shutdown Server
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-gray-400 py-4 mt-8">
+        <div class="max-w-7xl mx-auto px-4 text-center text-sm">
+            MCP Context Browser v0.1.1 | Admin Panel
+        </div>
+    </footer>
+
+    <script>
+        // Process health response to update cards
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+            if (evt.detail.target.id === 'health-card') {
+                try {
+                    const data = JSON.parse(evt.detail.xhr.responseText);
+                    document.getElementById('health-card').innerHTML = `
+                        <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Status</h3>
+                        <p class="mt-2 text-3xl font-semibold status-${data.status}">${data.status.toUpperCase()}</p>
+                    `;
+                    document.getElementById('uptime-value').textContent = formatUptime(data.uptime_seconds);
+                    document.getElementById('active-ops-value').textContent = data.active_indexing_operations;
+                } catch (e) {
+                    console.error('Error parsing health response:', e);
+                }
+            }
+            if (evt.detail.target.id === 'metrics-section') {
+                try {
+                    const data = JSON.parse(evt.detail.xhr.responseText);
+                    document.getElementById('metrics-section').innerHTML = `
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Performance Metrics</h2>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                            <div>
+                                <p class="text-sm text-gray-500">Total Queries</p>
+                                <p class="text-2xl font-semibold">${data.total_queries}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Success Rate</p>
+                                <p class="text-2xl font-semibold">${((data.successful_queries / Math.max(data.total_queries, 1)) * 100).toFixed(1)}%</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Cache Hit Rate</p>
+                                <p class="text-2xl font-semibold">${(data.cache_hit_rate * 100).toFixed(1)}%</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Avg Response Time</p>
+                                <p class="text-2xl font-semibold">${data.average_response_time_ms.toFixed(1)}ms</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Active Connections</p>
+                                <p class="text-2xl font-semibold">${data.active_connections}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Failed Queries</p>
+                                <p class="text-2xl font-semibold text-red-600">${data.failed_queries}</p>
+                            </div>
+                        </div>
+                    `;
+                } catch (e) {
+                    console.error('Error parsing metrics response:', e);
+                }
+            }
+        });
+
+        function formatUptime(seconds) {
+            const days = Math.floor(seconds / 86400);
+            const hours = Math.floor((seconds % 86400) / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            const secs = Math.floor(seconds % 60);
+            if (days > 0) return `${days}d ${hours}h ${mins}m`;
+            if (hours > 0) return `${hours}h ${mins}m ${secs}s`;
+            if (mins > 0) return `${mins}m ${secs}s`;
+            return `${secs}s`;
+        }
+    </script>
+</body>
+</html>
