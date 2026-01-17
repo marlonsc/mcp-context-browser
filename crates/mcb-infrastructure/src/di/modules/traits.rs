@@ -23,6 +23,7 @@ pub trait InfrastructureModule:
     + HasComponent<dyn mcb_application::ports::infrastructure::SystemMetricsCollectorInterface>
     + HasComponent<dyn mcb_application::ports::infrastructure::SnapshotProvider>
     + HasComponent<dyn mcb_application::ports::infrastructure::SyncProvider>
+    + HasComponent<dyn mcb_application::ports::admin::ShutdownCoordinator>
 {
 }
 

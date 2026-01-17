@@ -30,13 +30,15 @@ else
 endif
 
 lint: ## Lint code (Rust + Markdown)
-	@cargo clippy --all-targets --all-features -- -D warnings
+	@# Note: Using explicit features instead of --all-features to avoid broken upstream milvus crate
+	@cargo clippy --all-targets --features "full" -- -D warnings
 	@./scripts/docs/markdown.sh lint 2>/dev/null || true
 
 fix: ## Auto-fix all issues (Rust + Markdown)
 	@cargo fmt
 	@./scripts/docs/markdown.sh autofix 2>/dev/null || true
-	@cargo clippy --fix --allow-dirty --all-targets --all-features 2>/dev/null || true
+	@# Note: Using explicit features instead of --all-features to avoid broken upstream milvus crate
+	@cargo clippy --fix --allow-dirty --all-targets --features "full" 2>/dev/null || true
 	@echo "Auto-fix completed - run 'make fmt' to verify"
 
 # -----------------------------------------------------------------------------

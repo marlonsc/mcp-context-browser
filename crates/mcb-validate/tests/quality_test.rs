@@ -21,7 +21,7 @@ pub fn risky_code() {
     );
 
     let validator = QualityValidator::new(temp.path());
-    let violations = validator.validate_error_handling().unwrap();
+    let violations = validator.validate_no_unwrap_expect().unwrap();
 
     assert!(
         violations.len() >= 2,
@@ -44,7 +44,7 @@ pub fn incomplete() {
     );
 
     let validator = QualityValidator::new(temp.path());
-    let violations = validator.validate_todos().unwrap();
+    let violations = validator.validate_all().unwrap();
 
     assert!(
         violations.len() >= 2,
@@ -70,7 +70,7 @@ mod tests {
     );
 
     let validator = QualityValidator::new(temp.path());
-    let violations = validator.validate_error_handling().unwrap();
+    let violations = validator.validate_no_unwrap_expect().unwrap();
 
     assert!(
         violations.is_empty(),

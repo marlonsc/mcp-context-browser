@@ -2,108 +2,82 @@
 
 **Source**: `crates/mcb-domain/src/`
 **Crate**: `mcb-domain`
-**Files**: 15+ (port files + core files)
-**Lines of Code**: ~3,000
-**Traits**: 14+
-**Structs**: 25+
-**Enums**: 8
+**Files**: 15+
+**Lines of Code**: ~1,500
+**Traits**: 3 (repository interfaces)
+**Structs**: 10+
+**Enums**: 5
 
 ## Overview
 
-The domain module defines the core business entities and port interfaces following Clean Architecture principles. All domain logic is technology-agnostic, with external concerns abstracted behind port traits.
+The domain module defines the core business entities, value objects, and repository interfaces following Clean Architecture principles. All domain logic is technology-agnostic, with external concerns abstracted behind port traits.
+
+> **Note**: Port traits (EmbeddingProvider, VectorStoreProvider, etc.) are defined in `mcb-application/src/ports/`, not in mcb-domain. The domain layer contains only entities, value objects, and repository interfaces.
 
 ## Key Exports
 
-### Port Traits (14+ total)
+### Repository Interfaces (`repositories/`)
 
-All traits extend `shaku::Interface` for DI compatibility:
+-   `ChunkRepository` - Code chunk persistence (extends `shaku::Interface`)
+-   `SearchRepository` - Search operations (extends `shaku::Interface`)
 
-**Provider Ports (`ports/providers/`):**
+### Domain Events (`events/`)
 
--   `EmbeddingProvider` - Text-to-vector conversion
--   `VectorStoreProvider` - Vector storage and retrieval
--   `CacheProvider` - Caching operations
--   `CryptoProvider` - Encryption and hashing
+-   `DomainEvent` - Base event trait
+-   `EventPublisher` - Event publishing interface
+-   `ServiceState` - Service lifecycle states
 
-**Infrastructure Ports (`ports/infrastructure/`):**
+### Entities (`entities/`)
 
--   `SyncProvider` - Low-level sync operations
--   `SnapshotProvider` - Codebase snapshot management
--   `StateStoreProvider` - State persistence
--   `LockProvider` - Distributed locking
--   `EventPublisher` - Domain event publishing
+-   `CodeChunk` - Parsed code segment with metadata
+-   `Codebase` - Repository metadata
 
-**Admin Ports (`ports/admin.rs`):**
+### Value Objects (`value_objects/`)
 
--   `PerformanceMetricsInterface` - Performance metrics tracking
--   `IndexingOperationsInterface` - Indexing operations
+-   `Embedding` - Vector representation with metadata
+-   `SearchResult` - Ranked search results
+-   Config types - Configuration value objects
 
-**Repository Ports (`repositories/`):**
-
--   `ChunkRepository` - Code chunk persistence
--   `SearchRepository` - Search operations
-
-**Service Ports (in `mcb-application`):**
-
--   `ContextServiceInterface` - High-level code intelligence
--   `SearchServiceInterface` - Semantic search
--   `IndexingServiceInterface` - Codebase indexing
--   `ChunkingOrchestratorInterface` - Batch chunking coordination
-
-### Core Types
-
--   `CodeChunk` - Semantic code unit
--   `Embedding` - Vector representation
--   `SearchResult` - Search Result with score
--   `Language` - Programming language enum
-
-### Events
-
--   `DomainEvent` - Domain-level events (IndexRebuild, SyncCompleted, etc.)
-
-## File Structure
+## File Structure (Actual)
 
 ```text
 crates/mcb-domain/src/
-├── ports/
-│   ├── providers/           # Provider port traits
-│   │   ├── embedding.rs     # EmbeddingProvider trait
-│   │   ├── vector_store.rs  # VectorStoreProvider trait
-│   │   ├── cache.rs         # CacheProvider trait
-│   │   └── crypto.rs        # CryptoProvider trait
-│   ├── infrastructure/      # Infrastructure port traits
-│   │   ├── sync.rs          # SyncProvider, LockProvider traits
-│   │   ├── snapshot.rs      # SnapshotProvider, StateStoreProvider traits
-│   │   └── events.rs        # EventPublisher trait
-│   ├── admin.rs             # Admin service interfaces
-│   └── mod.rs               # Re-exports
-├── entities/                # Domain entities
-├── value_objects/           # Value objects
-├── repositories/            # Repository port traits
-│   ├── chunk_repository.rs  # ChunkRepository trait
-│   └── search_repository.rs # SearchRepository trait
-├── error.rs                 # Domain error types
-├── types.rs                 # Core domain types
-└── lib.rs                   # Module exports
+├── entities/               # Domain entities
+│   ├── code_chunk.rs
+│   ├── codebase.rs
+│   └── mod.rs
+├── events/                 # Domain events
+│   ├── domain_events.rs
+│   └── mod.rs
+├── repositories/           # Repository port traits
+│   ├── chunk_repository.rs
+│   ├── search_repository.rs
+│   └── mod.rs
+├── value_objects/          # Value objects
+│   ├── config.rs
+│   ├── embedding.rs
+│   ├── search.rs
+│   ├── types.rs
+│   └── mod.rs
+├── constants.rs            # Domain constants
+├── error.rs                # Domain error types
+└── mod.rs                  # Module exports
 ```
 
 ## Port/Adapter Mappings
 
-| Port | Implementation | Location |
-|------|---------------|----------|
+| Port (in mcb-application) | Implementation | Location |
+|---------------------------|---------------|----------|
 | `EmbeddingProvider` | OpenAI, VoyageAI, Ollama, Gemini, FastEmbed, Null | `crates/mcb-providers/src/embedding/` |
-| `VectorStoreProvider` | Memory, Encrypted, Null | `crates/mcb-providers/src/vector_store/` |
-| `CacheProvider` | Moka, Redis | `crates/mcb-providers/src/cache/` |
-| `EventPublisher` | NullEventBus | `crates/mcb-infrastructure/src/adapters/infrastructure/` |
-| `SyncProvider` | NullSyncProvider | `crates/mcb-infrastructure/src/adapters/infrastructure/` |
-| `SnapshotProvider` | NullSnapshotProvider | `crates/mcb-infrastructure/src/adapters/infrastructure/` |
-| `ChunkRepository` | NullChunkRepository | `crates/mcb-infrastructure/src/adapters/repository/` |
-| `SearchRepository` | NullSearchRepository | `crates/mcb-infrastructure/src/adapters/repository/` |
-| `ContextServiceInterface` | ContextService | `crates/mcb-application/src/services/` |
-| `SearchServiceInterface` | SearchService | `crates/mcb-application/src/services/` |
-| `IndexingServiceInterface` | IndexingService | `crates/mcb-application/src/services/` |
-| `ChunkingOrchestratorInterface` | ChunkingOrchestrator | `crates/mcb-application/src/domain_services/` |
+| `VectorStoreProvider` | InMemory, Encrypted, Null | `crates/mcb-providers/src/vector_store/` |
+| `CacheProvider` | Moka, Redis, Null | `crates/mcb-providers/src/cache/` |
+| `EventBusProvider` | Tokio, Null | `crates/mcb-providers/src/events/` |
+
+| Port (in mcb-domain) | Implementation | Location |
+|----------------------|---------------|----------|
+| `ChunkRepository` | In-memory (via providers) | `crates/mcb-providers/` |
+| `SearchRepository` | In-memory (via providers) | `crates/mcb-providers/` |
 
 ---
 
-*Updated 2026-01-17 - Reflects modular crate architecture (v0.1.1)*
+*Updated 2026-01-17 - Reflects v0.1.1 crate architecture*

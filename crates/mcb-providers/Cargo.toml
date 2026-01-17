@@ -28,9 +28,14 @@ embedding-gemini = []
 embedding-fastembed = ["dep:fastembed"]
 
 # === Vector Store Providers ===
-vectorstore-all = ["vectorstore-memory", "vectorstore-encrypted"]
+
+vectorstore-all = ["vectorstore-memory", "vectorstore-encrypted", "vectorstore-filesystem", "vectorstore-edgevec", "vectorstore-milvus"]
 vectorstore-memory = []
 vectorstore-encrypted = ["dep:aes-gcm"]
+vectorstore-filesystem = []
+vectorstore-edgevec = ["dep:edgevec", "dep:schemars"]
+# Milvus cloud vector database (disabled by default - upstream crate has compilation bug)
+vectorstore-milvus = ["dep:milvus-sdk-rust"]
 
 # === Cache Providers ===
 cache-all = ["cache-moka", "cache-redis"]
@@ -130,6 +135,15 @@ moka = { workspace = true, optional = true }
 
 # Optional: Redis cache
 redis = { workspace = true, optional = true }
+
+# Optional: EdgeVec high-performance vector store
+edgevec = { workspace = true, optional = true }
+
+# Optional: Milvus cloud vector database (has upstream lifetime bug in v0.2.0)
+milvus-sdk-rust = { workspace = true, optional = true }
+
+# Optional: JSON Schema generation (for EdgeVec config)
+schemars = { workspace = true, optional = true }
 
 [dev-dependencies]
 tempfile = "3.10"

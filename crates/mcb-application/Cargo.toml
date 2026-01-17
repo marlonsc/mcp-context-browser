@@ -43,6 +43,9 @@ shaku = { workspace = true }
 # Utilities
 uuid = { workspace = true }
 
+# Async streams for event subscription
+futures = { workspace = true }
+
 [dev-dependencies]
 tempfile = "3.10"
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }

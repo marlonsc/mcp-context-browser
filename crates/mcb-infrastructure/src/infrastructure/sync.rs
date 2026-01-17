@@ -68,11 +68,13 @@ impl SyncProvider for NullSyncProvider {
 // ============================================================================
 
 /// Null lock provider for testing and Shaku DI default
+#[allow(dead_code)] // Instantiated by Shaku DI container
 #[derive(shaku::Component)]
 #[shaku(interface = LockProvider)]
 pub struct NullLockProvider;
 
 impl NullLockProvider {
+    #[allow(dead_code)] // Used by Shaku DI
     pub fn new() -> Self {
         Self
     }

@@ -104,7 +104,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   **Total Tests**: 790+ (100% pass rate)
 -   **Language Processors**: 12 with full AST parsing support
 -   **Embedding Providers**: 6 (OpenAI, VoyageAI, Ollama, Gemini, FastEmbed, Null)
--   **Vector Stores**: 6 (Milvus, EdgeVec, In-Memory, Filesystem, Encrypted, Null)
+-   **Vector Stores**: 3 (In-Memory, Encrypted, Null)
 -   **Source Files**: 100+ enterprise-grade files
 -   **Lines of Code**: ~25,000 lines of production code
 -   **Test Coverage**: Comprehensive scenario coverage across all components
@@ -121,7 +121,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   **Startup Time**: Instant (from npm/npx overhead)
 -   **Memory Usage**: Native efficiency (reduced by ~60% vs Node.js)
--   **Provider Support**: 6 embedding providers, 6 vector stores
+-   **Provider Support**: 6 embedding providers, 3 vector stores
 -   **Language Support**: 12 languages with AST parsing
 -   **Test Coverage**: 790+ tests
 

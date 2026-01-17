@@ -10,7 +10,7 @@ This guide helps you migrate from [zilliztech/Claude-context](https://github.com
 |**MCP Tools**| 4 tools | 4 tools (same interface) |
 |**Hybrid Search**| BM25 + vector | BM25 + vector |
 |**Embedding Providers**| 4 | 6 (+ FastEmbed, Mock) |
-|**Vector Stores**| 2 (Milvus/Zilliz) | 6 (+ EdgeVec, In-Memory, Filesystem, Encrypted) |
+|**Vector Stores**| 2 (Milvus/Zilliz) | 3 (In-Memory, Encrypted, Null) |
 |**Languages**| 13+ | 13 (Rust, Python, JS/TS, Go, Java, C, C++, C#, Ruby, PHP, Swift, Kotlin) |
 |**Performance**| Node.js interpreter | Native compiled |
 |**Dependencies**| npm packages | Single binary |

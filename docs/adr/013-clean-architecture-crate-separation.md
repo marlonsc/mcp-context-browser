@@ -83,7 +83,7 @@ mcb-application/src/
 
 -   Depends on `mcb-domain` (implements port traits)
 -   Feature-flagged providers for optional dependencies
--   Contains real implementations: OpenAI, Ollama, Milvus, etc.
+-   Contains real implementations: OpenAI, Ollama, etc. (6 embedding, 3 vector store, 12 language)
 -   Contains null implementations for testing
 -   Organized by provider category
 
@@ -298,7 +298,7 @@ cargo run -p mcb-validate
 ### Adding a New Provider
 
 1.  Create implementation in `mcb-providers/src/<category>/`
-2.  Implement the port trait from `mcb-domain/src/ports/`
+2.  Implement the port trait from `mcb-application/src/ports/`
 3.  Add feature flag in `mcb-providers/Cargo.toml`
 4.  Register in factory in `mcb-infrastructure/src/di/factory/`
 

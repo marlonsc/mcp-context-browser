@@ -20,7 +20,7 @@ MCP Context Browser v0.1.0 is the first stable release, providing a complete dro
 -   ✅ Full MCP protocol implementation (4 tools)
 -   ✅ 12 languages with AST parsing (Rust, Python, JS/TS, Go, Java, C, C++, C#, Ruby, PHP, Swift, Kotlin)
 -   ✅ 6 embedding providers (OpenAI, VoyageAI, Ollama, Gemini, FastEmbed, Null)
--   ✅ 6 vector stores (Milvus, EdgeVec, In-Memory, Filesystem, Encrypted, Null)
+-   ✅ 3 vector stores (In-Memory, Encrypted, Null)
 -   ✅ Claude-context environment variable compatibility
 -   ✅ 790+ tests with comprehensive coverage (100% pass rate)
 -   ✅ JWT authentication and rate limiting

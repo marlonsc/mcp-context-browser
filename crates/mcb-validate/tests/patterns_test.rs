@@ -22,7 +22,7 @@ pub struct State {
     );
 
     let validator = PatternValidator::new(temp.path());
-    let violations = validator.validate_sync_patterns().unwrap();
+    let violations = validator.validate_async_traits().unwrap();
 
     // Arc<Mutex<>> can be a code smell in async code
     assert!(!violations.is_empty() || violations.is_empty()); // Depends on validator rules
@@ -44,7 +44,7 @@ pub fn risky() {
     );
 
     let validator = PatternValidator::new(temp.path());
-    let violations = validator.validate_deprecated_patterns().unwrap();
+    let violations = validator.validate_all().unwrap();
 
     // Should detect deprecated patterns
     assert!(!violations.is_empty() || violations.is_empty()); // Depends on validator rules

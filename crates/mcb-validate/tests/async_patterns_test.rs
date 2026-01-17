@@ -22,7 +22,7 @@ pub async fn bad_async() {
     );
 
     let validator = AsyncPatternValidator::new(temp.path());
-    let violations = validator.validate_blocking_calls().unwrap();
+    let violations = validator.validate_blocking_in_async().unwrap();
 
     assert!(
         !violations.is_empty(),
@@ -46,7 +46,7 @@ pub async fn good_async() {
     );
 
     let validator = AsyncPatternValidator::new(temp.path());
-    let violations = validator.validate_blocking_calls().unwrap();
+    let violations = validator.validate_blocking_in_async().unwrap();
 
     assert!(violations.is_empty(), "Proper async should pass");
 }

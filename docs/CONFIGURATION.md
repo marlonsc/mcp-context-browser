@@ -143,16 +143,14 @@ export DATABASE_CONNECTION_TIMEOUT_SECS="30"
 
 | Variable | Type | Default | Purpose |
 |----------|------|---------|---------|
-| `VECTOR_STORE_PROVIDER` | String | `in-memory` | Vector store backend: `milvus`, `edgevec`, `in-memory`, `filesystem` |
-| `MILVUS_ADDRESS` | String | Empty | Milvus server address (required for Milvus provider) |
-| `MILVUS_TOKEN` | String | Empty | Milvus authentication token (optional) |
+| `VECTOR_STORE_PROVIDER` | String | `in-memory` | Vector store backend: `in-memory`, `encrypted`, `null` |
+
+> **Note**: Additional vector stores (Milvus, EdgeVec, Filesystem) are planned for v0.2.0+. Currently only 3 providers are implemented.
 
 **Example:**
 
 ```bash
-export VECTOR_STORE_PROVIDER="milvus"
-export MILVUS_ADDRESS="localhost:19530"
-export MILVUS_TOKEN="your-milvus-token"
+export VECTOR_STORE_PROVIDER="in-memory"
 ```
 
 ### Embedding Provider Configuration

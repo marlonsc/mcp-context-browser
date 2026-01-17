@@ -15,7 +15,7 @@
 > **v0.1.1 Modular Architecture Updates:**
 >
 > -   ✅ **Seven-crate Clean Architecture** implemented (see [ADR-013](013-clean-architecture-crate-separation.md))
-> -   ✅ **14 domain port traits** in `crates/mcb-domain/src/ports/`
+> -   ✅ **20+ port traits** in `crates/mcb-application/src/ports/`
 > -   ✅ **Two-layer DI strategy** (see [ADR-012](012-di-strategy-two-layer-approach.md))
 > -   ✅ **All traits extend `shaku::Interface`** for DI compatibility
 > -   ✅ **mcb-validate crate** enforces architecture boundaries

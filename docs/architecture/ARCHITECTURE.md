@@ -51,8 +51,8 @@ MCP Context Browser is a high-performance, extensible Model Context Protocol (MC
 
 **Version**: 0.1.1 (First Stable Release)
 **Architecture Maturity**: ✅ **100% Complete DI Implementation**
-**DI Status**: ✅ 14 Domain Port Traits, ✅ Provider Registry, ✅ Service Factory, ✅ Full Port/Adapter Wiring
-**Port Traits**: `crates/mcb-domain/src/ports/` - All traits extend `shaku::Interface` for DI compatibility
+**DI Status**: ✅ 20+ Port Traits, ✅ Provider Registry, ✅ Service Factory, ✅ Full Port/Adapter Wiring
+**Port Traits**: `crates/mcb-application/src/ports/` - All traits extend `shaku::Interface` for DI compatibility
 **Deployment Options**: Local development, Docker, Kubernetes, hybrid cloud-edge
 
 ---
@@ -526,7 +526,7 @@ Beyond embedding and vector store providers, the system defines 12 additional po
 | `IndexingServiceInterface` | Codebase indexing | `IndexingService` |
 | `ChunkingOrchestratorInterface` | Batch chunking coordination | `ChunkingOrchestrator` |
 
-All 14 domain port traits extend `shaku::Interface` for DI container integration.
+All 20+ port traits extend `shaku::Interface` for DI container integration (defined in mcb-application).
 
 ---
 
@@ -618,10 +618,10 @@ let services = DomainServicesFactory::create_services(
 
 ### Port/Adapter Pattern
 
-The system enforces dependency inversion through port traits (interfaces) defined in the domain layer:
+The system enforces dependency inversion through port traits (interfaces) defined in the application layer:
 
 ```rust
-// Port trait (mcb-domain/src/ports/providers/embedding.rs)
+// Port trait (mcb-application/src/ports/providers/embedding.rs)
 #[async_trait]
 pub trait EmbeddingProvider: Interface + Send + Sync {
     async fn embed(&self, text: &str) -> Result<Embedding>;
@@ -647,9 +647,9 @@ impl EmbeddingProvider for OllamaEmbeddingProvider {
 
 | Category | Location | Examples |
 |----------|----------|----------|
-| Provider Ports | `mcb-domain/src/ports/providers/` | EmbeddingProvider, VectorStoreProvider, CacheProvider |
-| Infrastructure Ports | `mcb-domain/src/ports/infrastructure/` | SyncProvider, SnapshotProvider, EventPublisher |
-| Admin Ports | `mcb-domain/src/ports/admin.rs` | PerformanceMetrics, IndexingOperations |
+| Provider Ports | `mcb-application/src/ports/providers/` | EmbeddingProvider, VectorStoreProvider, CacheProvider |
+| Infrastructure Ports | `mcb-application/src/ports/infrastructure/` | SyncProvider, SnapshotProvider, EventPublisher |
+| Admin Ports | `mcb-application/src/ports/admin.rs` | PerformanceMetrics, IndexingOperations |
 
 ### Testing with DI
 
@@ -684,18 +684,18 @@ The system follows Clean Architecture principles with 7 crates organized as a Ca
 
 #### 📦 Domain Layer (`crates/mcb-domain/`)
 
-**Purpose**: Core business entities, port traits (interfaces), and validation rules.
+**Purpose**: Core business entities, value objects, events, and repository interfaces.
 
 **Key Components**:
 
--   `ports/providers/`: Provider port traits (embedding, vector_store, cache, crypto)
--   `ports/infrastructure/`: Infrastructure port traits (sync, snapshot, events)
--   `ports/admin.rs`: Admin service port traits
--   `entities/`: Domain entities (CodeChunk, Repository, etc.)
--   `value_objects/`: Value objects (Embedding, SearchResult, etc.)
+-   `entities/`: Domain entities (CodeChunk, Codebase)
+-   `events/`: Domain events (DomainEvent, EventPublisher trait)
 -   `repositories/`: Repository port traits (ChunkRepository, SearchRepository)
+-   `value_objects/`: Value objects (Embedding, Config, Search, Types)
+-   `constants.rs`: Domain constants
 -   `error.rs`: Domain error types
--   `types.rs`: Core domain types
+
+> **Note**: Provider port traits (EmbeddingProvider, VectorStoreProvider, etc.) are defined in `mcb-application/src/ports/`, not in mcb-domain.
 
 #### 🔧 Application Layer (`crates/mcb-application/`)
 
@@ -716,7 +716,7 @@ The system follows Clean Architecture principles with 7 crates organized as a Ca
 **Submodules**:
 
 -   `embedding/`: OpenAI, VoyageAI, Ollama, Gemini, FastEmbed, Null (6 providers)
--   `vector_store/`: Memory, Encrypted, Null (6 providers via features)
+-   `vector_store/`: InMemory, Encrypted, Null (3 providers)
 -   `cache/`: Moka, Redis cache providers
 -   `language/`: 12 AST-based language processors (Rust, Python, JS, TS, Go, Java, C, C++, C#, Ruby, PHP, Swift, Kotlin)
 -   `routing/`: Circuit breakers, health monitoring, failover

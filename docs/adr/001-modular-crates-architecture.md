@@ -16,12 +16,12 @@ We opted for a modular architecture based on crates, where the project is divide
 
 ## Implementation
 
-### Port Trait Definition (mcb-domain)
+### Port Trait Definition (mcb-application)
 
 Ports are defined as traits extending `shaku::Interface` for DI compatibility:
 
 ```rust
-// crates/mcb-domain/src/ports/providers/embedding.rs
+// crates/mcb-application/src/ports/providers/embedding.rs
 use shaku::Interface;
 use async_trait::async_trait;
 

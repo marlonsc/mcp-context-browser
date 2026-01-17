@@ -71,11 +71,13 @@ impl SnapshotProvider for NullSnapshotProvider {
 // ============================================================================
 
 /// Null state store provider for testing and Shaku DI default
+#[allow(dead_code)] // Instantiated by Shaku DI container
 #[derive(shaku::Component)]
 #[shaku(interface = StateStoreProvider)]
 pub struct NullStateStoreProvider;
 
 impl NullStateStoreProvider {
+    #[allow(dead_code)] // Used by Shaku DI
     pub fn new() -> Self {
         Self
     }

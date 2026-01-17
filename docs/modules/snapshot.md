@@ -2,7 +2,7 @@
 
 **Note**: Snapshot functionality is defined as a port trait in v0.1.1.
 
-**Trait**: `crates/mcb-domain/src/ports/infrastructure/snapshot.rs`
+**Trait**: `crates/mcb-application/src/ports/infrastructure/snapshot.rs`
 **Null Adapter**: `crates/mcb-infrastructure/src/adapters/infrastructure/snapshot.rs`
 
 ## Overview
@@ -11,7 +11,7 @@ Snapshot management for incremental codebase tracking. Tracks file changes using
 
 ## Components
 
-### SnapshotProvider Trait (`mcb-domain`)
+### SnapshotProvider Trait (`mcb-application`)
 
 Port definition for snapshot operations:
 
@@ -32,7 +32,7 @@ No-op implementation for testing and DI.
 ## File Structure
 
 ```text
-crates/mcb-domain/src/ports/infrastructure/
+crates/mcb-application/src/ports/infrastructure/
 └── snapshot.rs              # SnapshotProvider trait, StateStoreProvider trait
 
 crates/mcb-infrastructure/src/adapters/infrastructure/
@@ -50,7 +50,7 @@ Related types in `mcb-domain`:
 ## Key Exports
 
 ```rust
-// Trait (from mcb-domain)
+// Trait (from mcb-application)
 pub use ports::infrastructure::snapshot::{SnapshotProvider, StateStoreProvider};
 
 // Null implementation (from mcb-infrastructure)

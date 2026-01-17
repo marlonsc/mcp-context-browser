@@ -7,7 +7,7 @@
 
 -   **Crates**: 7 (mcb, mcb-domain, mcb-application, mcb-providers, mcb-infrastructure, mcb-server, mcb-validate)
 -   **Embedding Providers**: 6 (OpenAI, Ollama, Gemini, VoyageAI, FastEmbed, Null)
--   **Vector Store Providers**: 6 (Milvus, EdgeVec, In-Memory, Filesystem, Encrypted, Null)
+-   **Vector Store Providers**: 3 (In-Memory, Encrypted, Null)
 -   **Language Processors**: 12 (AST-based via tree-sitter)
 -   **Total Source Files**: 426+
 -   **Tests**: 561+

@@ -2,9 +2,8 @@
 
 **Note**: Sync functionality is defined as a port trait in v0.1.1.
 
-**Trait**: `crates/mcb-domain/src/ports/infrastructure/sync.rs`
+**Trait**: `crates/mcb-application/src/ports/infrastructure/sync.rs`
 **Null Adapter**: `crates/mcb-infrastructure/src/adapters/infrastructure/sync.rs`
-**Application Port**: `crates/mcb-application/src/ports/infrastructure/sync.rs`
 
 ## Overview
 
@@ -12,7 +11,7 @@ File synchronization coordination for incremental indexing. Manages file change 
 
 ## Components
 
-### SyncProvider Trait (`mcb-domain`)
+### SyncProvider Trait (`mcb-application`)
 
 Port definition for sync operations:
 
@@ -25,7 +24,7 @@ pub trait SyncProvider: Send + Sync + shaku::Interface {
 }
 ```
 
-### LockProvider Trait (`mcb-domain`)
+### LockProvider Trait (`mcb-application`)
 
 Distributed locking for concurrent sync:
 
@@ -45,11 +44,8 @@ pub trait LockProvider: Send + Sync + shaku::Interface {
 ## File Structure
 
 ```text
-crates/mcb-domain/src/ports/infrastructure/
-└── sync.rs                  # SyncProvider, LockProvider traits
-
 crates/mcb-application/src/ports/infrastructure/
-└── sync.rs                  # Application-layer sync interface
+└── sync.rs                  # SyncProvider, LockProvider traits
 
 crates/mcb-infrastructure/src/adapters/infrastructure/
 └── sync.rs                  # NullSyncProvider, NullLockProvider
@@ -58,7 +54,7 @@ crates/mcb-infrastructure/src/adapters/infrastructure/
 ## Key Exports
 
 ```rust
-// Traits (from mcb-domain)
+// Traits (from mcb-application)
 pub use ports::infrastructure::sync::{SyncProvider, LockProvider};
 
 // Null implementations (from mcb-infrastructure)

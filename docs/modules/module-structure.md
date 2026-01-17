@@ -65,8 +65,8 @@ mcp-context-browser/
 │   │       │   ├── gemini.rs
 │   │       │   ├── fastembed.rs
 │   │       │   └── null.rs
-│   │       ├── vector_store/         # Vector store providers (6)
-│   │       │   ├── memory.rs
+│   │       ├── vector_store/         # Vector store providers (3)
+│   │       │   ├── in_memory.rs
 │   │       │   ├── encrypted.rs
 │   │       │   └── null.rs
 │   │       ├── cache/                # Cache providers
@@ -113,7 +113,7 @@ mcp-context-browser/
 | **Domain** | `mcb-domain` | Business entities and rules | Ports, types, entities, repositories |
 | **Application** | `mcb-application` | Use case orchestration | ContextService, IndexingService, SearchService |
 | **Infrastructure** | `mcb-infrastructure` | Technical services | DI, auth, cache, config, health |
-| **Providers** | `mcb-providers` | External service adapters | Embedding (6), VectorStore (6), Cache, Language (12) |
+| **Providers** | `mcb-providers` | External service adapters | Embedding (6), VectorStore (3), Cache (3), Language (12) |
 | **Server** | `mcb-server` | Protocol implementation | MCP handlers, admin API |
 | **Validation** | `mcb-validate` | Architecture enforcement | 12 validators, violation reporting |
 | **Facade** | `mcb` | Public API | Re-exports from all crates |

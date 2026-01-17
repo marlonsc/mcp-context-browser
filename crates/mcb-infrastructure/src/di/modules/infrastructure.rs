@@ -26,7 +26,7 @@
 use shaku::module;
 
 // Import production implementations
-use crate::infrastructure::TokioBroadcastEventBus;
+use crate::infrastructure::{DefaultShutdownCoordinator, TokioBroadcastEventBus};
 
 // Import null implementations for services without production defaults yet
 use crate::infrastructure::{
@@ -40,7 +40,8 @@ module! {
     pub InfrastructureModuleImpl: InfrastructureModule {
         components = [
             // Production defaults
-            TokioBroadcastEventBus,  // Real event bus for SSE/events
+            TokioBroadcastEventBus,       // Real event bus for SSE/events
+            DefaultShutdownCoordinator,   // Graceful shutdown coordination
             // Testing defaults (override in production config)
             NullAuthService,
             NullSystemMetricsCollector,

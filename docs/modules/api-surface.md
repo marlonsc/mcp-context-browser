@@ -12,8 +12,8 @@ Re-exports from all internal crates for unified access:
 // Domain types
 pub use mcb_domain::{CodeChunk, Embedding, SearchResult, Language, Error, Result};
 
-// Service interfaces
-pub use mcb_domain::ports::{EmbeddingProvider, VectorStoreProvider, CacheProvider};
+// Service interfaces (from mcb-application)
+pub use mcb_application::ports::{EmbeddingProvider, VectorStoreProvider, CacheProvider};
 
 // Service implementations
 pub use mcb_application::{ContextServiceImpl, IndexingServiceImpl, SearchServiceImpl};
@@ -31,7 +31,7 @@ Core types and port traits:
 
 -   **Types**: `CodeChunk`, `Embedding`, `SearchResult`, `Language`
 -   **Errors**: `Error`, `Result<T>`
--   **Ports**: 14+ trait interfaces
+-   **Repositories**: ChunkRepository, SearchRepository interfaces
 
 ### mcb-application
 

@@ -108,12 +108,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 }
 ```
 
-### Async Port Traits with Shaku DI (mcb-domain)
+### Async Port Traits with Shaku DI (mcb-application)
 
 Port traits combine `async_trait` with `shaku::Interface` for DI compatibility:
 
 ```rust
-// crates/mcb-domain/src/ports/providers/embedding.rs
+// crates/mcb-application/src/ports/providers/embedding.rs
 use shaku::Interface;
 use async_trait::async_trait;
 

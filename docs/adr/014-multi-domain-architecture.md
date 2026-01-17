@@ -65,7 +65,7 @@ mcp-context-browser/
 
 -   Seven-crate Clean Architecture implemented
 -   Shaku DI with two-layer strategy
--   14 domain port traits with shaku::Interface
+-   20+ port traits with shaku::Interface (in mcb-application)
 -   mcb-validate enforces layer boundaries
 
 **v0.3.0** (Analysis domain):
@@ -105,12 +105,12 @@ mcp-context-browser/
 
 -   [x] Seven-crate Clean Architecture implemented
 -   [x] Shaku DI with two-layer strategy
--   [x] 14 domain port traits with shaku::Interface
+-   [x] 20+ port traits with shaku::Interface (in mcb-application)
 -   [x] mcb-validate enforces layer boundaries
 
 **v0.3.0 (Planned)**:
 
--   [ ] Create `crates/mcb-domain/src/ports/analysis/` (analysis domain ports)
+-   [ ] Create `crates/mcb-application/src/ports/analysis/` (analysis domain ports)
 -   [ ] Create `crates/mcb-providers/src/analyzers/` (PMAT adapters)
 -   [ ] Define `AnalysisInterface` trait
 -   [ ] Port PMAT complexity/TDG/SATD algorithms

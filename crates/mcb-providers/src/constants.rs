@@ -209,3 +209,67 @@ pub const LANG_SWIFT: &str = "swift";
 
 /// Kotlin language identifier
 pub const LANG_KOTLIN: &str = "kotlin";
+
+// ============================================================================
+// EDGEVEC VECTOR STORE CONSTANTS
+// ============================================================================
+
+/// EdgeVec HNSW M parameter (max connections per node in layers > 0)
+pub const EDGEVEC_HNSW_M: u32 = 16;
+
+/// EdgeVec HNSW M0 parameter (max connections per node in layer 0)
+pub const EDGEVEC_HNSW_M0: u32 = 32;
+
+/// EdgeVec HNSW ef_construction parameter
+pub const EDGEVEC_HNSW_EF_CONSTRUCTION: u32 = 200;
+
+/// EdgeVec HNSW ef_search parameter
+pub const EDGEVEC_HNSW_EF_SEARCH: u32 = 64;
+
+/// EdgeVec default dimensions (for OpenAI embeddings)
+pub const EDGEVEC_DEFAULT_DIMENSIONS: usize = 1536;
+
+// ============================================================================
+// FILESYSTEM VECTOR STORE CONSTANTS
+// ============================================================================
+
+/// Filesystem vector store bytes per dimension (f32 = 4 bytes)
+pub const FILESYSTEM_BYTES_PER_DIMENSION: usize = 4;
+
+/// Filesystem vector store max vectors per shard
+pub const FILESYSTEM_VECTOR_STORE_MAX_PER_SHARD: usize = 10000;
+
+/// Filesystem vector store index cache size
+pub const FILESYSTEM_VECTOR_STORE_INDEX_CACHE_SIZE: usize = 1000;
+
+// ============================================================================
+// MILVUS VECTOR STORE CONSTANTS
+// ============================================================================
+
+/// Milvus field varchar max length
+pub const MILVUS_FIELD_VARCHAR_MAX_LENGTH: i32 = 512;
+
+/// Milvus metadata varchar max length
+pub const MILVUS_METADATA_VARCHAR_MAX_LENGTH: i32 = 65535;
+
+/// Milvus IvfFlat nlist parameter
+pub const MILVUS_IVFFLAT_NLIST: u32 = 128;
+
+// ============================================================================
+// HYBRID SEARCH CONSTANTS
+// ============================================================================
+
+/// BM25 weight in hybrid search (0.0-1.0), default 40% BM25
+pub const HYBRID_SEARCH_BM25_WEIGHT: f32 = 0.4;
+
+/// Semantic weight in hybrid search (0.0-1.0), default 60% semantic
+pub const HYBRID_SEARCH_SEMANTIC_WEIGHT: f32 = 0.6;
+
+/// BM25 k1 parameter (term frequency saturation, standard tuning value)
+pub const HYBRID_SEARCH_BM25_K1: f32 = 1.2;
+
+/// BM25 b parameter (document length normalization, standard tuning value)
+pub const HYBRID_SEARCH_BM25_B: f32 = 0.75;
+
+/// BM25 token minimum length filter (filter very short tokens)
+pub const BM25_TOKEN_MIN_LENGTH: usize = 2;

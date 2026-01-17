@@ -33,7 +33,7 @@ pub mod sync;
 
 // Re-export infrastructure ports
 pub use auth::AuthServiceInterface;
-pub use events::EventBusProvider;
+pub use events::{DomainEventStream, EventBusProvider};
 pub use lock::{LockGuard, LockProvider};
 pub use metrics::{SystemMetrics, SystemMetricsCollectorInterface};
 pub use snapshot::{SnapshotProvider, SyncProvider};

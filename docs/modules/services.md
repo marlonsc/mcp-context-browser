@@ -1,7 +1,7 @@
 # Services Module
 
 **Source**: `crates/mcb-application/src/use_cases/`
-**Traits**: `crates/mcb-domain/src/ports/`
+**Traits**: `crates/mcb-application/src/ports/`
 **Crate**: `mcb-application`
 
 Orchestrates the semantic code search workflow - from codebase ingestion to search results.
@@ -10,7 +10,7 @@ Orchestrates the semantic code search workflow - from codebase ingestion to sear
 
 The services module contains core business logic that powers the semantic code search platform. Each service encapsulates specific capabilities that work together to deliver code intelligence.
 
-All services implement interface traits defined in `crates/mcb-domain/src/ports/` for DI compatibility.
+All services implement interface traits defined in `crates/mcb-application/src/ports/` for DI compatibility.
 
 ## Service Interface Traits
 
@@ -151,7 +151,7 @@ crates/mcb-application/src/
 │   └── search.rs               # Search domain logic
 └── mod.rs
 
-crates/mcb-domain/src/ports/    # Service interface traits
+crates/mcb-application/src/ports/    # Service interface traits
 ```
 
 ## Testing
