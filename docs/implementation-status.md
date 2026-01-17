@@ -1,16 +1,16 @@
 # Implementation Status
 
-**Last Updated**: seg 12 jan 2026 11:25:14 -03
-**Version**: 0.1.0
+**Last Updated**: 2026-01-17
+**Version**: 0.1.1
 
-## 📊 Implementation Metrics
+## 📊 Implementation Metrics (v0.1.1 Modular Architecture)
 
-\1-  **Core Modules**: 0
-\1-  **Embedding Providers**: 6
-\1-  **Vector Store Providers**: 6
-\1-  **Routing Modules**: 6
-\1-  **Total Source Files**: 166
-\1-  **Lines of Code**: 29840
+-  **Crates**: 7 (mcb, mcb-domain, mcb-application, mcb-providers, mcb-infrastructure, mcb-server, mcb-validate)
+-  **Embedding Providers**: 6 (OpenAI, Ollama, Gemini, VoyageAI, FastEmbed, Null)
+-  **Vector Store Providers**: 6 (Milvus, EdgeVec, In-Memory, Filesystem, Encrypted, Null)
+-  **Language Processors**: 12 (AST-based via tree-sitter)
+-  **Total Source Files**: 426+
+-  **Tests**: 561+
 
 ## ✅ Fully Implemented
 

@@ -119,39 +119,75 @@ impl ValidatorRegistry {
     ///
     /// This registers all built-in validators with default configuration.
     /// Validators include:
-    /// - clean_architecture: Clean Architecture compliance
-    /// - layer_flow: Layer dependency rules
-    /// - port_adapter: Port/adapter patterns
-    /// - visibility: Visibility modifiers
+    /// - Architecture: clean_architecture, layer_flow, port_adapter, visibility
+    /// - Dependencies: dependency, shaku
+    /// - Quality: quality, solid, naming, patterns, documentation, tests_org
+    /// - Performance: performance, async_patterns, kiss, pmat
+    /// - Organization: organization, implementation, refactoring, error_boundary
     pub fn standard() -> Self {
-        use crate::clean_architecture::CleanArchitectureValidator;
-        use crate::layer_flow::LayerFlowValidator;
-        use crate::port_adapter::PortAdapterValidator;
-        use crate::visibility::VisibilityValidator;
-
-        // Create validators that need workspace root
-        // They will receive the actual config when validate() is called
-        Self::new()
-            .with_validator(Box::new(CleanArchitectureValidator::new(".")))
-            .with_validator(Box::new(LayerFlowValidator::new()))
-            .with_validator(Box::new(PortAdapterValidator::new()))
-            .with_validator(Box::new(VisibilityValidator::new()))
+        Self::standard_for(".")
     }
 
     /// Create a registry with standard validators for a specific workspace
     pub fn standard_for(workspace_root: impl Into<std::path::PathBuf>) -> Self {
+        // Architecture validators
         use crate::clean_architecture::CleanArchitectureValidator;
         use crate::layer_flow::LayerFlowValidator;
         use crate::port_adapter::PortAdapterValidator;
         use crate::visibility::VisibilityValidator;
 
+        // Dependency validators
+        use crate::dependency::DependencyValidator;
+        use crate::shaku::ShakuValidator;
+
+        // Quality validators
+        use crate::quality::QualityValidator;
+        use crate::solid::SolidValidator;
+        use crate::naming::NamingValidator;
+        use crate::patterns::PatternValidator;
+        use crate::documentation::DocumentationValidator;
+        use crate::tests_org::TestValidator;
+
+        // Performance validators
+        use crate::performance::PerformanceValidator;
+        use crate::async_patterns::AsyncPatternValidator;
+        use crate::kiss::KissValidator;
+        use crate::pmat::PmatValidator;
+
+        // Organization validators
+        use crate::organization::OrganizationValidator;
+        use crate::implementation::ImplementationQualityValidator;
+        use crate::refactoring::RefactoringValidator;
+        use crate::error_boundary::ErrorBoundaryValidator;
+
         let root = workspace_root.into();
 
         Self::new()
-            .with_validator(Box::new(CleanArchitectureValidator::new(root)))
+            // Architecture
+            .with_validator(Box::new(CleanArchitectureValidator::new(&root)))
             .with_validator(Box::new(LayerFlowValidator::new()))
             .with_validator(Box::new(PortAdapterValidator::new()))
             .with_validator(Box::new(VisibilityValidator::new()))
+            // Dependencies
+            .with_validator(Box::new(DependencyValidator::new(&root)))
+            .with_validator(Box::new(ShakuValidator::new(&root)))
+            // Quality
+            .with_validator(Box::new(QualityValidator::new(&root)))
+            .with_validator(Box::new(SolidValidator::new(&root)))
+            .with_validator(Box::new(NamingValidator::new(&root)))
+            .with_validator(Box::new(PatternValidator::new(&root)))
+            .with_validator(Box::new(DocumentationValidator::new(&root)))
+            .with_validator(Box::new(TestValidator::new(&root)))
+            // Performance
+            .with_validator(Box::new(PerformanceValidator::new(&root)))
+            .with_validator(Box::new(AsyncPatternValidator::new(&root)))
+            .with_validator(Box::new(KissValidator::new(&root)))
+            .with_validator(Box::new(PmatValidator::new(&root)))
+            // Organization
+            .with_validator(Box::new(OrganizationValidator::new(&root)))
+            .with_validator(Box::new(ImplementationQualityValidator::new(&root)))
+            .with_validator(Box::new(RefactoringValidator::new(&root)))
+            .with_validator(Box::new(ErrorBoundaryValidator::new(&root)))
     }
 }
 

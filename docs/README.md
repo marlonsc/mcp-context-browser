@@ -1,7 +1,7 @@
 # MCP Context Browser - Documentation
 
 [![Documentation Status](https://img.shields.io/badge/docs-automated-green)](https://github.com/marlonsc/mcp-context-browser/actions)
-[![Version](https://img.shields.io/badge/version-0.0.3-blue)](https://github.com/marlonsc/mcp-context-browser/releases)
+[![Version](https://img.shields.io/badge/version-0.1.1-blue)](https://github.com/marlonsc/mcp-context-browser/releases)
 [![Architecture](https://img.shields.io/badge/architecture-C4--model-blue)](docs/architecture/ARCHITECTURE.md)
 
 **Comprehensive documentation for the MCP Context Browser project**

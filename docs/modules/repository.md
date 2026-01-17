@@ -1,32 +1,83 @@
 # repository Module
 
-**Source**: `src/adapters/repository/`
+**Source**: `crates/mcb-infrastructure/src/adapters/repository/`
+**Traits**: `crates/mcb-domain/src/repositories/`
+**Crate**: `mcb-infrastructure`
 **Files**: 3
-**Lines of Code**: 329
-**Traits**: 4
-**Structs**: 5
-**Enums**: 0
-**Functions**: 0
+**Lines of Code**: ~400
 
 ## Overview
 
-Repository pattern implementation for data access abstraction
-//!
-This module provides repository interfaces and implementations following
-the Repository pattern to separate data access logic from business logic.
+Repository pattern implementation for data access abstraction. Provides repository interfaces and null implementations following the Repository pattern to separate data access logic from business logic.
 
-## Key Exports
+## Components
 
-`chunk_repository::VectorStoreChunkRepository,search_repository::VectorStoreSearchRepository,`
+### Repository Traits (`mcb-domain`)
+
+Port definitions for repositories:
+
+-   `ChunkRepository` - Code chunk persistence operations
+-   `SearchRepository` - Search result retrieval operations
+
+### Null Implementations (`mcb-infrastructure`)
+
+Test/development implementations:
+
+-   `NullChunkRepository` - No-op chunk repository
+-   `NullSearchRepository` - No-op search repository
 
 ## File Structure
 
 ```text
-mod.rs
-chunk_repository.rs
-search_repository.rs
+crates/mcb-domain/src/repositories/
+├── chunk_repository.rs       # ChunkRepository trait
+├── search_repository.rs      # SearchRepository trait
+└── mod.rs
+
+crates/mcb-infrastructure/src/adapters/repository/
+├── chunk_repository.rs       # NullChunkRepository
+├── search_repository.rs      # NullSearchRepository
+└── mod.rs
 ```
+
+## Repository Pattern
+
+```rust
+// Port trait (in mcb-domain)
+#[async_trait]
+pub trait ChunkRepository: Send + Sync + shaku::Interface {
+    async fn store(&self, collection: &str, chunks: &[CodeChunk]) -> Result<()>;
+    async fn get(&self, collection: &str, id: &str) -> Result<Option<CodeChunk>>;
+    async fn delete(&self, collection: &str, id: &str) -> Result<()>;
+}
+
+// Null implementation (in mcb-infrastructure)
+pub struct NullChunkRepository;
+
+#[async_trait]
+impl ChunkRepository for NullChunkRepository {
+    async fn store(&self, _: &str, _: &[CodeChunk]) -> Result<()> { Ok(()) }
+    async fn get(&self, _: &str, _: &str) -> Result<Option<CodeChunk>> { Ok(None) }
+    async fn delete(&self, _: &str, _: &str) -> Result<()> { Ok(()) }
+}
+```
+
+## Key Exports
+
+```rust
+// Traits (from mcb-domain)
+pub use repositories::{ChunkRepository, SearchRepository};
+
+// Null implementations (from mcb-infrastructure)
+pub use adapters::repository::{NullChunkRepository, NullSearchRepository};
+```
+
+## Cross-References
+
+-   **Domain**: [domain.md](./domain.md) (trait definitions)
+-   **Infrastructure**: [infrastructure.md](./infrastructure.md) (null implementations)
+-   **Architecture**: [ARCHITECTURE.md](../architecture/ARCHITECTURE.md)
 
 ---
 
-*Auto-generated from source code on qua 07 jan 2026 18:27:27 -03*
+*Updated 2026-01-17 - Reflects modular crate architecture (v0.1.1)*

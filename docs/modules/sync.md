@@ -1,25 +1,77 @@
 # sync Module
 
-**Source**: `src/infrastructure/sync/`
-**Files**: 1
-**Lines of Code**: 430
-**Traits**: 0
-**Structs**: 3
-**Enums**: 0
-**Functions**: 0
+**Note**: Sync functionality is defined as a port trait in v0.1.1.
+
+**Trait**: `crates/mcb-domain/src/ports/infrastructure/sync.rs`
+**Null Adapter**: `crates/mcb-infrastructure/src/adapters/infrastructure/sync.rs`
+**Application Port**: `crates/mcb-application/src/ports/infrastructure/sync.rs`
 
 ## Overview
 
-## Key Exports
+File synchronization coordination for incremental indexing. Manages file change detection and coordinates re-indexing of modified files.
 
-``
+## Components
+
+### SyncProvider Trait (`mcb-domain`)
+
+Port definition for sync operations:
+
+```rust
+#[async_trait]
+pub trait SyncProvider: Send + Sync + shaku::Interface {
+    async fn sync(&self, path: &Path) -> Result<SyncResult>;
+    async fn get_changes(&self, path: &Path) -> Result<Vec<FileChange>>;
+    fn is_file_changed(&self, path: &Path, hash: &str) -> bool;
+}
+```
+
+### LockProvider Trait (`mcb-domain`)
+
+Distributed locking for concurrent sync:
+
+```rust
+#[async_trait]
+pub trait LockProvider: Send + Sync + shaku::Interface {
+    async fn acquire(&self, key: &str) -> Result<Lock>;
+    async fn release(&self, lock: Lock) -> Result<()>;
+}
+```
+
+### Null Implementations (`mcb-infrastructure`)
+
+-   `NullSyncProvider` - No-op sync provider
+-   `NullLockProvider` - No-op lock provider
 
 ## File Structure
 
 ```text
-manager.rs
+crates/mcb-domain/src/ports/infrastructure/
+└── sync.rs                  # SyncProvider, LockProvider traits
+
+crates/mcb-application/src/ports/infrastructure/
+└── sync.rs                  # Application-layer sync interface
+
+crates/mcb-infrastructure/src/adapters/infrastructure/
+└── sync.rs                  # NullSyncProvider, NullLockProvider
 ```
+
+## Key Exports
+
+```rust
+// Traits (from mcb-domain)
+pub use ports::infrastructure::sync::{SyncProvider, LockProvider};
+
+// Null implementations (from mcb-infrastructure)
+pub use adapters::infrastructure::sync::{NullSyncProvider, NullLockProvider};
+```
+
+## Cross-References
+
+-   **Domain**: [domain.md](./domain.md) (trait definition)
+-   **Infrastructure**: [infrastructure.md](./infrastructure.md) (null adapter)
+-   **Snapshot**: [snapshot.md](./snapshot.md) (change detection)
+-   **Architecture**: [ARCHITECTURE.md](../architecture/ARCHITECTURE.md)
 
 ---
 
-*Auto-generated from source code on seg 12 jan 2026 11:25:14 -03*
+*Updated 2026-01-17 - Reflects modular crate architecture (v0.1.1)*

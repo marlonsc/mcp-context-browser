@@ -6,6 +6,7 @@
 //! - Spawn patterns (missing JoinHandle handling)
 //! - Wrong mutex types in async code
 
+use crate::violation_trait::{Violation, ViolationCategory};
 use crate::{Result, Severity, ValidationConfig};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -121,6 +122,56 @@ impl std::fmt::Display for AsyncViolation {
                     context
                 )
             }
+        }
+    }
+}
+
+impl Violation for AsyncViolation {
+    fn id(&self) -> &str {
+        match self {
+            Self::BlockingInAsync { .. } => "ASYNC001",
+            Self::BlockOnInAsync { .. } => "ASYNC002",
+            Self::WrongMutexType { .. } => "ASYNC003",
+            Self::UnawaitedSpawn { .. } => "ASYNC004",
+        }
+    }
+
+    fn category(&self) -> ViolationCategory {
+        ViolationCategory::Async
+    }
+
+    fn severity(&self) -> Severity {
+        self.severity()
+    }
+
+    fn file(&self) -> Option<&PathBuf> {
+        match self {
+            Self::BlockingInAsync { file, .. } => Some(file),
+            Self::BlockOnInAsync { file, .. } => Some(file),
+            Self::WrongMutexType { file, .. } => Some(file),
+            Self::UnawaitedSpawn { file, .. } => Some(file),
+        }
+    }
+
+    fn line(&self) -> Option<usize> {
+        match self {
+            Self::BlockingInAsync { line, .. } => Some(*line),
+            Self::BlockOnInAsync { line, .. } => Some(*line),
+            Self::WrongMutexType { line, .. } => Some(*line),
+            Self::UnawaitedSpawn { line, .. } => Some(*line),
+        }
+    }
+
+    fn suggestion(&self) -> Option<String> {
+        match self {
+            Self::BlockingInAsync { suggestion, .. } => Some(suggestion.clone()),
+            Self::BlockOnInAsync { .. } => {
+                Some("Use .await instead of block_on() in async context".to_string())
+            }
+            Self::WrongMutexType { suggestion, .. } => Some(suggestion.clone()),
+            Self::UnawaitedSpawn { .. } => Some(
+                "Assign JoinHandle to a variable or use let _ = to explicitly ignore".to_string(),
+            ),
         }
     }
 }
@@ -548,6 +599,24 @@ impl AsyncPatternValidator {
         }
 
         Ok(violations)
+    }
+}
+
+impl crate::validator_trait::Validator for AsyncPatternValidator {
+    fn name(&self) -> &'static str {
+        "async_patterns"
+    }
+
+    fn description(&self) -> &'static str {
+        "Validates async patterns (blocking calls, mutex types, spawn patterns)"
+    }
+
+    fn validate(&self, _config: &ValidationConfig) -> anyhow::Result<Vec<Box<dyn Violation>>> {
+        let violations = self.validate_all()?;
+        Ok(violations
+            .into_iter()
+            .map(|v| Box::new(v) as Box<dyn Violation>)
+            .collect())
     }
 }
 

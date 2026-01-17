@@ -54,16 +54,17 @@ cargo run
 \1-   Follow `clippy` suggestions: `cargo clippy`
 \1-   Write idiomatic Rust code
 
-### Code Structure
+### Code Structure (v0.1.1 Modular Crates)
 
 ```text
-src/
-├── domain/         # Domain types, validation, errors, port traits
-├── application/    # Business services (indexing, search, context)
-├── adapters/       # Provider implementations, repositories
-├── infrastructure/ # Shared systems (cache, auth, config, metrics)
-├── server/         # MCP protocol implementation
-└── main.rs         # Application entry point
+crates/
+├── mcb/                # Unified facade crate (public API)
+├── mcb-domain/         # Core types, ports, entities (innermost)
+├── mcb-application/    # Business services (use cases, domain services)
+├── mcb-providers/      # External integrations (embedding, vector store, language)
+├── mcb-infrastructure/ # Shared systems (DI, config, null adapters)
+├── mcb-server/         # MCP protocol, HTTP transport, admin
+└── mcb-validate/       # Architecture validation (development tool)
 ```
 
 ### Commit Messages

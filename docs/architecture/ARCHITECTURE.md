@@ -52,7 +52,7 @@ MCP Context Browser is a high-performance, extensible Model Context Protocol (MC
 **Version**: 0.1.1 (First Stable Release)
 **Architecture Maturity**: ✅ **100% Complete DI Implementation**
 **DI Status**: ✅ 14 Domain Port Traits, ✅ Provider Registry, ✅ Service Factory, ✅ Full Port/Adapter Wiring
-**Port Traits**: `src/domain/ports/` - All traits extend `shaku::Interface` for DI compatibility
+**Port Traits**: `crates/mcb-domain/src/ports/` - All traits extend `shaku::Interface` for DI compatibility
 **Deployment Options**: Local development, Docker, Kubernetes, hybrid cloud-edge
 
 ---
@@ -532,72 +532,95 @@ All 14 domain port traits extend `shaku::Interface` for DI container integration
 
 ## Module Architecture
 
-### Core Modules (Clean Architecture)
+### Crate Structure (Clean Architecture Monorepo)
 
-The system follows Clean Architecture principles with 5 top-level layers:
+The system follows Clean Architecture principles with 7 crates organized as a Cargo workspace:
 
-#### 📦 Domain Layer (`src/domain/`)
+#### 📦 Domain Layer (`crates/mcb-domain/`)
 
 **Purpose**: Core business entities, port traits (interfaces), and validation rules.
 
 **Key Components**:
 
-\1-   `ports/`: 14 port traits defining system boundaries (see Domain Ports section)
-\1-   `chunking/`: Code chunking with 12 language processors
-\1-   `types.rs`: Core domain types (CodeChunk, Embedding, SearchResult)
+\1-   `ports/providers/`: Provider port traits (embedding, vector_store, cache, crypto)
+\1-   `ports/infrastructure/`: Infrastructure port traits (sync, snapshot, events)
+\1-   `ports/admin.rs`: Admin service port traits
+\1-   `entities/`: Domain entities (CodeChunk, Repository, etc.)
+\1-   `value_objects/`: Value objects (Embedding, SearchResult, etc.)
+\1-   `repositories/`: Repository port traits (ChunkRepository, SearchRepository)
 \1-   `error.rs`: Domain error types
-\1-   `validation.rs`: Input validation rules
+\1-   `types.rs`: Core domain types
 
-#### 🔧 Application Layer (`src/application/`)
+#### 🔧 Application Layer (`crates/mcb-application/`)
 
 **Purpose**: Business logic orchestration and use case implementations.
 
 **Services**:
 
-\1-   `ContextService`: Embedding generation and vector storage coordination
-\1-   `IndexingService`: Codebase indexing workflow
-\1-   `SearchService`: Semantic search operations
-\1-   `ChunkingOrchestrator`: Batch chunking coordination
+\1-   `services/context.rs`: ContextService - embedding generation and vector storage coordination
+\1-   `services/indexing.rs`: IndexingService - codebase indexing workflow
+\1-   `services/search.rs`: SearchService - semantic search operations
+\1-   `domain_services/chunking.rs`: ChunkingOrchestrator - batch chunking coordination
+\1-   `ports/`: Application-level port interfaces
 
-#### 🔌 Adapters Layer (`src/adapters/`)
+#### 🔌 Providers Layer (`crates/mcb-providers/`)
 
 **Purpose**: External service integrations implementing domain ports.
 
 **Submodules**:
 
-\1-   `providers/embedding/`: OpenAI, VoyageAI, Ollama, Gemini, FastEmbed, Null
-\1-   `providers/vector_store/`: Milvus, EdgeVec, In-Memory, Filesystem, Encrypted, Null
-\1-   `providers/routing/`: Circuit breakers, health monitoring, failover
-\1-   `hybrid_search/`: BM25 + semantic search adapter
-\1-   `repository/`: Chunk and search repository implementations
+\1-   `embedding/`: OpenAI, VoyageAI, Ollama, Gemini, FastEmbed, Null (6 providers)
+\1-   `vector_store/`: Memory, Encrypted, Null (6 providers via features)
+\1-   `cache/`: Moka, Redis cache providers
+\1-   `language/`: 12 AST-based language processors (Rust, Python, JS, TS, Go, Java, C, C++, C#, Ruby, PHP, Swift, Kotlin)
+\1-   `routing/`: Circuit breakers, health monitoring, failover
+\1-   `admin/`: Performance metrics provider
 
-#### 🏗️ Infrastructure Layer (`src/infrastructure/`)
+#### 🏗️ Infrastructure Layer (`crates/mcb-infrastructure/`)
 
 **Purpose**: Shared technical services and cross-cutting concerns.
 
 **Key Components**:
 
 \1-   `di/`: Shaku-based dependency injection with hierarchical modules
-\1-   `auth/`: JWT authentication, rate limiting, password handling
-\1-   `cache/`: TTL-based caching with size limits
-\1-   `events/`: Domain event bus (Tokio channels, NATS)
-\1-   `sync/`: File synchronization with debouncing
-\1-   `snapshot/`: Codebase snapshot management
-\1-   `metrics/`: System and performance metrics
+\1-   `di/modules/`: DI modules (infrastructure, server, providers, etc.)
+\1-   `config/`: Configuration management
+\1-   `cache/`: Cache infrastructure
+\1-   `crypto/`: Encryption and hashing utilities
+\1-   `health/`: Health check infrastructure
+\1-   `logging/`: Logging configuration
+\1-   `adapters/`: Null adapters for DI testing
 
-#### 🌐 Server Layer (`src/server/`)
+#### 🌐 Server Layer (`crates/mcb-server/`)
 
 **Purpose**: MCP protocol implementation and HTTP API.
 
 **Components**:
 
-\1-   `mcp_server.rs`: MCP protocol server
-\1-   `handlers/`: Tool handlers (index, search, clear, status)
-\1-   `admin/`: Admin service with health checks
+\1-   `handlers/`: MCP tool handlers (index, search, clear, status)
+\1-   `transport/`: Stdio transport implementation
+\1-   `tools/`: Tool registry
+\1-   `admin/`: Admin API handlers
+\1-   `init.rs`: Server initialization
+
+#### 🔍 Validation Layer (`crates/mcb-validate/`)
+
+**Purpose**: Architecture enforcement and code quality validation.
+
+**Components**:
+
+\1-   `validators/`: 12 validators (deps, quality, patterns, tests, docs, naming, solid, org, kiss, shaku, refactor)
+\1-   `report.rs`: Validation reporting
+
+#### 📦 Facade Crate (`crates/mcb/`)
+
+**Purpose**: Public API re-exports from all crates.
+
+**Provides**: Unified public interface for external consumers
 
 ### Advanced Features
 
-#### 🛡️ Provider Routing System (`src/adapters/providers/routing/`)
+#### 🛡️ Provider Routing System (`crates/mcb-providers/src/routing/`)
 
 **Purpose**: Intelligent provider management with resilience and optimization.
 
@@ -646,7 +669,7 @@ The system follows Clean Architecture principles with 5 top-level layers:
 \1-  **Performance Balancing**: Load distribution across providers
 \1-  **Metrics-Driven Decisions**: Data-driven provider selection
 
-#### 🔍 Hybrid Search Engine (`src/adapters/hybrid_search/`)
+#### 🔍 Hybrid Search Engine (`crates/mcb-providers/src/hybrid_search/`)
 
 **Purpose**: Combines lexical and semantic search for improved relevance.
 

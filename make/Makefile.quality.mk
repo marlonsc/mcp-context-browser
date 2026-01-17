@@ -4,7 +4,13 @@
 # Same commands work everywhere: local, CI, Docker, any OS
 # =============================================================================
 
-.PHONY: check fmt lint fix quality validate audit coverage bench
+.PHONY: check fmt lint fix quality audit coverage bench
+.PHONY: validate validate-report validate-summary validate-arch
+.PHONY: validate-deps validate-quality validate-patterns validate-tests validate-docs validate-naming
+.PHONY: validate-solid validate-org validate-kiss validate-shaku validate-refactor
+.PHONY: validate-all validate-config
+.PHONY: check-full ci-quality
+.PHONY: pmat-tdg pmat-diag pmat-entropy pmat-defects pmat-gate pmat-explain pmat-clean
 
 # -----------------------------------------------------------------------------
 # Core Quality Commands
@@ -31,17 +37,14 @@ fix: ## Auto-fix all issues (Rust + Markdown)
 	@cargo fmt
 	@./scripts/docs/markdown.sh autofix 2>/dev/null || true
 	@cargo clippy --fix --allow-dirty --all-targets --all-features 2>/dev/null || true
-	@echo "✅ Auto-fix completed - run 'make fmt' to verify"
+	@echo "Auto-fix completed - run 'make fmt' to verify"
 
 # -----------------------------------------------------------------------------
 # Quality Gates
 # -----------------------------------------------------------------------------
 
 quality: check fmt lint test test-doc ## Full quality check (includes doctests)
-	@echo "✅ Quality checks passed"
-
-validate: quality audit docs-check ## Complete validation
-	@echo "✅ All validations passed"
+	@echo "Quality checks passed"
 
 # -----------------------------------------------------------------------------
 # Security & Coverage
@@ -54,8 +57,176 @@ coverage: ## Generate coverage (use LCOV=1 for CI format)
 ifdef LCOV
 	@cargo tarpaulin --out Lcov --output-dir coverage
 else
-	@cargo tarpaulin --out Html --output-dir coverage 2>/dev/null || echo "⚠️  cargo-tarpaulin not installed"
+	@cargo tarpaulin --out Html --output-dir coverage 2>/dev/null || echo "cargo-tarpaulin not installed"
 endif
 
 bench: ## Run benchmarks
 	@cargo bench
+
+# =============================================================================
+# ARCHITECTURE VALIDATION (mcb-validate)
+# =============================================================================
+# Uses mcb-validate crate for comprehensive architecture checks
+# =============================================================================
+
+# Quick validation summary (shows counts only)
+validate: ## Architecture validation summary
+	@echo "=================================================================="
+	@echo "           mcb-validate Architecture Report                       "
+	@echo "=================================================================="
+	@cargo test --package mcb-validate test_full_validation_report -- --nocapture 2>&1 | \
+		grep -E "(Total Violations:|Dependency:|Quality:|Patterns:|Tests:|Documentation:|Naming:|SOLID:|Organization:|KISS:|DI/Shaku:|Refactoring:|Status:|\[Error\]|\[Warning\])" | \
+		head -30
+	@echo ""
+	@echo "Run 'make validate-report' for full details"
+
+# Full validation report (shows all violations)
+validate-report: ## Full architecture report with all violations
+	@echo "=================================================================="
+	@echo "        mcb-validate Full Architecture Report                     "
+	@echo "=================================================================="
+	@cargo test --package mcb-validate test_full_validation_report -- --nocapture 2>&1 | \
+		grep -v "^running\|^test \|^$\|Compiling\|Finished\|Doc-tests\|passed\|filtered"
+
+# Full architecture validation (all tests)
+validate-arch: ## Run all architecture validation tests
+	cargo test --package mcb-validate -- --nocapture
+	@echo "Architecture validation completed!"
+
+# -----------------------------------------------------------------------------
+# Individual Validator Targets (for targeted fixes)
+# -----------------------------------------------------------------------------
+
+validate-deps: ## Check dependency violations
+	@echo "=== Dependency Violations ==="
+	@cargo test --package mcb-validate test_validate_workspace_dependencies -- --nocapture 2>&1 | \
+		grep -v "^running\|^test \|Compiling\|Finished"
+
+validate-quality: ## Check quality violations (unwrap/expect/panic)
+	@echo "=== Quality Violations (unwrap/expect/panic) ==="
+	@cargo test --package mcb-validate test_validate_workspace_quality -- --nocapture 2>&1 | \
+		grep -v "^running\|^test \|Compiling\|Finished"
+
+validate-patterns: ## Check pattern violations (DI, async traits)
+	@echo "=== Pattern Violations (DI, async traits) ==="
+	@cargo test --package mcb-validate test_validate_workspace_patterns -- --nocapture 2>&1 | \
+		grep -v "^running\|^test \|Compiling\|Finished"
+
+validate-tests: ## Check test organization violations
+	@echo "=== Test Organization Violations ==="
+	@cargo test --package mcb-validate test_validate_workspace_tests -- --nocapture 2>&1 | \
+		grep -v "^running\|^test \|Compiling\|Finished"
+
+validate-docs: ## Check documentation violations
+	@echo "=== Documentation Violations ==="
+	@cargo test --package mcb-validate test_validate_workspace_documentation -- --nocapture 2>&1 | \
+		grep -v "^running\|^test \|Compiling\|Finished"
+
+validate-naming: ## Check naming violations
+	@echo "=== Naming Violations ==="
+	@cargo test --package mcb-validate test_validate_workspace_naming -- --nocapture 2>&1 | \
+		grep -v "^running\|^test \|Compiling\|Finished"
+
+validate-solid: ## Check SOLID principle violations
+	@echo "=== SOLID Principle Violations ==="
+	@cargo test --package mcb-validate test_validate_workspace_solid -- --nocapture 2>&1 | \
+		grep -v "^running\|^test \|Compiling\|Finished"
+
+validate-org: ## Check organization violations (file placement)
+	@echo "=== Organization Violations (file placement, centralization) ==="
+	@cargo test --package mcb-validate test_validate_workspace_organization -- --nocapture 2>&1 | \
+		grep -v "^running\|^test \|Compiling\|Finished"
+
+validate-kiss: ## Check KISS violations (complexity)
+	@echo "=== KISS Violations (complexity) ==="
+	@cargo test --package mcb-validate test_validate_workspace_kiss -- --nocapture 2>&1 | \
+		grep -v "^running\|^test \|Compiling\|Finished"
+
+validate-shaku: ## Check DI/Shaku violations
+	@echo "=== DI/Shaku Violations ==="
+	@cargo test --package mcb-validate test_validate_workspace_shaku -- --nocapture 2>&1 | \
+		grep -v "^running\|^test \|Compiling\|Finished"
+
+validate-refactor: ## Check refactoring completeness violations
+	@echo "=== Refactoring Completeness Violations ==="
+	@echo "Detects: orphan imports, duplicate definitions, missing tests, stale re-exports"
+	@cargo test --package mcb-validate test_validate_workspace_refactoring -- --nocapture 2>&1 | \
+		grep -v "^running\|^test \|Compiling\|Finished"
+
+# -----------------------------------------------------------------------------
+# Multi-Directory Validation
+# -----------------------------------------------------------------------------
+
+validate-all: ## Validate workspace + legacy source (if exists)
+	@echo "=================================================================="
+	@echo "     mcb-validate: Workspace + Legacy Source Validation           "
+	@echo "=================================================================="
+	@cargo test --package mcb-validate test_validation_with_legacy -- --nocapture 2>&1 | \
+		grep -E "(Total Violations:|Dependency:|Quality:|Patterns:|Tests:|Documentation:|Naming:|SOLID:|Organization:|KISS:|DI/Shaku:|Refactoring:|Status:|\[Error\]|\[Warning\]|\[Info\])" | \
+		head -40
+	@echo ""
+	@echo "Note: Legacy paths use Info severity level"
+
+validate-config: ## Show validation configuration
+	@echo "=================================================================="
+	@echo "          mcb-validate Configuration Test                         "
+	@echo "=================================================================="
+	@cargo test --package mcb-validate test_validation_config -- --nocapture 2>&1 | \
+		grep -v "^running\|^test \|Compiling\|Finished"
+
+# -----------------------------------------------------------------------------
+# Extended Check Targets
+# -----------------------------------------------------------------------------
+
+check-full: check lint test validate ## Full check with architecture validation
+	@echo ""
+	@echo "Full validation completed!"
+
+ci-quality: fmt lint test validate-arch ## CI quality gate (all checks)
+	@echo "CI quality checks passed!"
+
+# =============================================================================
+# PMAT Quality Analysis (optional - requires pmat tool)
+# =============================================================================
+
+pmat-tdg: ## Technical Debt Grade (target: A+)
+	@echo "=================================================================="
+	@echo "              TDG - Technical Debt Grade                          "
+	@echo "=================================================================="
+	@pmat tdg --format table 2>&1 || echo "pmat not installed"
+
+pmat-diag: ## Project diagnostics
+	@echo "=================================================================="
+	@echo "              Project Diagnostics                                 "
+	@echo "=================================================================="
+	@pmat project-diag --format summary 2>&1 || echo "pmat not installed"
+
+pmat-entropy: ## Pattern entropy analysis
+	@echo "=================================================================="
+	@echo "              Entropy Analysis (Pattern Detection)                "
+	@echo "=================================================================="
+	@pmat analyze entropy --format detailed --top-violations 10 2>&1 || echo "pmat not installed"
+
+pmat-defects: ## Known defects scan
+	@echo "=================================================================="
+	@echo "              Known Defects Scan                                  "
+	@echo "=================================================================="
+	@pmat analyze defects 2>&1 || echo "pmat not installed"
+
+pmat-gate: ## Quality gate (all checks)
+	@echo "=================================================================="
+	@echo "              Quality Gate (All Checks)                           "
+	@echo "=================================================================="
+	@pmat quality-gate --format summary 2>&1 || echo "pmat not installed"
+
+pmat-explain: ## TDG with function-level explanation
+	@echo "=================================================================="
+	@echo "              TDG Explain (Function Breakdown)                    "
+	@echo "=================================================================="
+	@pmat tdg --explain --threshold 10 2>&1 || echo "pmat not installed"
+
+pmat-clean: ## Clean target directory
+	@echo "Cleaning target directory..."
+	@du -sh target 2>/dev/null || echo "No target directory"
+	@cargo clean
+	@echo "Target directory cleaned"

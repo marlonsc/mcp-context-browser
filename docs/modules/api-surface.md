@@ -2,67 +2,99 @@
 
 This document provides an overview of the public API surface of the MCP Context Browser.
 
-## Public Modules
+## Crate Public APIs
 
-### Core Library Modules
+### mcb (Facade Crate)
 
-\1-   adapters
-\1-   admin
-\1-   application
-\1-   chunking
-\1-   config_example
-\1-   daemon
-\1-   domain
-\1-   infrastructure
-\1-   server
-\1-   snapshot
-\1-   sync
+Re-exports from all internal crates for unified access:
 
-### Public Re-exports
+```rust
+// Domain types
+pub use mcb_domain::{CodeChunk, Embedding, SearchResult, Language, Error, Result};
 
-\1-   domain::error::{Error, Result}
-\1-   domain::types::*
-\1-   server::builder::McpServerBuilder
-\1-   server::init::run_server
-\1-   server::MCP_server::McpServer
+// Service interfaces
+pub use mcb_domain::ports::{EmbeddingProvider, VectorStoreProvider, CacheProvider};
 
-## Public Functions
+// Service implementations
+pub use mcb_application::{ContextServiceImpl, IndexingServiceImpl, SearchServiceImpl};
 
-## Public Types
+// Server
+pub use mcb_server::{McpServer, McpServerBuilder, run_server};
 
-### Data Structures
+// Configuration
+pub use mcb_infrastructure::{AppConfig, ServerConfig};
+```
 
-\1-   NodeExtractionRule
-\1-   LanguageConfig
-\1-   NodeExtractionRuleBuilder
-\1-   IntelligentChunker;
-\1-   GenericFallbackChunker<'a>
-\1-   RustProcessor
-\1-   ".to_String(),
-\1-   PythonProcessor
-\1-   JavaScriptProcessor
-\1-   JavaProcessor
+### mcb-domain
 
-### Enums
+Core types and port traits:
 
-\1-   McpError
-\1-   CompatibilityResult
-\1-   SessionState
-\1-   SessionError
-\1-   TransportMode
+-   **Types**: `CodeChunk`, `Embedding`, `SearchResult`, `Language`
+-   **Errors**: `Error`, `Result<T>`
+-   **Ports**: 14+ trait interfaces
+
+### mcb-application
+
+Business logic services:
+
+-   `ContextServiceImpl`
+-   `IndexingServiceImpl`
+-   `SearchServiceImpl`
+-   `ChunkingOrchestrator`
+
+### mcb-server
+
+HTTP server and MCP protocol:
+
+-   `McpServer` - MCP protocol handler
+-   `McpServerBuilder` - Server builder pattern
+-   `run_server` - Entry point function
+
+### mcb-providers
+
+External integrations:
+
+-   6 embedding providers
+-   3 vector store providers
+-   2 cache providers
+-   12 language processors
+
+### mcb-infrastructure
+
+Configuration and DI:
+
+-   `AppConfig`, `ServerConfig`, `AuthConfig`
+-   `McpModule` - DI container
+-   Null adapters for testing
+
+### mcb-validate
+
+Architecture validation (internal tooling):
+
+-   12 validators
+-   Architecture report generation
 
 ## API Stability
 
 ### Current Status
 
-\1-  **Version**: 0.1.0 (First Stable Release)
-\1-  **Stability**: Experimental - APIs may change
-\1-  **Compatibility**: Breaking changes expected until 1.0.0
+-   **Version**: 0.1.1 (First Stable Release)
+-   **Stability**: Stable for documented APIs
+-   **Compatibility**: Semantic versioning from v0.1.0+
 
 ### Public API Commitments
 
-\1-   MCP protocol interface stability
-\1-   Core semantic search functionality
-\1-   Provider abstraction interfaces
+-   MCP protocol interface stability
+-   Core semantic search functionality
+-   Provider abstraction interfaces
+-   Configuration structure
 
-*Generated automatically from source code analysis on: 2026-01-11 21:51:55 UTC*
+### Breaking Change Policy
+
+-   Minor versions (0.x.0): May include breaking changes
+-   Patch versions (0.x.y): Bug fixes only
+-   Major version (1.0.0+): Stable API with deprecation cycles
+
+---
+
+*Updated 2026-01-17 - Reflects modular crate architecture (v0.1.1)*

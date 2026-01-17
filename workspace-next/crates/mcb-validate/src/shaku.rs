@@ -738,8 +738,10 @@ impl ShakuValidator {
                     || file_name == "lib.rs"  // Crate roots re-export
                     || file_name == "provider.rs"  // Provider aggregators
                     || file_name == "providers.rs"  // Provider lists/enums
-                    || path_str.contains("/di/modules/")
-                // Shaku DI modules use null providers as defaults
+                    || path_str.contains("/di/modules/")  // Shaku DI modules use null providers as defaults
+                    // Null Object Pattern implementations in infrastructure layer are intentional
+                    // These provide no-op implementations for optional services (Clean Architecture)
+                    || (path_str.contains("mcb-infrastructure") && path_str.contains("/infrastructure/"))
                 {
                     continue;
                 }

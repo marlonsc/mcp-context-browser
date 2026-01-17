@@ -7,6 +7,7 @@
 //! - Log-only methods (no actual logic)
 //! - Default-only trait implementations
 
+use crate::violation_trait::{Violation, ViolationCategory};
 use crate::{Result, Severity, ValidationConfig};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -175,6 +176,84 @@ impl std::fmt::Display for ImplementationViolation {
                     context
                 )
             }
+        }
+    }
+}
+
+impl Violation for ImplementationViolation {
+    fn id(&self) -> &str {
+        match self {
+            Self::EmptyMethodBody { .. } => "IMPL001",
+            Self::HardcodedReturnValue { .. } => "IMPL002",
+            Self::PassThroughWrapper { .. } => "IMPL003",
+            Self::LogOnlyMethod { .. } => "IMPL004",
+            Self::StubMacro { .. } => "IMPL005",
+            Self::EmptyCatchAll { .. } => "IMPL006",
+        }
+    }
+
+    fn category(&self) -> ViolationCategory {
+        ViolationCategory::Implementation
+    }
+
+    fn severity(&self) -> Severity {
+        match self {
+            Self::EmptyMethodBody { severity, .. } => *severity,
+            Self::HardcodedReturnValue { severity, .. } => *severity,
+            Self::PassThroughWrapper { severity, .. } => *severity,
+            Self::LogOnlyMethod { severity, .. } => *severity,
+            Self::StubMacro { severity, .. } => *severity,
+            Self::EmptyCatchAll { severity, .. } => *severity,
+        }
+    }
+
+    fn file(&self) -> Option<&PathBuf> {
+        match self {
+            Self::EmptyMethodBody { file, .. } => Some(file),
+            Self::HardcodedReturnValue { file, .. } => Some(file),
+            Self::PassThroughWrapper { file, .. } => Some(file),
+            Self::LogOnlyMethod { file, .. } => Some(file),
+            Self::StubMacro { file, .. } => Some(file),
+            Self::EmptyCatchAll { file, .. } => Some(file),
+        }
+    }
+
+    fn line(&self) -> Option<usize> {
+        match self {
+            Self::EmptyMethodBody { line, .. } => Some(*line),
+            Self::HardcodedReturnValue { line, .. } => Some(*line),
+            Self::PassThroughWrapper { line, .. } => Some(*line),
+            Self::LogOnlyMethod { line, .. } => Some(*line),
+            Self::StubMacro { line, .. } => Some(*line),
+            Self::EmptyCatchAll { line, .. } => Some(*line),
+        }
+    }
+
+    fn suggestion(&self) -> Option<String> {
+        match self {
+            Self::EmptyMethodBody { pattern, .. } => Some(format!(
+                "Replace trivial return '{}' with actual implementation logic",
+                pattern
+            )),
+            Self::HardcodedReturnValue { return_value, .. } => Some(format!(
+                "Replace hardcoded '{}' with computed value based on actual logic",
+                return_value
+            )),
+            Self::PassThroughWrapper { delegated_to, .. } => Some(format!(
+                "Add value to this wrapper or consider removing it if '{}' delegation is sufficient",
+                delegated_to
+            )),
+            Self::LogOnlyMethod { .. } => Some(
+                "Add actual business logic; logging alone does not constitute implementation"
+                    .to_string(),
+            ),
+            Self::StubMacro { macro_type, .. } => Some(format!(
+                "Replace {}!() with actual implementation",
+                macro_type
+            )),
+            Self::EmptyCatchAll { .. } => Some(
+                "Handle the catch-all case explicitly or log unhandled variants".to_string(),
+            ),
         }
     }
 }
@@ -832,6 +911,24 @@ impl ImplementationQualityValidator {
         }
 
         Ok(violations)
+    }
+}
+
+impl crate::validator_trait::Validator for ImplementationQualityValidator {
+    fn name(&self) -> &'static str {
+        "implementation"
+    }
+
+    fn description(&self) -> &'static str {
+        "Validates implementation quality patterns (empty methods, hardcoded returns, stubs)"
+    }
+
+    fn validate(&self, _config: &ValidationConfig) -> anyhow::Result<Vec<Box<dyn Violation>>> {
+        let violations = self.validate_all()?;
+        Ok(violations
+            .into_iter()
+            .map(|v| Box::new(v) as Box<dyn Violation>)
+            .collect())
     }
 }
 

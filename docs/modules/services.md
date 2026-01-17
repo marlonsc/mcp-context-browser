@@ -1,7 +1,8 @@
 # Services Module
 
-**Source**: `src/application/`
-**Traits**: 4 service interfaces in `src/domain/ports/services.rs`
+**Source**: `crates/mcb-application/src/use_cases/`
+**Traits**: `crates/mcb-domain/src/ports/`
+**Crate**: `mcb-application`
 
 Orchestrates the semantic code search workflow - from codebase ingestion to search results.
 
@@ -9,11 +10,11 @@ Orchestrates the semantic code search workflow - from codebase ingestion to sear
 
 The services module contains core business logic that powers the semantic code search platform. Each service encapsulates specific capabilities that work together to deliver code intelligence.
 
-All services implement interface traits defined in `src/domain/ports/services.rs` for DI compatibility.
+All services implement interface traits defined in `crates/mcb-domain/src/ports/` for DI compatibility.
 
 ## Service Interface Traits
 
-All service interfaces extend `shaku::Interface`:
+All service interfaces extend `shaku::Interface` (defined in mcb-domain):
 
 ```rust
 pub trait ContextServiceInterface: Interface + Send + Sync {
@@ -47,15 +48,15 @@ pub trait ChunkingOrchestratorInterface: Interface + Send + Sync {
 
 Coordinates embedding generation and vector storage operations.
 
-**Constructor** (simplified in v0.1.0+):
+**Location**: `crates/mcb-application/src/use_cases/context_service.rs`
+
+**Constructor**:
 ```rust
 pub fn new_with_providers(
     embedding_provider: Arc<dyn EmbeddingProvider>,
     vector_store_provider: Arc<dyn VectorStoreProvider>,
 ) -> Self
 ```
-
-Note: The `hybrid_search_provider` parameter was removed as it was unused.
 
 **Responsibilities**:
 
@@ -64,11 +65,13 @@ Note: The `hybrid_search_provider` parameter was removed as it was unused.
 3.   Handle batch processing
 4.   Collect performance metrics
 
-**Related**: [providers/embedding](./providers.md), [core/types](./core.md)
+**Related**: [providers.md](./providers.md), [domain.md](./domain.md)
 
 ### IndexingService
 
 Processes codebases and creates searchable vector indexes.
+
+**Location**: `crates/mcb-application/src/use_cases/indexing_service.rs`
 
 **Responsibilities**:
 
@@ -77,11 +80,13 @@ Processes codebases and creates searchable vector indexes.
 3.   Incremental indexing with change detection
 4.   Chunk generation and metadata extraction
 
-**Related**: [chunking module](../../src/domain/chunking/), [core/types](./core.md)
+**Related**: [chunking.md](./chunking.md), [domain.md](./domain.md)
 
 ### SearchService
 
 Executes semantic similarity searches across indexed codebases.
+
+**Location**: `crates/mcb-application/src/use_cases/search_service.rs`
 
 **Responsibilities**:
 
@@ -90,16 +95,18 @@ Executes semantic similarity searches across indexed codebases.
 3.   Result ranking and filtering
 4.   Response caching and optimization
 
-**Related**: [providers/vector_store](./providers.md), [core/hybrid_search](./core.md)
+**Related**: [providers.md](./providers.md)
 
 ### ChunkingOrchestrator
 
 Coordinates batch chunking operations across files.
 
+**Location**: `crates/mcb-application/src/domain_services/chunking.rs`
+
 **Responsibilities**:
 
 1.   Process multiple files in parallel
-2.   Coordinate with CodeChunker implementation
+2.   Coordinate with language processors
 3.   Handle file batching and error recovery
 
 ## Integration Points
@@ -108,53 +115,55 @@ Coordinates batch chunking operations across files.
 
 1.   OpenAI, Ollama, Gemini, VoyageAI, FastEmbed
 2.   Intelligent routing with failover
-3.   See [providers module](./providers.md)
+3.   See [providers.md](./providers.md)
 
 ### Vector Storage
 
-1.   Milvus (production), InMemory (development), EdgeVec, Filesystem
-2.   See [providers module](./providers.md)
+1.   InMemory (development), Encrypted (sensitive data)
+2.   See [providers.md](./providers.md)
 
 ### MCP Protocol
 
 1.   Standardized interface with AI assistants
-2.   See [server module](./server.md)
+2.   See [server.md](./server.md)
 
 ## Key Exports
 
 ```rust
-pub use context::ContextService;
-pub use indexing::IndexingService;
-pub use search::SearchService;
+pub use use_cases::context_service::ContextServiceImpl;
+pub use use_cases::indexing_service::IndexingServiceImpl;
+pub use use_cases::search_service::SearchServiceImpl;
+pub use domain_services::chunking::ChunkingOrchestrator;
 ```
 
 ## File Structure
 
 ```text
-src/application/
-├── context.rs              # Embedding and vector operations
-├── indexing/
-│   ├── service.rs          # Codebase ingestion and processing
-│   ├── chunking_orchestrator.rs  # Batch chunking coordination
-│   └── file_discovery.rs   # File discovery utilities
-├── search.rs               # Query processing and ranking
-└── mod.rs                  # Module coordination
+crates/mcb-application/src/
+├── use_cases/
+│   ├── context_service.rs      # Embedding and vector operations
+│   ├── indexing_service.rs     # Codebase ingestion and processing
+│   ├── search_service.rs       # Query processing and ranking
+│   └── mod.rs
+├── domain_services/
+│   ├── chunking.rs             # Batch chunking coordination
+│   └── search.rs               # Search domain logic
+└── mod.rs
 
-src/domain/ports/services.rs  # Service interface traits
+crates/mcb-domain/src/ports/    # Service interface traits
 ```
 
 ## Testing
 
-See [tests/services/](../../tests/services/) for service-specific tests.
+See `crates/mcb-application/tests/` for service-specific tests.
 
 ## Cross-References
 
 -   **Architecture**: [ARCHITECTURE.md](../architecture/ARCHITECTURE.md)
--   **Core Types**: [core.md](./core.md)
+-   **Domain Ports**: [domain.md](./domain.md)
 -   **Providers**: [providers.md](./providers.md)
 -   **Server**: [server.md](./server.md)
--   **Domain Ports**: [domain.md](./domain.md)
 
 ---
 
-*Updated 2026-01-13 - Added service interface traits and API changes*
+*Updated 2026-01-17 - Reflects modular crate architecture (v0.1.1)*

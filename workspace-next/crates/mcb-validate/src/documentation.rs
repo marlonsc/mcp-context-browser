@@ -275,6 +275,8 @@ impl DocumentationValidator {
                     // Check for public traits
                     if let Some(cap) = pub_trait_pattern.captures(line) {
                         let name = cap.get(1).map(|m| m.as_str()).unwrap_or("");
+                        let path_str = entry.path().to_string_lossy();
+
                         if !self.has_doc_comment(&lines, line_num) {
                             violations.push(DocumentationViolation::MissingPubItemDoc {
                                 file: entry.path().to_path_buf(),
@@ -285,14 +287,21 @@ impl DocumentationValidator {
                             });
                         } else {
                             // Check for example code in trait documentation
-                            let doc_section = self.get_doc_comment_section(&lines, line_num);
-                            if !example_pattern.is_match(&doc_section) {
-                                violations.push(DocumentationViolation::MissingExampleCode {
-                                    file: entry.path().to_path_buf(),
-                                    line: line_num + 1,
-                                    item_name: name.to_string(),
-                                    severity: Severity::Info,
-                                });
+                            // Skip DI module traits and port traits - they are interface definitions
+                            // that don't need examples (they define contracts for DI injection)
+                            let is_di_or_port_trait = path_str.contains("/di/modules/")
+                                || path_str.contains("/ports/");
+
+                            if !is_di_or_port_trait {
+                                let doc_section = self.get_doc_comment_section(&lines, line_num);
+                                if !example_pattern.is_match(&doc_section) {
+                                    violations.push(DocumentationViolation::MissingExampleCode {
+                                        file: entry.path().to_path_buf(),
+                                        line: line_num + 1,
+                                        item_name: name.to_string(),
+                                        severity: Severity::Info,
+                                    });
+                                }
                             }
                         }
                     }

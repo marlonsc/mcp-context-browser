@@ -7,6 +7,7 @@
 //! - Nesting depth (max 3 levels)
 //! - Function length (max 50 lines)
 
+use crate::violation_trait::{Violation, ViolationCategory};
 use crate::{Result, Severity, ValidationConfig};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -187,6 +188,106 @@ impl std::fmt::Display for KissViolation {
                     max_allowed
                 )
             }
+        }
+    }
+}
+
+impl Violation for KissViolation {
+    fn id(&self) -> &str {
+        match self {
+            Self::StructTooManyFields { .. } => "KISS001",
+            Self::FunctionTooManyParams { .. } => "KISS002",
+            Self::BuilderTooComplex { .. } => "KISS003",
+            Self::DeepNesting { .. } => "KISS004",
+            Self::FunctionTooLong { .. } => "KISS005",
+        }
+    }
+
+    fn category(&self) -> ViolationCategory {
+        ViolationCategory::Kiss
+    }
+
+    fn severity(&self) -> Severity {
+        match self {
+            Self::StructTooManyFields { severity, .. } => *severity,
+            Self::FunctionTooManyParams { severity, .. } => *severity,
+            Self::BuilderTooComplex { severity, .. } => *severity,
+            Self::DeepNesting { severity, .. } => *severity,
+            Self::FunctionTooLong { severity, .. } => *severity,
+        }
+    }
+
+    fn file(&self) -> Option<&PathBuf> {
+        match self {
+            Self::StructTooManyFields { file, .. } => Some(file),
+            Self::FunctionTooManyParams { file, .. } => Some(file),
+            Self::BuilderTooComplex { file, .. } => Some(file),
+            Self::DeepNesting { file, .. } => Some(file),
+            Self::FunctionTooLong { file, .. } => Some(file),
+        }
+    }
+
+    fn line(&self) -> Option<usize> {
+        match self {
+            Self::StructTooManyFields { line, .. } => Some(*line),
+            Self::FunctionTooManyParams { line, .. } => Some(*line),
+            Self::BuilderTooComplex { line, .. } => Some(*line),
+            Self::DeepNesting { line, .. } => Some(*line),
+            Self::FunctionTooLong { line, .. } => Some(*line),
+        }
+    }
+
+    fn suggestion(&self) -> Option<String> {
+        match self {
+            Self::StructTooManyFields {
+                struct_name,
+                field_count,
+                max_allowed,
+                ..
+            } => Some(format!(
+                "Split '{}' into smaller structs or use composition. \
+                 {} fields exceeds the maximum of {}.",
+                struct_name, field_count, max_allowed
+            )),
+            Self::FunctionTooManyParams {
+                function_name,
+                param_count,
+                max_allowed,
+                ..
+            } => Some(format!(
+                "Refactor '{}' to use a config/options struct instead of {} parameters. \
+                 Maximum allowed is {}.",
+                function_name, param_count, max_allowed
+            )),
+            Self::BuilderTooComplex {
+                builder_name,
+                optional_field_count,
+                max_allowed,
+                ..
+            } => Some(format!(
+                "Split '{}' into smaller builders or use builder composition. \
+                 {} optional fields exceeds the maximum of {}.",
+                builder_name, optional_field_count, max_allowed
+            )),
+            Self::DeepNesting {
+                nesting_level,
+                max_allowed,
+                ..
+            } => Some(format!(
+                "Extract nested logic into separate functions using early returns or guard clauses. \
+                 Nesting depth {} exceeds the maximum of {}.",
+                nesting_level, max_allowed
+            )),
+            Self::FunctionTooLong {
+                function_name,
+                line_count,
+                max_allowed,
+                ..
+            } => Some(format!(
+                "Break '{}' into smaller, focused functions. \
+                 {} lines exceeds the maximum of {}.",
+                function_name, line_count, max_allowed
+            )),
         }
     }
 }
@@ -754,6 +855,24 @@ impl KissValidator {
         }
 
         line_count
+    }
+}
+
+impl crate::validator_trait::Validator for KissValidator {
+    fn name(&self) -> &'static str {
+        "kiss"
+    }
+
+    fn description(&self) -> &'static str {
+        "Validates KISS principle (Keep It Simple, Stupid)"
+    }
+
+    fn validate(&self, _config: &ValidationConfig) -> anyhow::Result<Vec<Box<dyn Violation>>> {
+        let violations = self.validate_all()?;
+        Ok(violations
+            .into_iter()
+            .map(|v| Box::new(v) as Box<dyn Violation>)
+            .collect())
     }
 }
 

@@ -8,6 +8,7 @@
 //! - Deleted module references
 //! - Dead code from refactoring
 
+use crate::violation_trait::{Violation, ViolationCategory};
 use crate::{Result, Severity, ValidationConfig};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -204,6 +205,89 @@ impl std::fmt::Display for RefactoringViolation {
                     file.display()
                 )
             }
+        }
+    }
+}
+
+impl Violation for RefactoringViolation {
+    fn id(&self) -> &str {
+        match self {
+            Self::OrphanImport { .. } => "REF001",
+            Self::DuplicateDefinition { .. } => "REF002",
+            Self::MissingTestFile { .. } => "REF003",
+            Self::StaleReExport { .. } => "REF004",
+            Self::DeletedModuleReference { .. } => "REF005",
+            Self::RefactoringDeadCode { .. } => "REF006",
+        }
+    }
+
+    fn category(&self) -> ViolationCategory {
+        ViolationCategory::Refactoring
+    }
+
+    fn severity(&self) -> Severity {
+        match self {
+            Self::OrphanImport { severity, .. } => *severity,
+            Self::DuplicateDefinition { severity, .. } => *severity,
+            Self::MissingTestFile { severity, .. } => *severity,
+            Self::StaleReExport { severity, .. } => *severity,
+            Self::DeletedModuleReference { severity, .. } => *severity,
+            Self::RefactoringDeadCode { severity, .. } => *severity,
+        }
+    }
+
+    fn file(&self) -> Option<&PathBuf> {
+        match self {
+            Self::OrphanImport { file, .. } => Some(file),
+            Self::DuplicateDefinition { locations, .. } => locations.first(),
+            Self::MissingTestFile { source_file, .. } => Some(source_file),
+            Self::StaleReExport { file, .. } => Some(file),
+            Self::DeletedModuleReference {
+                referencing_file, ..
+            } => Some(referencing_file),
+            Self::RefactoringDeadCode { file, .. } => Some(file),
+        }
+    }
+
+    fn line(&self) -> Option<usize> {
+        match self {
+            Self::OrphanImport { line, .. } => Some(*line),
+            Self::DuplicateDefinition { .. } => None,
+            Self::MissingTestFile { .. } => None,
+            Self::StaleReExport { line, .. } => Some(*line),
+            Self::DeletedModuleReference { line, .. } => Some(*line),
+            Self::RefactoringDeadCode { .. } => None,
+        }
+    }
+
+    fn suggestion(&self) -> Option<String> {
+        match self {
+            Self::OrphanImport { suggestion, .. } => Some(suggestion.clone()),
+            Self::DuplicateDefinition { suggestion, .. } => Some(suggestion.clone()),
+            Self::MissingTestFile {
+                source_file,
+                expected_test,
+                ..
+            } => Some(format!(
+                "Create test file {} for source {}",
+                expected_test.display(),
+                source_file.display()
+            )),
+            Self::StaleReExport { re_export, .. } => {
+                Some(format!("Remove or update the re-export '{}'", re_export))
+            }
+            Self::DeletedModuleReference { deleted_module, .. } => Some(format!(
+                "Remove the mod declaration for '{}' or create the module file",
+                deleted_module
+            )),
+            Self::RefactoringDeadCode {
+                item_name,
+                item_type,
+                ..
+            } => Some(format!(
+                "Remove the unused {} '{}' or add #[allow(dead_code)] if intentional",
+                item_type, item_name
+            )),
         }
     }
 }
@@ -625,6 +709,24 @@ impl RefactoringValidator {
         }
 
         Ok(dirs)
+    }
+}
+
+impl crate::validator_trait::Validator for RefactoringValidator {
+    fn name(&self) -> &'static str {
+        "refactoring"
+    }
+
+    fn description(&self) -> &'static str {
+        "Validates refactoring completeness (duplicate definitions, missing tests, stale references)"
+    }
+
+    fn validate(&self, _config: &ValidationConfig) -> anyhow::Result<Vec<Box<dyn Violation>>> {
+        let violations = self.validate_all()?;
+        Ok(violations
+            .into_iter()
+            .map(|v| Box::new(v) as Box<dyn Violation>)
+            .collect())
     }
 }
 

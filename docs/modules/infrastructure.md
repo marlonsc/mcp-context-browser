@@ -1,75 +1,151 @@
 # infrastructure Module
 
-**Source**: `src/infrastructure/`
-**Files**: 51
-**Lines of Code**: 9150
-**Traits**: 1
-**Structs**: 30
-**Enums**: 8
-**Functions**: 7
+**Source**: `crates/mcb-infrastructure/src/`
+**Crate**: `mcb-infrastructure`
+**Files**: 40+
+**Lines of Code**: ~6,000
 
 ## Overview
 
-## Key Exports
+The infrastructure module provides shared technical services and cross-cutting concerns for the MCP Context Browser system. It implements Shaku-based dependency injection, configuration management, caching, health checks, and null adapters for testing.
 
-``
+## Key Components
+
+### Dependency Injection (`di/`)
+
+Shaku-based hierarchical DI container system:
+
+-   `bootstrap.rs` - DI container initialization
+-   `modules/` - Shaku module definitions
+    -   `infrastructure.rs` - Infrastructure services module
+    -   `server.rs` - Server components module
+    -   `providers.rs` - Provider registrations
+    -   `traits.rs` - Module trait definitions
+
+### Configuration (`config/`)
+
+Application configuration management:
+
+-   Type-safe configuration with nested structures
+-   Environment variable overrides
+-   Server, auth, cache, and provider configurations
+
+### Cache (`cache/`)
+
+Caching infrastructure:
+
+-   Cache configuration and management
+-   Integration with mcb-providers cache implementations
+
+### Crypto (`crypto/`)
+
+Encryption and hashing utilities:
+
+-   AES-GCM encryption support
+-   Hash computation utilities
+
+### Health (`health/`)
+
+Health check infrastructure:
+
+-   Component health monitoring
+-   Readiness and liveness checks
+
+### Logging (`logging/`)
+
+Structured logging configuration:
+
+-   Tracing integration
+-   Log level management
+
+### Adapters (`adapters/`)
+
+Null implementations for DI testing:
+
+-   `infrastructure/` - Null adapters for infrastructure ports
+    -   `NullAuthService`
+    -   `NullEventBus`
+    -   `NullSyncProvider`
+    -   `NullLockProvider`
+    -   `NullSnapshotProvider`
+    -   `NullStateStoreProvider`
+    -   `NullPerformanceMetrics`
+    -   `NullIndexingOperations`
+    -   `NullSystemMetricsCollector`
+-   `providers/` - Provider adapter bindings
+-   `repository/` - Repository adapters
+    -   `NullChunkRepository`
+    -   `NullSearchRepository`
 
 ## File Structure
 
 ```text
-logging.rs
-di/factory/traits.rs
-di/factory/implementation.rs
-di/modules.rs
-di/factory.rs
-di/registry.rs
-config/server.rs
-config/providers/embedding.rs
-config/providers/vector_store.rs
-config/providers/manager.rs
-config/loader.rs
-config/watcher.rs
-config/types.rs
-config/providers.rs
-config/metrics.rs
-metrics/system.rs
-metrics/performance.rs
-metrics/http_server.rs
-utils.rs
-cache/config.rs
-cache/operations.rs
-cache/local.rs
-cache/stats.rs
-cache/redis.rs
-cache/manager.rs
-limits/config.rs
-limits/types.rs
-limits/enforcer.rs
-merkle.rs
-rate_limit.rs
-binary_watcher.rs
-signals.rs
-respawn.rs
-connection_tracker.rs
-crypto.rs
-di.rs
-config.rs
-metrics.rs
-cache.rs
-limits.rs
-auth/roles.rs
-auth/claims.rs
-auth/password.rs
-auth/service.rs
-auth/config.rs
-auth/rate_limit.rs
-auth/middleware.rs
-auth/mod.rs
-auth/api_keys.rs
-backup.rs
-events.rs
+crates/mcb-infrastructure/src/
+├── di/
+│   ├── bootstrap.rs        # DI container setup
+│   ├── modules/
+│   │   ├── infrastructure.rs
+│   │   ├── server.rs
+│   │   ├── providers.rs
+│   │   ├── traits.rs
+│   │   └── mod.rs
+│   └── mod.rs
+├── config/
+│   ├── types.rs            # Configuration types
+│   └── mod.rs
+├── cache/
+│   └── mod.rs
+├── crypto/
+│   └── mod.rs
+├── health/
+│   └── mod.rs
+├── logging/
+│   └── mod.rs
+├── adapters/
+│   ├── infrastructure/     # Null infrastructure adapters
+│   │   ├── auth.rs
+│   │   ├── events.rs
+│   │   ├── metrics.rs
+│   │   ├── snapshot.rs
+│   │   ├── sync.rs
+│   │   ├── admin.rs
+│   │   └── mod.rs
+│   ├── providers/          # Provider bindings
+│   │   └── mod.rs
+│   ├── repository/         # Repository adapters
+│   │   └── mod.rs
+│   └── mod.rs
+├── infrastructure/         # Re-exports
+│   └── mod.rs
+└── lib.rs                  # Crate root
 ```
+
+## Key Exports
+
+```rust
+// DI
+pub use di::{bootstrap, McpModule};
+
+// Configuration
+pub use config::{AppConfig, ServerConfig, AuthConfig};
+
+// Null Adapters (for testing)
+pub use adapters::infrastructure::{
+    NullAuthService, NullEventBus, NullSyncProvider,
+    NullSnapshotProvider, NullPerformanceMetrics,
+};
+```
+
+## Testing
+
+Infrastructure tests are located in `crates/mcb-infrastructure/tests/`.
+
+## Cross-References
+
+-   **Domain Ports**: [domain.md](./domain.md) (interfaces implemented)
+-   **Architecture**: [ARCHITECTURE.md](../architecture/ARCHITECTURE.md)
+-   **Module Structure**: [module-structure.md](./module-structure.md)
 
 ---
 
-*Auto-generated from source code on seg 12 jan 2026 11:25:13 -03*
+*Updated 2026-01-17 - Reflects modular crate architecture (v0.1.1)*

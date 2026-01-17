@@ -403,5 +403,5 @@ export CACHE_TTL_SECONDS="1800"
 
 ---
 
-**Last Updated:**2026-01-12
-**Version:**0.1.0
+**Last Updated:** 2026-01-17
+**Version:** 0.1.1

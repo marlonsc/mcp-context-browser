@@ -1,84 +1,76 @@
 # Metrics Module
 
-**Source**: `src/infrastructure/metrics/`
+**Source**: `crates/mcb-providers/src/admin/metrics.rs` and `crates/mcb-server/src/admin/`
+**Crates**: `mcb-providers`, `mcb-server`
 
 System monitoring, performance tracking, and HTTP metrics API.
 
 ## Overview
 
-The metrics module provides comprehensive observability for the MCP Context Browser. It collects system metrics (CPU, memory, disk), tracks query performance, and exposes a REST API for monitoring dashboards.
+The metrics functionality is distributed across crates in v0.1.1:
+
+-   **mcb-providers**: `AtomicPerformanceMetrics` - Performance tracking
+-   **mcb-server**: Admin endpoints for metrics exposure
 
 ## Components
 
-### SystemMetricsCollector (`system.rs`)
+### AtomicPerformanceMetrics (`mcb-providers`)
 
-Collects system-level metrics using `sysinfo` crate.
+Thread-safe performance metrics collection:
 
-\1-   CPU usage and load averages
-\1-   Memory utilization (used/total/available)
-\1-   Disk I/O and storage capacity
-\1-   Network statistics
+-   Query latency (P50, P95, P99)
+-   Cache hit/miss rates
+-   Request throughput
+-   Error rates
 
-### PerformanceMetrics (`performance.rs`)
+### Metrics Endpoints (`mcb-server`)
 
-Tracks application performance.
-
-\1-   Query latency (P50, P95, P99)
-\1-   Cache hit/miss rates
-\1-   Request throughput
-\1-   Error rates
-
-### MetricsApiServer (`http_server.rs`)
-
-HTTP API for metrics access (port 3001).
+HTTP API for metrics access via admin router.
 
 **Endpoints**:
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
-| `/api/health` | GET | Health check |
-| `/api/metrics` | GET | Prometheus-format metrics |
-| `/api/context/metrics` | GET | Application metrics JSON |
-
-### CacheMetrics
-
-Cache performance tracking.
-
-\1-   Hit count / miss count
-\1-   Hit rate percentage
-\1-   Eviction statistics
+| `/health` | GET | Health check |
+| `/health/ready` | GET | Readiness probe |
+| `/health/live` | GET | Liveness probe |
+| `/metrics` | GET | Performance metrics JSON |
 
 ## File Structure
 
 ```text
-src/infrastructure/metrics/
-├── http_server.rs   # REST API server
-├── mod.rs           # Module exports
-├── performance.rs   # Query performance tracking
-└── system.rs        # System metrics collection
+crates/mcb-providers/src/admin/
+└── metrics.rs               # AtomicPerformanceMetrics
+
+crates/mcb-server/src/admin/
+├── handlers.rs              # Metrics endpoint handlers
+└── models.rs                # MetricsResponse types
 ```
 
 ## Key Exports
 
 ```rust
-pub use http_server::{MetricsApiServer, HealthResponse};
-pub use performance::{PerformanceMetrics, CacheMetrics, QueryPerformanceMetrics};
-pub use performance::PERFORMANCE_METRICS;
+// From mcb-providers
+pub use admin::metrics::AtomicPerformanceMetrics;
+
+// From mcb-server
+pub use admin::{metrics_handler, MetricsResponse};
 ```
 
 ## Configuration
 
 Environment variables:
 
-\1-   `MCP_METRICS_ENABLED=true` - Enable metrics collection
-\1-   `MCP_PORT=3001` - Unified HTTP port (Admin + Metrics + MCP)
-
-## Testing
-
-5 metrics tests. See [tests/metrics.rs](../../tests/metrics.rs).
+-   `MCP_METRICS_ENABLED=true` - Enable metrics collection
+-   `MCP_PORT=3000` - Unified HTTP port (Admin + Metrics + MCP)
 
 ## Cross-References
 
-\1-  **Architecture**: [ARCHITECTURE.md](../architecture/ARCHITECTURE.md)
-\1-  **Server**: [server.md](./server.md) (integrates metrics)
-\1-  **Admin**: [admin.md](./admin.md) (metrics dashboard)
+-   **Admin**: [admin.md](./admin.md) (metrics endpoints)
+-   **Server**: [server.md](./server.md) (HTTP server)
+-   **Providers**: [providers.md](./providers.md) (metrics implementation)
+-   **Architecture**: [ARCHITECTURE.md](../architecture/ARCHITECTURE.md)
+
+---
+
+*Updated 2026-01-17 - Reflects modular crate architecture (v0.1.1)*

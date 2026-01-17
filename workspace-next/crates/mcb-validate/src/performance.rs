@@ -6,6 +6,7 @@
 //! - Arc/Mutex overuse
 //! - Inefficient iterator patterns
 
+use crate::violation_trait::{Violation, ViolationCategory};
 use crate::{Result, Severity, ValidationConfig};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -152,6 +153,62 @@ impl std::fmt::Display for PerformanceViolation {
                     suggestion
                 )
             }
+        }
+    }
+}
+
+impl Violation for PerformanceViolation {
+    fn id(&self) -> &str {
+        match self {
+            Self::CloneInLoop { .. } => "PERF001",
+            Self::AllocationInLoop { .. } => "PERF002",
+            Self::ArcMutexOveruse { .. } => "PERF003",
+            Self::InefficientIterator { .. } => "PERF004",
+            Self::InefficientString { .. } => "PERF005",
+        }
+    }
+
+    fn category(&self) -> ViolationCategory {
+        ViolationCategory::Performance
+    }
+
+    fn severity(&self) -> Severity {
+        match self {
+            Self::CloneInLoop { severity, .. } => *severity,
+            Self::AllocationInLoop { severity, .. } => *severity,
+            Self::ArcMutexOveruse { severity, .. } => *severity,
+            Self::InefficientIterator { severity, .. } => *severity,
+            Self::InefficientString { severity, .. } => *severity,
+        }
+    }
+
+    fn file(&self) -> Option<&PathBuf> {
+        match self {
+            Self::CloneInLoop { file, .. } => Some(file),
+            Self::AllocationInLoop { file, .. } => Some(file),
+            Self::ArcMutexOveruse { file, .. } => Some(file),
+            Self::InefficientIterator { file, .. } => Some(file),
+            Self::InefficientString { file, .. } => Some(file),
+        }
+    }
+
+    fn line(&self) -> Option<usize> {
+        match self {
+            Self::CloneInLoop { line, .. } => Some(*line),
+            Self::AllocationInLoop { line, .. } => Some(*line),
+            Self::ArcMutexOveruse { line, .. } => Some(*line),
+            Self::InefficientIterator { line, .. } => Some(*line),
+            Self::InefficientString { line, .. } => Some(*line),
+        }
+    }
+
+    fn suggestion(&self) -> Option<String> {
+        match self {
+            Self::CloneInLoop { suggestion, .. } => Some(suggestion.clone()),
+            Self::AllocationInLoop { suggestion, .. } => Some(suggestion.clone()),
+            Self::ArcMutexOveruse { suggestion, .. } => Some(suggestion.clone()),
+            Self::InefficientIterator { suggestion, .. } => Some(suggestion.clone()),
+            Self::InefficientString { suggestion, .. } => Some(suggestion.clone()),
         }
     }
 }
@@ -598,6 +655,24 @@ impl PerformanceValidator {
         }
 
         Ok(violations)
+    }
+}
+
+impl crate::validator_trait::Validator for PerformanceValidator {
+    fn name(&self) -> &'static str {
+        "performance"
+    }
+
+    fn description(&self) -> &'static str {
+        "Validates performance patterns (clones, allocations, Arc/Mutex usage)"
+    }
+
+    fn validate(&self, _config: &ValidationConfig) -> anyhow::Result<Vec<Box<dyn Violation>>> {
+        let violations = self.validate_all()?;
+        Ok(violations
+            .into_iter()
+            .map(|v| Box::new(v) as Box<dyn Violation>)
+            .collect())
     }
 }
 

@@ -30,7 +30,7 @@ use serde::Deserialize;
 use std::path::{Path, PathBuf};
 
 /// Root configuration loaded from `.mcb-validate.toml`
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Default, Deserialize)]
 pub struct FileConfig {
     /// General settings
     #[serde(default)]
@@ -43,16 +43,6 @@ pub struct FileConfig {
     /// Validator enable/disable flags
     #[serde(default)]
     pub validators: ValidatorsConfig,
-}
-
-impl Default for FileConfig {
-    fn default() -> Self {
-        Self {
-            general: GeneralConfig::default(),
-            rules: RulesConfig::default(),
-            validators: ValidatorsConfig::default(),
-        }
-    }
 }
 
 impl FileConfig {

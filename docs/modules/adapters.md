@@ -1,57 +1,35 @@
 # adapters Module
 
-**Source**: `src/adapters/`
-**Files**: 33
-**Lines of Code**: 7404
-**Traits**: 2
-**Structs**: 7
-**Enums**: 0
-**Functions**: 0
+**Note**: In v0.1.1, adapters have been reorganized into dedicated crates.
+
+**Previous Source**: `src/adapters/`
+**New Location**: `crates/mcb-providers/src/` and `crates/mcb-infrastructure/src/adapters/`
 
 ## Overview
 
-## Key Exports
+The adapters layer has been split into two crates in v0.1.1:
 
-``
+1. **mcb-providers** - External service integrations (embedding, vector store, cache, language processors)
+2. **mcb-infrastructure** - Null adapters for testing and DI
 
-## File Structure
+## Migration Mapping
 
-```text
-providers/embedding/gemini.rs
-providers/embedding/null.rs
-providers/embedding/ollama.rs
-providers/embedding/openai.rs
-providers/embedding/voyageai.rs
-providers/embedding/fastembed.rs
-providers/vector_store/in_memory.rs
-providers/vector_store/filesystem.rs
-providers/vector_store/encrypted.rs
-providers/vector_store/null.rs
-providers/vector_store/edgevec.rs
-providers/vector_store/milvus.rs
-providers/routing/circuit_breaker.rs
-providers/routing/failover.rs
-providers/routing/health.rs
-providers/routing/cost_tracker.rs
-providers/routing/metrics.rs
-providers/routing/router.rs
-providers/vector_store.rs
-providers/routing.rs
-providers/embedding.rs
-repository/search_repository.rs
-repository/chunk_repository.rs
-hybrid_search/actor.rs
-hybrid_search/config.rs
-hybrid_search/engine.rs
-hybrid_search/bm25.rs
-hybrid_search/adapter.rs
-database.rs
-http_client.rs
-hybrid_search.rs
-providers.rs
-repository.rs
-```
+| Old Location | New Location |
+|--------------|--------------|
+| `src/adapters/providers/embedding/` | `crates/mcb-providers/src/embedding/` |
+| `src/adapters/providers/vector_store/` | `crates/mcb-providers/src/vector_store/` |
+| `src/adapters/providers/routing/` | `crates/mcb-providers/src/routing/` |
+| `src/adapters/hybrid_search/` | `crates/mcb-providers/src/hybrid_search/` |
+| `src/adapters/repository/` | `crates/mcb-infrastructure/src/adapters/repository/` |
+| Null adapters | `crates/mcb-infrastructure/src/adapters/infrastructure/` |
+
+## Related Documentation
+
+-   **Providers**: [providers.md](./providers.md) - Provider implementations
+-   **Infrastructure**: [infrastructure.md](./infrastructure.md) - Null adapters
+-   **Domain**: [domain.md](./domain.md) - Port trait definitions
+-   **Module Structure**: [module-structure.md](./module-structure.md) - Full architecture
 
 ---
 
-*Auto-generated from source code on seg 12 jan 2026 11:25:12 -03*
+*Updated 2026-01-17 - Reflects modular crate architecture (v0.1.1)*

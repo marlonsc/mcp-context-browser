@@ -124,7 +124,7 @@ docker-compose down -v        # Cleanup
 
 ### Redis Cache Provider Tests
 
-**File:** `tests/e2e/redis_cache_test.rs` (integration tests moved to e2e/)
+**File:** `crates/mcb-infrastructure/tests/cache/providers/redis_test.rs`
 
 Tests include:
 
@@ -147,7 +147,7 @@ cargo test redis_cache_integration -- --nocapture
 
 ### NATS Event Bus Tests
 
-**File:** `tests/e2e/nats_event_bus_test.rs` (integration tests moved to e2e/)
+**File:** `crates/mcb-infrastructure/tests/events/nats_event_bus_test.rs` (or inline tests in `crates/mcb-infrastructure/src/events/`)
 
 Tests include:
 
@@ -427,7 +427,7 @@ jobs:
 
 When adding new integration tests:
 
-1.  Use the existing patterns in `redis_cache_integration.rs` and `nats_event_bus_integration.rs`
+1.  Use the existing patterns in `crates/mcb-infrastructure/tests/cache/providers/redis_test.rs`
 2.  Include environment variable support for flexible service locations
 3.  Use `skip_if_no_service!()` macro for graceful skipping
 4.  Add cleanup code to prevent test pollution

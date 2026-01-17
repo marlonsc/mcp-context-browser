@@ -25,7 +25,12 @@ include make/Makefile.aliases.mk
 # =============================================================================
 .PHONY: help all
 .PHONY: build build-release test test-unit test-integration test-doc test-all clean run
-.PHONY: check fmt lint fix quality validate audit coverage bench
+.PHONY: check fmt lint fix quality audit coverage bench
+.PHONY: validate validate-report validate-summary validate-arch
+.PHONY: validate-deps validate-quality validate-patterns validate-tests validate-docs validate-naming
+.PHONY: validate-solid validate-org validate-kiss validate-shaku validate-refactor
+.PHONY: validate-all validate-config check-full ci-quality
+.PHONY: pmat-tdg pmat-diag pmat-entropy pmat-defects pmat-gate pmat-explain pmat-clean
 .PHONY: lint-md fix-md
 .PHONY: docs docs-build docs-serve docs-check docs-fix docs-setup docs-metrics docs-sync info doc
 .PHONY: adr-new adr-list adr-check rust-docs diagrams

@@ -1,26 +1,31 @@
 # daemon Module
 
-**Source**: `src/infrastructure/daemon/`
-**Files**: 2
-**Lines of Code**: 334
-**Traits**: 0
-**Structs**: 3
-**Enums**: 0
-**Functions**: 0
+**Note**: The daemon module from the legacy codebase has been simplified in v0.1.1.
+
+**Previous Source**: `src/infrastructure/daemon/`
+**Status**: Background service functionality integrated into mcb-server
 
 ## Overview
 
-## Key Exports
+In v0.1.1, background daemon functionality is handled by:
 
-``
+-   **mcb-server**: Server lifecycle management
+-   **Systemd**: External service management (see deployment docs)
 
-## File Structure
+## Migration Notes
 
-```text
-service.rs
-types.rs
-```
+The standalone daemon service has been replaced with:
+
+1. Systemd service integration for production deployments
+2. Built-in graceful shutdown in mcb-server
+3. Health check endpoints for monitoring
+
+## Related Documentation
+
+-   **Server**: [server.md](./server.md) (server lifecycle)
+-   **Deployment**: [DEPLOYMENT.md](../operations/DEPLOYMENT.md) (systemd setup)
+-   **Architecture**: [ARCHITECTURE.md](../architecture/ARCHITECTURE.md)
 
 ---
 
-*Auto-generated from source code on seg 12 jan 2026 11:25:13 -03*
+*Updated 2026-01-17 - Reflects modular crate architecture (v0.1.1)*

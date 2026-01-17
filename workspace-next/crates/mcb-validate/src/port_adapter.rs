@@ -189,7 +189,7 @@ impl PortAdapterValidator {
 
         for entry in WalkDir::new(&ports_dir).into_iter().filter_map(|e| e.ok()) {
             let path = entry.path();
-            if !path.extension().is_some_and(|e| e == "rs") {
+            if path.extension().is_none_or(|e| e != "rs") {
                 continue;
             }
 
@@ -264,7 +264,7 @@ impl PortAdapterValidator {
             .filter_map(|e| e.ok())
         {
             let path = entry.path();
-            if !path.extension().is_some_and(|e| e == "rs") {
+            if path.extension().is_none_or(|e| e != "rs") {
                 continue;
             }
 

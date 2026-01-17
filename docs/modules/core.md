@@ -1,15 +1,15 @@
 # Core Module
 
-**Source**: `src/domain/` (types, ports) and `src/infrastructure/` (utilities)
+**Source**: `crates/mcb-domain/src/` (types, ports) and `crates/mcb-infrastructure/src/` (utilities)
 
 Foundational types, traits, and utilities used throughout the system.
 
 ## Overview
 
-The core module functionality is now split across Clean Architecture layers:
--   **Domain types** (`src/domain/types.rs`): Embedding, CodeChunk, SearchResult, Language
--   **Port traits** (`src/domain/ports/`): 14 interfaces including EmbeddingProvider, VectorStoreProvider, HybridSearchProvider, CodeChunker, EventPublisher, SyncCoordinator, SnapshotProvider, ChunkRepository, SearchRepository, and service interfaces
--   **Infrastructure utilities** (`src/infrastructure/`): auth, cache, crypto, rate_limit
+The core module functionality is split across Clean Architecture layers:
+-   **Domain types** (`crates/mcb-domain/src/types.rs`): Embedding, CodeChunk, SearchResult, Language
+-   **Port traits** (`crates/mcb-domain/src/ports/`): 14 interfaces including EmbeddingProvider, VectorStoreProvider, HybridSearchProvider, CodeChunker, EventPublisher, SyncCoordinator, SnapshotProvider, ChunkRepository, SearchRepository, and service interfaces
+-   **Infrastructure utilities** (`crates/mcb-infrastructure/src/`): auth, cache, crypto, health, logging
 
 ## Submodules
 
@@ -17,97 +17,96 @@ The core module functionality is now split across Clean Architecture layers:
 
 Core data structures for code intelligence.
 
-\1-   `Embedding` - Vector representation of text/code
-\1-   `CodeChunk` - Parsed code segment with metadata
-\1-   `SearchResult` - Ranked search item with score
-\1-   `Language` - Supported programming languages
+-   `Embedding` - Vector representation of text/code
+-   `CodeChunk` - Parsed code segment with metadata
+-   `SearchResult` - Ranked search item with score
+-   `Language` - Supported programming languages
 
 ### Error Handling (`error.rs`)
 
 Comprehensive error types with `thiserror`.
 
-\1-   `Error` - Main error enum with variants
-\1-   `Result<T>` - Type alias for `Result<T, Error>`
+-   `Error` - Main error enum with variants
+-   `Result<T>` - Type alias for `Result<T, Error>`
 
-### Authentication (`auth.rs`)
+### Authentication (`auth/`)
 
-JWT-based identity and access management.
+JWT-based identity and access management (in mcb-server).
 
-\1-   `AuthService` - Token validation and generation
-\1-   `Claims` - JWT payload structure
-\1-   `Permission` - Authorization controls
+-   `AuthService` - Token validation and generation
+-   `Claims` - JWT payload structure
+-   `Permission` - Authorization controls
 
-### Caching (`cache.rs`)
+### Caching (`cache/`)
 
-Multi-level caching with TTL and size limits.
+Multi-level caching with TTL and size limits (in mcb-infrastructure).
 
-\1-   `CacheManager` - Main cache interface
-\1-   Configurable TTL and eviction policies
+-   `CacheManager` - Main cache interface
+-   Configurable TTL and eviction policies
 
-### Rate Limiting (`rate_limit.rs`)
+### Crypto (`crypto/`)
 
-Request throttling with multiple strategies.
+Encryption utilities (in mcb-infrastructure).
 
-\1-   `RateLimiter` - Token bucket implementation
-\1-   Configurable limits per endpoint/user
+-   AES-GCM encryption support
+-   Hash computation utilities
 
-### Hybrid Search (`hybrid_search.rs`)
+### Health (`health/`)
 
-Combined BM25 + semantic search.
+Health check infrastructure (in mcb-infrastructure).
 
-\1-   `HybridSearchEngine` - Orchestrates dual ranking
-\1-   `BM25Scorer` - Term frequency ranking
-\1-   Configurable weighting between methods
-
-### Other Utilities
-
-\1-   `crypto.rs` - Encryption utilities (AES-GCM)
-\1-   `database.rs` - Connection pooling
-\1-   `http_client.rs` - HTTP client with retry
-\1-   `limits.rs` - Resource quotas
-\1-   `merkle.rs` - Data integrity verification
+-   Component health monitoring
+-   Readiness and liveness checks
 
 ## Key Exports
 
 ```rust
-// Domain types
+// Domain types (from mcb-domain)
 pub use types::{Embedding, CodeChunk, SearchResult, Language};
 pub use error::{Error, Result};
 
-// Security
-pub use auth::{AuthService, Permission, Claims};
-pub use crypto::*;
-
-// Infrastructure
-pub use cache::CacheManager;
-pub use resilience::{RateLimiterBackend, CircuitBreakerBackend};
-pub use hybrid_search::HybridSearchEngine;
+// Infrastructure (from mcb-infrastructure)
+pub use config::{AppConfig, ServerConfig, AuthConfig};
+pub use logging::{init_logging, init_json_logging};
 ```
 
 ## File Structure (Clean Architecture)
 
 ```text
-src/domain/
-├── types.rs         # Domain types (Embedding, CodeChunk, etc.)
-├── error.rs         # Domain error types
-├── validation.rs    # Input validation rules
-└── ports/           # Port traits (interfaces)
+crates/mcb-domain/src/
+├── types.rs              # Domain types (Embedding, CodeChunk, etc.)
+├── error.rs              # Domain error types
+├── entities/             # Domain entities
+├── value_objects/        # Value objects
+├── ports/                # Port traits (interfaces)
+│   ├── providers/        # Provider port traits
+│   ├── infrastructure/   # Infrastructure port traits
+│   └── admin.rs          # Admin service interfaces
+└── repositories/         # Repository port traits
 
-src/infrastructure/
-├── auth/            # JWT authentication
-├── cache.rs         # Multi-level caching
-├── crypto/          # Encryption utilities
-├── resilience/      # Rate limiting and circuit breakers
-└── ...              # Other infrastructure
+crates/mcb-infrastructure/src/
+├── config/               # Configuration management
+├── cache/                # Caching infrastructure
+├── crypto/               # Encryption utilities
+├── health/               # Health checks
+├── logging.rs            # Structured logging
+└── adapters/             # Null adapters for testing
 ```
 
 ## Testing
 
-Core types have 18 dedicated tests. See [tests/core_types.rs](../../tests/core_types.rs).
+Domain tests are in `crates/mcb-domain/tests/`.
+Infrastructure tests are in `crates/mcb-infrastructure/tests/`.
 
 ## Cross-References
 
-\1-  **Architecture**: [ARCHITECTURE.md](../architecture/ARCHITECTURE.md)
-\1-  **Services**: [services.md](./services.md) (uses core types)
-\1-  **Providers**: [providers.md](./providers.md) (implements traits)
-\1-  **Server**: [server.md](./server.md) (uses auth/rate limiting)
+-   **Architecture**: [ARCHITECTURE.md](../architecture/ARCHITECTURE.md)
+-   **Domain**: [domain.md](./domain.md)
+-   **Infrastructure**: [infrastructure.md](./infrastructure.md)
+-   **Services**: [services.md](./services.md) (uses core types)
+-   **Providers**: [providers.md](./providers.md) (implements traits)
+-   **Server**: [server.md](./server.md) (uses auth/rate limiting)
+
+---
+
+*Updated 2026-01-17 - Reflects modular crate architecture (v0.1.1)*

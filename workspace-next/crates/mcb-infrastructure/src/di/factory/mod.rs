@@ -14,3 +14,6 @@ pub use providers::{
     embedding_providers, vector_store_providers, EmbeddingProviderFactory,
     VectorStoreProviderFactory,
 };
+
+pub use implementation::DefaultCryptoServiceFactory;
+pub use traits::CryptoServiceFactory;

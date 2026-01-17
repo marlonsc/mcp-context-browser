@@ -1,48 +1,103 @@
 # Module Dependencies
 
-This document shows the internal module dependencies of the MCP Context Browser.
+This document shows the crate dependencies of the MCP Context Browser.
 
-## Dependencies Graph
+## Crate Dependency Graph
 
 ```dot
 digraph {
     rankdir=TB;
     node [shape=box, style=filled, fillcolor=lightblue];
 
-    "main" -> "lib";
-    "lib" -> "core";
-    "lib" -> "config";
-    "lib" -> "providers";
-    "lib" -> "services";
-    "lib" -> "server";
-    "lib" -> "metrics";
-    "lib" -> "sync";
-    "lib" -> "daemon";
-    "lib" -> "snapshot";
+    "mcb" -> "mcb-server";
+    "mcb" -> "mcb-application";
+    "mcb" -> "mcb-domain";
+    "mcb" -> "mcb-infrastructure";
+    "mcb" -> "mcb-providers";
 
-    "providers" -> "core";
-    "services" -> "core";
-    "services" -> "providers";
-    "server" -> "core";
-    "server" -> "services";
-    "server" -> "providers";
-    "metrics" -> "core";
-    "sync" -> "core";
-    "daemon" -> "core";
-    "snapshot" -> "core";
+    "mcb-server" -> "mcb-application";
+    "mcb-server" -> "mcb-domain";
+    "mcb-server" -> "mcb-infrastructure";
+    "mcb-server" -> "mcb-providers";
 
-    label="MCP Context Browser Module Dependencies (Estimated)";
+    "mcb-application" -> "mcb-domain";
+    "mcb-application" -> "mcb-providers";
+
+    "mcb-infrastructure" -> "mcb-domain";
+
+    "mcb-providers" -> "mcb-domain";
+
+    "mcb-validate" [fillcolor=lightyellow];
+    "mcb-validate" -> "mcb-domain";
+
+    label="MCP Context Browser Crate Dependencies (v0.1.1)";
 }
 ```
 
-## Analysis
+## Dependency Layers
 
-The dependency graph above shows estimated module relationships within the codebase. Higher-level modules depend on lower-level core modules, creating a clean layered architecture.
+```text
+                    ┌─────────┐
+                    │   mcb   │  (Facade)
+                    └────┬────┘
+                         │
+         ┌───────────────┼───────────────┐
+         │               │               │
+         ▼               ▼               ▼
+    ┌─────────┐    ┌─────────┐    ┌─────────┐
+    │ server  │    │  app    │    │validate │
+    └────┬────┘    └────┬────┘    └────┬────┘
+         │               │               │
+         └───────┬───────┘               │
+                 │                       │
+         ┌───────┴───────┐               │
+         │               │               │
+         ▼               ▼               │
+    ┌─────────┐    ┌─────────┐          │
+    │providers│    │  infra  │          │
+    └────┬────┘    └────┬────┘          │
+         │               │               │
+         └───────┬───────┴───────────────┘
+                 │
+                 ▼
+            ┌─────────┐
+            │ domain  │  (Innermost)
+            └─────────┘
+```
 
-Key dependency patterns:
-\1-  **Entry point**(main) depends on library (lib)
-\1-  **Business logic**(services) depends on providers and core
-\1-  **HTTP server**depends on all major components
-\1-  **Core modules**have minimal dependencies
+## Crate Descriptions
 
-*Generated automatically on: 2026-01-11 21:51:42 UTC*
+| Crate | Purpose | Dependencies |
+|-------|---------|--------------|
+| `mcb` | Unified facade, public API | All crates |
+| `mcb-domain` | Core types, ports, entities | None (innermost) |
+| `mcb-application` | Business logic, use cases | domain, providers |
+| `mcb-infrastructure` | DI, config, null adapters | domain |
+| `mcb-providers` | External integrations | domain |
+| `mcb-server` | MCP protocol, HTTP transport | All except validate |
+| `mcb-validate` | Architecture validation | domain |
+
+## Key Dependency Patterns
+
+1. **Domain is dependency-free**: `mcb-domain` has no internal crate dependencies
+2. **Clean Architecture layers**: Dependencies flow inward toward domain
+3. **Facade aggregates**: `mcb` crate re-exports from all other crates
+4. **Validation is isolated**: `mcb-validate` only depends on domain
+
+## External Dependencies
+
+Major external crates:
+
+| Category | Crate | Purpose |
+|----------|-------|---------|
+| Async | `tokio` | Async runtime |
+| HTTP | `axum` | HTTP server |
+| DI | `shaku` | Dependency injection |
+| Serialization | `serde` | JSON/TOML serialization |
+| Error handling | `thiserror`, `anyhow` | Error types |
+| Parsing | `tree-sitter-*` | AST parsing |
+| AI | `reqwest` | HTTP client for AI APIs |
+
+---
+
+*Updated 2026-01-17 - Reflects modular crate architecture (v0.1.1)*

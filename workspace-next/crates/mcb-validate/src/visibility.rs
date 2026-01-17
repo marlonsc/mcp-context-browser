@@ -167,7 +167,7 @@ impl VisibilityValidator {
 
             for entry in WalkDir::new(&full_path).into_iter().filter_map(|e| e.ok()) {
                 let path = entry.path();
-                if !path.extension().is_some_and(|e| e == "rs") {
+                if path.extension().is_none_or(|e| e != "rs") {
                     continue;
                 }
 
@@ -221,12 +221,12 @@ impl VisibilityValidator {
 
             for entry in WalkDir::new(&crate_src).into_iter().filter_map(|e| e.ok()) {
                 let path = entry.path();
-                if !path.extension().is_some_and(|e| e == "rs") {
+                if path.extension().is_none_or(|e| e != "rs") {
                     continue;
                 }
 
                 let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
-                if !utility_patterns.iter().any(|p| file_name == *p) {
+                if !utility_patterns.contains(&file_name) {
                     continue;
                 }
 

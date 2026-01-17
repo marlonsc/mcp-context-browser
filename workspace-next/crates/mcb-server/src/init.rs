@@ -33,7 +33,10 @@ use std::sync::Arc;
 use mcb_infrastructure::cache::provider::SharedCacheProvider;
 use mcb_infrastructure::config::TransportMode;
 use mcb_infrastructure::crypto::CryptoService;
-use mcb_infrastructure::di::{EmbeddingProviderFactory, VectorStoreProviderFactory};
+use mcb_infrastructure::di::{
+    CryptoServiceFactory, DefaultCryptoServiceFactory, EmbeddingProviderFactory,
+    VectorStoreProviderFactory,
+};
 use mcb_infrastructure::HasComponent;
 use tracing::{error, info};
 
@@ -54,23 +57,8 @@ use crate::McpServerBuilder;
 /// - `Stdio` (default): Runs MCP over stdin/stdout
 /// - `Http`: Runs HTTP server on configured port
 /// - `Hybrid`: Runs both Stdio and HTTP concurrently
-///
-/// # Example
-///
-/// ```rust,ignore
-/// // Run with default config (stdio mode)
-/// run_server(None).await?;
-///
-/// // Run with custom config file
-/// run_server(Some(Path::new("config.toml"))).await?;
-/// ```
 pub async fn run_server(config_path: Option<&Path>) -> Result<(), Box<dyn std::error::Error>> {
-    let loader = match config_path {
-        Some(path) => mcb_infrastructure::config::ConfigLoader::new().with_config_path(path),
-        None => mcb_infrastructure::config::ConfigLoader::new(),
-    };
-
-    let config = loader.load()?;
+    let config = load_config(config_path)?;
     mcb_infrastructure::logging::init_logging(config.logging.clone())?;
 
     info!(
@@ -84,14 +72,35 @@ pub async fn run_server(config_path: Option<&Path>) -> Result<(), Box<dyn std::e
     let http_host = config.server.network.host.clone();
     let http_port = config.server.network.port;
 
-    // Step 1: Create AppContainer with Shaku modules (infrastructure services)
+    let server = create_mcp_server(config).await?;
+    info!("MCP server initialized successfully");
+
+    start_transport(server, transport_mode, &http_host, http_port).await
+}
+
+/// Load configuration from optional path
+fn load_config(
+    config_path: Option<&Path>,
+) -> Result<mcb_infrastructure::config::AppConfig, Box<dyn std::error::Error>> {
+    let loader = match config_path {
+        Some(path) => mcb_infrastructure::config::ConfigLoader::new().with_config_path(path),
+        None => mcb_infrastructure::config::ConfigLoader::new(),
+    };
+    Ok(loader.load()?)
+}
+
+/// Create and configure the MCP server with all services
+async fn create_mcp_server(
+    config: mcb_infrastructure::config::AppConfig,
+) -> Result<McpServer, Box<dyn std::error::Error>> {
+    // Create AppContainer with Shaku modules (infrastructure services)
     let app_container = mcb_infrastructure::di::bootstrap::init_app(config.clone()).await?;
 
-    // Step 2: Create production providers from configuration
+    // Create production providers from configuration
     let embedding_provider = create_embedding_provider(&config)?;
     let vector_store_provider = create_vector_store_provider(&config)?;
 
-    // Step 3: Get infrastructure dependencies from Shaku modules
+    // Get infrastructure dependencies from Shaku modules
     let cache_provider: Arc<dyn mcb_application::ports::providers::cache::CacheProvider> =
         app_container.cache.resolve();
     let language_chunker: Arc<dyn mcb_application::ports::providers::LanguageChunkingProvider> =
@@ -99,9 +108,9 @@ pub async fn run_server(config_path: Option<&Path>) -> Result<(), Box<dyn std::e
 
     // Create shared cache provider (conversion for domain services factory)
     let shared_cache = SharedCacheProvider::from_arc(cache_provider);
-    let crypto = CryptoService::new(CryptoService::generate_master_key())?;
+    let crypto = create_crypto_service(&config).await?;
 
-    // Step 4: Create domain services with production providers
+    // Create domain services with production providers
     let deps = mcb_infrastructure::di::modules::domain_services::ServiceDependencies {
         cache: shared_cache,
         crypto,
@@ -116,19 +125,21 @@ pub async fn run_server(config_path: Option<&Path>) -> Result<(), Box<dyn std::e
         )
         .await?;
 
-    let indexing_service = services.indexing_service;
-    let context_service = services.context_service;
-    let search_service = services.search_service;
+    McpServerBuilder::new()
+        .with_indexing_service(services.indexing_service)
+        .with_context_service(services.context_service)
+        .with_search_service(services.search_service)
+        .try_build()
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })
+}
 
-    let server = McpServerBuilder::new()
-        .with_indexing_service(indexing_service)
-        .with_context_service(context_service)
-        .with_search_service(search_service)
-        .try_build()?;
-
-    info!("MCP server initialized successfully");
-
-    // Route to appropriate transport based on configuration
+/// Start the appropriate transport based on configuration
+async fn start_transport(
+    server: McpServer,
+    transport_mode: TransportMode,
+    http_host: &str,
+    http_port: u16,
+) -> Result<(), Box<dyn std::error::Error>> {
     match transport_mode {
         TransportMode::Stdio => {
             info!("Starting stdio transport");
@@ -136,7 +147,7 @@ pub async fn run_server(config_path: Option<&Path>) -> Result<(), Box<dyn std::e
         }
         TransportMode::Http => {
             info!(host = %http_host, port = http_port, "Starting HTTP transport");
-            run_http_transport(server, &http_host, http_port).await
+            run_http_transport(server, http_host, http_port).await
         }
         TransportMode::Hybrid => {
             info!(
@@ -144,7 +155,7 @@ pub async fn run_server(config_path: Option<&Path>) -> Result<(), Box<dyn std::e
                 port = http_port,
                 "Starting hybrid transport (stdio + HTTP)"
             );
-            run_hybrid_transport(server, &http_host, http_port).await
+            run_hybrid_transport(server, http_host, http_port).await
         }
     }
 }
@@ -277,4 +288,24 @@ fn create_vector_store_provider(
         info!("No vector store provider configured, using in-memory provider");
         Ok(VectorStoreProviderFactory::create_in_memory())
     }
+}
+
+/// Create crypto service from configuration using DI factory pattern
+///
+/// Uses JWT secret from config if available (32+ bytes), otherwise generates a random key.
+async fn create_crypto_service(
+    config: &mcb_infrastructure::config::AppConfig,
+) -> Result<CryptoService, Box<dyn std::error::Error>> {
+    // AES-GCM requires exactly 32 bytes for the key
+    let master_key = if config.auth.jwt.secret.len() >= 32 {
+        config.auth.jwt.secret.as_bytes()[..32].to_vec()
+    } else {
+        CryptoService::generate_master_key()
+    };
+
+    let factory = DefaultCryptoServiceFactory::with_master_key(master_key);
+    factory
+        .create_crypto_service()
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })
 }

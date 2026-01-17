@@ -269,7 +269,8 @@ Deliver a fully production-ready enterprise platform with SLA guarantees, profes
 | v0.0.1 | Released | Initial prototype |
 | v0.0.2 | Released | Core architecture |
 | v0.0.3 | Released | Production foundation |
-| v0.1.0 |**Current**| Documentation excellence, clean architecture, first stable release |
+| v0.1.0 | Released | Documentation excellence, clean architecture, first stable release |
+| v0.1.1 |**Current**| Modular crate architecture, architecture validation (mcb-validate) |
 | v0.2.0 | Planned | Git-aware semantic indexing, persistent session memory |
 | v0.3.0 | Future | Advanced code intelligence |
 | v0.4.0 | Future | Enterprise features |

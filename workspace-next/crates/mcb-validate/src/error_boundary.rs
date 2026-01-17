@@ -5,6 +5,7 @@
 //! - Context preservation across layers
 //! - Error type placement (right layer)
 
+use crate::violation_trait::{Violation, ViolationCategory};
 use crate::{Result, Severity, ValidationConfig};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -98,6 +99,58 @@ impl std::fmt::Display for ErrorBoundaryViolation {
                     pattern
                 )
             }
+        }
+    }
+}
+
+impl Violation for ErrorBoundaryViolation {
+    fn id(&self) -> &str {
+        match self {
+            Self::MissingErrorContext { .. } => "ERR001",
+            Self::WrongLayerError { .. } => "ERR002",
+            Self::LeakedInternalError { .. } => "ERR003",
+        }
+    }
+
+    fn category(&self) -> ViolationCategory {
+        ViolationCategory::ErrorBoundary
+    }
+
+    fn severity(&self) -> Severity {
+        match self {
+            Self::MissingErrorContext { severity, .. } => *severity,
+            Self::WrongLayerError { severity, .. } => *severity,
+            Self::LeakedInternalError { severity, .. } => *severity,
+        }
+    }
+
+    fn file(&self) -> Option<&PathBuf> {
+        match self {
+            Self::MissingErrorContext { file, .. } => Some(file),
+            Self::WrongLayerError { file, .. } => Some(file),
+            Self::LeakedInternalError { file, .. } => Some(file),
+        }
+    }
+
+    fn line(&self) -> Option<usize> {
+        match self {
+            Self::MissingErrorContext { line, .. } => Some(*line),
+            Self::WrongLayerError { line, .. } => Some(*line),
+            Self::LeakedInternalError { line, .. } => Some(*line),
+        }
+    }
+
+    fn suggestion(&self) -> Option<String> {
+        match self {
+            Self::MissingErrorContext { suggestion, .. } => Some(suggestion.clone()),
+            Self::WrongLayerError { error_type, layer, .. } => Some(format!(
+                "Wrap {} in a domain error type instead of using it directly in {}",
+                error_type, layer
+            )),
+            Self::LeakedInternalError { pattern, .. } => Some(format!(
+                "Replace {} with a sanitized error response that doesn't expose internal details",
+                pattern
+            )),
         }
     }
 }
@@ -372,6 +425,24 @@ impl ErrorBoundaryValidator {
         }
 
         Ok(violations)
+    }
+}
+
+impl crate::validator_trait::Validator for ErrorBoundaryValidator {
+    fn name(&self) -> &'static str {
+        "error_boundary"
+    }
+
+    fn description(&self) -> &'static str {
+        "Validates error handling patterns across layer boundaries"
+    }
+
+    fn validate(&self, _config: &ValidationConfig) -> anyhow::Result<Vec<Box<dyn Violation>>> {
+        let violations = self.validate_all()?;
+        Ok(violations
+            .into_iter()
+            .map(|v| Box::new(v) as Box<dyn Violation>)
+            .collect())
     }
 }
 

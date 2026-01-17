@@ -7,6 +7,7 @@
 //!
 //! This validator is optional - it only runs if the `pmat` binary is available.
 
+use crate::violation_trait::{Violation, ViolationCategory};
 use crate::{Result, Severity, ValidationConfig};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -120,6 +121,81 @@ impl std::fmt::Display for PmatViolation {
             }
             Self::PmatError { command, error, .. } => {
                 write!(f, "PMAT error running '{}': {}", command, error)
+            }
+        }
+    }
+}
+
+impl Violation for PmatViolation {
+    fn id(&self) -> &str {
+        match self {
+            Self::HighComplexity { .. } => "PMAT001",
+            Self::DeadCode { .. } => "PMAT002",
+            Self::LowTdgScore { .. } => "PMAT003",
+            Self::PmatUnavailable { .. } => "PMAT004",
+            Self::PmatError { .. } => "PMAT005",
+        }
+    }
+
+    fn category(&self) -> ViolationCategory {
+        ViolationCategory::Pmat
+    }
+
+    fn severity(&self) -> Severity {
+        match self {
+            Self::HighComplexity { severity, .. } => *severity,
+            Self::DeadCode { severity, .. } => *severity,
+            Self::LowTdgScore { severity, .. } => *severity,
+            Self::PmatUnavailable { severity, .. } => *severity,
+            Self::PmatError { severity, .. } => *severity,
+        }
+    }
+
+    fn file(&self) -> Option<&PathBuf> {
+        match self {
+            Self::HighComplexity { file, .. } => Some(file),
+            Self::DeadCode { file, .. } => Some(file),
+            Self::LowTdgScore { file, .. } => Some(file),
+            Self::PmatUnavailable { .. } => None,
+            Self::PmatError { .. } => None,
+        }
+    }
+
+    fn line(&self) -> Option<usize> {
+        match self {
+            Self::DeadCode { line, .. } => Some(*line),
+            _ => None,
+        }
+    }
+
+    fn suggestion(&self) -> Option<String> {
+        match self {
+            Self::HighComplexity {
+                function,
+                complexity,
+                threshold,
+                ..
+            } => Some(format!(
+                "Consider refactoring '{}' to reduce complexity from {} to below {}. \
+                 Split into smaller functions or simplify control flow.",
+                function, complexity, threshold
+            )),
+            Self::DeadCode {
+                item_type, name, ..
+            } => Some(format!(
+                "Remove unused {} '{}' or mark with #[allow(dead_code)] if intentional.",
+                item_type, name
+            )),
+            Self::LowTdgScore { score, threshold, .. } => Some(format!(
+                "Technical debt score {} exceeds threshold {}. \
+                 Address code smells, reduce complexity, and improve maintainability.",
+                score, threshold
+            )),
+            Self::PmatUnavailable { .. } => {
+                Some("Install PMAT CLI tool to enable additional analysis.".to_string())
+            }
+            Self::PmatError { command, .. } => {
+                Some(format!("Check PMAT installation and run '{}' manually to diagnose.", command))
             }
         }
     }
@@ -415,6 +491,29 @@ impl PmatValidator {
         }
 
         Ok(violations)
+    }
+}
+
+impl crate::validator_trait::Validator for PmatValidator {
+    fn name(&self) -> &'static str {
+        "pmat"
+    }
+
+    fn description(&self) -> &'static str {
+        "PMAT integration for cyclomatic complexity, dead code detection, and TDG scoring"
+    }
+
+    fn validate(&self, _config: &ValidationConfig) -> anyhow::Result<Vec<Box<dyn Violation>>> {
+        let violations = self.validate_all()?;
+        Ok(violations
+            .into_iter()
+            .map(|v| Box::new(v) as Box<dyn Violation>)
+            .collect())
+    }
+
+    fn enabled_by_default(&self) -> bool {
+        // Only enable by default if PMAT is available
+        self.pmat_available
     }
 }
 
