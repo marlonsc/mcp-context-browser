@@ -1,0 +1,242 @@
+[workspace]
+members = [
+    ".",
+    "libs/mcb-tree-sitter-analysis",
+]
+
+[workspace.dependencies]
+# Shared dependencies across workspace members
+tokio = { version = "1.49", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+
+[package]
+name = "mcp-context-browser"
+version = "0.1.1"
+edition = "2021"
+authors = ["Marlon Costa <marlonsc@gmail.com>"]
+license = "MIT"
+repository = "https://github.com/marlonsc/mcp-context-browser"
+keywords = ["mcp", "rust", "semantic-search", "code-analysis", "vector-embeddings"]
+categories = ["development-tools", "api-bindings", "science::artificial-intelligence"]
+description = "A Model Context Protocol server for semantic code analysis using vector embeddings"
+readme = "README.md"
+documentation = "https://docs.rs/mcp-context-browser"
+homepage = "https://github.com/marlonsc/mcp-context-browser"
+rust-version = "1.89"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[features]
+default = ["search"]
+
+# NOTE: Feature flags currently serve as capability markers for documentation/selection.
+# Dependencies are always compiled; conditional compilation (#[cfg(feature)]) not yet implemented.
+# TODO: Add optional deps and #[cfg] guards to enable true feature-gated compilation.
+
+# === CORE FEATURES ===
+
+# v0.1.0: Semantic search (embedding-based code discovery)
+search = ["fastembed", "filesystem-store", "milvus", "edgevec", "redis-cache", "argon2"]
+
+# v0.3.0+: Code analysis (complexity, technical debt, SATD detection)
+analysis = []
+
+# v0.5.0+: Quality metrics and assessment
+quality = []
+
+# v0.5.0+: Git integration and operations
+git = []
+
+# === PROVIDER FEATURES ===
+
+# Embedding providers
+fastembed = []  # Local embeddings via FastEmbed (always compiled)
+
+# Vector stores
+filesystem-store = []  # Local filesystem storage (always compiled)
+milvus = ["dep:milvus-sdk-rust"]  # Milvus vector database (optional dep)
+edgevec = []  # EdgeVec in-memory store (always compiled)
+
+# Optional infrastructure
+redis-cache = []  # Redis distributed caching (always compiled)
+
+# Authentication
+argon2 = []  # Argon2id password hashing (NIST recommended, default)
+
+# === FEATURE BUNDLES ===
+
+# Full feature set for development/testing (all capabilities)
+full = ["search", "analysis", "quality", "git"]
+
+[dependencies]
+# Core async runtime
+tokio = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = "1.0"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "2.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Configuration
+config = "0.15"
+toml = "0.9"
+notify = "6.1"
+arc-swap = "1.7"
+shaku = "0.6"
+
+# HTTP client
+reqwest = { version = "0.13", features = ["json", "__tls"] }
+
+# CLI
+clap = { version = "4.5.54", features = ["derive"] }
+
+# File operations
+walkdir = "2.5"
+
+# Regex
+regex = "1.12"
+
+# Date/time handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# Template engines
+handlebars = "6.0"
+tera = "1.20"
+
+# Markdown processing
+pulldown-cmark = "0.13"
+
+# Redis
+redis = { version = "1.0", features = ["tokio-comp", "connection-manager"] }
+
+# Cryptography
+aes-gcm = "0.10"
+rand = "0.9"
+
+# Shell expansion
+shellexpand = "3.1"
+
+# Authentication
+jsonwebtoken = { version = "10.2", features = ["rust_crypto"] }
+bcrypt = "0.18"
+argon2 = "0.5"
+base64 = "0.22"
+flate2 = "1.0"
+tar = "0.4"
+seahash = "4.1"
+
+# Database
+r2d2 = "0.8"
+r2d2_postgres = "0.18"
+
+# Hostname
+hostname = "0.4"
+
+# Hashing
+sha2 = "0.10"
+
+# Utilities
+uuid = { version = "1.0", features = ["v4"] }
+dirs = "6.0"
+
+# HTTP server
+axum = "0.8"
+axum-extra = { version = "0.10", features = ["cookie"] }
+tower = { version = "0.5", features = ["load-shed", "limit", "load", "retry", "timeout", "util"] }
+tower-http = { version = "0.6", features = ["cors", "catch-panic", "request-id", "trace", "timeout", "limit", "compression-gzip"] }
+
+# System metrics
+sysinfo = "0.37.2"
+nix = { version = "0.30", features = ["fs"] }
+
+# Code analysis and AST parsing
+tree-sitter = "0.26"
+tree-sitter-c = "0.24"
+tree-sitter-cpp = "0.23"
+tree-sitter-c-sharp = "0.23"
+tree-sitter-rust = "0.24"
+tree-sitter-python = "0.25"
+tree-sitter-javascript = "0.25"
+tree-sitter-typescript = "0.23"
+tree-sitter-java = "0.23"
+tree-sitter-go = "0.25"
+tree-sitter-ruby = "0.23"
+tree-sitter-php = "0.24"
+tree-sitter-swift = "0.7"
+tree-sitter-kotlin-ng = "1.1"
+
+# Fast globbing
+glob = "0.3"
+
+# Git ignore parsing
+ignore = "0.4"
+
+# Concurrent processing
+futures = "0.3"
+rayon = "1.8"
+
+# Text processing
+unicode-segmentation = "1.12"
+
+# Schema generation for MCP
+schemars = "1.0"
+
+# Input validation
+validator = { version = "0.20", features = ["derive"] }
+
+# MCP SDK
+rmcp = { version = "0.12.0", features = ["server", "client", "macros", "transport-io", "transport-child-process"] }
+
+# Advanced Multi-Provider Strategy
+prometheus = "0.14"
+metrics = "0.24"
+metrics-exporter-prometheus = "0.18"
+tokio-util = { version = "0.7", features = ["time", "rt"] }
+dashmap = "6.0"
+health = "0.2"
+
+# EdgeVec high-performance vector database
+edgevec = "0.8"
+
+# Additional dependencies
+milvus-sdk-rust = { version = "0.1.0", optional = true, git = "https://github.com/milvus-io/milvus-sdk-rust.git" }
+async-trait = "0.1.89"
+downcast-rs = "2.0.2"
+futures-util = "0.3.31"
+
+# Service layer improvements
+itertools = "0.13"  # Iterator composition and chains
+humantime = "2.1"  # Human-readable duration formatting
+
+# Event bus providers
+async-nats = "0.35"  # NATS client with JetStream support
+
+# Local embeddings without external services
+fastembed = { version = "5.8", default-features = false, features = ["default"] }
+criterion = "0.8.1"
+moka = { version = "0.12", features = ["future"] }
+
+[dev-dependencies]
+tempfile = "3.10"
+assert_cmd = "2.0"
+predicates = "3.0"
+mockito = "1.4"
+proptest = "1.0"
+serial_test = "3.2"
+http-body-util = "0.1"
+
+[lints.rust]
+missing_docs = "warn"
+
+[lints.rustdoc]
+broken_intra_doc_links = "warn"

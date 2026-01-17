@@ -1,82 +1,44 @@
 [workspace]
+resolver = "2"
 members = [
-    ".",
-    "libs/mcb-tree-sitter-analysis",
+    "crates/mcb",
+    "crates/mcb-domain",
+    "crates/mcb-application",
+    "crates/mcb-infrastructure",
+    "crates/mcb-providers",
+    "crates/mcb-server",
+    "crates/mcb-validate",
 ]
 
-[workspace.dependencies]
-# Shared dependencies across workspace members
-tokio = { version = "1.49", features = ["full"] }
-serde = { version = "1.0", features = ["derive"] }
-
-[package]
-name = "mcp-context-browser"
-version = "0.1.1"
+[workspace.package]
 edition = "2021"
-authors = ["Marlon Costa <marlonsc@gmail.com>"]
+rust-version = "1.89.0"
 license = "MIT"
-repository = "https://github.com/marlonsc/mcp-context-browser"
-keywords = ["mcp", "rust", "semantic-search", "code-analysis", "vector-embeddings"]
-categories = ["development-tools", "api-bindings", "science::artificial-intelligence"]
-description = "A Model Context Protocol server for semantic code analysis using vector embeddings"
-readme = "README.md"
-documentation = "https://docs.rs/mcp-context-browser"
-homepage = "https://github.com/marlonsc/mcp-context-browser"
-rust-version = "1.89"
+repository = "https://github.com/anthropics/mcp-context-browser"
 
-[package.metadata.docs.rs]
-all-features = true
-rustdoc-args = ["--cfg", "docsrs"]
-targets = ["x86_64-unknown-linux-gnu"]
+[workspace.lints.rust]
+# Safety lints
+unsafe_code = "warn"
+# Documentation lints
+missing_docs = "allow"
 
-[features]
-default = ["search"]
+[workspace.lints.clippy]
+# Correctness
+all = { level = "warn", priority = -1 }
+# Style improvements
+pedantic = { level = "warn", priority = -1 }
+# Allow common patterns
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
 
-# NOTE: Feature flags currently serve as capability markers for documentation/selection.
-# Dependencies are always compiled; conditional compilation (#[cfg(feature)]) not yet implemented.
-# TODO: Add optional deps and #[cfg] guards to enable true feature-gated compilation.
-
-# === CORE FEATURES ===
-
-# v0.1.0: Semantic search (embedding-based code discovery)
-search = ["fastembed", "filesystem-store", "milvus", "edgevec", "redis-cache", "argon2"]
-
-# v0.3.0+: Code analysis (complexity, technical debt, SATD detection)
-analysis = []
-
-# v0.5.0+: Quality metrics and assessment
-quality = []
-
-# v0.5.0+: Git integration and operations
-git = []
-
-# === PROVIDER FEATURES ===
-
-# Embedding providers
-fastembed = []  # Local embeddings via FastEmbed (always compiled)
-
-# Vector stores
-filesystem-store = []  # Local filesystem storage (always compiled)
-milvus = ["dep:milvus-sdk-rust"]  # Milvus vector database (optional dep)
-edgevec = []  # EdgeVec in-memory store (always compiled)
-
-# Optional infrastructure
-redis-cache = []  # Redis distributed caching (always compiled)
-
-# Authentication
-argon2 = []  # Argon2id password hashing (NIST recommended, default)
-
-# === FEATURE BUNDLES ===
-
-# Full feature set for development/testing (all capabilities)
-full = ["search", "analysis", "quality", "git"]
-
-[dependencies]
+[workspace.dependencies]
 # Core async runtime
-tokio = { workspace = true }
+tokio = { version = "1.49", features = ["full"] }
 
 # Serialization
-serde = { workspace = true }
+serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
 # Error handling
@@ -90,8 +52,8 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 # Configuration
 config = "0.15"
 toml = "0.9"
-notify = "6.1"
-arc-swap = "1.7"
+
+# Dependency injection
 shaku = "0.6"
 
 # HTTP client
@@ -123,17 +85,11 @@ redis = { version = "1.0", features = ["tokio-comp", "connection-manager"] }
 aes-gcm = "0.10"
 rand = "0.9"
 
-# Shell expansion
-shellexpand = "3.1"
-
 # Authentication
 jsonwebtoken = { version = "10.2", features = ["rust_crypto"] }
 bcrypt = "0.18"
 argon2 = "0.5"
 base64 = "0.22"
-flate2 = "1.0"
-tar = "0.4"
-seahash = "4.1"
 
 # Database
 r2d2 = "0.8"
@@ -144,6 +100,7 @@ hostname = "0.4"
 
 # Hashing
 sha2 = "0.10"
+hex = "0.4"
 
 # Utilities
 uuid = { version = "1.0", features = ["v4"] }
@@ -151,7 +108,7 @@ dirs = "6.0"
 
 # HTTP server
 axum = "0.8"
-axum-extra = { version = "0.10", features = ["cookie"] }
+axum-extra = { version = "0.12", features = ["cookie"] }
 tower = { version = "0.5", features = ["load-shed", "limit", "load", "retry", "timeout", "util"] }
 tower-http = { version = "0.6", features = ["cors", "catch-panic", "request-id", "trace", "timeout", "limit", "compression-gzip"] }
 
@@ -183,6 +140,7 @@ ignore = "0.4"
 
 # Concurrent processing
 futures = "0.3"
+async-stream = "0.3"
 rayon = "1.8"
 
 # Text processing
@@ -209,34 +167,57 @@ health = "0.2"
 edgevec = "0.8"
 
 # Additional dependencies
-milvus-sdk-rust = { version = "0.1.0", optional = true, git = "https://github.com/milvus-io/milvus-sdk-rust.git" }
 async-trait = "0.1.89"
 downcast-rs = "2.0.2"
 futures-util = "0.3.31"
 
 # Service layer improvements
-itertools = "0.13"  # Iterator composition and chains
-humantime = "2.1"  # Human-readable duration formatting
+itertools = "0.14"
+humantime = "2.1"
 
 # Event bus providers
-async-nats = "0.35"  # NATS client with JetStream support
+async-nats = "0.45"
 
 # Local embeddings without external services
 fastembed = { version = "5.8", default-features = false, features = ["default"] }
-criterion = "0.8.1"
+
+# Optional provider - moved to individual crate dependencies since workspace deps can't be optional
+
+# Configuration watching
+notify = "8.2"
+arc-swap = "1.7"
+
+# Shell expansion
+shellexpand = "3.1"
+
+# Compression
+flate2 = "1.0"
+tar = "0.4"
+seahash = "4.1"
+
+# Caching
 moka = { version = "0.12", features = ["future"] }
 
-[dev-dependencies]
-tempfile = "3.10"
-assert_cmd = "2.0"
-predicates = "3.0"
-mockito = "1.4"
-proptest = "1.0"
-serial_test = "3.2"
-http-body-util = "0.1"
+# Additional crypto
+pbkdf2 = { version = "0.12", features = ["simple"] }
+hmac = "0.12"
 
-[lints.rust]
-missing_docs = "warn"
+# Logging appenders
+tracing-appender = "0.2"
 
-[lints.rustdoc]
-broken_intra_doc_links = "warn"
+# Benchmarking
+criterion = "0.8.1"
+
+# ============================================
+# Build Profiles
+# ============================================
+
+[profile.release]
+# Link-time optimization for smaller/faster binaries
+lto = true
+# Single codegen unit for better optimization
+codegen-units = 1
+
+[profile.dev]
+# Faster compile times in development
+incremental = true

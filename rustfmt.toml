@@ -1,16 +1,5 @@
-# Rust code formatting configuration
-
-# Edition must match Cargo.toml (2021)
+# Rust formatting configuration
 edition = "2021"
-
-# Maximum width of each line
 max_width = 100
-
-# Number of spaces per tab
 tab_spaces = 4
-
-# Reorder imports
-reorder_imports = true
-
-# Reorder modules
-reorder_modules = true
+use_small_heuristics = "Default"
