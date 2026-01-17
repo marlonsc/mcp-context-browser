@@ -122,16 +122,16 @@ impl GeminiEmbeddingProvider {
         });
 
         let url = format!(
-            "{}/v1beta/models/{}:embedContent?key={}",
+            "{}/v1beta/models/{}:embedContent",
             self.effective_base_url(),
-            self.api_model_name(),
-            self.api_key
+            self.api_model_name()
         );
 
         let response = self
             .http_client
             .post(&url)
             .header("Content-Type", CONTENT_TYPE_JSON)
+            .header("x-goog-api-key", &self.api_key)
             .timeout(self.timeout)
             .json(&payload)
             .send()
