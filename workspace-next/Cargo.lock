@@ -2889,6 +2889,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "mcb-application"
+version = "0.1.1"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "mcb-domain",
+ "serde",
+ "serde_json",
+ "shaku",
+ "tempfile",
+ "thiserror 2.0.17",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "mcb-domain"
 version = "0.1.1"
 dependencies = [
@@ -2944,6 +2961,7 @@ dependencies = [
  "ignore",
  "itertools 0.14.0",
  "jsonwebtoken",
+ "mcb-application",
  "mcb-domain",
  "mcb-providers",
  "metrics",
@@ -3063,6 +3081,7 @@ dependencies = [
  "handlebars",
  "health",
  "jsonwebtoken",
+ "mcb-application",
  "mcb-domain",
  "mcb-infrastructure",
  "mcb-providers",

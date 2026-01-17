@@ -20,6 +20,7 @@ use shaku::module;
 
 // Import null providers from mcb-providers crate
 use mcb_providers::embedding::NullEmbeddingProvider;
+use mcb_providers::language::UniversalLanguageChunkingProvider;
 use mcb_providers::vector_store::NullVectorStoreProvider;
 
 // Import traits
@@ -56,10 +57,7 @@ module! {
             // Null providers (testing fallbacks, overridden in production)
             NullEmbeddingProvider,
             NullVectorStoreProvider,
-
-            // Null repositories (testing fallbacks)
-            NullChunkRepository,
-            NullSearchRepository
+            UniversalLanguageChunkingProvider
         ],
         providers = []
     }

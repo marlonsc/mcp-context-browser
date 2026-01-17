@@ -245,3 +245,50 @@ impl CodeChunker for IntelligentChunker {
         LANGUAGE_PROCESSORS.keys().cloned().collect()
     }
 }
+
+/// Universal Language Chunking Provider
+///
+/// A provider that supports all languages by delegating to the IntelligentChunker.
+/// This is used for dependency injection where we need a single provider that
+/// can handle any supported language.
+#[derive(shaku::Component)]
+#[shaku(interface = mcb_domain::ports::providers::LanguageChunkingProvider)]
+pub struct UniversalLanguageChunkingProvider {
+    chunker: IntelligentChunker,
+}
+
+impl UniversalLanguageChunkingProvider {
+    /// Create a new universal language chunking provider
+    pub fn new() -> Self {
+        Self {
+            chunker: IntelligentChunker::new(),
+        }
+    }
+}
+
+impl Default for UniversalLanguageChunkingProvider {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl mcb_domain::ports::providers::LanguageChunkingProvider for UniversalLanguageChunkingProvider {
+    fn language(&self) -> mcb_domain::value_objects::Language {
+        "universal".to_string()
+    }
+
+    fn extensions(&self) -> &[&'static str] {
+        &["rs", "py", "js", "ts", "java", "go", "c", "cpp", "cs", "rb", "php", "swift", "kt"]
+    }
+
+    fn chunk(&self, content: &str, file_path: &str) -> Vec<mcb_domain::entities::CodeChunk> {
+        let path = std::path::Path::new(file_path);
+        let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+        let language = super::helpers::language_from_extension(ext);
+        self.chunker.chunk_code(content, file_path, &language)
+    }
+
+    fn provider_name(&self) -> &str {
+        "universal-intelligent-chunker"
+    }
+}

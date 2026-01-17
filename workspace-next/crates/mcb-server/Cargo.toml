@@ -23,6 +23,8 @@ path = "src/main.rs"
 [dependencies]
 # Domain layer - core contracts and types
 mcb-domain = { path = "../mcb-domain" }
+# Application layer - use cases and business logic
+mcb-application = { path = "../mcb-application" }
 # Infrastructure layer - configuration and DI
 mcb-infrastructure = { path = "../mcb-infrastructure" }
 

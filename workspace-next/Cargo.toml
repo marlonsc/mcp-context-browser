@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "crates/mcb",
     "crates/mcb-domain",
+    "crates/mcb-application",
     "crates/mcb-infrastructure",
     "crates/mcb-providers",
     "crates/mcb-server",

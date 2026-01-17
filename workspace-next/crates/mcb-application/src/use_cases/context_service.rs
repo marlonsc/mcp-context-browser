@@ -15,15 +15,12 @@ use shaku::Component;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-/// Shared cache provider type for dependency injection
-pub type SharedCacheProvider = Arc<dyn mcb_domain::ports::providers::cache::CacheProvider>;
-
 /// Context service implementation - manages embeddings and vector storage
 #[derive(Component)]
 #[shaku(interface = ContextServiceInterface)]
 pub struct ContextServiceImpl {
     #[shaku(inject)]
-    cache: SharedCacheProvider,
+    cache: Arc<dyn mcb_domain::ports::providers::cache::CacheProvider>,
 
     #[shaku(inject)]
     embedding_provider: Arc<dyn EmbeddingProvider>,
@@ -35,7 +32,7 @@ pub struct ContextServiceImpl {
 impl ContextServiceImpl {
     /// Create new context service with injected dependencies
     pub fn new(
-        cache: SharedCacheProvider,
+        cache: Arc<dyn mcb_domain::ports::providers::cache::CacheProvider>,
         embedding_provider: Arc<dyn EmbeddingProvider>,
         vector_store_provider: Arc<dyn VectorStoreProvider>,
     ) -> Self {

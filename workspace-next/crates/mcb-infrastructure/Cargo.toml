@@ -20,6 +20,9 @@ path = "src/mod.rs"
 # Domain layer - core business logic and port traits
 mcb-domain = { path = "../mcb-domain" }
 
+# Application layer - use cases and business logic orchestration
+mcb-application = { path = "../mcb-application" }
+
 # Provider implementations - adapters for embedding, vector store, cache, language chunking
 mcb-providers = { path = "../mcb-providers", features = ["full"] }
 
