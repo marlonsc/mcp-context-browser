@@ -9,12 +9,17 @@
 //! - Vector store provider (with null fallback for testing)
 //! - Chunk repository for data persistence
 //! - Search repository for semantic search operations
+//!
+//! ## Clean Architecture Note
+//!
+//! Null providers are defined in mcb-infrastructure/adapters/, not imported
+//! from mcb-providers. This ensures mcb-infrastructure only depends on
+//! traits from mcb-domain, not concrete types from mcb-providers.
 
 use shaku::module;
 
-// Import null providers from mcb-providers for testing fallbacks
-use mcb_providers::embedding::NullEmbeddingProvider;
-use mcb_providers::vector_store::NullVectorStoreProvider;
+// Import null providers from local adapters module (not mcb-providers!)
+use crate::adapters::providers::{NullEmbeddingProvider, NullVectorStoreProvider};
 
 // Import null repositories from adapters bridge
 use crate::adapters::repository::{NullChunkRepository, NullSearchRepository};

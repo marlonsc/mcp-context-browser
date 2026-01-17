@@ -18,4 +18,4 @@ pub mod search_repository;
 
 // Re-export repository interfaces
 pub use chunk_repository::{ChunkRepository, RepositoryStats};
-pub use search_repository::SearchRepository;
+pub use search_repository::{SearchRepository, SearchStats};

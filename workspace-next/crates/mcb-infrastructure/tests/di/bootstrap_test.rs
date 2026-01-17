@@ -3,9 +3,7 @@
 //! Tests for the infrastructure container bootstrap process.
 
 use mcb_infrastructure::config::ConfigBuilder;
-use mcb_infrastructure::di::bootstrap::{
-    ConfigHealthAccess, InfrastructureContainerBuilder, StorageComponentsAccess,
-};
+use mcb_infrastructure::di::bootstrap::InfrastructureContainerBuilder;
 
 #[tokio::test]
 async fn test_infrastructure_container_creation() {
@@ -22,15 +20,15 @@ async fn test_infrastructure_components() {
         .await
         .unwrap();
 
-    // Test that components are accessible
+    // Test that components are accessible via public fields
     assert!(components
-        .cache()
+        .cache
         .get::<String>("test")
         .await
         .unwrap()
         .is_none());
     assert!(components
-        .health()
+        .health
         .list_checks()
         .await
         .contains(&"system".to_string()));

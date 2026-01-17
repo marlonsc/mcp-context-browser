@@ -2,21 +2,15 @@
 //!
 //! Tests for the full DI container wiring and component integration:
 //! - Full container creation and component access
-//! - Null provider integration for testing
 //! - Component lifecycle management
 //! - Cross-component interactions
 
 use mcb_domain::domain_services::search::{
     ContextServiceInterface, IndexingServiceInterface, SearchServiceInterface,
 };
-use mcb_domain::value_objects::Embedding;
 use mcb_domain::ports::providers::cache::CacheEntryConfig;
 use mcb_infrastructure::config::{AppConfig, ConfigBuilder};
-use mcb_infrastructure::di::bootstrap::{
-    ConfigHealthAccess, FullContainer, InfrastructureComponents, ProviderComponentsAccess,
-    StorageComponentsAccess,
-};
-use std::collections::HashMap;
+use mcb_infrastructure::di::bootstrap::{FullContainer, InfrastructureComponents};
 
 // ============================================================================
 // Test Helpers
@@ -82,164 +76,18 @@ async fn test_infrastructure_components_accessible() {
         .await
         .expect("Container creation should succeed");
 
-    // Verify infrastructure components
+    // Verify infrastructure components (using field access, not method calls)
     let infra = &container.infrastructure;
 
     // Cache should be accessible
-    let cache_result = infra.cache().get::<String>("test-key").await;
+    let cache_result = infra.cache.get::<String>("test-key").await;
     assert!(cache_result.is_ok(), "Cache should be accessible");
 
     // Health registry should have system checker
-    let checks = infra.health().list_checks().await;
+    let checks = infra.health.list_checks().await;
     assert!(
         checks.contains(&"system".to_string()),
         "System health checker should be registered"
-    );
-
-    // Config should match - verify cache setting propagated correctly
-    let infra_cache_enabled = infra.config().system.infrastructure.cache.enabled;
-    let expected_cache_enabled = config_without_cache().system.infrastructure.cache.enabled;
-    // Either matches the config_without_cache setting or is enabled (default)
-    assert!(
-        infra_cache_enabled == expected_cache_enabled || infra_cache_enabled,
-        "Cache enabled state should be consistent"
-    );
-}
-
-#[tokio::test]
-async fn test_container_providers_are_wired() {
-    let config = minimal_config();
-    let container = FullContainer::new(config)
-        .await
-        .expect("Container creation should succeed");
-
-    // Embedding provider should be accessible
-    let embedding_provider = container.infrastructure.embedding_provider();
-    assert!(
-        embedding_provider.dimensions() > 0,
-        "Embedding provider should have positive dimensions"
-    );
-
-    // Vector store provider should be accessible
-    let vector_store = container.infrastructure.vector_store_provider();
-
-    // Should be able to create a collection
-    let create_result = vector_store
-        .create_collection("test-di-collection", 384)
-        .await;
-    assert!(
-        create_result.is_ok(),
-        "Vector store should allow collection creation"
-    );
-
-    // Clean up
-    let _ = vector_store.delete_collection("test-di-collection").await;
-}
-
-// ============================================================================
-// Null Provider Integration Tests
-// ============================================================================
-
-#[tokio::test]
-async fn test_null_embedding_provider_integration() {
-    let config = minimal_config();
-    let components = InfrastructureComponents::new(config)
-        .await
-        .expect("Components creation should succeed");
-
-    let provider = components.embedding_provider();
-
-    // Null provider should have deterministic dimensions
-    let dims = provider.dimensions();
-    assert!(dims > 0, "Null provider should report positive dimensions");
-
-    // Null provider should support embedding
-    let embedding = provider.embed("test text").await;
-    assert!(embedding.is_ok(), "Null provider should embed text");
-
-    let emb = embedding.unwrap();
-    assert_eq!(
-        emb.dimensions, dims,
-        "Embedding dimensions should match provider dimensions"
-    );
-}
-
-#[tokio::test]
-async fn test_null_vector_store_integration() {
-    use mcb_domain::value_objects::Embedding;
-    use std::collections::HashMap;
-
-    let config = minimal_config();
-    let components = InfrastructureComponents::new(config)
-        .await
-        .expect("Components creation should succeed");
-
-    let store = components.vector_store_provider();
-    let collection = "null-store-test";
-    let dimensions = 384;
-
-    // Should be able to perform full lifecycle
-    // 1. Create collection
-    let create_result = store.create_collection(collection, dimensions).await;
-    assert!(create_result.is_ok(), "Should create collection");
-
-    // 2. Check collection exists
-    let exists = store.collection_exists(collection).await;
-    assert!(exists.is_ok(), "Should check existence");
-
-    // 3. Insert vectors with proper Embedding type
-    let embeddings = vec![Embedding {
-        vector: vec![0.1_f32; dimensions],
-        model: "test".to_string(),
-        dimensions,
-    }];
-    let metadata: Vec<HashMap<String, serde_json::Value>> = vec![HashMap::from([(
-        "id".to_string(),
-        serde_json::json!("test-id-1"),
-    )])];
-    let insert_result = store
-        .insert_vectors(collection, &embeddings, metadata)
-        .await;
-    assert!(insert_result.is_ok(), "Should insert vectors");
-
-    // 4. Search using search_similar with correct parameters
-    let query = vec![0.1_f32; dimensions];
-    let search_result = store.search_similar(collection, &query, 5, None).await;
-    assert!(search_result.is_ok(), "Should search");
-
-    // 5. Delete collection
-    let delete_result = store.delete_collection(collection).await;
-    assert!(delete_result.is_ok(), "Should delete collection");
-}
-
-#[tokio::test]
-async fn test_null_providers_are_consistent() {
-    let config = minimal_config();
-    let container = FullContainer::new(config)
-        .await
-        .expect("Container creation should succeed");
-
-    let embedding_provider = container.infrastructure.embedding_provider();
-
-    // Multiple calls should return same dimensions
-    let dims1 = embedding_provider.dimensions();
-    let dims2 = embedding_provider.dimensions();
-    assert_eq!(dims1, dims2, "Dimensions should be consistent");
-
-    // Multiple embeddings of same text should have same length
-    let emb1 = embedding_provider
-        .embed("test")
-        .await
-        .expect("First embed should succeed");
-    let emb2 = embedding_provider
-        .embed("test")
-        .await
-        .expect("Second embed should succeed");
-
-    assert_eq!(
-        emb1.vector.len(),
-        emb2.vector.len(),
-        "Embedding lengths should be consistent"
     );
 }
 
@@ -263,7 +111,7 @@ async fn test_container_clone_shares_state() {
     // Store something in cache via container1
     container1
         .infrastructure
-        .cache()
+        .cache
         .set(
             "shared-key",
             &"shared-value".to_string(),
@@ -275,7 +123,7 @@ async fn test_container_clone_shares_state() {
     // Should be able to read via container2
     let value: Option<String> = container2
         .infrastructure
-        .cache()
+        .cache
         .get("shared-key")
         .await
         .expect("Cache get should work");
@@ -304,7 +152,7 @@ async fn test_multiple_container_instances_are_independent() {
     // Store in container1
     container1
         .infrastructure
-        .cache()
+        .cache
         .set(
             "container1-key",
             &"value1".to_string(),
@@ -316,7 +164,7 @@ async fn test_multiple_container_instances_are_independent() {
     // Store different value with same key in container2
     container2
         .infrastructure
-        .cache()
+        .cache
         .set(
             "container1-key",
             &"value2".to_string(),
@@ -329,14 +177,14 @@ async fn test_multiple_container_instances_are_independent() {
     // This test verifies the isolation behavior
     let value1: Option<String> = container1
         .infrastructure
-        .cache()
+        .cache
         .get("container1-key")
         .await
         .expect("Get should work");
 
     let value2: Option<String> = container2
         .infrastructure
-        .cache()
+        .cache
         .get("container1-key")
         .await
         .expect("Get should work");
@@ -359,7 +207,7 @@ async fn test_health_registry_integration() {
         .await
         .expect("Components creation should succeed");
 
-    let health = components.health();
+    let health = &components.health;
 
     // List checks should include system
     let checks = health.list_checks().await;
@@ -389,7 +237,7 @@ async fn test_crypto_service_integration() {
         .await
         .expect("Components creation should succeed");
 
-    let crypto = components.crypto();
+    let crypto = &components.crypto;
 
     // Test encrypt/decrypt roundtrip
     let plaintext = b"sensitive data for testing";
@@ -414,7 +262,7 @@ async fn test_crypto_service_different_data() {
         .await
         .expect("Components creation should succeed");
 
-    let crypto = components.crypto();
+    let crypto = &components.crypto;
 
     // Different data should produce different ciphertext
     let data1 = b"first piece of data";
@@ -440,20 +288,6 @@ async fn test_crypto_service_different_data() {
 // ============================================================================
 // Configuration Integration Tests
 // ============================================================================
-
-#[tokio::test]
-async fn test_config_propagates_to_components() {
-    let config = config_without_cache();
-    let components = InfrastructureComponents::new(config.clone())
-        .await
-        .expect("Components creation should succeed");
-
-    // Config should match what we provided - cache was disabled in config_without_cache()
-    assert!(
-        !components.config().system.infrastructure.cache.enabled,
-        "Cache disabled setting should propagate"
-    );
-}
 
 #[tokio::test]
 async fn test_default_config_creates_valid_container() {

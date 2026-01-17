@@ -19,11 +19,11 @@ use shaku::HasComponent;
 /// Provides fundamental infrastructure services with Shaku Component implementation.
 pub trait InfrastructureModule:
     HasComponent<dyn mcb_domain::ports::providers::cache::CacheProvider>
-    + HasComponent<dyn crate::infrastructure::auth::AuthServiceInterface>
-    + HasComponent<dyn crate::infrastructure::events::EventBusProvider>
-    + HasComponent<dyn crate::infrastructure::metrics::system::SystemMetricsCollectorInterface>
-    + HasComponent<dyn crate::infrastructure::snapshot::SnapshotProvider>
-    + HasComponent<dyn crate::infrastructure::sync::SyncProvider>
+    + HasComponent<dyn mcb_domain::ports::infrastructure::AuthServiceInterface>
+    + HasComponent<dyn mcb_domain::ports::infrastructure::EventBusProvider>
+    + HasComponent<dyn mcb_domain::ports::infrastructure::SystemMetricsCollectorInterface>
+    + HasComponent<dyn mcb_domain::ports::infrastructure::StateStoreProvider>
+    + HasComponent<dyn mcb_domain::ports::infrastructure::LockProvider>
 {}
 
 // ============================================================================

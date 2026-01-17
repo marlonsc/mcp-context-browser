@@ -81,7 +81,7 @@ pub use domain_services::{
 pub use entities::*;
 pub use error::{Error, Result};
 pub use events::{DomainEvent, EventPublisher};
-pub use repositories::{ChunkRepository, RepositoryStats, SearchRepository};
+pub use repositories::{ChunkRepository, RepositoryStats, SearchRepository, SearchStats};
 pub use value_objects::{
     Embedding, EmbeddingConfig, EmbeddingProviderKind, Language, OperationType, SearchResult,
     VectorStoreConfig, VectorStoreProviderKind,

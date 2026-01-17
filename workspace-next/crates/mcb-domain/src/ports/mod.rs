@@ -22,5 +22,9 @@ pub use admin::{
     IndexingOperation, IndexingOperationsInterface, PerformanceMetricsData,
     PerformanceMetricsInterface,
 };
-pub use infrastructure::{SnapshotProvider, SyncProvider};
+pub use infrastructure::{
+    AuthServiceInterface, EventBusProvider, LockGuard, LockProvider, SnapshotProvider,
+    StateStoreProvider, SyncCoordinator, SystemMetrics, SystemMetricsCollectorInterface,
+};
+pub use infrastructure::snapshot::SyncProvider;
 pub use providers::{EmbeddingProvider, HybridSearchProvider, VectorStoreProvider};

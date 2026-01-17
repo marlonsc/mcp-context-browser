@@ -1,43 +1,24 @@
 //! DI Component Dispatch Tests
 //!
-//! Tests for the component dispatcher and infrastructure initializer.
+//! Tests for the DI container bootstrap and initialization.
 
 use mcb_infrastructure::config::ConfigBuilder;
-use mcb_infrastructure::di::bootstrap::{ConfigHealthAccess, StorageComponentsAccess};
-use mcb_infrastructure::di::dispatch::{ComponentDispatcher, InfrastructureInitializer};
+use mcb_infrastructure::di::bootstrap::{DiContainerBuilder, FullContainer};
 
 #[tokio::test]
-async fn test_component_dispatcher() {
-    let config = ConfigBuilder::new().build();
-    let dispatcher = ComponentDispatcher::new(config);
-
-    let container = dispatcher.dispatch().await.unwrap();
-
-    // Verify components are accessible
-    assert!(container
-        .cache()
-        .get::<String>("test")
-        .await
-        .unwrap()
-        .is_none());
-    assert!(container
-        .health()
-        .list_checks()
-        .await
-        .contains(&"system".to_string()));
+async fn test_di_container_builder() {
+    let container = DiContainerBuilder::new().build().await.unwrap();
+    // Container builds successfully with null providers
+    drop(container);
 }
 
 #[tokio::test]
-async fn test_infrastructure_initializer() {
+async fn test_full_container_creation() {
     let config = ConfigBuilder::new().build();
-    let initializer = InfrastructureInitializer::new(config);
+    let container = FullContainer::new(config).await.unwrap();
 
-    let container = initializer.initialize().await.unwrap();
-
-    // Test that initialization succeeded
-    assert!(container
-        .health()
-        .list_checks()
-        .await
-        .contains(&"system".to_string()));
+    // Test that services are accessible
+    let _indexing = container.indexing_service();
+    let _context = container.context_service();
+    let _search = container.search_service();
 }

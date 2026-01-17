@@ -1,50 +1,37 @@
-//! Metrics Collection Interfaces
+//! System Metrics Adapter
+//!
+//! Null implementation of the system metrics port for testing.
 
-pub mod system {
-    use async_trait::async_trait;
-    use shaku::Interface;
-    use mcb_domain::error::Result;
+use async_trait::async_trait;
+use mcb_domain::error::Result;
+use mcb_domain::ports::infrastructure::{SystemMetrics, SystemMetricsCollectorInterface};
 
-    /// System metrics collector interface
-    #[async_trait]
-    pub trait SystemMetricsCollectorInterface: Interface + Send + Sync {
-        /// Collect current system metrics
-        async fn collect(&self) -> Result<SystemMetrics>;
+/// Null implementation for testing
+#[derive(shaku::Component)]
+#[shaku(interface = SystemMetricsCollectorInterface)]
+pub struct NullSystemMetricsCollector;
 
-        /// Get CPU usage percentage
-        fn cpu_usage(&self) -> f64;
-
-        /// Get memory usage percentage
-        fn memory_usage(&self) -> f64;
+impl NullSystemMetricsCollector {
+    pub fn new() -> Self {
+        Self
     }
+}
 
-    /// System metrics data
-    #[derive(Debug, Clone, Default)]
-    pub struct SystemMetrics {
-        pub cpu_percent: f64,
-        pub memory_percent: f64,
-        pub disk_percent: f64,
+impl Default for NullSystemMetricsCollector {
+    fn default() -> Self {
+        Self::new()
     }
+}
 
-    /// Null implementation for testing
-    #[derive(shaku::Component)]
-    #[shaku(interface = SystemMetricsCollectorInterface)]
-    pub struct NullSystemMetricsCollector;
-
-    impl NullSystemMetricsCollector {
-        pub fn new() -> Self { Self }
+#[async_trait]
+impl SystemMetricsCollectorInterface for NullSystemMetricsCollector {
+    async fn collect(&self) -> Result<SystemMetrics> {
+        Ok(SystemMetrics::default())
     }
-
-    impl Default for NullSystemMetricsCollector {
-        fn default() -> Self { Self::new() }
+    fn cpu_usage(&self) -> f64 {
+        0.0
     }
-
-    #[async_trait]
-    impl SystemMetricsCollectorInterface for NullSystemMetricsCollector {
-        async fn collect(&self) -> Result<SystemMetrics> {
-            Ok(SystemMetrics::default())
-        }
-        fn cpu_usage(&self) -> f64 { 0.0 }
-        fn memory_usage(&self) -> f64 { 0.0 }
+    fn memory_usage(&self) -> f64 {
+        0.0
     }
 }

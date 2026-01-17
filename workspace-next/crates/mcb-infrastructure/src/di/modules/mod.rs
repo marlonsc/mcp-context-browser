@@ -115,11 +115,11 @@ module! {
         use dyn InfrastructureModule {
             components = [
                 dyn mcb_domain::ports::providers::cache::CacheProvider,
-                dyn crate::infrastructure::auth::AuthServiceInterface,
-                dyn crate::infrastructure::events::EventBusProvider,
-                dyn crate::infrastructure::metrics::system::SystemMetricsCollectorInterface,
-                dyn crate::infrastructure::snapshot::SnapshotProvider,
-                dyn crate::infrastructure::sync::SyncProvider
+                dyn mcb_domain::ports::infrastructure::AuthServiceInterface,
+                dyn mcb_domain::ports::infrastructure::EventBusProvider,
+                dyn mcb_domain::ports::infrastructure::SystemMetricsCollectorInterface,
+                dyn mcb_domain::ports::infrastructure::StateStoreProvider,
+                dyn mcb_domain::ports::infrastructure::LockProvider
             ],
             providers = []
         },

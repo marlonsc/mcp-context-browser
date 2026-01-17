@@ -2,9 +2,13 @@
 //!
 //! Provides domain service implementations that can be injected into the server.
 //! These services implement domain interfaces using infrastructure components.
+//!
+//! ## Runtime Factory Pattern
+//!
+//! Services are created via `DomainServicesFactory::create_services()` at runtime
+//! rather than through Shaku DI, because they require runtime configuration
+//! (embedding provider, vector store, cache).
 
-use mcb_providers::language::{language_from_extension, IntelligentChunker};
-use mcb_domain::ports::providers::cache::CacheEntryConfig;
 use crate::cache::provider::SharedCacheProvider;
 use crate::config::AppConfig;
 use crate::crypto::CryptoService;
@@ -13,9 +17,11 @@ use mcb_domain::domain_services::search::{
 };
 use mcb_domain::entities::CodeChunk;
 use mcb_domain::error::Result;
+use mcb_domain::ports::providers::cache::CacheEntryConfig;
 use mcb_domain::ports::providers::{EmbeddingProvider, VectorStoreProvider};
 use mcb_domain::repositories::{chunk_repository::RepositoryStats, search_repository::SearchStats};
 use mcb_domain::value_objects::{Embedding, SearchResult};
+use mcb_providers::language::{language_from_extension, IntelligentChunker};
 use serde_json::json;
 use std::collections::HashMap;
 use std::path::Path;
@@ -29,7 +35,7 @@ pub struct DomainServicesContainer {
     pub indexing_service: Arc<dyn IndexingServiceInterface>,
 }
 
-/// Domain services factory
+/// Domain services factory - creates services with runtime dependencies
 pub struct DomainServicesFactory;
 
 impl DomainServicesFactory {
@@ -41,17 +47,20 @@ impl DomainServicesFactory {
         embedding_provider: Arc<dyn EmbeddingProvider>,
         vector_store_provider: Arc<dyn VectorStoreProvider>,
     ) -> Result<DomainServicesContainer> {
-        // Get the underlying cache provider
-        let cache_provider = cache.as_provider();
+        // Create context service with dependencies
+        let context_service: Arc<dyn ContextServiceInterface> = Arc::new(ContextServiceImpl::new(
+            cache,
+            embedding_provider,
+            vector_store_provider,
+        ));
 
-        // Create context service implementation
-        let context_service: Arc<dyn ContextServiceInterface> = Arc::new(ContextServiceImpl::new());
+        // Create search service with context service dependency
+        let search_service: Arc<dyn SearchServiceInterface> =
+            Arc::new(SearchServiceImpl::new(context_service.clone()));
 
-        // Create search service implementation
-        let search_service: Arc<dyn SearchServiceInterface> = Arc::new(SearchServiceImpl::new());
-
-        // Create indexing service implementation
-        let indexing_service: Arc<dyn IndexingServiceInterface> = Arc::new(IndexingServiceImpl::new());
+        // Create indexing service with context service dependency
+        let indexing_service: Arc<dyn IndexingServiceInterface> =
+            Arc::new(IndexingServiceImpl::new(context_service.clone()));
 
         Ok(DomainServicesContainer {
             context_service,
@@ -61,9 +70,7 @@ impl DomainServicesFactory {
     }
 }
 
-/// Context service implementation for complete Shaku DI
-#[derive(shaku::Component)]
-#[shaku(interface = ContextServiceInterface)]
+/// Context service implementation - manages embeddings and vector storage
 pub struct ContextServiceImpl {
     cache: SharedCacheProvider,
     embedding_provider: Arc<dyn EmbeddingProvider>,
@@ -71,9 +78,17 @@ pub struct ContextServiceImpl {
 }
 
 impl ContextServiceImpl {
-    /// Create new context service (Shaku DI compatible)
-    pub fn new() -> Self {
-        Self
+    /// Create new context service with injected dependencies
+    pub fn new(
+        cache: SharedCacheProvider,
+        embedding_provider: Arc<dyn EmbeddingProvider>,
+        vector_store_provider: Arc<dyn VectorStoreProvider>,
+    ) -> Self {
+        Self {
+            cache,
+            embedding_provider,
+            vector_store_provider,
+        }
     }
 }
 
@@ -212,15 +227,15 @@ impl ContextServiceInterface for ContextServiceImpl {
     }
 }
 
-/// Search service implementation for Shaku DI
-#[derive(shaku::Component)]
-#[shaku(interface = SearchServiceInterface)]
-pub struct SearchServiceImpl;
+/// Search service implementation - delegates to context service
+pub struct SearchServiceImpl {
+    context_service: Arc<dyn ContextServiceInterface>,
+}
 
 impl SearchServiceImpl {
-    /// Create new search service (Shaku DI compatible)
-    pub fn new() -> Self {
-        Self
+    /// Create new search service with injected dependencies
+    pub fn new(context_service: Arc<dyn ContextServiceInterface>) -> Self {
+        Self { context_service }
     }
 }
 
@@ -240,15 +255,15 @@ impl SearchServiceInterface for SearchServiceImpl {
     }
 }
 
-/// Indexing service implementation for Shaku DI
-#[derive(shaku::Component)]
-#[shaku(interface = IndexingServiceInterface)]
-pub struct IndexingServiceImpl;
+/// Indexing service implementation - orchestrates file discovery and chunking
+pub struct IndexingServiceImpl {
+    context_service: Arc<dyn ContextServiceInterface>,
+}
 
 impl IndexingServiceImpl {
-    /// Create new indexing service (Shaku DI compatible)
-    pub fn new() -> Self {
-        Self
+    /// Create new indexing service with injected dependencies
+    pub fn new(context_service: Arc<dyn ContextServiceInterface>) -> Self {
+        Self { context_service }
     }
 
     /// Discover files recursively from a path
@@ -297,6 +312,17 @@ impl IndexingServiceImpl {
                 matches!(ext_str.as_str(), "rs" | "py" | "js" | "ts" | "java" | "cpp" | "c" | "go")
             })
             .unwrap_or(false)
+    }
+
+    /// Chunk file content using intelligent AST-based chunking
+    fn chunk_file_content(&self, content: &str, path: &Path) -> Vec<CodeChunk> {
+        let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+        let language = language_from_extension(ext);
+        let file_name = path.to_string_lossy().to_string();
+
+        // Create chunker - it's stateless and cheap to create
+        let chunker = IntelligentChunker::new();
+        chunker.chunk_code(content, &file_name, &language)
     }
 }
 
@@ -349,7 +375,7 @@ impl IndexingServiceInterface for IndexingServiceImpl {
 
     fn get_status(&self) -> mcb_domain::domain_services::search::IndexingStatus {
         mcb_domain::domain_services::search::IndexingStatus {
-            is_indexing: false, // Simple implementation
+            is_indexing: false,
             progress: 0.0,
             current_file: None,
             total_files: 0,
@@ -359,18 +385,5 @@ impl IndexingServiceInterface for IndexingServiceImpl {
 
     async fn clear_collection(&self, collection: &str) -> Result<()> {
         self.context_service.clear_collection(collection).await
-    }
-}
-
-impl IndexingServiceImpl {
-    fn chunk_file_content(&self, content: &str, path: &Path) -> Vec<CodeChunk> {
-        // Use AST-based intelligent chunking when possible
-        let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
-        let language = language_from_extension(ext);
-        let file_name = path.to_string_lossy().to_string();
-
-        // Create chunker inline - it's stateless and cheap to create
-        let chunker = IntelligentChunker::new();
-        chunker.chunk_code(content, &file_name, &language)
     }
 }

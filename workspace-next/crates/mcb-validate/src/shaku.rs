@@ -606,6 +606,7 @@ impl ShakuValidator {
 
                 // Skip files where Null/Fake types are legitimately defined or re-exported
                 let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+                let path_str = path.to_string_lossy();
                 if file_name == "null.rs"
                     || file_name == "mock.rs"
                     || file_name == "fake.rs"
@@ -616,6 +617,7 @@ impl ShakuValidator {
                     || file_name == "lib.rs"  // Crate roots re-export
                     || file_name == "provider.rs"  // Provider aggregators
                     || file_name == "providers.rs"  // Provider lists/enums
+                    || path_str.contains("/di/modules/")  // Shaku DI modules use null providers as defaults
                 {
                     continue;
                 }
@@ -753,8 +755,13 @@ impl ShakuValidator {
                 let path = entry.path();
                 let path_str = path.to_string_lossy();
 
-                // Skip test files
+                // Skip test files and DI modules
                 if path_str.contains("/tests/") || path_str.contains("_test.rs") {
+                    continue;
+                }
+
+                // Allow concrete imports in DI modules - they register concrete types as Shaku components
+                if path_str.contains("/di/modules/") {
                     continue;
                 }
 
@@ -883,8 +890,13 @@ impl ShakuValidator {
                 let path = entry.path();
                 let path_str = path.to_string_lossy();
 
-                // Skip test files
+                // Skip test files and DI modules
                 if path_str.contains("/tests/") || path_str.contains("_test.rs") {
+                    continue;
+                }
+
+                // Allow concrete imports in DI modules - they register concrete types as Shaku components
+                if path_str.contains("/di/modules/") {
                     continue;
                 }
 
@@ -1299,8 +1311,13 @@ impl ShakuValidator {
                 let path = entry.path();
                 let path_str = path.to_string_lossy();
 
-                // Skip test files
+                // Skip test files and DI modules
                 if path_str.contains("/tests/") || path_str.contains("_test.rs") {
+                    continue;
+                }
+
+                // Allow concrete imports in DI modules - they register concrete types as Shaku components
+                if path_str.contains("/di/modules/") {
                     continue;
                 }
 
@@ -1384,8 +1401,13 @@ impl ShakuValidator {
                 let path = entry.path();
                 let path_str = path.to_string_lossy();
 
-                // Skip test files
+                // Skip test files and DI modules
                 if path_str.contains("/tests/") || path_str.contains("_test.rs") {
+                    continue;
+                }
+
+                // Allow concrete imports in DI modules - they register concrete types as Shaku components
+                if path_str.contains("/di/modules/") {
                     continue;
                 }
 
@@ -1443,8 +1465,13 @@ impl ShakuValidator {
                 let path = entry.path();
                 let path_str = path.to_string_lossy();
 
-                // Skip test files
+                // Skip test files and DI modules
                 if path_str.contains("/tests/") || path_str.contains("_test.rs") {
+                    continue;
+                }
+
+                // Allow concrete imports in DI modules - they register concrete types as Shaku components
+                if path_str.contains("/di/modules/") {
                     continue;
                 }
 

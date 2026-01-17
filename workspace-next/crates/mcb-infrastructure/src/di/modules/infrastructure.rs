@@ -9,8 +9,8 @@
 //! - NullAuthService (from infrastructure) -> implements AuthServiceInterface ✓
 //! - NullEventBus (from infrastructure) -> implements EventBusProvider ✓
 //! - NullSystemMetricsCollector (from infrastructure) -> implements SystemMetricsCollectorInterface ✓
-//! - NullSnapshotProvider (from infrastructure) -> implements SnapshotProvider ✓
-//! - NullSyncProvider (from infrastructure) -> implements SyncProvider ✓
+//! - NullStateStoreProvider (from infrastructure) -> implements StateStoreProvider ✓
+//! - NullLockProvider (from infrastructure) -> implements LockProvider ✓
 //!
 //! ## No Runtime Factories:
 //!
@@ -22,9 +22,9 @@ use shaku::module;
 use mcb_providers::cache::MokaCacheProvider;
 use crate::infrastructure::auth::NullAuthService;
 use crate::infrastructure::events::NullEventBus;
-use crate::infrastructure::metrics::system::NullSystemMetricsCollector;
-use crate::infrastructure::snapshot::NullSnapshotProvider;
-use crate::infrastructure::sync::NullSyncProvider;
+use crate::infrastructure::metrics::NullSystemMetricsCollector;
+use crate::infrastructure::snapshot::NullStateStoreProvider;
+use crate::infrastructure::sync::NullLockProvider;
 
 // Import traits
 use super::traits::InfrastructureModule;
@@ -54,8 +54,8 @@ module! {
             NullAuthService,
             NullEventBus,
             NullSystemMetricsCollector,
-            NullSnapshotProvider,
-            NullSyncProvider
+            NullStateStoreProvider,
+            NullLockProvider
         ],
         providers = []
     }
