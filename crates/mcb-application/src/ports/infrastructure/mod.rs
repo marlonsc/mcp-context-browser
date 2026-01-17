@@ -15,6 +15,7 @@
 //! | [`SystemMetricsCollectorInterface`] | System metrics collection |
 //! | [`LockProvider`] | Distributed lock coordination |
 //! | [`StateStoreProvider`] | Key-value state persistence |
+//! | [`ProviderRouter`] | Provider routing and selection services |
 
 /// Authentication service port
 pub mod auth;
@@ -24,6 +25,8 @@ pub mod events;
 pub mod lock;
 /// System metrics collector port
 pub mod metrics;
+/// Provider routing and selection port
+pub mod routing;
 /// Snapshot management infrastructure port
 pub mod snapshot;
 /// Key-value state store port
@@ -36,6 +39,7 @@ pub use auth::AuthServiceInterface;
 pub use events::{DomainEventStream, EventBusProvider};
 pub use lock::{LockGuard, LockProvider};
 pub use metrics::{SystemMetrics, SystemMetricsCollectorInterface};
+pub use routing::{ProviderContext, ProviderHealthStatus, ProviderRouter};
 pub use snapshot::{SnapshotProvider, SyncProvider};
 pub use state_store::StateStoreProvider;
 pub use sync::{SharedSyncCoordinator, SyncCoordinator, SyncOptions, SyncResult};

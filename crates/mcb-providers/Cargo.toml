@@ -44,6 +44,9 @@ cache-all = ["cache-moka", "cache-redis"]
 cache-moka = ["dep:moka"]
 cache-redis = ["dep:redis"]
 
+# === Event Providers ===
+events-nats = ["dep:async-nats"]
+
 # === Language Chunking Providers ===
 lang-all = ["lang-rust", "lang-python", "lang-javascript", "lang-typescript", "lang-go", "lang-java", "lang-c", "lang-cpp", "lang-csharp", "lang-ruby", "lang-php", "lang-swift", "lang-kotlin"]
 lang-rust = ["dep:tree-sitter-rust"]
@@ -86,6 +89,12 @@ tracing = { workspace = true }
 
 # Async traits
 async-trait = { workspace = true }
+
+# Async streams and futures
+futures = { workspace = true }
+
+# Time/date (for events)
+chrono = { workspace = true }
 
 # HTTP client (for API providers)
 reqwest = { workspace = true }
@@ -146,6 +155,9 @@ milvus-sdk-rust = { workspace = true, optional = true }
 
 # Optional: JSON Schema generation (for EdgeVec config)
 schemars = { workspace = true, optional = true }
+
+# Optional: NATS for distributed events
+async-nats = { workspace = true, optional = true }
 
 [dev-dependencies]
 tempfile = "3.10"

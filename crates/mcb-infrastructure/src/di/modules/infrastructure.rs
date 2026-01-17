@@ -16,17 +16,20 @@
 //! ## Testing Override Example:
 //!
 //! ```ignore
-//! use mcb_infrastructure::infrastructure::NullEventBus;
+//! use mcb_providers::events::NullEventBusProvider;
 //!
 //! let module = InfrastructureModuleImpl::builder()
-//!     .with_component_override::<dyn EventBusProvider>(Box::new(NullEventBus::new()))
+//!     .with_component_override::<dyn EventBusProvider>(Box::new(NullEventBusProvider::new()))
 //!     .build();
 //! ```
 
 use shaku::module;
 
-// Import production implementations
-use crate::infrastructure::{DefaultShutdownCoordinator, TokioBroadcastEventBus};
+// Import event bus provider from mcb-providers (correct architecture)
+use mcb_providers::events::TokioEventBusProvider;
+
+// Import infrastructure-specific implementations (lifecycle, etc.)
+use crate::infrastructure::DefaultShutdownCoordinator;
 
 // Import null implementations for services without production defaults yet
 use crate::infrastructure::{
@@ -39,8 +42,9 @@ use super::traits::InfrastructureModule;
 module! {
     pub InfrastructureModuleImpl: InfrastructureModule {
         components = [
-            // Production defaults
-            TokioBroadcastEventBus,       // Real event bus for SSE/events
+            // Production defaults from mcb-providers
+            TokioEventBusProvider,        // Real event bus for SSE/events
+            // Local infrastructure services
             DefaultShutdownCoordinator,   // Graceful shutdown coordination
             // Testing defaults (override in production config)
             NullAuthService,

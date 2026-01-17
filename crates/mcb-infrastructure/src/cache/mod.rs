@@ -5,6 +5,5 @@
 //! Types (CacheEntryConfig, CacheStats, CacheProvider) are in mcb-domain.
 
 pub mod config;
-pub mod factory;
 pub mod provider;
 pub mod queue;

@@ -382,7 +382,7 @@ impl ShutdownCoordinator for DefaultShutdownCoordinator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::infrastructure::events::NullEventBus;
+    use mcb_providers::events::NullEventBusProvider;
 
     #[test]
     fn test_shutdown_coordinator_initial_state() {
@@ -418,7 +418,7 @@ mod tests {
 
     #[test]
     fn test_service_manager_registration() {
-        let event_bus = Arc::new(NullEventBus::new());
+        let event_bus = Arc::new(NullEventBusProvider::new());
         let manager = ServiceManager::new(event_bus);
 
         assert_eq!(manager.count(), 0);
@@ -427,7 +427,7 @@ mod tests {
 
     #[test]
     fn test_service_manager_list_empty() {
-        let event_bus = Arc::new(NullEventBus::new());
+        let event_bus = Arc::new(NullEventBusProvider::new());
         let manager = ServiceManager::new(event_bus);
 
         let services = manager.list();

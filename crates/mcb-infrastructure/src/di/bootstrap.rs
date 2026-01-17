@@ -52,9 +52,6 @@ use super::modules::{
     language_module::LanguageModuleImpl, server::ServerModuleImpl,
 };
 
-// Re-export factories for production provider creation (used by mcb-server)
-pub use super::factory::{EmbeddingProviderFactory, VectorStoreProviderFactory};
-
 /// Type alias for the root DI container (AppContainer with Shaku modules).
 pub type DiContainer = AppContainer;
 
@@ -136,21 +133,26 @@ pub struct AppContainer {
 ///
 /// This replaces the old FullContainer approach with pure Shaku DI.
 /// Uses hierarchical modules following the Clean Architecture pattern.
+/// All providers are resolved via DI - no concrete types instantiated here.
+///
+/// ## Example
+///
+/// ```ignore
+/// let container = init_app(AppConfig::default()).await?;
+/// ```
 pub async fn init_app(_config: AppConfig) -> Result<AppContainer> {
     info!("Initializing Clean Architecture application modules");
 
-    // Build context modules (provider implementations)
+    // All modules use their DI-registered default providers
+    // Provider selection is handled by the Shaku modules themselves
     let cache = CacheModuleImpl::builder().build();
     let embedding = EmbeddingModuleImpl::builder().build();
     let data = DataModuleImpl::builder().build();
     let language = LanguageModuleImpl::builder().build();
-
-    // Build infrastructure modules
     let infrastructure = InfrastructureModuleImpl::builder().build();
     let server = ServerModuleImpl::builder().build();
     let admin = AdminModuleImpl::builder().build();
 
-    // Compose into final app container
     let app_container = AppContainer {
         cache,
         embedding,

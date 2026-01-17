@@ -64,10 +64,11 @@ pub mod vector_store;
 /// Implements `CacheProvider` trait for caching backends.
 pub mod cache;
 
-/// Event publisher implementations
+/// Event publisher implementations (simple EventPublisher trait)
 ///
 /// Implements `EventPublisher` trait for event bus backends.
 pub mod events;
+
 
 /// HTTP client abstractions
 ///

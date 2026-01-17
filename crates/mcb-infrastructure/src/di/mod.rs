@@ -35,9 +35,7 @@
 
 pub mod bootstrap;
 pub mod dispatch;
-pub mod factory;
 pub mod modules;
 
 pub use bootstrap::*;
 pub use dispatch::*;
-pub use factory::*;

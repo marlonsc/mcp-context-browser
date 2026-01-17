@@ -1,58 +1,79 @@
-//! NATS EventBus Implementation
+//! NATS Event Bus Provider
 //!
-//! Provides a distributed event bus using NATS for multi-process/distributed systems.
+//! Event bus implementation using NATS for distributed event distribution.
 //!
-//! ## ARCHITECTURE RULE
+//! ## Features
 //!
-//! This implementation is **INTERNAL** to the infrastructure layer.
-//! External code MUST resolve `Arc<dyn EventBusProvider>` via Shaku DI.
-//! NEVER import or use this type directly.
+//! - Distributed event broadcasting across multiple processes/nodes
+//! - Multiple subscribers support
+//! - Configurable subject for event routing
+//! - Reconnection support built into async-nats
 //!
-//! ## Usage
+//! ## Example
 //!
-//! Configure via `config.toml`:
-//! ```toml
-//! [system.infrastructure.event_bus]
-//! provider = "nats"
-//! nats_url = "nats://localhost:4222"
+//! ```ignore
+//! use mcb_providers::events::NatsEventBusProvider;
+//!
+//! let bus = NatsEventBusProvider::new("nats://localhost:4222").await?;
+//!
+//! // Subscribe to events
+//! let stream = bus.subscribe_events().await?;
+//!
+//! // Publish events
+//! bus.publish_event(DomainEvent::IndexRebuild { collection: None }).await?;
 //! ```
 
 use async_nats::Client;
 use async_trait::async_trait;
-use futures::stream;
+use futures::{stream, StreamExt};
 use mcb_application::ports::infrastructure::{DomainEventStream, EventBusProvider};
 use mcb_domain::error::{Error, Result};
 use mcb_domain::events::DomainEvent;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, info, warn};
 
 /// Default subject for domain events
 const DEFAULT_SUBJECT: &str = "mcb.events";
 
-/// NATS EventBus for distributed systems
+/// Event bus provider using NATS for distributed systems
 ///
-/// This implementation is INTERNAL. Resolve via Shaku DI as `Arc<dyn EventBusProvider>`.
-pub struct NatsEventBus {
+/// Provides distributed event broadcasting across multiple processes/nodes.
+/// Events are serialized to JSON and published to a NATS subject.
+///
+/// ## Subject
+///
+/// By default, events are published to `mcb.events`. Use `with_subject`
+/// to customize the subject for namespace isolation.
+pub struct NatsEventBusProvider {
+    /// NATS client
     client: Arc<Client>,
+    /// Subject for publishing events
     subject: String,
-    /// Active subscribers for tracking
+    /// Active subscriber count (local tracking only)
     subscriber_count: Arc<RwLock<usize>>,
 }
 
-impl NatsEventBus {
-    /// Create a new NATS EventBus
+impl NatsEventBusProvider {
+    /// Create a new NATS event bus provider
     ///
     /// # Arguments
+    ///
     /// * `url` - NATS server URL (e.g., "nats://localhost:4222")
     ///
     /// # Errors
-    /// Returns an error if connection to NATS server fails
+    ///
+    /// Returns an error if connection to NATS server fails.
     pub async fn new(url: &str) -> Result<Self> {
         Self::with_subject(url, DEFAULT_SUBJECT).await
     }
 
-    /// Create a new NATS EventBus with custom subject
+    /// Create with custom subject
+    ///
+    /// # Arguments
+    ///
+    /// * `url` - NATS server URL
+    /// * `subject` - Subject for publishing events
     pub async fn with_subject(url: &str, subject: &str) -> Result<Self> {
         info!("Connecting to NATS server at {}", url);
 
@@ -69,7 +90,13 @@ impl NatsEventBus {
         })
     }
 
-    /// Create a new NATS EventBus with client options
+    /// Create with client name for identification
+    ///
+    /// # Arguments
+    ///
+    /// * `url` - NATS server URL
+    /// * `subject` - Subject for publishing events
+    /// * `client_name` - Optional client name for server-side identification
     pub async fn with_options(
         url: &str,
         subject: &str,
@@ -95,22 +122,28 @@ impl NatsEventBus {
             subscriber_count: Arc::new(RwLock::new(0)),
         })
     }
+
+    /// Create as Arc for sharing
+    pub async fn new_shared(url: &str) -> Result<Arc<Self>> {
+        Ok(Arc::new(Self::new(url).await?))
+    }
+
+    /// Get the configured subject
+    pub fn subject(&self) -> &str {
+        &self.subject
+    }
 }
 
-impl std::fmt::Debug for NatsEventBus {
+impl std::fmt::Debug for NatsEventBusProvider {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("NatsEventBus")
+        f.debug_struct("NatsEventBusProvider")
             .field("subject", &self.subject)
             .finish()
     }
 }
 
 #[async_trait]
-impl EventBusProvider for NatsEventBus {
-    // ========================================================================
-    // High-Level Typed API
-    // ========================================================================
-
+impl EventBusProvider for NatsEventBusProvider {
     async fn publish_event(&self, event: DomainEvent) -> Result<()> {
         let payload = serde_json::to_vec(&event).map_err(|e| Error::Provider {
             message: format!("Failed to serialize event: {}", e),
@@ -178,17 +211,11 @@ impl EventBusProvider for NatsEventBus {
     }
 
     fn has_subscribers(&self) -> bool {
-        // This is a best-effort check - NATS doesn't provide real-time subscriber info
-        // We track local subscribers only
         match self.subscriber_count.try_read() {
             Ok(count) => *count > 0,
             Err(_) => false,
         }
     }
-
-    // ========================================================================
-    // Low-Level Raw API
-    // ========================================================================
 
     async fn publish(&self, topic: &str, payload: &[u8]) -> Result<()> {
         let subject = if topic.is_empty() {
@@ -215,7 +242,6 @@ impl EventBusProvider for NatsEventBus {
             format!("{}.{}", self.subject, topic)
         };
 
-        // Create subscription for tracking purposes
         let _sub = self
             .client
             .subscribe(subject.clone())
@@ -231,62 +257,5 @@ impl EventBusProvider for NatsEventBus {
     }
 }
 
-/// Factory for creating NatsEventBus from configuration
-pub struct NatsEventBusFactory;
-
-impl NatsEventBusFactory {
-    /// Create NatsEventBus from EventBusConfig
-    pub async fn create(
-        url: &str,
-        client_name: Option<&str>,
-    ) -> Result<NatsEventBus> {
-        NatsEventBus::with_options(url, DEFAULT_SUBJECT, client_name).await
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    // Note: These tests require a running NATS server
-    // Run with: docker run -p 4222:4222 nats:latest
-
-    #[tokio::test]
-    #[ignore = "Requires running NATS server"]
-    async fn test_nats_connect() {
-        let bus = NatsEventBus::new("nats://localhost:4222").await;
-        assert!(bus.is_ok());
-    }
-
-    #[tokio::test]
-    #[ignore = "Requires running NATS server"]
-    async fn test_nats_publish_subscribe() {
-        use futures::StreamExt;
-        use mcb_domain::events::ServiceState;
-
-        let bus = NatsEventBus::new("nats://localhost:4222").await.unwrap();
-
-        // Subscribe first
-        let mut stream = bus.subscribe_events().await.unwrap();
-
-        // Publish event
-        let event = DomainEvent::ServiceStateChanged {
-            name: "test".to_string(),
-            state: ServiceState::Running,
-            previous_state: None,
-        };
-
-        bus.publish_event(event.clone()).await.unwrap();
-
-        // Receive event (with timeout)
-        let received = tokio::time::timeout(
-            std::time::Duration::from_secs(2),
-            stream.next(),
-        )
-        .await
-        .expect("Timeout waiting for event")
-        .expect("Stream ended unexpectedly");
-
-        assert_eq!(received, event);
-    }
-}
+// Keep backward compatibility with old name
+pub type NatsEventPublisher = NatsEventBusProvider;

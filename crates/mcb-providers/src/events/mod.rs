@@ -1,4 +1,4 @@
-//! Event Publisher Implementations
+//! Event Bus Provider Implementations
 //!
 //! Provides event bus backends for domain events.
 //!
@@ -6,20 +6,29 @@
 //!
 //! | Provider | Type | Description |
 //! |----------|------|-------------|
-//! | [`NullEventPublisher`] | Testing | Discards all events |
-//! | [`TokioEventPublisher`] | In-Process | Tokio broadcast channels |
+//! | [`NullEventBusProvider`] | Testing | Discards all events |
+//! | [`TokioEventBusProvider`] | In-Process | Tokio broadcast channels |
+//! | [`NatsEventBusProvider`] | Distributed | NATS for multi-process systems |
 //!
 //! ## Provider Selection Guide
 //!
-//! - **Testing**: Use `NullEventPublisher` to discard events
-//! - **Single Instance**: Use `TokioEventPublisher` for in-process events
+//! - **Testing**: Use `NullEventBusProvider` to discard events
+//! - **Single Instance**: Use `TokioEventBusProvider` for in-process events
+//! - **Distributed**: Use `NatsEventBusProvider` for multi-process/node systems
 
+#[cfg(feature = "events-nats")]
+pub mod nats;
 pub mod null;
 pub mod tokio;
 
-// Re-export for convenience
-pub use null::NullEventPublisher;
-pub use tokio::TokioEventPublisher;
+// Re-export providers
+#[cfg(feature = "events-nats")]
+pub use nats::{NatsEventBusProvider, NatsEventPublisher};
+pub use null::{NullEventBusProvider, NullEventPublisher};
+pub use tokio::{TokioEventBusProvider, TokioEventPublisher};
 
-// Re-export domain types
-pub use mcb_domain::events::domain_events::{DomainEvent, EventPublisher};
+// Re-export port trait from application layer
+pub use mcb_application::ports::infrastructure::{DomainEventStream, EventBusProvider};
+
+// Re-export domain event types
+pub use mcb_domain::events::DomainEvent;

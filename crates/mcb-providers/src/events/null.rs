@@ -1,31 +1,32 @@
-//! Null Event Publisher
+//! Null Event Bus Provider
 //!
 //! Testing stub implementation that discards all events.
 //!
 //! ## Usage
 //!
 //! ```rust
-//! use mcb_providers::events::NullEventPublisher;
+//! use mcb_providers::events::NullEventBusProvider;
 //!
-//! let publisher = NullEventPublisher::new();
+//! let bus = NullEventBusProvider::new();
 //! // All events are silently discarded
 //! ```
 
 use async_trait::async_trait;
+use futures::stream;
+use mcb_application::ports::infrastructure::{DomainEventStream, EventBusProvider};
 use mcb_domain::error::Result;
-use mcb_domain::events::domain_events::{DomainEvent, EventPublisher};
+use mcb_domain::events::DomainEvent;
 use std::sync::Arc;
 
-/// Null event publisher for testing
+/// Null event bus provider for testing
 ///
 /// Discards all published events without any side effects.
 /// Useful for testing when event publishing is not relevant.
-#[derive(Debug, Default, shaku::Component)]
-#[shaku(interface = EventPublisher)]
-pub struct NullEventPublisher;
+#[derive(Debug, Default)]
+pub struct NullEventBusProvider;
 
-impl NullEventPublisher {
-    /// Create a new null event publisher
+impl NullEventBusProvider {
+    /// Create a new null event bus provider
     pub fn new() -> Self {
         Self
     }
@@ -36,15 +37,39 @@ impl NullEventPublisher {
     }
 }
 
+// Shaku Component implementation for DI container
+impl<M: shaku::Module> shaku::Component<M> for NullEventBusProvider {
+    type Interface = dyn EventBusProvider;
+    type Parameters = ();
+
+    fn build(_: &mut shaku::ModuleBuildContext<M>, _: Self::Parameters) -> Box<Self::Interface> {
+        Box::new(NullEventBusProvider::new())
+    }
+}
+
 #[async_trait]
-impl EventPublisher for NullEventPublisher {
-    async fn publish(&self, _event: DomainEvent) -> Result<()> {
-        // Discard all events
+impl EventBusProvider for NullEventBusProvider {
+    async fn publish_event(&self, _event: DomainEvent) -> Result<()> {
         Ok(())
     }
 
+    async fn subscribe_events(&self) -> Result<DomainEventStream> {
+        // Return an empty stream that never yields
+        Ok(Box::pin(stream::empty()))
+    }
+
     fn has_subscribers(&self) -> bool {
-        // No subscribers in null implementation
         false
     }
+
+    async fn publish(&self, _topic: &str, _payload: &[u8]) -> Result<()> {
+        Ok(())
+    }
+
+    async fn subscribe(&self, _topic: &str) -> Result<String> {
+        Ok("null-sub".to_string())
+    }
 }
+
+// Keep backward compatibility with old name
+pub type NullEventPublisher = NullEventBusProvider;

@@ -29,6 +29,11 @@
 //! |--------|-------------|
 //! | [`health`] | Health check endpoints |
 //! | [`logging`] | Structured logging with tracing |
+//!
+//! ### Routing & Selection
+//! | Module | Description |
+//! |--------|-------------|
+//! | [`routing`] | Provider routing and selection |
 
 // Core infrastructure modules
 pub mod cache;
@@ -39,6 +44,7 @@ pub mod di;
 pub mod error_ext;
 pub mod health;
 pub mod logging;
+pub mod routing;
 pub mod utils;
 
 // DI bridge modules (re-exports for module composition)

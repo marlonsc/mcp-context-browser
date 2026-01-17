@@ -2,16 +2,16 @@
 //!
 //! Coordinates the initialization and dispatch of infrastructure components,
 //! ensuring proper dependency order and lifecycle management.
+//!
+//! All components are resolved via Shaku DI - no manual factories.
 
 use crate::config::AppConfig;
 use crate::di::bootstrap::{DiContainer, DiContainerBuilder};
-use crate::di::factory::implementation::*;
-use crate::di::factory::traits::{
-    CacheProviderFactory, CryptoServiceFactory, HealthRegistryFactory,
-};
 use mcb_domain::error::Result;
 
 /// Component dispatcher for infrastructure initialization
+///
+/// Uses Shaku DI to resolve all components - no manual factories.
 pub struct ComponentDispatcher {
     config: AppConfig,
 }
@@ -22,45 +22,17 @@ impl ComponentDispatcher {
         Self { config }
     }
 
-    /// Dispatch and initialize all infrastructure components
+    /// Dispatch and initialize all infrastructure components via Shaku DI
     pub async fn dispatch(&self) -> Result<DiContainer> {
         DiContainerBuilder::with_config(self.config.clone())
             .build()
             .await
     }
-
-    /// Create cache provider
-    #[allow(dead_code)]
-    async fn create_cache_provider(&self) -> Result<crate::cache::provider::SharedCacheProvider> {
-        let factory =
-            DefaultCacheProviderFactory::new(self.config.system.infrastructure.cache.clone());
-        factory.create_cache_provider().await
-    }
-
-    /// Create crypto service
-    #[allow(dead_code)]
-    async fn create_crypto_service(&self) -> Result<crate::crypto::CryptoService> {
-        // AES-GCM requires exactly 32 bytes for the key
-        let master_key = if self.config.auth.jwt.secret.len() >= 32 {
-            // Use first 32 bytes of the JWT secret as the master key
-            self.config.auth.jwt.secret.as_bytes()[..32].to_vec()
-        } else {
-            crate::crypto::CryptoService::generate_master_key()
-        };
-
-        let factory = DefaultCryptoServiceFactory::with_master_key(master_key);
-        factory.create_crypto_service().await
-    }
-
-    /// Create health registry
-    #[allow(dead_code)]
-    async fn create_health_registry(&self) -> Result<crate::health::HealthRegistry> {
-        let factory = DefaultHealthRegistryFactory::new();
-        factory.create_health_registry().await
-    }
 }
 
 /// Infrastructure component initializer
+///
+/// Uses Shaku DI for all component resolution.
 pub struct InfrastructureInitializer {
     dispatcher: ComponentDispatcher,
 }
@@ -73,7 +45,12 @@ impl InfrastructureInitializer {
         }
     }
 
-    /// Initialize all infrastructure components
+    /// Get the config reference
+    fn config(&self) -> &AppConfig {
+        &self.dispatcher.config
+    }
+
+    /// Initialize all infrastructure components via Shaku DI
     pub async fn initialize(&self) -> Result<DiContainer> {
         // Initialize logging first
         self.initialize_logging()?;
@@ -81,7 +58,7 @@ impl InfrastructureInitializer {
         // Initialize configuration watching if enabled
         self.initialize_config_watching().await?;
 
-        // Dispatch all components
+        // Dispatch all components via Shaku DI
         let container = self.dispatcher.dispatch().await?;
 
         // Log successful initialization
@@ -92,7 +69,7 @@ impl InfrastructureInitializer {
 
     /// Initialize logging system
     fn initialize_logging(&self) -> Result<()> {
-        crate::logging::init_logging(self.dispatcher.config.logging.clone()).map_err(|e| {
+        crate::logging::init_logging(self.config().logging.clone()).map_err(|e| {
             mcb_domain::error::Error::Infrastructure {
                 message: format!("Failed to initialize logging: {}", e),
                 source: Some(Box::new(e)),

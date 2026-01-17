@@ -15,6 +15,7 @@
 //! │
 //! └── Infrastructure Modules (cross-cutting services)
 //!     ├── InfrastructureModule (auth, events, metrics, sync, snapshot)
+//!     ├── RoutingModule (provider routing and selection)
 //!     ├── ServerModule (performance metrics, indexing operations)
 //!     └── AdminModule (marker module for future admin services)
 //! ```
@@ -39,6 +40,8 @@ pub mod admin;
 /// Infrastructure modules
 /// Core infrastructure services (auth, events, metrics, sync, snapshot)
 pub mod infrastructure;
+/// Provider routing and selection services
+pub mod routing_module;
 /// MCP server components (performance metrics, indexing operations)
 pub mod server;
 
@@ -52,12 +55,13 @@ pub use data_module::DataModuleImpl;
 pub use embedding_module::EmbeddingModuleImpl;
 pub use infrastructure::InfrastructureModuleImpl;
 pub use language_module::LanguageModuleImpl;
+pub use routing_module::RoutingModuleImpl;
 pub use server::ServerModuleImpl;
 
 // Re-export module traits
 pub use traits::{
     AdminModule, CacheModule, DataModule, EmbeddingModule, InfrastructureModule, LanguageModule,
-    ServerModule,
+    RoutingModule, ServerModule,
 };
 
 // Re-export Shaku for convenience

@@ -68,6 +68,12 @@ pub trait LanguageModule:
 {
 }
 
+/// Routing module trait - provider routing and selection services.
+pub trait RoutingModule:
+    HasComponent<dyn mcb_application::ports::infrastructure::ProviderRouter>
+{
+}
+
 // ============================================================================
 // Admin Module (Administrative Services)
 // ============================================================================

@@ -195,6 +195,11 @@ tracing-appender = { workspace = true }
 # Benchmarking
 criterion = { workspace = true }
 
+[features]
+default = []
+# Enable NATS event bus provider (requires mcb-providers events-nats feature)
+events-nats = ["mcb-providers/events-nats"]
+
 [dev-dependencies]
 tempfile = "3.10"
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
