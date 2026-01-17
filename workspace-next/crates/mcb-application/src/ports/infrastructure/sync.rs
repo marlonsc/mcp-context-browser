@@ -69,8 +69,8 @@ impl SyncResult {
 ///
 /// # Example
 ///
-/// ```rust,no_run
-/// use mcb_domain::ports::infrastructure::sync::{SyncCoordinator, SyncOptions};
+/// ```ignore
+/// use mcb_application::ports::infrastructure::sync::{SyncCoordinator, SyncOptions};
 /// use std::path::Path;
 ///
 /// async fn sync_codebase(

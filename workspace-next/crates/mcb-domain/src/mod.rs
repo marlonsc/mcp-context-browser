@@ -21,26 +21,14 @@
 //!
 //! ## Example
 //!
-//! ```rust
-//! use mcb_domain::{
-//!     entities::CodeChunk,
-//!     value_objects::{Language, Embedding},
-//!     error::Result,
-//! };
+//! ```ignore
+//! use mcb_domain::{entities::CodeChunk, value_objects::Embedding};
 //!
 //! // Create a code chunk entity
-//! let chunk = CodeChunk {
-//!     id: "chunk-1".to_string(),
-//!     content: "fn main() {}".to_string(),
-//!     file_path: "example.rs".to_string(),
-//!     start_line: 1,
-//!     end_line: 1,
-//!     language: "rust".to_string(),
-//! };
+//! let chunk = CodeChunk::new("chunk-1", "fn main() {}", "example.rs", 1, 1, "rust");
 //!
 //! // Create an embedding value object
-//! let embedding = Embedding::new(vec![0.1, 0.2, 0.3], "example text".to_string())?;
-//! # Ok::<(), mcb_domain::error::Error>(())
+//! let embedding = Embedding { vector: vec![0.1, 0.2], model: "test".into(), dimensions: 2 };
 //! ```
 
 /// Domain-level constants

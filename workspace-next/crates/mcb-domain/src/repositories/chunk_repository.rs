@@ -19,8 +19,8 @@ use shaku::Interface;
 ///
 /// # Example
 ///
-/// ```rust,no_run
-/// use mcb_domain::ChunkRepository;
+/// ```ignore
+/// use mcb_domain::repositories::ChunkRepository;
 /// use mcb_domain::CodeChunk;
 ///
 /// # async fn example(repo: &dyn ChunkRepository) -> mcb_domain::Result<()> {

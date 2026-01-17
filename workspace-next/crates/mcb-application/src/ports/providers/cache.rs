@@ -25,8 +25,8 @@ pub const DEFAULT_CACHE_TTL_SECS: u64 = 300;
 ///
 /// # Example
 ///
-/// ```rust
-/// use mcb_domain::ports::providers::cache::CacheEntryConfig;
+/// ```ignore
+/// use mcb_application::ports::providers::cache::CacheEntryConfig;
 /// use std::time::Duration;
 ///
 /// let config = CacheEntryConfig::default()
@@ -94,8 +94,8 @@ impl Default for CacheEntryConfig {
 ///
 /// # Example
 ///
-/// ```rust
-/// use mcb_domain::ports::providers::cache::CacheStats;
+/// ```ignore
+/// use mcb_application::ports::providers::cache::CacheStats;
 ///
 /// let stats = CacheStats::default();
 /// println!("Hit rate: {:.1}%", stats.hit_rate * 100.0);

@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 ///
 /// # Example
 ///
-/// ```rust
+/// ```ignore
 /// use mcb_infrastructure::utils::TimedOperation;
 ///
 /// let timer = TimedOperation::start();

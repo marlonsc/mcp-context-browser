@@ -25,6 +25,17 @@
 //! let report = validator.validate_all()?;
 //! ```
 
+// === New DRY Violation System (Phase 3 Refactoring) ===
+pub mod violation_trait;
+#[macro_use]
+pub mod violation_macro;
+pub mod validator_trait;
+pub mod generic_reporter;
+
+// === New Validators (using new system) ===
+pub mod architecture;
+
+// === Legacy Validators (being migrated to new system) ===
 pub mod async_patterns;
 pub mod dependency;
 pub mod documentation;
@@ -46,6 +57,15 @@ pub mod tests_org;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 
+// Re-export new DRY violation system
+pub use violation_trait::{Violation, ViolationCategory, ViolationExt};
+pub use validator_trait::{LegacyValidatorAdapter, Validator, ValidatorRegistry};
+pub use generic_reporter::{GenericReport, GenericReporter, GenericSummary, ViolationEntry};
+
+// Re-export new validators
+pub use architecture::{ArchitectureValidator, ArchitectureViolation};
+
+// Re-export legacy validators
 pub use dependency::{DependencyValidator, DependencyViolation};
 pub use documentation::{DocumentationValidator, DocumentationViolation};
 pub use implementation::{ImplementationQualityValidator, ImplementationViolation};
@@ -248,11 +268,21 @@ pub enum ValidationError {
 }
 
 /// Severity level for violations
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum Severity {
     Error,
     Warning,
     Info,
+}
+
+impl std::fmt::Display for Severity {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Error => write!(f, "ERROR"),
+            Self::Warning => write!(f, "WARNING"),
+            Self::Info => write!(f, "INFO"),
+        }
+    }
 }
 
 /// Component type for strict directory validation

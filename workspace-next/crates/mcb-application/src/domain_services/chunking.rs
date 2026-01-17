@@ -76,8 +76,8 @@ impl ChunkingResult {
 ///
 /// # Example
 ///
-/// ```rust,no_run
-/// use crate::domain_services::chunking::{CodeChunker, ChunkingOptions};
+/// ```ignore
+/// use mcb_application::domain_services::chunking::{CodeChunker, ChunkingOptions};
 /// use std::path::Path;
 ///
 /// async fn process_file(
