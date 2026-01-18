@@ -1,0 +1,19 @@
+schema: "rule/v1"
+id: "CTOR002"
+name: "Constructor Injection Pattern"
+category: "dependency_injection"
+severity: "warning"
+enabled: true
+engine: "rust-rule-engine"
+
+description: "Service implementation missing constructor that accepts Arc<dyn Trait> parameters"
+rationale: "All services must use constructor injection for dependency management"
+
+rule: |
+  rule ConstructorInjectionPattern "Check for constructor injection" {
+      when
+          ServiceImplementation() &&
+          !HasConstructor(Arc<dyn Trait>)
+      then
+          Violation("Service implementation missing constructor that accepts Arc<dyn Trait> parameters");
+  }

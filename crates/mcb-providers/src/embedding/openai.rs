@@ -204,7 +204,7 @@ impl EmbeddingProvider for OpenAIEmbeddingProvider {
 // Auto-registration via inventory
 // ============================================================================
 
-use mcb_application::ports::registry::{EmbeddingProviderConfig, EmbeddingProviderEntry};
+use mcb_application::ports::registry::{EmbeddingProviderConfig, EmbeddingProviderEntry, EMBEDDING_PROVIDERS};
 
 #[linkme::distributed_slice(mcb_application::ports::registry::EMBEDDING_PROVIDERS)]
 static OPENAI_PROVIDER: mcb_application::ports::registry::EmbeddingProviderEntry = mcb_application::ports::registry::EmbeddingProviderEntry {

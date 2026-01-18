@@ -1,0 +1,22 @@
+schema: "rule/v1"
+id: "CTOR001"
+name: "Shaku Migration Required"
+category: "dependency_injection"
+severity: "error"
+enabled: true
+engine: "rust-rule-engine"
+
+description: "Code still uses Shaku DI patterns (#[derive(Component)], module! macro)"
+rationale: "Shaku DI is being replaced by direct constructor injection for simplicity"
+
+config:
+  migration_deadline: "v0.2.0"
+
+rule: |
+  rule ShakuMigrationRequired "Check for Shaku DI usage" {
+      when
+          HasAttribute("derive(Component)") ||
+          UsesMacro("module!")
+      then
+          Violation("Code still uses Shaku DI patterns, migrate to constructor injection by ${migration_deadline}");
+  }
