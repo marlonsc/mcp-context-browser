@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://mcp-context-browser.com/schemas/rule/v1",
+  "$id": "https://mcp-context-browser.com/schemas/rule/v2",
   "title": "MCB Validation Rule Schema",
   "description": "Schema for YAML-based validation rules in MCP Context Browser",
   "type": "object",
   "properties": {
     "schema": {
       "type": "string",
-      "enum": ["rule/v1", "template/v1"],
+      "enum": ["rule/v1", "rule/v2", "template/v1"],
       "description": "Schema version identifier"
     },
     "id": {
@@ -58,8 +58,43 @@
     },
     "engine": {
       "type": "string",
-      "enum": ["rust-rule-engine", "rusty-rules"],
+      "enum": ["rust-rule-engine", "rusty-rules", "ast"],
       "description": "Which rule engine to use for execution"
+    },
+    "selectors": {
+      "type": "array",
+      "description": "AST selectors for multi-language rules",
+      "items": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string",
+            "enum": ["rust", "python", "javascript", "typescript", "go", "java"],
+            "description": "Programming language"
+          },
+          "node_type": {
+            "type": "string",
+            "description": "AST node type to match (e.g., function_item, function_definition)"
+          },
+          "pattern": {
+            "type": "string",
+            "description": "Tree-sitter query pattern"
+          }
+        },
+        "required": ["language", "node_type"]
+      }
+    },
+    "ast_query": {
+      "type": "string",
+      "description": "Tree-sitter query string for complex AST matching"
+    },
+    "lint_select": {
+      "type": "array",
+      "description": "Linter rule codes to integrate (Ruff/Clippy)",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z]+[0-9]+$|^clippy::[a-zA-Z_]+$|^[A-Z][0-9]+$"
+      }
     },
     "config": {
       "type": "object",
@@ -129,5 +164,18 @@
   },
   "then": {
     "required": ["engine", "rule"]
+  },
+  "else": {
+    "if": {
+      "properties": { "schema": { "const": "rule/v2" } }
+    },
+    "then": {
+      "oneOf": [
+        { "required": ["engine", "rule"] },
+        { "required": ["selectors"] },
+        { "required": ["lint_select"] },
+        { "required": ["ast_query"] }
+      ]
+    }
   }
 }

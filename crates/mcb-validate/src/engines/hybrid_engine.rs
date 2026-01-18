@@ -38,6 +38,38 @@ pub struct RuleViolation {
     pub context: Option<String>,
 }
 
+impl Violation for RuleViolation {
+    fn id(&self) -> &str {
+        &self.id
+    }
+
+    fn category(&self) -> ViolationCategory {
+        self.category
+    }
+
+    fn severity(&self) -> Severity {
+        self.severity
+    }
+
+    fn file(&self) -> Option<&std::path::PathBuf> {
+        self.file.as_ref()
+    }
+
+    fn line(&self) -> Option<usize> {
+        self.line
+    }
+
+    fn message(&self) -> String {
+        self.message.clone()
+    }
+}
+
+impl std::fmt::Display for RuleViolation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "[{}] {}", self.id, self.message)
+    }
+}
+
 impl RuleViolation {
     pub fn new(id: impl Into<String>, category: ViolationCategory, severity: Severity, message: impl Into<String>) -> Self {
         Self {

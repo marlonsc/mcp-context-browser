@@ -1,0 +1,12 @@
+schema: "rule/v2"
+id: "QUAL005"
+name: "Unused Imports (Ruff Integration)"
+category: "quality"
+severity: "warning"
+enabled: true
+
+description: "Remove unused imports detected by Ruff"
+rationale: "Unused imports clutter code and can cause confusion"
+
+lint_select: ["F401"]
+message: "Remove unused imports detected by Ruff linter"

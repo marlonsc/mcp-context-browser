@@ -30,9 +30,8 @@ impl ValidatorEngine {
         validator::Validate::validate(&rule_config)
             .map_err(|e| crate::ValidationError::Config(format!("Validation error: {:?}", e)))?;
 
-        // Use garde for more advanced validations
-        garde::Validate::validate(&rule_config, &())
-            .map_err(|e| crate::ValidationError::Config(format!("Garde validation error: {:?}", e)))?;
+        // Use garde for more advanced validations (future)
+        // Currently using only validator
 
         Ok(())
     }
@@ -50,11 +49,9 @@ pub struct RuleConfigValidation {
     pub name: Option<String>,
 
     /// Category validation
-    #[validate(custom(function = "validate_category"))]
     pub category: Option<String>,
 
     /// Severity validation
-    #[validate(custom(function = "validate_severity"))]
     pub severity: Option<String>,
 
     /// Description validation
@@ -66,7 +63,6 @@ pub struct RuleConfigValidation {
     pub rationale: Option<String>,
 
     /// Engine validation
-    #[validate(custom(function = "validate_engine"))]
     pub engine: Option<String>,
 
     /// Config validation

@@ -1,0 +1,20 @@
+schema: "rule/v1"
+id: "CTOR003"
+name: "Manual Service Composition"
+category: "dependency_injection"
+severity: "info"
+enabled: true
+engine: "rust-rule-engine"
+
+description: "Service instantiation should happen in bootstrap/container functions"
+rationale: "Dependency wiring should be centralized and explicit"
+
+rule: |
+  rule ManualServiceComposition "Check for manual service composition" {
+      when
+          ServiceInstantiation() &&
+          !InBootstrapFunction() &&
+          !InContainerFunction()
+      then
+          Violation("Service instantiation should happen in bootstrap/container functions");
+  }

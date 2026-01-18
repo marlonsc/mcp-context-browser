@@ -1,0 +1,23 @@
+schema: "rule/v1"
+id: "ROCKET001"
+name: "Axum Migration Required"
+category: "web_framework"
+severity: "error"
+enabled: true
+engine: "rust-rule-engine"
+
+description: "Code still uses Axum routing patterns (Router::new(), axum::routing::*)"
+rationale: "Axum is being replaced by Rocket for attribute-based routing simplicity"
+
+config:
+  migration_deadline: "v0.2.0"
+
+rule: |
+  rule RocketMigrationRequired "Check for Axum usage" {
+      when
+          UsesType("Router::new") ||
+          UsesImport("axum::routing") ||
+          UsesCrate("axum")
+      then
+          Violation("Code still uses Axum routing patterns, migrate to Rocket by ${migration_deadline}");
+  }

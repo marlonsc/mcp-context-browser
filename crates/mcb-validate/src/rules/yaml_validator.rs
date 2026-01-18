@@ -2,7 +2,7 @@
 //!
 //! Validates YAML rules against JSON Schema using jsonschema crate.
 
-use jsonschema::{JSONSchema, ValidationError};
+use jsonschema::JSONSchema;
 use serde_json::Value;
 use std::path::Path;
 
@@ -40,7 +40,9 @@ impl YamlRuleValidator {
     pub fn validate_rule(&self, rule: &Value) -> Result<()> {
         let validation_result = self.schema.validate(rule);
 
-        let errors: Vec<ValidationError> = validation_result.err().unwrap_or_default().collect();
+        let errors: Vec<jsonschema::ValidationError> = validation_result.err()
+            .map(|iter| iter.collect())
+            .unwrap_or_default();
 
         if !errors.is_empty() {
             let error_messages: Vec<String> = errors
@@ -78,7 +80,9 @@ impl YamlRuleValidator {
                 message: format!("JSON conversion error: {}", e),
             })?;
 
-        let errors: Vec<_> = self.schema.validate(&json_value).err().unwrap_or_default().collect();
+        let errors: Vec<jsonschema::ValidationError> = self.schema.validate(&json_value).err()
+            .map(|iter| iter.collect())
+            .unwrap_or_default();
         if errors.is_empty() {
             Ok(())
         } else {

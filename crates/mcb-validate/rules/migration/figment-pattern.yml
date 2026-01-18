@@ -1,0 +1,19 @@
+schema: "rule/v1"
+id: "FIGMENT002"
+name: "Figment Pattern Usage"
+category: "configuration"
+severity: "warning"
+enabled: true
+engine: "rust-rule-engine"
+
+description: "Configuration loading should use Figment::new().merge().extract() pattern"
+rationale: "Figment provides unified configuration source handling"
+
+rule: |
+  rule FigmentPatternUsage "Check for Figment pattern usage" {
+      when
+          ConfigurationLoading() &&
+          !UsesPattern("Figment::new().merge().extract()")
+      then
+          Violation("Configuration loading should use Figment::new().merge().extract() pattern");
+  }

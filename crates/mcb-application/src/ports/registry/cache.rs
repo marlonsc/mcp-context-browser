@@ -83,9 +83,12 @@ pub struct CacheProviderEntry {
     pub factory: fn(&CacheProviderConfig) -> Result<Arc<dyn CacheProvider>, String>,
 }
 
-// Auto-collection via linkme distributed slices - providers submit entries at compile time
+// Auto-collection via inventory - providers submit entries at compile time
+inventory::collect!(CacheProviderEntry);
+
+// Auto-collection via linkme distributed slices - providers submit entries at compile time (new approach)
 #[linkme::distributed_slice]
-pub static CACHE_PROVIDERS: [CacheProviderEntry] = [..];
+pub static CACHE_PROVIDERS_LINKME: [CacheProviderEntry] = [..];
 
 /// Resolve cache provider by name from registry
 ///
@@ -103,17 +106,26 @@ pub fn resolve_cache_provider(
 ) -> Result<Arc<dyn CacheProvider>, String> {
     let provider_name = &config.provider;
 
-    for entry in CACHE_PROVIDERS {
+    // Try linkme first (new approach)
+    for entry in CACHE_PROVIDERS_LINKME {
+        if entry.name == provider_name {
+            return (entry.factory)(config);
+        }
+    }
+
+    // Fallback to inventory (old approach)
+    for entry in inventory::iter::<CacheProviderEntry>() {
         if entry.name == provider_name {
             return (entry.factory)(config);
         }
     }
 
     // List available providers for helpful error message
-    let available: Vec<&str> = CACHE_PROVIDERS
+    let mut available: Vec<&str> = CACHE_PROVIDERS_LINKME
         .iter()
         .map(|e| e.name)
         .collect();
+    available.extend(inventory::iter::<CacheProviderEntry>().map(|e| e.name));
 
     Err(format!(
         "Unknown cache provider '{}'. Available providers: {:?}",
@@ -126,10 +138,24 @@ pub fn resolve_cache_provider(
 /// Returns a list of (name, description) tuples for all registered
 /// cache providers. Useful for CLI help and admin UI.
 pub fn list_cache_providers() -> Vec<(&'static str, &'static str)> {
-    CACHE_PROVIDERS
+    let mut providers: Vec<(&'static str, &'static str)> = CACHE_PROVIDERS_LINKME
         .iter()
         .map(|e| (e.name, e.description))
-        .collect()
+        .collect();
+
+    // Add inventory providers (avoiding duplicates)
+    let linkme_names: std::collections::HashSet<&str> = CACHE_PROVIDERS_LINKME
+        .iter()
+        .map(|e| e.name)
+        .collect();
+
+    for entry in inventory::iter::<CacheProviderEntry>() {
+        if !linkme_names.contains(entry.name) {
+            providers.push((entry.name, entry.description));
+        }
+    }
+
+    providers
 }
 
 #[cfg(test)]

@@ -1,0 +1,22 @@
+schema: "rule/v1"
+id: "ROCKET002"
+name: "Attribute-Based Handlers"
+category: "web_framework"
+severity: "warning"
+enabled: true
+engine: "rust-rule-engine"
+
+description: "HTTP handlers should use Rocket attribute macros (#[get], #[post], etc.)"
+rationale: "Attribute-based routing reduces boilerplate and improves readability"
+
+rule: |
+  rule RocketAttributeHandlers "Check for Rocket attribute usage" {
+      when
+          HttpHandler() &&
+          !HasAttribute("#[get]") &&
+          !HasAttribute("#[post]") &&
+          !HasAttribute("#[put]") &&
+          !HasAttribute("#[delete]")
+      then
+          Violation("HTTP handlers should use Rocket attribute macros (#[get], #[post], etc.)");
+  }

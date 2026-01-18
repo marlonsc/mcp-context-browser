@@ -1,0 +1,24 @@
+schema: "rule/v1"
+id: "FIGMENT001"
+name: "Config Crate Migration Required"
+category: "configuration"
+severity: "error"
+enabled: true
+engine: "rust-rule-engine"
+
+description: "Code still uses config crate (Config::builder(), Environment, File)"
+rationale: "config crate is being replaced by Figment for unified configuration"
+
+config:
+  migration_deadline: "v0.2.0"
+
+rule: |
+  rule FigmentMigrationRequired "Check for config crate usage" {
+      when
+          UsesType("Config::builder") ||
+          UsesType("Environment") ||
+          UsesType("File") &&
+          FromCrate("config")
+      then
+          Violation("Code still uses config crate, migrate to Figment by ${migration_deadline}");
+  }

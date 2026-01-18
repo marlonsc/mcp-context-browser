@@ -1,0 +1,19 @@
+schema: "rule/v1"
+id: "FIGMENT003"
+name: "Profile Support"
+category: "configuration"
+severity: "info"
+enabled: true
+engine: "rust-rule-engine"
+
+description: "Consider adding profile-based configuration (dev/prod)"
+rationale: "Figment enables easy environment-specific configuration"
+
+rule: |
+  rule FigmentProfileSupport "Check for profile-based configuration" {
+      when
+          ConfigurationLoading() &&
+          !HasProfileSupport()
+      then
+          Violation("Consider adding profile-based configuration (dev/prod)");
+  }

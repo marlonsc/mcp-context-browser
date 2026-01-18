@@ -634,7 +634,7 @@ impl ArchitectureValidator {
         let rules = self.load_yaml_rules().await?;
         let engine = HybridRuleEngine::new();
 
-        let mut violations = Vec::new();
+        let mut violations: Vec<Box<dyn Violation>> = Vec::new();
 
         for rule in rules.into_iter().filter(|r| r.enabled) {
             let context = engines::hybrid_engine::RuleContext {
@@ -658,7 +658,7 @@ impl ArchitectureValidator {
                 &context,
             ).await?;
 
-            violations.extend(result.violations);
+            violations.extend(result.violations.into_iter().map(|v| Box::new(v) as Box<dyn Violation>));
         }
 
         Ok(GenericReporter::create_report(

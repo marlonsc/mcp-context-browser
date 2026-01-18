@@ -1,25 +1,23 @@
-schema: "rule/v1"
+schema: "rule/v2"
 id: "QUAL001"
 name: "No Unwrap in Production"
 category: "quality"
 severity: "error"
 enabled: true
-engine: "rust-rule-engine"
 
 description: "Production code should not use .unwrap()"
 rationale: "Unwrap can cause panics; use ? operator or proper error handling"
 
-config:
-  allow_in_tests: true
-  allow_in_examples: false
-  custom_exclusions: []
+selectors:
+  - language: "rust"
+    node_type: "call_expression"
+    pattern: "(call_expression function: (identifier) @func (#eq? @func \"unwrap\"))"
+  - language: "python"
+    node_type: "call"
+    pattern: "(call function: (identifier) @func (#eq? @func \"unwrap\"))"
 
-rule: |
-  rule NoUnwrapCheck "Avoid unwrap() in production" {
-      when
-          AST.MethodCall(name == "unwrap") &&
-          !TestFunction() &&
-          !ExampleFunction()
-      then
-          Violation("Avoid .unwrap() in production code");
-  }
+ast_query: "(call_expression function: (identifier) @func) (#eq? @func \"unwrap\")"
+condition: "not_in_test_function and not_in_example"
+message: "Avoid .unwrap() in production code"
+
+lint_select: ["clippy::unwrap_used"]

@@ -83,9 +83,12 @@ pub struct EmbeddingProviderEntry {
     pub factory: fn(&EmbeddingProviderConfig) -> Result<Arc<dyn EmbeddingProvider>, String>,
 }
 
-// Auto-collection via linkme distributed slices - providers submit entries at compile time
+// Auto-collection via inventory - providers submit entries at compile time
+inventory::collect!(EmbeddingProviderEntry);
+
+// Auto-collection via linkme distributed slices - providers submit entries at compile time (new approach)
 #[linkme::distributed_slice]
-pub static EMBEDDING_PROVIDERS: [EmbeddingProviderEntry] = [..];
+pub static EMBEDDING_PROVIDERS_LINKME: [EmbeddingProviderEntry] = [..];
 
 /// Resolve embedding provider by name from registry
 ///
@@ -112,17 +115,26 @@ pub fn resolve_embedding_provider(
 ) -> Result<Arc<dyn EmbeddingProvider>, String> {
     let provider_name = &config.provider;
 
-    for entry in EMBEDDING_PROVIDERS {
+    // Try linkme first (new approach)
+    for entry in EMBEDDING_PROVIDERS_LINKME {
+        if entry.name == provider_name {
+            return (entry.factory)(config);
+        }
+    }
+
+    // Fallback to inventory (old approach)
+    for entry in inventory::iter::<EmbeddingProviderEntry>() {
         if entry.name == provider_name {
             return (entry.factory)(config);
         }
     }
 
     // List available providers for helpful error message
-    let available: Vec<&str> = EMBEDDING_PROVIDERS
+    let mut available: Vec<&str> = EMBEDDING_PROVIDERS_LINKME
         .iter()
         .map(|e| e.name)
         .collect();
+    available.extend(inventory::iter::<EmbeddingProviderEntry>().map(|e| e.name));
 
     Err(format!(
         "Unknown embedding provider '{}'. Available providers: {:?}",
@@ -138,10 +150,24 @@ pub fn resolve_embedding_provider(
 /// # Returns
 /// Vector of (name, description) tuples for all registered providers
 pub fn list_embedding_providers() -> Vec<(&'static str, &'static str)> {
-    EMBEDDING_PROVIDERS
+    let mut providers: Vec<(&'static str, &'static str)> = EMBEDDING_PROVIDERS_LINKME
         .iter()
         .map(|e| (e.name, e.description))
-        .collect()
+        .collect();
+
+    // Add inventory providers (avoiding duplicates)
+    let linkme_names: std::collections::HashSet<&str> = EMBEDDING_PROVIDERS_LINKME
+        .iter()
+        .map(|e| e.name)
+        .collect();
+
+    for entry in inventory::iter::<EmbeddingProviderEntry>() {
+        if !linkme_names.contains(entry.name) {
+            providers.push((entry.name, entry.description));
+        }
+    }
+
+    providers
 }
 
 #[cfg(test)]

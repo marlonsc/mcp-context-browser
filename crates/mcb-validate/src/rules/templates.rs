@@ -86,7 +86,7 @@ impl TemplateEngine {
     }
 
     /// Extend a rule with another rule (inheritance)
-    pub fn extend_rule(&self, extends_name: &str, rule: &serde_yaml::Value) -> Result<serde_yaml::Value> {
+    pub fn extend_rule(&self, _extends_name: &str, rule: &serde_yaml::Value) -> Result<serde_yaml::Value> {
         // For now, just return the rule as-is
         // In a full implementation, this would look up the base rule
         // and merge it with the extending rule

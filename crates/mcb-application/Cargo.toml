@@ -20,7 +20,8 @@ path = "src/lib.rs"
 # Domain layer - core business logic and port traits
 mcb-domain = { path = "../mcb-domain" }
 
-# Providers layer - for registry slices
+# Plugin registration (temporary - will be removed after full migration)
+inventory = { workspace = true }
 
 # Core async runtime
 tokio = { workspace = true }

@@ -204,9 +204,9 @@ impl EmbeddingProvider for OpenAIEmbeddingProvider {
 // Auto-registration via inventory
 // ============================================================================
 
-use mcb_application::ports::registry::{EmbeddingProviderConfig, EmbeddingProviderEntry, EMBEDDING_PROVIDERS};
+use mcb_application::ports::registry::{EmbeddingProviderConfig, EmbeddingProviderEntry, EMBEDDING_PROVIDERS_LINKME};
 
-#[linkme::distributed_slice(mcb_application::ports::registry::EMBEDDING_PROVIDERS)]
+#[linkme::distributed_slice(EMBEDDING_PROVIDERS_LINKME)]
 static OPENAI_PROVIDER: mcb_application::ports::registry::EmbeddingProviderEntry = mcb_application::ports::registry::EmbeddingProviderEntry {
     name: "openai",
     description: "OpenAI embedding provider (text-embedding-3-small/large, ada-002)",

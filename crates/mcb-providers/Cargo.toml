@@ -112,6 +112,7 @@ base64 = { workspace = true }
 shaku = { workspace = true }
 
 # Plugin registration
+inventory = { workspace = true }  # Temporário - será removido após migração completa
 linkme = "0.3"
 
 # Concurrent data structures
