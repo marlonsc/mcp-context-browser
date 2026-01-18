@@ -30,8 +30,23 @@ impl ValidatorEngine {
         validator::Validate::validate(&rule_config)
             .map_err(|e| crate::ValidationError::Config(format!("Validation error: {:?}", e)))?;
 
-        // Use garde for more advanced validations (future)
-        // Currently using only validator
+        // Validate category if present
+        if let Some(ref category) = rule_config.category {
+            validate_category(category)
+                .map_err(|e| crate::ValidationError::Config(format!("Invalid category: {:?}", e)))?;
+        }
+
+        // Validate engine if present
+        if let Some(ref engine) = rule_config.engine {
+            validate_engine(engine)
+                .map_err(|e| crate::ValidationError::Config(format!("Invalid engine: {:?}", e)))?;
+        }
+
+        // Validate severity if present
+        if let Some(ref severity) = rule_config.severity {
+            validate_severity(severity)
+                .map_err(|e| crate::ValidationError::Config(format!("Invalid severity: {:?}", e)))?;
+        }
 
         Ok(())
     }
@@ -89,8 +104,7 @@ pub struct RuleConfigFields {
     pub forbidden_patterns: Option<Vec<String>>,
 }
 
-/// Validator functions for custom validations (reserved for future use)
-#[allow(dead_code)]
+/// Validator functions for custom validations
 fn validate_category(category: &str) -> std::result::Result<(), ValidationErrors> {
     let valid_categories = [
         "architecture",
@@ -111,7 +125,6 @@ fn validate_category(category: &str) -> std::result::Result<(), ValidationErrors
     }
 }
 
-#[allow(dead_code)]
 fn validate_severity(severity: &str) -> std::result::Result<(), ValidationErrors> {
     let valid_severities = ["error", "warning", "info"];
 
@@ -124,7 +137,6 @@ fn validate_severity(severity: &str) -> std::result::Result<(), ValidationErrors
     }
 }
 
-#[allow(dead_code)]
 fn validate_engine(engine: &str) -> std::result::Result<(), ValidationErrors> {
     let valid_engines = ["rust-rule-engine", "rusty-rules"];
 

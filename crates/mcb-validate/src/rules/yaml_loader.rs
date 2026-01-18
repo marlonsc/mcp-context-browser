@@ -321,11 +321,11 @@ rule:
   pattern: "{{forbidden_prefixes}}"
 "#;
 
-        std::fs::write(templates_dir.join("cargo-dependency-template.yml"), template_content).unwrap();
+        std::fs::write(templates_dir.join("cargo-dependency-check.yml"), template_content).unwrap();
 
-        // Create a rule using the template
+        // Create a rule using the template (template name is the filename without extension)
         let rule_content = r#"
-_template: "cargo_dependency_check"
+_template: "cargo-dependency-check"
 id: "TEST002"
 name: "Domain Dependencies"
 description: "Domain must not depend on other layers"
