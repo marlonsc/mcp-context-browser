@@ -704,28 +704,27 @@ impl VectorStoreProvider for MilvusVectorStoreProvider {
 }
 
 // ============================================================================
-// Auto-registration via inventory
+// Auto-registration via linkme
 // ============================================================================
 
-use mcb_application::ports::registry::{VectorStoreProviderConfig, VectorStoreProviderEntry};
+use mcb_application::ports::registry::{VectorStoreProviderConfig, VectorStoreProviderEntry, VECTOR_STORE_PROVIDERS};
 
-inventory::submit! {
-    VectorStoreProviderEntry {
-        name: "milvus",
-        description: "Milvus distributed vector database",
-        factory: |config: &VectorStoreProviderConfig| {
-            let uri = config.uri.clone()
-                .unwrap_or_else(|| "http://localhost:19530".to_string());
-            let token = config.api_key.clone();
+#[linkme::distributed_slice(VECTOR_STORE_PROVIDERS)]
+static MILVUS_PROVIDER: VectorStoreProviderEntry = VectorStoreProviderEntry {
+    name: "milvus",
+    description: "Milvus distributed vector database",
+    factory: |config: &VectorStoreProviderConfig| {
+        let uri = config.uri.clone()
+            .unwrap_or_else(|| "http://localhost:19530".to_string());
+        let token = config.api_key.clone();
 
-            // Create Milvus client synchronously using block_on
-            let provider = tokio::task::block_in_place(|| {
-                tokio::runtime::Handle::current().block_on(async {
-                    MilvusVectorStoreProvider::new(uri, token, None).await
-                })
-            }).map_err(|e| format!("Failed to create Milvus provider: {}", e))?;
+        // Create Milvus client synchronously using block_on
+        let provider = tokio::task::block_in_place(|| {
+            tokio::runtime::Handle::current().block_on(async {
+                MilvusVectorStoreProvider::new(uri, token, None).await
+            })
+        }).map_err(|e| format!("Failed to create Milvus provider: {}", e))?;
 
-            Ok(std::sync::Arc::new(provider))
-        },
-    }
-}
+        Ok(std::sync::Arc::new(provider))
+    },
+};

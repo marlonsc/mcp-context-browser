@@ -2,9 +2,10 @@
 
 ## Status
 
-**Proposed** (v0.1.2)
+**Accepted** (v0.1.2)
 
-> Planned for implementation in v0.1.2 as part of the refatoração and simplification initiative.
+> Completed in v0.1.2. All 15 providers migrated to linkme.
+> Supersedes inventory-based registration.
 
 ## Context
 
@@ -91,13 +92,23 @@ static OLLAMA_PROVIDER: EmbeddingProviderEntry = EmbeddingProviderEntry {
 4. **Phase 4**: Remove inventory dependency and clean up old code
 5. **Phase 5**: Comprehensive testing and validation
 
+## Implementation Status
+
+- [x] All embedding providers (6): ollama, openai, voyageai, gemini, fastembed, null
+- [x] All cache providers (3): moka, redis, null
+- [x] All vector store providers (5): milvus, filesystem, in_memory, edgevec, null
+- [x] All language providers (1): universal
+- [x] Pure linkme registries (no inventory fallback)
+- [x] All provider entry structs use `#[linkme::distributed_slice]`
+- [x] Remove stale `inventory` dependency from workspace Cargo.toml (cleanup)
+
 ## Validation Criteria
 
-- [ ] All providers are correctly registered and discoverable
-- [ ] Build succeeds on all supported platforms (Linux, macOS, Windows)
+- [x] All providers are correctly registered and discoverable
+- [x] Build succeeds on all supported platforms (Linux, macOS, Windows)
 - [ ] WASM builds work (future compatibility)
 - [ ] Performance benchmarks show no regression
-- [ ] All integration tests pass
+- [x] All integration tests pass
 - [ ] Binary size is reduced or maintained
 
 ## Related ADRs

@@ -1,8 +1,8 @@
 //! Vector Store Provider Registry
 //!
-//! Auto-registration system for vector store providers.
-//! Providers register themselves via `inventory::submit!` and are
-//! discovered at runtime via `inventory::iter`.
+//! Auto-registration system for vector store providers using linkme distributed slices.
+//! Providers register themselves via `#[linkme::distributed_slice]` and are
+//! discovered at runtime.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -83,8 +83,8 @@ impl VectorStoreProviderConfig {
 /// Registry entry for vector store providers
 ///
 /// Each vector store provider implementation registers itself with this entry
-/// using `inventory::submit!`. The entry contains metadata and a factory
-/// function to create provider instances.
+/// using `#[linkme::distributed_slice(VECTOR_STORE_PROVIDERS)]`. The entry contains
+/// metadata and a factory function to create provider instances.
 pub struct VectorStoreProviderEntry {
     /// Unique provider name (e.g., "milvus", "memory", "null")
     pub name: &'static str,
@@ -94,12 +94,9 @@ pub struct VectorStoreProviderEntry {
     pub factory: fn(&VectorStoreProviderConfig) -> Result<Arc<dyn VectorStoreProvider>, String>,
 }
 
-// Auto-collection via inventory - providers submit entries at compile time
-inventory::collect!(VectorStoreProviderEntry);
-
-// Auto-collection via linkme distributed slices - providers submit entries at compile time (new approach)
+// Auto-collection via linkme distributed slices - providers submit entries at compile time
 #[linkme::distributed_slice]
-pub static VECTOR_STORE_PROVIDERS_LINKME: [VectorStoreProviderEntry] = [..];
+pub static VECTOR_STORE_PROVIDERS: [VectorStoreProviderEntry] = [..];
 
 /// Resolve vector store provider by name from registry
 ///
@@ -117,26 +114,13 @@ pub fn resolve_vector_store_provider(
 ) -> Result<Arc<dyn VectorStoreProvider>, String> {
     let provider_name = &config.provider;
 
-    // Try linkme first (new approach)
-    for entry in VECTOR_STORE_PROVIDERS_LINKME {
+    for entry in VECTOR_STORE_PROVIDERS {
         if entry.name == provider_name {
             return (entry.factory)(config);
         }
     }
 
-    // Fallback to inventory (old approach)
-    for entry in inventory::iter::<VectorStoreProviderEntry>() {
-        if entry.name == provider_name {
-            return (entry.factory)(config);
-        }
-    }
-
-    // List available providers for helpful error message
-    let mut available: Vec<&str> = VECTOR_STORE_PROVIDERS_LINKME
-        .iter()
-        .map(|e| e.name)
-        .collect();
-    available.extend(inventory::iter::<VectorStoreProviderEntry>().map(|e| e.name));
+    let available: Vec<&str> = VECTOR_STORE_PROVIDERS.iter().map(|e| e.name).collect();
 
     Err(format!(
         "Unknown vector store provider '{}'. Available providers: {:?}",
@@ -149,24 +133,10 @@ pub fn resolve_vector_store_provider(
 /// Returns a list of (name, description) tuples for all registered
 /// vector store providers. Useful for CLI help and admin UI.
 pub fn list_vector_store_providers() -> Vec<(&'static str, &'static str)> {
-    let mut providers: Vec<(&'static str, &'static str)> = VECTOR_STORE_PROVIDERS_LINKME
+    VECTOR_STORE_PROVIDERS
         .iter()
         .map(|e| (e.name, e.description))
-        .collect();
-
-    // Add inventory providers (avoiding duplicates)
-    let linkme_names: std::collections::HashSet<&str> = VECTOR_STORE_PROVIDERS_LINKME
-        .iter()
-        .map(|e| e.name)
-        .collect();
-
-    for entry in inventory::iter::<VectorStoreProviderEntry>() {
-        if !linkme_names.contains(entry.name) {
-            providers.push((entry.name, entry.description));
-        }
-    }
-
-    providers
+        .collect()
 }
 
 #[cfg(test)]

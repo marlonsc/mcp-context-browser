@@ -1,7 +1,7 @@
 //! Provider Registry System
 //!
 //! Defines the auto-registration infrastructure for plugin providers.
-//! Uses the `inventory` crate for compile-time registration of providers
+//! Uses the `linkme` crate for compile-time registration of providers
 //! that can be discovered and instantiated at runtime.
 //!
 //! ## Architecture
@@ -11,11 +11,13 @@
 //! │                    Provider Registration Flow                    │
 //! ├─────────────────────────────────────────────────────────────────┤
 //! │                                                                 │
-//! │  1. Provider defines:  inventory::submit! { Entry { ... } }     │
+//! │  1. Provider defines:  #[linkme::distributed_slice(PROVIDERS)]  │
+//! │                        static ENTRY: ProviderEntry = ...        │
 //! │                              ↓                                  │
-//! │  2. Registry collects: inventory::collect!(Entry)               │
+//! │  2. Registry declares: #[linkme::distributed_slice]             │
+//! │                        pub static PROVIDERS: [Entry] = [..]     │
 //! │                              ↓                                  │
-//! │  3. Resolver queries:  inventory::iter::<Entry>                 │
+//! │  3. Resolver queries:  PROVIDERS.iter()                         │
 //! │                              ↓                                  │
 //! │  4. Config selects:    "provider = ollama" → OllamaProvider     │
 //! │                                                                 │
@@ -27,15 +29,14 @@
 //! ### Registering a Provider (in mcb-providers)
 //!
 //! ```ignore
-//! use mcb_application::ports::registry::EmbeddingProviderEntry;
+//! use mcb_application::ports::registry::{EmbeddingProviderEntry, EMBEDDING_PROVIDERS};
 //!
-//! inventory::submit! {
-//!     EmbeddingProviderEntry {
-//!         name: "ollama",
-//!         description: "Ollama local embedding provider",
-//!         factory: |config| Ok(Arc::new(OllamaProvider::from_config(config)?)),
-//!     }
-//! }
+//! #[linkme::distributed_slice(EMBEDDING_PROVIDERS)]
+//! static OLLAMA_PROVIDER: EmbeddingProviderEntry = EmbeddingProviderEntry {
+//!     name: "ollama",
+//!     description: "Ollama local embedding provider",
+//!     factory: |config| Ok(Arc::new(OllamaProvider::from_config(config)?)),
+//! };
 //! ```
 //!
 //! ### Resolving a Provider (in mcb-infrastructure)
@@ -55,17 +56,17 @@ pub mod vector_store;
 // Re-export all registry types and functions
 pub use cache::{
     list_cache_providers, resolve_cache_provider, CacheProviderConfig, CacheProviderEntry,
-    CACHE_PROVIDERS_LINKME,
+    CACHE_PROVIDERS,
 };
 pub use embedding::{
     list_embedding_providers, resolve_embedding_provider, EmbeddingProviderConfig,
-    EmbeddingProviderEntry, EMBEDDING_PROVIDERS_LINKME,
+    EmbeddingProviderEntry, EMBEDDING_PROVIDERS,
 };
 pub use language::{
     list_language_providers, resolve_language_provider, LanguageProviderConfig,
-    LanguageProviderEntry, LANGUAGE_PROVIDERS_LINKME,
+    LanguageProviderEntry, LANGUAGE_PROVIDERS,
 };
 pub use vector_store::{
     list_vector_store_providers, resolve_vector_store_provider, VectorStoreProviderConfig,
-    VectorStoreProviderEntry, VECTOR_STORE_PROVIDERS_LINKME,
+    VectorStoreProviderEntry, VECTOR_STORE_PROVIDERS,
 };

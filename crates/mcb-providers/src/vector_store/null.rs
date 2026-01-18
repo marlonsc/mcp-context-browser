@@ -130,17 +130,16 @@ impl VectorStoreProvider for NullVectorStoreProvider {
 }
 
 // ============================================================================
-// Auto-registration via inventory
+// Auto-registration via linkme
 // ============================================================================
 
-use mcb_application::ports::registry::{VectorStoreProviderConfig, VectorStoreProviderEntry};
+use mcb_application::ports::registry::{VectorStoreProviderConfig, VectorStoreProviderEntry, VECTOR_STORE_PROVIDERS};
 
-inventory::submit! {
-    VectorStoreProviderEntry {
-        name: "null",
-        description: "Null vector store for testing (no-op operations)",
-        factory: |_config: &VectorStoreProviderConfig| {
-            Ok(std::sync::Arc::new(NullVectorStoreProvider::new()))
-        },
-    }
-}
+#[linkme::distributed_slice(VECTOR_STORE_PROVIDERS)]
+static NULL_VECTOR_PROVIDER: VectorStoreProviderEntry = VectorStoreProviderEntry {
+    name: "null",
+    description: "Null vector store for testing (no-op operations)",
+    factory: |_config: &VectorStoreProviderConfig| {
+        Ok(std::sync::Arc::new(NullVectorStoreProvider::new()))
+    },
+};

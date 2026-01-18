@@ -176,7 +176,8 @@ impl RustyRulesEngineWrapper {
         Ok(Action::Custom("Custom action".to_string()))
     }
 
-    /// Evaluate condition against context
+    /// Evaluate condition against context (reserved for rule composition)
+    #[allow(dead_code)]
     fn evaluate_condition(&self, condition: &Condition, context: &RuleContext) -> bool {
         match condition {
             Condition::All(conditions) => {
@@ -194,6 +195,7 @@ impl RustyRulesEngineWrapper {
         }
     }
 
+    #[allow(dead_code)]
     fn evaluate_simple_condition(
         &self,
         fact_type: &str,
@@ -216,6 +218,7 @@ impl RustyRulesEngineWrapper {
         }
     }
 
+    #[allow(dead_code)]
     fn evaluate_cargo_dependencies(
         &self,
         field: &str,
@@ -259,6 +262,7 @@ impl RustyRulesEngineWrapper {
         false
     }
 
+    #[allow(dead_code)]
     fn evaluate_file_pattern(
         &self,
         field: &str,
@@ -281,6 +285,7 @@ impl RustyRulesEngineWrapper {
         }
     }
 
+    #[allow(dead_code)]
     fn evaluate_ast_pattern(
         &self,
         field: &str,
@@ -304,7 +309,8 @@ impl RustyRulesEngineWrapper {
     }
 
     /// Execute rule action
-    fn execute_action(&self, action: &Action, rule_id: &str, context: &RuleContext) -> Vec<RuleViolation> {
+    #[allow(dead_code)]
+    fn execute_action(&self, action: &Action, rule_id: &str, _context: &RuleContext) -> Vec<RuleViolation> {
         match action {
             Action::Violation { message, severity } => {
         vec![RuleViolation::new(
@@ -337,7 +343,7 @@ impl RuleEngine for RustyRulesEngineWrapper {
         // In a real implementation, this would use the rusty-rules engine
         // For now, we'll simulate the behavior
 
-        let rule_id = "unknown"; // Would be passed in real implementation
+        let _rule_id = "unknown"; // Would be passed in real implementation
 
         if let Some(rule_type) = rule_definition.get("type").and_then(|v| v.as_str()) {
             match rule_type {

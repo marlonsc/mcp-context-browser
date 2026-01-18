@@ -1,6 +1,6 @@
 //! Dynamic Provider Resolver
 //!
-//! Resolves providers by name using the inventory registry.
+//! Resolves providers by name using the linkme distributed slice registry.
 //! No direct knowledge of concrete provider implementations.
 //!
 //! ## Architecture
@@ -17,7 +17,7 @@
 //!                    │
 //!                    ▼
 //! ┌─────────────────────────────────────┐
-//! │   inventory::iter::<ProviderEntry>   │  ← Discovers auto-registered providers
+//! │   PROVIDERS.iter()                   │  ← Discovers auto-registered providers
 //! └─────────────────────────────────────┘
 //!                    │
 //!                    ▼

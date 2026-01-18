@@ -3,11 +3,9 @@
 //! Provides querying capabilities over unified AST format
 //! for rule validation.
 
-use std::collections::HashMap;
 use regex::Regex;
 
 use super::{AstNode, AstViolation};
-use crate::Result;
 
 /// AST query for pattern matching
 #[derive(Debug, Clone)]

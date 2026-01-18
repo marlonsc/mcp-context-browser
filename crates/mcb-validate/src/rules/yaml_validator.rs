@@ -17,9 +17,7 @@ impl YamlRuleValidator {
     /// Create a new validator with the schema
     pub fn new() -> Result<Self> {
         let schema_path = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .parent()
-            .unwrap()
-            .join("crates/mcb-validate/rules/schema.json");
+            .join("rules/schema.json");
 
         let schema_content = std::fs::read_to_string(&schema_path)
             .map_err(|e| crate::ValidationError::Io(e))?;

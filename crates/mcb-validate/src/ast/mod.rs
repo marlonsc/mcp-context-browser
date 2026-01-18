@@ -9,7 +9,7 @@ pub mod query;
 
 use std::collections::HashMap;
 use std::path::Path;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use crate::Result;
 
@@ -50,38 +50,31 @@ pub struct AstParseResult {
     pub errors: Vec<String>,
 }
 
-/// AST query for pattern matching
-#[derive(Debug, Clone)]
-pub struct AstQuery {
-    pub language: String,
-    pub pattern: String,
-    pub message: String,
-    pub severity: String,
-}
+// AstQuery is defined in query.rs and re-exported below
 
 /// Language-specific AST parser
 pub trait AstParser: Send + Sync {
     fn language(&self) -> &'static str;
-    fn parse_file(&self, path: &Path) -> Result<AstParseResult>;
-    fn parse_content(&self, content: &str, filename: &str) -> Result<AstParseResult>;
+    fn parse_file(&mut self, path: &Path) -> Result<AstParseResult>;
+    fn parse_content(&mut self, content: &str, filename: &str) -> Result<AstParseResult>;
 }
 
 /// Unified AST engine for multi-language analysis
 pub struct AstEngine {
-    parsers: HashMap<String, Arc<dyn AstParser>>,
+    parsers: HashMap<String, Arc<Mutex<dyn AstParser>>>,
     queries: HashMap<String, Vec<AstQuery>>,
 }
 
 impl AstEngine {
     pub fn new() -> Self {
-        let mut parsers = HashMap::new();
+        let mut parsers: HashMap<String, Arc<Mutex<dyn AstParser>>> = HashMap::new();
 
         // Register language parsers
-        parsers.insert("rust".to_string(), Arc::new(languages::RustParser::new()));
-        parsers.insert("python".to_string(), Arc::new(languages::PythonParser::new()));
-        parsers.insert("javascript".to_string(), Arc::new(languages::JavaScriptParser::new()));
-        parsers.insert("typescript".to_string(), Arc::new(languages::TypeScriptParser::new()));
-        parsers.insert("go".to_string(), Arc::new(languages::GoParser::new()));
+        parsers.insert("rust".to_string(), Arc::new(Mutex::new(languages::RustParser::new())));
+        parsers.insert("python".to_string(), Arc::new(Mutex::new(languages::PythonParser::new())));
+        parsers.insert("javascript".to_string(), Arc::new(Mutex::new(languages::JavaScriptParser::new())));
+        parsers.insert("typescript".to_string(), Arc::new(Mutex::new(languages::TypeScriptParser::new())));
+        parsers.insert("go".to_string(), Arc::new(Mutex::new(languages::GoParser::new())));
 
         Self {
             parsers,
@@ -93,7 +86,7 @@ impl AstEngine {
         self.queries.entry(rule_id).or_insert_with(Vec::new).push(query);
     }
 
-    pub fn get_parser(&self, language: &str) -> Option<&Arc<dyn AstParser>> {
+    pub fn get_parser(&self, language: &str) -> Option<&Arc<Mutex<dyn AstParser>>> {
         self.parsers.get(language)
     }
 

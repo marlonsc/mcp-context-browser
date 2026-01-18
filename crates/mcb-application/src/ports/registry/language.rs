@@ -1,8 +1,8 @@
 //! Language Chunking Provider Registry
 //!
-//! Auto-registration system for language chunking providers.
-//! Providers register themselves via `inventory::submit!` and are
-//! discovered at runtime via `inventory::iter`.
+//! Auto-registration system for language chunking providers using linkme distributed slices.
+//! Providers register themselves via `#[linkme::distributed_slice]` and are
+//! discovered at runtime.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -64,8 +64,8 @@ impl LanguageProviderConfig {
 /// Registry entry for language chunking providers
 ///
 /// Each language chunking provider implementation registers itself with this entry
-/// using `inventory::submit!`. The entry contains metadata and a factory
-/// function to create provider instances.
+/// using `#[linkme::distributed_slice(LANGUAGE_PROVIDERS)]`. The entry contains
+/// metadata and a factory function to create provider instances.
 pub struct LanguageProviderEntry {
     /// Unique provider name (e.g., "universal", "treesitter", "null")
     pub name: &'static str,
@@ -75,12 +75,9 @@ pub struct LanguageProviderEntry {
     pub factory: fn(&LanguageProviderConfig) -> Result<Arc<dyn LanguageChunkingProvider>, String>,
 }
 
-// Auto-collection via inventory - providers submit entries at compile time
-inventory::collect!(LanguageProviderEntry);
-
-// Auto-collection via linkme distributed slices - providers submit entries at compile time (new approach)
+// Auto-collection via linkme distributed slices - providers submit entries at compile time
 #[linkme::distributed_slice]
-pub static LANGUAGE_PROVIDERS_LINKME: [LanguageProviderEntry] = [..];
+pub static LANGUAGE_PROVIDERS: [LanguageProviderEntry] = [..];
 
 /// Resolve language chunking provider by name from registry
 ///
@@ -98,26 +95,13 @@ pub fn resolve_language_provider(
 ) -> Result<Arc<dyn LanguageChunkingProvider>, String> {
     let provider_name = &config.provider;
 
-    // Try linkme first (new approach)
-    for entry in LANGUAGE_PROVIDERS_LINKME {
+    for entry in LANGUAGE_PROVIDERS {
         if entry.name == provider_name {
             return (entry.factory)(config);
         }
     }
 
-    // Fallback to inventory (old approach)
-    for entry in inventory::iter::<LanguageProviderEntry>() {
-        if entry.name == provider_name {
-            return (entry.factory)(config);
-        }
-    }
-
-    // List available providers for helpful error message
-    let mut available: Vec<&str> = LANGUAGE_PROVIDERS_LINKME
-        .iter()
-        .map(|e| e.name)
-        .collect();
-    available.extend(inventory::iter::<LanguageProviderEntry>().map(|e| e.name));
+    let available: Vec<&str> = LANGUAGE_PROVIDERS.iter().map(|e| e.name).collect();
 
     Err(format!(
         "Unknown language provider '{}'. Available providers: {:?}",
@@ -130,24 +114,10 @@ pub fn resolve_language_provider(
 /// Returns a list of (name, description) tuples for all registered
 /// language chunking providers. Useful for CLI help and admin UI.
 pub fn list_language_providers() -> Vec<(&'static str, &'static str)> {
-    let mut providers: Vec<(&'static str, &'static str)> = LANGUAGE_PROVIDERS_LINKME
+    LANGUAGE_PROVIDERS
         .iter()
         .map(|e| (e.name, e.description))
-        .collect();
-
-    // Add inventory providers (avoiding duplicates)
-    let linkme_names: std::collections::HashSet<&str> = LANGUAGE_PROVIDERS_LINKME
-        .iter()
-        .map(|e| e.name)
-        .collect();
-
-    for entry in inventory::iter::<LanguageProviderEntry>() {
-        if !linkme_names.contains(entry.name) {
-            providers.push((entry.name, entry.description));
-        }
-    }
-
-    providers
+        .collect()
 }
 
 #[cfg(test)]

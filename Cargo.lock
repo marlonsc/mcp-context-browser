@@ -2836,15 +2836,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "inventory"
-version = "0.3.21"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc61209c082fbeb19919bee74b176221b27223e27b65d781eb91af24eb1fb46e"
-dependencies = [
- "rustversion",
-]
-
-[[package]]
 name = "ipnet"
 version = "2.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3247,7 +3238,6 @@ dependencies = [
  "anyhow",
  "async-trait",
  "futures",
- "inventory",
  "linkme",
  "mcb-domain",
  "serde",
@@ -3311,7 +3301,6 @@ dependencies = [
  "hostname",
  "humantime",
  "ignore",
- "inventory",
  "itertools 0.14.0",
  "jsonwebtoken",
  "mcb-application",
@@ -3371,7 +3360,6 @@ dependencies = [
  "edgevec",
  "fastembed",
  "futures",
- "inventory",
  "linkme",
  "mcb-application",
  "mcb-domain",
@@ -3466,7 +3454,6 @@ dependencies = [
  "clap",
  "garde",
  "glob",
- "inventory",
  "jsonpath-rust",
  "jsonschema",
  "once_cell",

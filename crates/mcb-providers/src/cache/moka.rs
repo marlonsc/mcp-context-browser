@@ -167,22 +167,21 @@ impl<M: shaku::Module> shaku::Component<M> for MokaCacheProvider {
 }
 
 // ============================================================================
-// Auto-registration via inventory
+// Auto-registration via linkme
 // ============================================================================
 
-use mcb_application::ports::registry::{CacheProviderConfig, CacheProviderEntry};
+use mcb_application::ports::registry::{CacheProviderConfig, CacheProviderEntry, CACHE_PROVIDERS};
 
-inventory::submit! {
-    CacheProviderEntry {
-        name: "moka",
-        description: "Moka high-performance in-memory cache",
-        factory: |config: &CacheProviderConfig| {
-            let provider = if let Some(max_size) = config.max_size {
-                MokaCacheProvider::with_capacity(max_size)
-            } else {
-                MokaCacheProvider::new()
-            };
-            Ok(std::sync::Arc::new(provider))
-        },
-    }
-}
+#[linkme::distributed_slice(CACHE_PROVIDERS)]
+static MOKA_PROVIDER: CacheProviderEntry = CacheProviderEntry {
+    name: "moka",
+    description: "Moka high-performance in-memory cache",
+    factory: |config: &CacheProviderConfig| {
+        let provider = if let Some(max_size) = config.max_size {
+            MokaCacheProvider::with_capacity(max_size)
+        } else {
+            MokaCacheProvider::new()
+        };
+        Ok(std::sync::Arc::new(provider))
+    },
+};

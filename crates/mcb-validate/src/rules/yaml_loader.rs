@@ -25,6 +25,10 @@ pub struct ValidatedRule {
     pub config: serde_json::Value,
     pub rule_definition: serde_json::Value,
     pub fixes: Vec<RuleFix>,
+    /// Linter codes to execute (e.g., ["F401"] for Ruff, ["clippy::unwrap_used"] for Clippy)
+    pub lint_select: Vec<String>,
+    /// Custom message for violations
+    pub message: Option<String>,
 }
 
 /// Suggested fix for a rule violation
@@ -197,6 +201,21 @@ impl YamlRuleLoader {
             })
             .unwrap_or_default();
 
+        // Extract lint_select codes (for Ruff/Clippy integration)
+        let lint_select = obj.get("lint_select")
+            .and_then(|v| v.as_array())
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|code| code.as_str().map(|s| s.to_string()))
+                    .collect()
+            })
+            .unwrap_or_default();
+
+        // Extract custom message
+        let message = obj.get("message")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+
         Ok(ValidatedRule {
             id,
             name,
@@ -209,6 +228,8 @@ impl YamlRuleLoader {
             config,
             rule_definition,
             fixes,
+            lint_select,
+            message,
         })
     }
 

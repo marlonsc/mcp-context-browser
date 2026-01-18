@@ -299,17 +299,16 @@ impl mcb_application::ports::providers::LanguageChunkingProvider
 }
 
 // ============================================================================
-// Auto-registration via inventory
+// Auto-registration via linkme
 // ============================================================================
 
-use mcb_application::ports::registry::{LanguageProviderConfig, LanguageProviderEntry};
+use mcb_application::ports::registry::{LanguageProviderConfig, LanguageProviderEntry, LANGUAGE_PROVIDERS};
 
-inventory::submit! {
-    LanguageProviderEntry {
-        name: "universal",
-        description: "Universal language chunker supporting all languages via tree-sitter",
-        factory: |_config: &LanguageProviderConfig| {
-            Ok(std::sync::Arc::new(UniversalLanguageChunkingProvider::new()))
-        },
-    }
-}
+#[linkme::distributed_slice(LANGUAGE_PROVIDERS)]
+static UNIVERSAL_LANGUAGE_PROVIDER: LanguageProviderEntry = LanguageProviderEntry {
+    name: "universal",
+    description: "Universal language chunker supporting all languages via tree-sitter",
+    factory: |_config: &LanguageProviderConfig| {
+        Ok(std::sync::Arc::new(UniversalLanguageChunkingProvider::new()))
+    },
+};

@@ -253,7 +253,7 @@ forbidden_prefixes:
   - "forbidden-"
 "#).unwrap();
 
-        let mut test_string = "{{crate_name}} should not use {{forbidden_prefixes}}".to_string();
+        let test_string = "{{crate_name}} should not use {{forbidden_prefixes}}".to_string();
         let result = engine.substitute_string(&test_string, &variables).unwrap();
 
         assert_eq!(result, "test-crate should not use mcb-,forbidden-");

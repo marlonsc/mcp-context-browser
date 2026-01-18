@@ -40,6 +40,12 @@ pub mod scan;
 pub mod rules;
 pub mod engines;
 
+// === Linter Integration (Phase 1 - Pure Rust Pipeline) ===
+pub mod linters;
+
+// === AST Analysis (Phase 2 - Pure Rust Pipeline) ===
+pub mod ast;
+
 // === New Validators (using new system) ===
 pub mod clean_architecture;
 pub mod layer_flow;
@@ -92,6 +98,15 @@ pub use rules::yaml_loader::YamlRuleLoader;
 pub use rules::yaml_validator::YamlRuleValidator;
 pub use rules::templates::TemplateEngine;
 pub use engines::{HybridRuleEngine, RuleEngineType};
+
+// Re-export linter integration
+pub use linters::{LintViolation, LinterEngine, LinterType, RuffLinter, ClippyLinter};
+
+// Re-export AST module types
+pub use ast::{
+    AstDecoder, AstEngine, AstNode, AstParseResult, AstParser, AstQuery,
+    AstQueryBuilder, AstQueryPatterns, AstViolation, Position, QueryCondition, Span,
+};
 
 // Re-export new validators
 pub use clean_architecture::{CleanArchitectureValidator, CleanArchitectureViolation};
@@ -631,10 +646,15 @@ impl ArchitectureValidator {
 
     /// Validate using YAML rules with hybrid engines
     pub async fn validate_with_yaml_rules(&self) -> Result<GenericReport> {
+        use crate::violation_trait::ViolationCategory;
+
         let rules = self.load_yaml_rules().await?;
         let engine = HybridRuleEngine::new();
 
         let mut violations: Vec<Box<dyn Violation>> = Vec::new();
+
+        // Scan for files to validate
+        let file_contents = self.scan_files_for_validation()?;
 
         for rule in rules.into_iter().filter(|r| r.enabled) {
             let context = engines::hybrid_engine::RuleContext {
@@ -642,29 +662,108 @@ impl ArchitectureValidator {
                 config: self.config.clone(),
                 ast_data: HashMap::new(), // Would be populated by scanner
                 cargo_data: HashMap::new(), // Would be populated by scanner
-                file_contents: HashMap::new(), // Would be populated by scanner
+                file_contents: file_contents.clone(),
             };
 
-            let engine_type = match rule.engine.as_str() {
-                "rust-rule-engine" => RuleEngineType::RustRuleEngine,
-                "rusty-rules" => RuleEngineType::RustyRules,
-                _ => RuleEngineType::RustyRules, // Default
+            // Determine severity
+            let severity = match rule.severity.to_lowercase().as_str() {
+                "error" => crate::violation_trait::Severity::Error,
+                "warning" => crate::violation_trait::Severity::Warning,
+                _ => crate::violation_trait::Severity::Info,
             };
 
-            let result = engine.execute_rule(
-                &rule.id,
-                engine_type,
-                &rule.rule_definition,
-                &context,
-            ).await?;
+            // Determine category
+            let category = match rule.category.to_lowercase().as_str() {
+                "architecture" | "clean-architecture" => ViolationCategory::Architecture,
+                "quality" => ViolationCategory::Quality,
+                "performance" => ViolationCategory::Performance,
+                "organization" => ViolationCategory::Organization,
+                "solid" => ViolationCategory::Solid,
+                "di" | "dependency-injection" => ViolationCategory::DependencyInjection,
+                "migration" => ViolationCategory::Configuration, // Use Configuration for migration rules
+                _ => ViolationCategory::Quality,
+            };
 
-            violations.extend(result.violations.into_iter().map(|v| Box::new(v) as Box<dyn Violation>));
+            // Check if this is a lint-based rule
+            if !rule.lint_select.is_empty() {
+                // Use linter execution
+                let result = engine.execute_lint_rule(
+                    &rule.id,
+                    &rule.lint_select,
+                    &context,
+                    rule.message.as_deref(),
+                    severity,
+                    category,
+                ).await?;
+
+                violations.extend(result.violations.into_iter().map(|v| Box::new(v) as Box<dyn Violation>));
+            } else {
+                // Use rule engine execution
+                let engine_type = match rule.engine.as_str() {
+                    "rust-rule-engine" => RuleEngineType::RustRuleEngine,
+                    "rusty-rules" => RuleEngineType::RustyRules,
+                    _ => RuleEngineType::RustyRules, // Default
+                };
+
+                let result = engine.execute_rule(
+                    &rule.id,
+                    engine_type,
+                    &rule.rule_definition,
+                    &context,
+                ).await?;
+
+                violations.extend(result.violations.into_iter().map(|v| Box::new(v) as Box<dyn Violation>));
+            }
         }
 
         Ok(GenericReporter::create_report(
             &violations,
             self.config.workspace_root.clone(),
         ))
+    }
+
+    /// Scan files for validation context
+    fn scan_files_for_validation(&self) -> Result<HashMap<String, String>> {
+        let mut file_contents = HashMap::new();
+
+        // Scan all source directories
+        if let Ok(scan_dirs) = self.config.get_scan_dirs() {
+            for dir in scan_dirs {
+                self.scan_directory(&dir, &mut file_contents)?;
+            }
+        }
+
+        Ok(file_contents)
+    }
+
+    /// Recursively scan a directory for source files
+    fn scan_directory(&self, dir: &Path, file_contents: &mut HashMap<String, String>) -> Result<()> {
+        if !dir.exists() || !dir.is_dir() {
+            return Ok(());
+        }
+
+        for entry in std::fs::read_dir(dir)? {
+            let entry = entry?;
+            let path = entry.path();
+
+            if self.config.should_exclude(&path) {
+                continue;
+            }
+
+            if path.is_dir() {
+                self.scan_directory(&path, file_contents)?;
+            } else if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+                // Include common source file extensions
+                let is_source = matches!(ext, "rs" | "py" | "js" | "ts" | "go" | "java" | "c" | "cpp" | "h" | "hpp");
+                if is_source {
+                    if let Ok(content) = std::fs::read_to_string(&path) {
+                        file_contents.insert(path.to_string_lossy().to_string(), content);
+                    }
+                }
+            }
+        }
+
+        Ok(())
     }
 
     // ========== Registry-Based Validation (Phase 7) ==========

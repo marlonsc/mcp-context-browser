@@ -89,7 +89,8 @@ pub struct RuleConfigFields {
     pub forbidden_patterns: Option<Vec<String>>,
 }
 
-/// Validator functions for custom validations
+/// Validator functions for custom validations (reserved for future use)
+#[allow(dead_code)]
 fn validate_category(category: &str) -> std::result::Result<(), ValidationErrors> {
     let valid_categories = [
         "architecture",
@@ -110,6 +111,7 @@ fn validate_category(category: &str) -> std::result::Result<(), ValidationErrors
     }
 }
 
+#[allow(dead_code)]
 fn validate_severity(severity: &str) -> std::result::Result<(), ValidationErrors> {
     let valid_severities = ["error", "warning", "info"];
 
@@ -122,6 +124,7 @@ fn validate_severity(severity: &str) -> std::result::Result<(), ValidationErrors
     }
 }
 
+#[allow(dead_code)]
 fn validate_engine(engine: &str) -> std::result::Result<(), ValidationErrors> {
     let valid_engines = ["rust-rule-engine", "rusty-rules"];
 

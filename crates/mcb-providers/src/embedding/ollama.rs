@@ -176,9 +176,9 @@ impl EmbeddingProvider for OllamaEmbeddingProvider {
 // Auto-registration via inventory
 // ============================================================================
 
-use mcb_application::ports::registry::{EmbeddingProviderConfig, EmbeddingProviderEntry};
+use mcb_application::ports::registry::EMBEDDING_PROVIDERS;
 
-#[linkme::distributed_slice(mcb_application::ports::registry::EMBEDDING_PROVIDERS)]
+#[linkme::distributed_slice(EMBEDDING_PROVIDERS)]
 static OLLAMA_PROVIDER: mcb_application::ports::registry::EmbeddingProviderEntry = mcb_application::ports::registry::EmbeddingProviderEntry {
     name: "ollama",
     description: "Ollama local embedding provider (nomic-embed-text, all-minilm, etc.)",

@@ -4,7 +4,7 @@
 //! Tree-sitter AST to unified format.
 
 use std::path::Path;
-use tree_sitter::{Language, Parser, Tree};
+use tree_sitter::Parser;
 
 use super::{AstParseResult, AstParser};
 use crate::Result;
@@ -17,8 +17,7 @@ pub struct RustParser {
 impl RustParser {
     pub fn new() -> Self {
         let mut parser = Parser::new();
-        let language = tree_sitter_rust::language();
-        parser.set_language(&language).expect("Failed to load Rust grammar");
+        parser.set_language(&tree_sitter_rust::LANGUAGE.into()).expect("Failed to load Rust grammar");
 
         Self { parser }
     }
@@ -35,12 +34,12 @@ impl AstParser for RustParser {
         "rust"
     }
 
-    fn parse_file(&self, path: &Path) -> Result<AstParseResult> {
+    fn parse_file(&mut self, path: &Path) -> Result<AstParseResult> {
         let content = std::fs::read_to_string(path)?;
         self.parse_content(&content, &path.to_string_lossy())
     }
 
-    fn parse_content(&self, content: &str, filename: &str) -> Result<AstParseResult> {
+    fn parse_content(&mut self, content: &str, filename: &str) -> Result<AstParseResult> {
         let tree = self.parser.parse(content, None)
             .ok_or_else(|| crate::ValidationError::Parse {
                 file: filename.into(),
@@ -64,8 +63,7 @@ pub struct PythonParser {
 impl PythonParser {
     pub fn new() -> Self {
         let mut parser = Parser::new();
-        let language = tree_sitter_python::language();
-        parser.set_language(&language).expect("Failed to load Python grammar");
+        parser.set_language(&tree_sitter_python::LANGUAGE.into()).expect("Failed to load Python grammar");
 
         Self { parser }
     }
@@ -82,12 +80,12 @@ impl AstParser for PythonParser {
         "python"
     }
 
-    fn parse_file(&self, path: &Path) -> Result<AstParseResult> {
+    fn parse_file(&mut self, path: &Path) -> Result<AstParseResult> {
         let content = std::fs::read_to_string(path)?;
         self.parse_content(&content, &path.to_string_lossy())
     }
 
-    fn parse_content(&self, content: &str, filename: &str) -> Result<AstParseResult> {
+    fn parse_content(&mut self, content: &str, filename: &str) -> Result<AstParseResult> {
         let tree = self.parser.parse(content, None)
             .ok_or_else(|| crate::ValidationError::Parse {
                 file: filename.into(),
@@ -111,8 +109,7 @@ pub struct JavaScriptParser {
 impl JavaScriptParser {
     pub fn new() -> Self {
         let mut parser = Parser::new();
-        let language = tree_sitter_javascript::language();
-        parser.set_language(&language).expect("Failed to load JavaScript grammar");
+        parser.set_language(&tree_sitter_javascript::LANGUAGE.into()).expect("Failed to load JavaScript grammar");
 
         Self { parser }
     }
@@ -129,12 +126,12 @@ impl AstParser for JavaScriptParser {
         "javascript"
     }
 
-    fn parse_file(&self, path: &Path) -> Result<AstParseResult> {
+    fn parse_file(&mut self, path: &Path) -> Result<AstParseResult> {
         let content = std::fs::read_to_string(path)?;
         self.parse_content(&content, &path.to_string_lossy())
     }
 
-    fn parse_content(&self, content: &str, filename: &str) -> Result<AstParseResult> {
+    fn parse_content(&mut self, content: &str, filename: &str) -> Result<AstParseResult> {
         let tree = self.parser.parse(content, None)
             .ok_or_else(|| crate::ValidationError::Parse {
                 file: filename.into(),
@@ -158,8 +155,7 @@ pub struct TypeScriptParser {
 impl TypeScriptParser {
     pub fn new() -> Self {
         let mut parser = Parser::new();
-        let language = tree_sitter_typescript::language_tsx();
-        parser.set_language(&language).expect("Failed to load TypeScript grammar");
+        parser.set_language(&tree_sitter_typescript::LANGUAGE_TSX.into()).expect("Failed to load TypeScript grammar");
 
         Self { parser }
     }
@@ -176,12 +172,12 @@ impl AstParser for TypeScriptParser {
         "typescript"
     }
 
-    fn parse_file(&self, path: &Path) -> Result<AstParseResult> {
+    fn parse_file(&mut self, path: &Path) -> Result<AstParseResult> {
         let content = std::fs::read_to_string(path)?;
         self.parse_content(&content, &path.to_string_lossy())
     }
 
-    fn parse_content(&self, content: &str, filename: &str) -> Result<AstParseResult> {
+    fn parse_content(&mut self, content: &str, filename: &str) -> Result<AstParseResult> {
         let tree = self.parser.parse(content, None)
             .ok_or_else(|| crate::ValidationError::Parse {
                 file: filename.into(),
@@ -205,8 +201,7 @@ pub struct GoParser {
 impl GoParser {
     pub fn new() -> Self {
         let mut parser = Parser::new();
-        let language = tree_sitter_go::language();
-        parser.set_language(&language).expect("Failed to load Go grammar");
+        parser.set_language(&tree_sitter_go::LANGUAGE.into()).expect("Failed to load Go grammar");
 
         Self { parser }
     }
@@ -223,12 +218,12 @@ impl AstParser for GoParser {
         "go"
     }
 
-    fn parse_file(&self, path: &Path) -> Result<AstParseResult> {
+    fn parse_file(&mut self, path: &Path) -> Result<AstParseResult> {
         let content = std::fs::read_to_string(path)?;
         self.parse_content(&content, &path.to_string_lossy())
     }
 
-    fn parse_content(&self, content: &str, filename: &str) -> Result<AstParseResult> {
+    fn parse_content(&mut self, content: &str, filename: &str) -> Result<AstParseResult> {
         let tree = self.parser.parse(content, None)
             .ok_or_else(|| crate::ValidationError::Parse {
                 file: filename.into(),
@@ -281,7 +276,7 @@ mod tests {
 
     #[test]
     fn test_parse_simple_rust_function() {
-        let parser = RustParser::new();
+        let mut parser = RustParser::new();
         let code = r#"
 fn hello_world() {
     println!("Hello, World!");
@@ -295,7 +290,7 @@ fn hello_world() {
 
     #[test]
     fn test_parse_simple_python_function() {
-        let parser = PythonParser::new();
+        let mut parser = PythonParser::new();
         let code = r#"
 def hello_world():
     print("Hello, World!")

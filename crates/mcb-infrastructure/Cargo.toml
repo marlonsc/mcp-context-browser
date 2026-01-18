@@ -46,7 +46,6 @@ arc-swap = { workspace = true }
 
 # Dependency injection
 shaku = { workspace = true }
-inventory = { workspace = true }
 
 # HTTP client
 reqwest = { workspace = true }
@@ -165,5 +164,5 @@ criterion = { workspace = true }
 [dev-dependencies]
 tempfile = "3.10"
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
-# Link mcb-providers for inventory auto-registration in tests
+# Link mcb-providers for linkme auto-registration in tests
 mcb-providers = { path = "../mcb-providers" }

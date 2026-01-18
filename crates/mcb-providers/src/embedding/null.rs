@@ -97,17 +97,16 @@ impl NullEmbeddingProvider {
 }
 
 // ============================================================================
-// Auto-registration via inventory
+// Auto-registration via linkme
 // ============================================================================
 
-use mcb_application::ports::registry::{EmbeddingProviderConfig, EmbeddingProviderEntry};
+use mcb_application::ports::registry::{EmbeddingProviderConfig, EmbeddingProviderEntry, EMBEDDING_PROVIDERS};
 
-inventory::submit! {
-    EmbeddingProviderEntry {
-        name: "null",
-        description: "Null provider for testing (deterministic hash-based embeddings)",
-        factory: |_config: &EmbeddingProviderConfig| {
-            Ok(std::sync::Arc::new(NullEmbeddingProvider::new()))
-        },
-    }
-}
+#[linkme::distributed_slice(EMBEDDING_PROVIDERS)]
+static NULL_PROVIDER: EmbeddingProviderEntry = EmbeddingProviderEntry {
+    name: "null",
+    description: "Null provider for testing (deterministic hash-based embeddings)",
+    factory: |_config: &EmbeddingProviderConfig| {
+        Ok(std::sync::Arc::new(NullEmbeddingProvider::new()))
+    },
+};

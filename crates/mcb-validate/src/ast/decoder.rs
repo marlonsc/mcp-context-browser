@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 use tree_sitter::Node;
 
-use super::{AstNode, AstParseResult, Position, Span};
+use super::{AstNode, Position, Span};
 
 /// Decoder for Tree-sitter AST to unified format
 pub struct AstDecoder;
@@ -52,7 +52,7 @@ impl AstDecoder {
     }
 
     /// Extract node span from Tree-sitter
-    fn decode_span(node: Node, source: &str) -> Span {
+    fn decode_span(node: Node, _source: &str) -> Span {
         let start_byte = node.start_byte();
         let end_byte = node.end_byte();
         let start_pos = node.start_position();
@@ -153,7 +153,7 @@ impl AstDecoder {
     }
 
     /// Extract function-specific metadata
-    fn extract_function_metadata(node: &Node, source: &str, metadata: &mut HashMap<String, serde_json::Value>) {
+    fn extract_function_metadata(node: &Node, _source: &str, metadata: &mut HashMap<String, serde_json::Value>) {
         // Count parameters
         let param_count = Self::count_function_parameters(node);
         metadata.insert("parameter_count".to_string(), param_count.into());

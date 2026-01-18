@@ -1,8 +1,8 @@
 //! Embedding Provider Registry
 //!
-//! Auto-registration system for embedding providers.
-//! Providers register themselves via `inventory::submit!` and are
-//! discovered at runtime via `inventory::iter`.
+//! Auto-registration system for embedding providers using linkme distributed slices.
+//! Providers register themselves via `#[linkme::distributed_slice]` and are
+//! discovered at runtime.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -72,8 +72,8 @@ impl EmbeddingProviderConfig {
 /// Registry entry for embedding providers
 ///
 /// Each embedding provider implementation registers itself with this entry
-/// using `inventory::submit!`. The entry contains metadata and a factory
-/// function to create provider instances.
+/// using `#[linkme::distributed_slice(EMBEDDING_PROVIDERS)]`. The entry contains
+/// metadata and a factory function to create provider instances.
 pub struct EmbeddingProviderEntry {
     /// Unique provider name (e.g., "ollama", "openai", "null")
     pub name: &'static str,
@@ -83,12 +83,9 @@ pub struct EmbeddingProviderEntry {
     pub factory: fn(&EmbeddingProviderConfig) -> Result<Arc<dyn EmbeddingProvider>, String>,
 }
 
-// Auto-collection via inventory - providers submit entries at compile time
-inventory::collect!(EmbeddingProviderEntry);
-
-// Auto-collection via linkme distributed slices - providers submit entries at compile time (new approach)
+// Auto-collection via linkme distributed slices - providers submit entries at compile time
 #[linkme::distributed_slice]
-pub static EMBEDDING_PROVIDERS_LINKME: [EmbeddingProviderEntry] = [..];
+pub static EMBEDDING_PROVIDERS: [EmbeddingProviderEntry] = [..];
 
 /// Resolve embedding provider by name from registry
 ///
@@ -115,26 +112,13 @@ pub fn resolve_embedding_provider(
 ) -> Result<Arc<dyn EmbeddingProvider>, String> {
     let provider_name = &config.provider;
 
-    // Try linkme first (new approach)
-    for entry in EMBEDDING_PROVIDERS_LINKME {
+    for entry in EMBEDDING_PROVIDERS {
         if entry.name == provider_name {
             return (entry.factory)(config);
         }
     }
 
-    // Fallback to inventory (old approach)
-    for entry in inventory::iter::<EmbeddingProviderEntry>() {
-        if entry.name == provider_name {
-            return (entry.factory)(config);
-        }
-    }
-
-    // List available providers for helpful error message
-    let mut available: Vec<&str> = EMBEDDING_PROVIDERS_LINKME
-        .iter()
-        .map(|e| e.name)
-        .collect();
-    available.extend(inventory::iter::<EmbeddingProviderEntry>().map(|e| e.name));
+    let available: Vec<&str> = EMBEDDING_PROVIDERS.iter().map(|e| e.name).collect();
 
     Err(format!(
         "Unknown embedding provider '{}'. Available providers: {:?}",
@@ -150,35 +134,10 @@ pub fn resolve_embedding_provider(
 /// # Returns
 /// Vector of (name, description) tuples for all registered providers
 pub fn list_embedding_providers() -> Vec<(&'static str, &'static str)> {
-    let mut providers: Vec<(&'static str, &'static str)> = EMBEDDING_PROVIDERS_LINKME
+    EMBEDDING_PROVIDERS
         .iter()
         .map(|e| (e.name, e.description))
-        .collect();
-
-    // Add inventory providers (avoiding duplicates)
-    let linkme_names: std::collections::HashSet<&str> = EMBEDDING_PROVIDERS_LINKME
-        .iter()
-        .map(|e| e.name)
-        .collect();
-
-    for entry in inventory::iter::<EmbeddingProviderEntry>() {
-        if !linkme_names.contains(entry.name) {
-            providers.push((entry.name, entry.description));
-        }
-    }
-
-    providers
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_embedding_providers_slice_access() {
-        // This test ensures the slice is accessible at compile time
-        let _providers = EMBEDDING_PROVIDERS;
-    }
+        .collect()
 }
 
 #[cfg(test)]

@@ -177,10 +177,10 @@ impl FastEmbedActor {
 }
 
 // ============================================================================
-// Auto-registration via inventory
+// Auto-registration via linkme
 // ============================================================================
 
-use mcb_application::ports::registry::{EmbeddingProviderConfig, EmbeddingProviderEntry};
+use mcb_application::ports::registry::{EmbeddingProviderConfig, EmbeddingProviderEntry, EMBEDDING_PROVIDERS};
 
 /// Parse model name string to EmbeddingModel enum
 fn parse_embedding_model(model_name: &str) -> EmbeddingModel {
@@ -197,19 +197,18 @@ fn parse_embedding_model(model_name: &str) -> EmbeddingModel {
     }
 }
 
-inventory::submit! {
-    EmbeddingProviderEntry {
-        name: "fastembed",
-        description: "FastEmbed local provider (AllMiniLML6V2, BGESmallEN, etc.)",
-        factory: |config: &EmbeddingProviderConfig| {
-            let model_name = config.model.clone()
-                .unwrap_or_else(|| "AllMiniLML6V2".to_string());
+#[linkme::distributed_slice(EMBEDDING_PROVIDERS)]
+static FASTEMBED_PROVIDER: EmbeddingProviderEntry = EmbeddingProviderEntry {
+    name: "fastembed",
+    description: "FastEmbed local provider (AllMiniLML6V2, BGESmallEN, etc.)",
+    factory: |config: &EmbeddingProviderConfig| {
+        let model_name = config.model.clone()
+            .unwrap_or_else(|| "AllMiniLML6V2".to_string());
 
-            let model = parse_embedding_model(&model_name);
-            let provider = FastEmbedProvider::with_model(model)
-                .map_err(|e| format!("Failed to create FastEmbed provider: {}", e))?;
+        let model = parse_embedding_model(&model_name);
+        let provider = FastEmbedProvider::with_model(model)
+            .map_err(|e| format!("Failed to create FastEmbed provider: {}", e))?;
 
-            Ok(std::sync::Arc::new(provider))
-        },
-    }
-}
+        Ok(std::sync::Arc::new(provider))
+    },
+};

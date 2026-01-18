@@ -3,7 +3,6 @@
 //! Integrates external linters (Ruff, Clippy) as first-layer validation
 //! that feeds into the unified violation reporting system.
 
-use std::collections::HashMap;
 use std::path::Path;
 use std::process::Stdio;
 use tokio::process::Command;
@@ -23,7 +22,7 @@ pub struct LintViolation {
 }
 
 /// Supported linter types
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LinterType {
     Ruff,
     Clippy,
@@ -179,14 +178,43 @@ async fn run_linter_command(linter: LinterType, files: &[&Path]) -> Result<Strin
 }
 
 /// Parse Ruff JSON output
+///
+/// Ruff outputs JSON in array format when using `--output-format=json`:
+/// ```json
+/// [
+///   {
+///     "code": "F401",
+///     "message": "...",
+///     "filename": "...",
+///     "location": {"row": 1, "column": 1},
+///     ...
+///   }
+/// ]
+/// ```
 fn parse_ruff_output(output: &str) -> Vec<LintViolation> {
     let mut violations = Vec::new();
 
-    // Parse JSON lines
+    // Try parsing as JSON array first (ruff's default format)
+    if let Ok(ruff_violations) = serde_json::from_str::<Vec<RuffViolation>>(output) {
+        for ruff_violation in ruff_violations {
+            violations.push(LintViolation {
+                rule: ruff_violation.code.clone(),
+                file: ruff_violation.filename,
+                line: ruff_violation.location.row,
+                column: ruff_violation.location.column,
+                message: ruff_violation.message,
+                severity: map_ruff_severity(&ruff_violation.code),
+                category: "quality".to_string(),
+            });
+        }
+        return violations;
+    }
+
+    // Fallback: try parsing as JSON lines (legacy/alternative format)
     for line in output.lines() {
         if let Ok(ruff_violation) = serde_json::from_str::<RuffViolation>(line) {
             violations.push(LintViolation {
-                rule: ruff_violation.code,
+                rule: ruff_violation.code.clone(),
                 file: ruff_violation.filename,
                 line: ruff_violation.location.row,
                 column: ruff_violation.location.column,
@@ -201,27 +229,67 @@ fn parse_ruff_output(output: &str) -> Vec<LintViolation> {
 }
 
 /// Parse Clippy JSON output
+///
+/// Clippy outputs JSON lines with different "reason" types:
+/// - "compiler-message": contains lint/warning/error messages
+/// - "compiler-artifact": build artifacts (ignore)
+/// - "build-finished": build completion (ignore)
+///
+/// The message structure for compiler-message:
+/// ```json
+/// {
+///   "reason": "compiler-message",
+///   "message": {
+///     "code": {"code": "clippy::unwrap_used", "explanation": null},
+///     "level": "warning",
+///     "message": "...",
+///     "spans": [{"file_name": "...", "line_start": 1, "column_start": 1, ...}]
+///   }
+/// }
+/// ```
 fn parse_clippy_output(output: &str) -> Vec<LintViolation> {
     let mut violations = Vec::new();
 
     // Parse JSON lines
     for line in output.lines() {
-        if let Ok(clippy_message) = serde_json::from_str::<ClippyMessage>(line) {
-            if let Some(span) = &clippy_message.message.spans.first() {
-                violations.push(LintViolation {
-                    rule: clippy_message.message.code.clone().unwrap_or_default(),
-                    file: span.file_name.clone(),
-                    line: span.line_start,
-                    column: span.column_start,
-                    message: clippy_message.message.message,
-                    severity: map_clippy_level(&clippy_message.message.level),
-                    category: clippy_message.message.code
-                        .as_ref()
-                        .map(|code| if code.contains("clippy") { "quality" } else { "correctness" })
-                        .unwrap_or("quality")
-                        .to_string(),
-                });
+        // Skip empty lines
+        if line.trim().is_empty() {
+            continue;
+        }
+
+        // Try to parse as ClippyOutput (with reason field)
+        if let Ok(clippy_output) = serde_json::from_str::<ClippyOutput>(line) {
+            // Only process compiler-message reason
+            if clippy_output.reason != "compiler-message" {
+                continue;
             }
+
+            let msg = &clippy_output.message;
+
+            // Skip messages without primary spans
+            let Some(span) = msg.spans.iter().find(|s| s.is_primary) else {
+                continue;
+            };
+
+            // Extract the code (either from nested structure or direct)
+            let rule_code = msg.code.as_ref()
+                .map(|c| c.code.clone())
+                .unwrap_or_default();
+
+            // Skip if no rule code (likely a build error, not a lint)
+            if rule_code.is_empty() {
+                continue;
+            }
+
+            violations.push(LintViolation {
+                rule: rule_code.clone(),
+                file: span.file_name.clone(),
+                line: span.line_start,
+                column: span.column_start,
+                message: msg.message.clone(),
+                severity: map_clippy_level(&msg.level),
+                category: if rule_code.contains("clippy") { "quality" } else { "correctness" }.to_string(),
+            });
         }
     }
 
@@ -279,18 +347,27 @@ struct RuffLocation {
     pub column: usize,
 }
 
-/// Clippy message format
+/// Clippy output format (JSON lines with reason field)
 #[derive(serde::Deserialize)]
-struct ClippyMessage {
+struct ClippyOutput {
+    pub reason: String,
     pub message: ClippyMessageContent,
 }
 
 #[derive(serde::Deserialize)]
 struct ClippyMessageContent {
     pub message: String,
-    pub code: Option<String>,
+    pub code: Option<ClippyCode>,
     pub level: String,
     pub spans: Vec<ClippySpan>,
+}
+
+/// Clippy code is nested: {"code": "clippy::unwrap_used", "explanation": null}
+#[derive(serde::Deserialize)]
+struct ClippyCode {
+    pub code: String,
+    #[allow(dead_code)]
+    pub explanation: Option<String>,
 }
 
 #[derive(serde::Deserialize)]
@@ -298,6 +375,8 @@ struct ClippySpan {
     pub file_name: String,
     pub line_start: usize,
     pub column_start: usize,
+    #[serde(default)]
+    pub is_primary: bool,
 }
 
 #[cfg(test)]

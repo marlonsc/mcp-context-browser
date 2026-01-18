@@ -290,17 +290,16 @@ fn cosine_similarity_with_norm(a: &[f32], b: &[f32], norm_a: f32) -> f32 {
 }
 
 // ============================================================================
-// Auto-registration via inventory
+// Auto-registration via linkme
 // ============================================================================
 
-use mcb_application::ports::registry::{VectorStoreProviderConfig, VectorStoreProviderEntry};
+use mcb_application::ports::registry::{VectorStoreProviderConfig, VectorStoreProviderEntry, VECTOR_STORE_PROVIDERS};
 
-inventory::submit! {
-    VectorStoreProviderEntry {
-        name: "memory",
-        description: "In-memory vector store (fast, non-persistent)",
-        factory: |_config: &VectorStoreProviderConfig| {
-            Ok(std::sync::Arc::new(InMemoryVectorStoreProvider::new()))
-        },
-    }
-}
+#[linkme::distributed_slice(VECTOR_STORE_PROVIDERS)]
+static MEMORY_PROVIDER: VectorStoreProviderEntry = VectorStoreProviderEntry {
+    name: "memory",
+    description: "In-memory vector store (fast, non-persistent)",
+    factory: |_config: &VectorStoreProviderConfig| {
+        Ok(std::sync::Arc::new(InMemoryVectorStoreProvider::new()))
+    },
+};

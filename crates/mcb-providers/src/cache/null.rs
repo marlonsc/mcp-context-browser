@@ -80,17 +80,16 @@ impl CacheProvider for NullCacheProvider {
 }
 
 // ============================================================================
-// Auto-registration via inventory
+// Auto-registration via linkme
 // ============================================================================
 
-use mcb_application::ports::registry::{CacheProviderConfig, CacheProviderEntry};
+use mcb_application::ports::registry::{CacheProviderConfig, CacheProviderEntry, CACHE_PROVIDERS};
 
-inventory::submit! {
-    CacheProviderEntry {
-        name: "null",
-        description: "Null cache provider for testing (no-op operations)",
-        factory: |_config: &CacheProviderConfig| {
-            Ok(std::sync::Arc::new(NullCacheProvider::new()))
-        },
-    }
-}
+#[linkme::distributed_slice(CACHE_PROVIDERS)]
+static NULL_CACHE_PROVIDER: CacheProviderEntry = CacheProviderEntry {
+    name: "null",
+    description: "Null cache provider for testing (no-op operations)",
+    factory: |_config: &CacheProviderConfig| {
+        Ok(std::sync::Arc::new(NullCacheProvider::new()))
+    },
+};

@@ -1,8 +1,8 @@
 //! Cache Provider Registry
 //!
-//! Auto-registration system for cache providers.
-//! Providers register themselves via `inventory::submit!` and are
-//! discovered at runtime via `inventory::iter`.
+//! Auto-registration system for cache providers using linkme distributed slices.
+//! Providers register themselves via `#[linkme::distributed_slice]` and are
+//! discovered at runtime.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -72,8 +72,8 @@ impl CacheProviderConfig {
 /// Registry entry for cache providers
 ///
 /// Each cache provider implementation registers itself with this entry
-/// using `inventory::submit!`. The entry contains metadata and a factory
-/// function to create provider instances.
+/// using `#[linkme::distributed_slice(CACHE_PROVIDERS)]`. The entry contains
+/// metadata and a factory function to create provider instances.
 pub struct CacheProviderEntry {
     /// Unique provider name (e.g., "moka", "redis", "null")
     pub name: &'static str,
@@ -83,12 +83,9 @@ pub struct CacheProviderEntry {
     pub factory: fn(&CacheProviderConfig) -> Result<Arc<dyn CacheProvider>, String>,
 }
 
-// Auto-collection via inventory - providers submit entries at compile time
-inventory::collect!(CacheProviderEntry);
-
-// Auto-collection via linkme distributed slices - providers submit entries at compile time (new approach)
+// Auto-collection via linkme distributed slices - providers submit entries at compile time
 #[linkme::distributed_slice]
-pub static CACHE_PROVIDERS_LINKME: [CacheProviderEntry] = [..];
+pub static CACHE_PROVIDERS: [CacheProviderEntry] = [..];
 
 /// Resolve cache provider by name from registry
 ///
@@ -106,26 +103,13 @@ pub fn resolve_cache_provider(
 ) -> Result<Arc<dyn CacheProvider>, String> {
     let provider_name = &config.provider;
 
-    // Try linkme first (new approach)
-    for entry in CACHE_PROVIDERS_LINKME {
+    for entry in CACHE_PROVIDERS {
         if entry.name == provider_name {
             return (entry.factory)(config);
         }
     }
 
-    // Fallback to inventory (old approach)
-    for entry in inventory::iter::<CacheProviderEntry>() {
-        if entry.name == provider_name {
-            return (entry.factory)(config);
-        }
-    }
-
-    // List available providers for helpful error message
-    let mut available: Vec<&str> = CACHE_PROVIDERS_LINKME
-        .iter()
-        .map(|e| e.name)
-        .collect();
-    available.extend(inventory::iter::<CacheProviderEntry>().map(|e| e.name));
+    let available: Vec<&str> = CACHE_PROVIDERS.iter().map(|e| e.name).collect();
 
     Err(format!(
         "Unknown cache provider '{}'. Available providers: {:?}",
@@ -138,24 +122,10 @@ pub fn resolve_cache_provider(
 /// Returns a list of (name, description) tuples for all registered
 /// cache providers. Useful for CLI help and admin UI.
 pub fn list_cache_providers() -> Vec<(&'static str, &'static str)> {
-    let mut providers: Vec<(&'static str, &'static str)> = CACHE_PROVIDERS_LINKME
+    CACHE_PROVIDERS
         .iter()
         .map(|e| (e.name, e.description))
-        .collect();
-
-    // Add inventory providers (avoiding duplicates)
-    let linkme_names: std::collections::HashSet<&str> = CACHE_PROVIDERS_LINKME
-        .iter()
-        .map(|e| e.name)
-        .collect();
-
-    for entry in inventory::iter::<CacheProviderEntry>() {
-        if !linkme_names.contains(entry.name) {
-            providers.push((entry.name, entry.description));
-        }
-    }
-
-    providers
+        .collect()
 }
 
 #[cfg(test)]

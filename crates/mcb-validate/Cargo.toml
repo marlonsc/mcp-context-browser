@@ -53,9 +53,6 @@ jsonschema = "0.17"
 pest = "2.8"
 pest_derive = "2.8"
 
-# Plugin system - Para descoberta automática
-inventory.workspace = true
-
 # JSON Path - Para navegação complexa
 jsonpath-rust = "0.7"
 
