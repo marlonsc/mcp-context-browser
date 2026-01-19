@@ -97,7 +97,9 @@ pub use config::{
 // Re-export rule registry and YAML system
 pub use engines::{HybridRuleEngine, RuleEngineType};
 pub use rules::templates::TemplateEngine;
-pub use rules::yaml_loader::{ValidatedRule, YamlRuleLoader};
+pub use rules::yaml_loader::{
+    AstSelector, MetricThresholdConfig, MetricsConfig, RuleFix, ValidatedRule, YamlRuleLoader,
+};
 pub use rules::yaml_validator::YamlRuleValidator;
 pub use rules::{Rule, RuleRegistry};
 

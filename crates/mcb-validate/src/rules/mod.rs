@@ -12,5 +12,7 @@ pub use registry::{clean_architecture_rules, layer_boundary_rules, Rule, RuleReg
 
 // Re-export YAML system
 pub use templates::TemplateEngine;
-pub use yaml_loader::YamlRuleLoader;
+pub use yaml_loader::{
+    AstSelector, MetricThresholdConfig, MetricsConfig, RuleFix, ValidatedRule, YamlRuleLoader,
+};
 pub use yaml_validator::YamlRuleValidator;

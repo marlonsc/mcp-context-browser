@@ -25,6 +25,7 @@ mod ast_executor_tests {
             message: Some("Test violation detected".to_string()),
             selectors,
             ast_query,
+            metrics: None,
         }
     }
 

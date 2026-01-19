@@ -7,7 +7,7 @@
   "properties": {
     "schema": {
       "type": "string",
-      "enum": ["rule/v1", "rule/v2", "template/v1"],
+      "enum": ["rule/v1", "rule/v2", "rule/v3", "template/v1"],
       "description": "Schema version identifier"
     },
     "id": {
@@ -30,7 +30,8 @@
         "dependency_injection",
         "configuration",
         "web_framework",
-        "migration"
+        "migration",
+        "metrics"
       ],
       "description": "Rule category for grouping"
     },
@@ -99,6 +100,48 @@
     "config": {
       "type": "object",
       "description": "Rule-specific configuration validated by validator/garde"
+    },
+    "metrics": {
+      "type": "object",
+      "description": "Metrics thresholds for schema v3 rules",
+      "properties": {
+        "cognitive_complexity": {
+          "type": "object",
+          "properties": {
+            "max": {"type": "integer", "minimum": 1},
+            "severity": {"type": "string", "enum": ["error", "warning", "info"]},
+            "languages": {"type": "array", "items": {"type": "string"}}
+          },
+          "required": ["max"]
+        },
+        "cyclomatic_complexity": {
+          "type": "object",
+          "properties": {
+            "max": {"type": "integer", "minimum": 1},
+            "severity": {"type": "string", "enum": ["error", "warning", "info"]},
+            "languages": {"type": "array", "items": {"type": "string"}}
+          },
+          "required": ["max"]
+        },
+        "function_length": {
+          "type": "object",
+          "properties": {
+            "max": {"type": "integer", "minimum": 1},
+            "severity": {"type": "string", "enum": ["error", "warning", "info"]},
+            "languages": {"type": "array", "items": {"type": "string"}}
+          },
+          "required": ["max"]
+        },
+        "nesting_depth": {
+          "type": "object",
+          "properties": {
+            "max": {"type": "integer", "minimum": 1},
+            "severity": {"type": "string", "enum": ["error", "warning", "info"]},
+            "languages": {"type": "array", "items": {"type": "string"}}
+          },
+          "required": ["max"]
+        }
+      }
     },
     "rule": {
       "description": "Engine-specific rule definition",
@@ -176,6 +219,20 @@
         { "required": ["lint_select"] },
         { "required": ["ast_query"] }
       ]
+    },
+    "else": {
+      "if": {
+        "properties": { "schema": { "const": "rule/v3" } }
+      },
+      "then": {
+        "anyOf": [
+          { "required": ["metrics"] },
+          { "required": ["engine", "rule"] },
+          { "required": ["selectors"] },
+          { "required": ["lint_select"] },
+          { "required": ["ast_query"] }
+        ]
+      }
     }
   }
 }

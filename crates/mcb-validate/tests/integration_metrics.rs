@@ -5,7 +5,7 @@
 #[cfg(test)]
 mod integration_metrics_tests {
     use mcb_validate::metrics::{MetricThresholds, MetricType, MetricsAnalyzer};
-    use mcb_validate::violation_trait::Severity;
+    use mcb_validate::violation_trait::{Severity, Violation};
     use std::path::Path;
     use tempfile::TempDir;
 
@@ -283,8 +283,9 @@ fn complex(x: i32) {
     /// Test violation message format
     #[test]
     fn test_violation_message_format() {
+        // Use threshold of 0 so any if/for/while triggers a violation
         let thresholds =
-            MetricThresholds::new().with_threshold(MetricType::CognitiveComplexity, 1, Severity::Warning);
+            MetricThresholds::new().with_threshold(MetricType::CognitiveComplexity, 0, Severity::Warning);
 
         let analyzer = MetricsAnalyzer::with_thresholds(thresholds);
 
@@ -300,14 +301,14 @@ fn with_if(x: i32) {
             .analyze_rust_content(content, Path::new("msg.rs"))
             .unwrap();
 
-        assert!(!violations.is_empty());
+        assert!(!violations.is_empty(), "Should have violations with threshold=0");
         let v = &violations[0];
 
         // Check violation fields
         assert_eq!(v.item_name, "with_if");
         assert_eq!(v.metric_type, MetricType::CognitiveComplexity);
-        assert!(v.actual_value > 1); // Should exceed threshold
-        assert_eq!(v.threshold, 1);
+        assert!(v.actual_value >= 1); // Should be at least 1 (the if statement)
+        assert_eq!(v.threshold, 0);
 
         // Check message() method
         let msg = v.message();
@@ -318,8 +319,6 @@ fn with_if(x: i32) {
     /// Test suggestion text
     #[test]
     fn test_suggestion_text() {
-        use mcb_validate::violation_trait::Violation;
-
         let thresholds =
             MetricThresholds::new().with_threshold(MetricType::NestingDepth, 1, Severity::Warning);
 

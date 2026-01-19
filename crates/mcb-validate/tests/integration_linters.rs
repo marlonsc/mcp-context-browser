@@ -505,6 +505,7 @@ fn create_test_rule(
         message: None,
         selectors: Vec::new(),
         ast_query: None,
+        metrics: None,
     }
 }
 

@@ -1,0 +1,32 @@
+schema: "rule/v3"
+id: "METRIC003"
+name: "Nesting Depth Limit"
+category: "metrics"
+severity: "error"
+enabled: true
+
+description: |
+  Enforces a maximum nesting depth for control structures.
+  Deep nesting makes code difficult to follow and understand.
+
+rationale: |
+  Code with excessive nesting is hard to read and often indicates
+  that the function is doing too much. Early returns and guard
+  clauses can reduce nesting and improve readability.
+
+metrics:
+  nesting_depth:
+    max: 4
+    severity: error
+    languages: ["rust", "python", "javascript", "typescript", "go", "java"]
+
+fixes:
+  - type: refactor
+    pattern: "Early returns"
+    message: "Use early returns to handle edge cases and reduce nesting"
+  - type: refactor
+    pattern: "Guard clauses"
+    message: "Convert nested conditions to guard clauses at function start"
+  - type: refactor
+    pattern: "Extract inner logic"
+    message: "Extract deeply nested code into a separate function"

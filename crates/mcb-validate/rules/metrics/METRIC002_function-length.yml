@@ -1,0 +1,29 @@
+schema: "rule/v3"
+id: "METRIC002"
+name: "Function Length Limit"
+category: "metrics"
+severity: "warning"
+enabled: true
+
+description: |
+  Enforces a maximum line count for functions.
+  Long functions are harder to understand and maintain.
+
+rationale: |
+  Functions exceeding the line limit often do too much and should
+  be broken down into smaller, single-purpose functions that are
+  easier to test and reason about.
+
+metrics:
+  function_length:
+    max: 50
+    severity: warning
+    languages: ["rust", "python", "javascript", "typescript", "go", "java"]
+
+fixes:
+  - type: refactor
+    pattern: "Extract methods"
+    message: "Extract logical sections into separate methods"
+  - type: refactor
+    pattern: "Single responsibility"
+    message: "Ensure each function has a single responsibility"

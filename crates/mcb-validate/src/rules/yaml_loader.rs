@@ -33,6 +33,32 @@ pub struct ValidatedRule {
     pub selectors: Vec<AstSelector>,
     /// Tree-sitter query string for complex AST matching (Phase 2)
     pub ast_query: Option<String>,
+    /// Metrics configuration for schema v3 rules (Phase 4)
+    pub metrics: Option<MetricsConfig>,
+}
+
+/// Metrics configuration for rule/v3 rules
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MetricsConfig {
+    /// Cognitive complexity threshold
+    pub cognitive_complexity: Option<MetricThresholdConfig>,
+    /// Cyclomatic complexity threshold
+    pub cyclomatic_complexity: Option<MetricThresholdConfig>,
+    /// Function length threshold
+    pub function_length: Option<MetricThresholdConfig>,
+    /// Nesting depth threshold
+    pub nesting_depth: Option<MetricThresholdConfig>,
+}
+
+/// Configuration for a single metric threshold
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MetricThresholdConfig {
+    /// Maximum allowed value
+    pub max: u32,
+    /// Severity level when threshold is exceeded
+    pub severity: Option<String>,
+    /// Languages this threshold applies to
+    pub languages: Option<Vec<String>>,
 }
 
 /// AST selector for language-specific pattern matching
@@ -286,6 +312,11 @@ impl YamlRuleLoader {
             .and_then(|v| v.as_str())
             .map(|s| s.to_string());
 
+        // Extract metrics configuration (Phase 4 - rule/v3)
+        let metrics = obj.get("metrics").and_then(|v| {
+            serde_json::from_value::<MetricsConfig>(v.clone()).ok()
+        });
+
         Ok(ValidatedRule {
             id,
             name,
@@ -302,6 +333,7 @@ impl YamlRuleLoader {
             message,
             selectors,
             ast_query,
+            metrics,
         })
     }
 

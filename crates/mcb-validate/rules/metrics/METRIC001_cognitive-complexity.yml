@@ -1,0 +1,33 @@
+schema: "rule/v3"
+id: "METRIC001"
+name: "Cognitive Complexity Limit"
+category: "metrics"
+severity: "warning"
+enabled: true
+
+description: |
+  Enforces a maximum cognitive complexity limit for functions.
+  Cognitive complexity measures how hard code is to understand,
+  considering nesting depth and control flow structures.
+
+rationale: |
+  High cognitive complexity makes code harder to understand, test,
+  and maintain. Functions with excessive complexity should be
+  refactored into smaller, more focused units.
+
+metrics:
+  cognitive_complexity:
+    max: 15
+    severity: warning
+    languages: ["rust", "python", "javascript", "typescript"]
+
+fixes:
+  - type: refactor
+    pattern: "Extract helper functions"
+    message: "Consider extracting nested logic into separate helper functions"
+  - type: refactor
+    pattern: "Simplify conditionals"
+    message: "Use early returns or guard clauses to reduce nesting"
+  - type: refactor
+    pattern: "Use pattern matching"
+    message: "Replace nested if-else chains with pattern matching where applicable"
