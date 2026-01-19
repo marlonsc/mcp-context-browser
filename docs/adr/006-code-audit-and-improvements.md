@@ -2,7 +2,7 @@
 
 ## Status
 
-**Implemented** (v0.1.1)
+Accepted
 
 > Major improvements completed:
 >

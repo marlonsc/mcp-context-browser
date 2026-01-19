@@ -2,7 +2,7 @@
 
 ## Status
 
-**Implemented** (v0.1.1)
+Accepted
 
 > Fully implemented with Tokio async runtime across 8 crates in the Clean Architecture workspace.
 >

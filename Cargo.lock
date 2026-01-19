@@ -3334,6 +3334,7 @@ dependencies = [
  "config",
  "criterion",
  "dashmap 6.1.0",
+ "dill",
  "dirs",
  "downcast-rs",
  "flate2",

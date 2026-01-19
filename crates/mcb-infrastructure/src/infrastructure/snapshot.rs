@@ -3,6 +3,7 @@
 //! Null implementation of snapshot port for testing.
 
 use async_trait::async_trait;
+use dill::{component, interface};
 use mcb_application::ports::infrastructure::SnapshotProvider;
 use mcb_domain::entities::codebase::{CodebaseSnapshot, SnapshotChanges};
 use mcb_domain::error::Result;
@@ -12,6 +13,8 @@ use std::path::Path;
 /// Null snapshot provider for testing
 ///
 /// Returns empty snapshots without accessing the filesystem.
+#[component]
+#[interface(dyn SnapshotProvider)]
 pub struct NullSnapshotProvider;
 
 impl NullSnapshotProvider {

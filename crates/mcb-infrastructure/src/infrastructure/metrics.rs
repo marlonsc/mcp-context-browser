@@ -3,10 +3,13 @@
 //! Null implementation of the system metrics port for testing.
 
 use async_trait::async_trait;
+use dill::{component, interface};
 use mcb_application::ports::infrastructure::{SystemMetrics, SystemMetricsCollectorInterface};
 use mcb_domain::error::Result;
 
 /// Null implementation for testing
+#[component]
+#[interface(dyn SystemMetricsCollectorInterface)]
 pub struct NullSystemMetricsCollector;
 
 impl NullSystemMetricsCollector {

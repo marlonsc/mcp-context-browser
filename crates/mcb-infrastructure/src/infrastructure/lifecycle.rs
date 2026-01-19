@@ -330,17 +330,6 @@ impl DefaultShutdownCoordinator {
             notify: Notify::new(),
         }
     }
-
-    /// Wait asynchronously for shutdown signal
-    ///
-    /// This method blocks until `signal_shutdown()` is called.
-    pub async fn wait_for_shutdown(&self) {
-        // If already shutting down, return immediately
-        if self.is_shutting_down() {
-            return;
-        }
-        self.notify.notified().await;
-    }
 }
 
 impl Default for DefaultShutdownCoordinator {

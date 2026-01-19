@@ -2,7 +2,7 @@
 
 ## Status
 
-**Implemented** (v0.1.1)
+Accepted
 
 > Full multi-provider routing implemented in `crates/mcb-providers/src/routing/`:
 >

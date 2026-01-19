@@ -2,7 +2,7 @@
 
 ## Status
 
-**Implemented**(v0.1.0)
+Accepted
 
 > Documentation automation implemented in `scripts/docs/`:
 >

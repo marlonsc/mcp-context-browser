@@ -2,7 +2,7 @@
 
 ## Status
 
-**Implemented** (v0.1.1)
+Accepted
 
 > C4 model documentation structure reflects the Clean Architecture eight-crate workspace:
 >
