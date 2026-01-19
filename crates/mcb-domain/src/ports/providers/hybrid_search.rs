@@ -3,10 +3,10 @@
 //! Defines the interface for hybrid search capabilities that combine
 //! lexical (BM25) and semantic (vector) search.
 
-use async_trait::async_trait;
 use crate::entities::CodeChunk;
 use crate::error::Result;
 use crate::value_objects::SearchResult;
+use async_trait::async_trait;
 use std::collections::HashMap;
 
 /// Result of a hybrid search operation

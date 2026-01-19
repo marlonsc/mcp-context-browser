@@ -3,8 +3,8 @@
 //! Generates reports from violations implementing the Violation trait.
 //! Supports multiple output formats: human-readable, JSON, and CI (GitHub Actions).
 
-use crate::violation_trait::{Violation, ViolationCategory};
 use crate::Severity;
+use crate::violation_trait::{Violation, ViolationCategory};
 use serde::Serialize;
 use std::collections::HashMap;
 use std::path::PathBuf;

@@ -117,10 +117,12 @@ fn test_ssl_cert_required_for_https() {
     };
     let result = ServerConfigUtils::validate_ssl_config(&https_no_ssl);
     assert!(result.is_err());
-    assert!(result
-        .unwrap_err()
-        .to_string()
-        .contains("certificate path is required"));
+    assert!(
+        result
+            .unwrap_err()
+            .to_string()
+            .contains("certificate path is required")
+    );
 
     // HTTPS with only cert path should fail
     let https_cert_only = ServerConfig {
@@ -133,10 +135,12 @@ fn test_ssl_cert_required_for_https() {
     };
     let result = ServerConfigUtils::validate_ssl_config(&https_cert_only);
     assert!(result.is_err());
-    assert!(result
-        .unwrap_err()
-        .to_string()
-        .contains("key path is required"));
+    assert!(
+        result
+            .unwrap_err()
+            .to_string()
+            .contains("key path is required")
+    );
 
     // HTTP config doesn't require SSL
     let http_config = ServerConfig {

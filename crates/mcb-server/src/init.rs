@@ -35,10 +35,10 @@ use mcb_infrastructure::config::TransportMode;
 use mcb_infrastructure::crypto::CryptoService;
 use tracing::{error, info};
 
-use crate::transport::http::{HttpTransport, HttpTransportConfig};
-use crate::transport::stdio::StdioServerExt;
 use crate::McpServer;
 use crate::McpServerBuilder;
+use crate::transport::http::{HttpTransport, HttpTransportConfig};
+use crate::transport::stdio::StdioServerExt;
 
 /// Run the MCP Context Browser server
 ///

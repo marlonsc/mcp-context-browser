@@ -6,8 +6,8 @@
 use async_trait::async_trait;
 use serde_json::Value;
 
-use crate::engines::hybrid_engine::RuleViolation;
 use crate::Result;
+use crate::engines::hybrid_engine::RuleViolation;
 
 use super::hybrid_engine::{RuleContext, RuleEngine};
 use super::rete_engine::ReteEngine;

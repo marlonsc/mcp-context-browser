@@ -10,8 +10,8 @@
 //! - Implementations live in mcb-infrastructure (CryptoService)
 //! - Providers depend on the abstraction, not the concrete implementation
 
-use async_trait::async_trait;
 use crate::error::Result;
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 

@@ -5,19 +5,19 @@
 
 use std::sync::Arc;
 
+use rmcp::ErrorData as McpError;
+use rmcp::ServerHandler;
 use rmcp::model::{
     CallToolResult, Implementation, ListToolsResult, PaginatedRequestParam, ProtocolVersion,
     ServerCapabilities, ServerInfo,
 };
-use rmcp::ErrorData as McpError;
-use rmcp::ServerHandler;
 
 use mcb_application::{ContextServiceInterface, IndexingServiceInterface, SearchServiceInterface};
 
 use crate::handlers::{
     ClearIndexHandler, GetIndexingStatusHandler, IndexCodebaseHandler, SearchCodeHandler,
 };
-use crate::tools::{create_tool_list, route_tool_call, ToolHandlers};
+use crate::tools::{ToolHandlers, create_tool_list, route_tool_call};
 
 /// Core MCP server implementation
 ///

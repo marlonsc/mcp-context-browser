@@ -10,17 +10,15 @@
 //! ```
 
 use super::handles::{
-    CacheProviderHandle, EmbeddingProviderHandle, LanguageProviderHandle,
-    VectorStoreProviderHandle,
+    CacheProviderHandle, EmbeddingProviderHandle, LanguageProviderHandle, VectorStoreProviderHandle,
 };
 use super::provider_resolvers::{
     CacheProviderResolver, EmbeddingProviderResolver, LanguageProviderResolver,
     VectorStoreProviderResolver,
 };
-use dill::{component, Singleton};
+use dill::{Singleton, component};
 use mcb_application::ports::registry::{
-    CacheProviderConfig, EmbeddingProviderConfig, LanguageProviderConfig,
-    VectorStoreProviderConfig,
+    CacheProviderConfig, EmbeddingProviderConfig, LanguageProviderConfig, VectorStoreProviderConfig,
 };
 use std::sync::Arc;
 
@@ -42,7 +40,6 @@ pub struct EmbeddingAdminService {
 }
 
 impl EmbeddingAdminService {
-
     /// List all available embedding providers
     pub fn list_providers(&self) -> Vec<ProviderInfo> {
         self.resolver
@@ -103,7 +100,6 @@ pub struct VectorStoreAdminService {
 }
 
 impl VectorStoreAdminService {
-
     /// List all available vector store providers
     pub fn list_providers(&self) -> Vec<ProviderInfo> {
         self.resolver
@@ -150,7 +146,6 @@ pub struct CacheAdminService {
 }
 
 impl CacheAdminService {
-
     /// List all available cache providers
     pub fn list_providers(&self) -> Vec<ProviderInfo> {
         self.resolver
@@ -204,7 +199,6 @@ pub struct LanguageAdminService {
 }
 
 impl LanguageAdminService {
-
     /// List all available language providers
     pub fn list_providers(&self) -> Vec<ProviderInfo> {
         self.resolver

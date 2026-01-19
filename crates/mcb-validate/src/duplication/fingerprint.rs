@@ -394,7 +394,10 @@ mod tests {
         fp.fingerprint_file(PathBuf::from("file2.rs"), &tokens2);
 
         let stats = fp.stats();
-        assert!(stats.duplicate_fingerprints >= 1, "Should have at least one duplicate fingerprint");
+        assert!(
+            stats.duplicate_fingerprints >= 1,
+            "Should have at least one duplicate fingerprint"
+        );
     }
 
     #[test]

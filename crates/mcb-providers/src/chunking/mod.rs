@@ -22,11 +22,6 @@
 
 // Re-export everything from the language module (single source of truth)
 pub use crate::language::{
-    // Helpers
-    get_chunk_size,
-    is_language_supported,
-    language_from_extension,
-    supported_languages,
     // Base types
     BaseProcessor,
     // Language processors
@@ -47,6 +42,11 @@ pub use crate::language::{
     RubyProcessor,
     RustProcessor,
     SwiftProcessor,
+    // Helpers
+    get_chunk_size,
+    is_language_supported,
+    language_from_extension,
+    supported_languages,
 };
 
 // Re-export constants from language/common

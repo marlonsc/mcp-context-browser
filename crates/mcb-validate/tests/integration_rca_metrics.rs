@@ -127,11 +127,16 @@ mod rca_integration_tests {
         std::fs::write(&file_path, code).expect("Write temp file");
 
         // Set threshold to 5 - the function has CC > 5
-        let thresholds = MetricThresholds::new()
-            .with_threshold(MetricType::CyclomaticComplexity, 5, Severity::Warning);
+        let thresholds = MetricThresholds::new().with_threshold(
+            MetricType::CyclomaticComplexity,
+            5,
+            Severity::Warning,
+        );
 
         let analyzer = RcaAnalyzer::with_thresholds(thresholds);
-        let violations = analyzer.find_violations(&file_path).expect("Should analyze");
+        let violations = analyzer
+            .find_violations(&file_path)
+            .expect("Should analyze");
 
         // Verify violations if found have valid structure
         for v in &violations {
@@ -164,7 +169,9 @@ fn func3(x: i32) -> i32 {
         std::fs::write(&file_path, code).expect("Write temp file");
 
         let analyzer = RcaAnalyzer::new();
-        let metrics = analyzer.analyze_file_aggregate(&file_path).expect("Should analyze");
+        let metrics = analyzer
+            .analyze_file_aggregate(&file_path)
+            .expect("Should analyze");
 
         // File-level metrics should have some values
         // Note: rust-code-analysis may return 0 for some metrics
@@ -211,7 +218,9 @@ fn func3(x: i32) -> i32 {
         std::fs::write(&file_path, code).expect("Write temp file");
 
         let analyzer = RcaAnalyzer::new();
-        let metrics = analyzer.analyze_file_aggregate(&file_path).expect("Should analyze");
+        let metrics = analyzer
+            .analyze_file_aggregate(&file_path)
+            .expect("Should analyze");
 
         // MI is typically 0-100+ (higher is better) but can vary
         assert!(

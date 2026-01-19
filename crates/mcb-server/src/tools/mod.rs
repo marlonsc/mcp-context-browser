@@ -6,5 +6,5 @@
 pub mod registry;
 pub mod router;
 
-pub use registry::{create_tool_list, ToolDefinitions};
-pub use router::{route_tool_call, ToolHandlers};
+pub use registry::{ToolDefinitions, create_tool_list};
+pub use router::{ToolHandlers, route_tool_call};

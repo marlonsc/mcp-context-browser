@@ -56,7 +56,8 @@ fixes:
         engine.load_templates(temp_dir.path()).await.unwrap();
 
         // Create a rule that uses the template
-        let rule_yaml: serde_yaml::Value = serde_yaml::from_str(r#"
+        let rule_yaml: serde_yaml::Value = serde_yaml::from_str(
+            r#"
 _template: "cargo_dependency_check"
 id: "CA001"
 name: "Domain Layer Independence"
@@ -87,10 +88,14 @@ rule: |
           Facts.violation_message = "Domain layer cannot depend on internal mcb-* crates";
           Facts.violation_rule_name = "CA001";
   }
-"#).unwrap();
+"#,
+        )
+        .unwrap();
 
         // Apply template
-        let result = engine.apply_template("cargo_dependency_check", &rule_yaml).unwrap();
+        let result = engine
+            .apply_template("cargo_dependency_check", &rule_yaml)
+            .unwrap();
 
         // Verify the template was applied correctly
         assert_eq!(result["id"], "CA001");
@@ -98,8 +103,17 @@ rule: |
         assert_eq!(result["category"], "architecture");
 
         // Basic check that template was applied
-        assert!(result.get("id").is_some(), "Template should preserve rule ID");
-        assert!(result.get("name").is_some(), "Template should preserve rule name");
-        assert!(result.get("category").is_some(), "Template should preserve category");
+        assert!(
+            result.get("id").is_some(),
+            "Template should preserve rule ID"
+        );
+        assert!(
+            result.get("name").is_some(),
+            "Template should preserve rule name"
+        );
+        assert!(
+            result.get("category").is_some(),
+            "Template should preserve category"
+        );
     }
 }

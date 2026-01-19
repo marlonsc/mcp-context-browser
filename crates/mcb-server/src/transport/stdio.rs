@@ -4,8 +4,8 @@
 //! This is the traditional transport mechanism for MCP servers.
 
 use crate::McpServer;
-use rmcp::transport::stdio;
 use rmcp::ServiceExt;
+use rmcp::transport::stdio;
 use tracing::info;
 
 /// Extension trait for McpServer to add stdio serving capability

@@ -1,9 +1,9 @@
 //! End-to-end test for the complete semantic code search workflow
 
 use mcb_domain::{
+    CodeChunk, Embedding, SearchResult,
     entities::{CodebaseSnapshot, FileSnapshot},
     value_objects::config::SyncBatch,
-    CodeChunk, Embedding, SearchResult,
 };
 use std::collections::HashMap;
 
@@ -51,9 +51,11 @@ fn test_complete_semantic_search_workflow() {
 
     // Verify search results
     assert!(!search_results.is_empty());
-    assert!(search_results
-        .iter()
-        .all(|r| r.score >= 0.0 && r.score <= 1.0));
+    assert!(
+        search_results
+            .iter()
+            .all(|r| r.score >= 0.0 && r.score <= 1.0)
+    );
     assert!(search_results.iter().all(|r| !r.content.is_empty()));
 
     // Phase 5: Result Ranking and Filtering

@@ -5,6 +5,7 @@
 //!
 //! Phase 2 of v0.1.2: These tests verify that errors return `is_error: Some(true)`
 //! and contain proper troubleshooting information.
+#![allow(clippy::collapsible_if)]
 
 use mcb_application::domain_services::search::{IndexingResult, IndexingStatus};
 use mcb_server::formatter::ResponseFormatter;
@@ -286,9 +287,8 @@ fn test_format_search_response_success_has_is_error_false() {
     let results = create_test_search_results(3);
     let duration = Duration::from_millis(150);
 
-    let response =
-        ResponseFormatter::format_search_response("test query", &results, duration, 10)
-            .expect("Should format successfully");
+    let response = ResponseFormatter::format_search_response("test query", &results, duration, 10)
+        .expect("Should format successfully");
 
     assert!(
         !response.is_error.unwrap_or(false),
@@ -647,7 +647,9 @@ mod handler_error_tests {
             Ok(response) => {
                 let text = extract_text_content(&response.content);
                 assert!(
-                    text.contains(error_msg) || text.contains("Database") || text.contains("failed"),
+                    text.contains(error_msg)
+                        || text.contains("Database")
+                        || text.contains("failed"),
                     "Error response should contain error details. Got: {}",
                     text
                 );

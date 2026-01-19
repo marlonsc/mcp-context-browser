@@ -2,11 +2,11 @@
 
 #[cfg(test)]
 mod ca001_integration_tests {
-    use mcb_validate::engines::rete_engine::ReteEngine;
-    use mcb_validate::engines::RuleContext;
     use mcb_validate::ValidationConfig;
     #[allow(unused_imports)]
     use mcb_validate::Violation; // Used for type context in violation iteration
+    use mcb_validate::engines::RuleContext;
+    use mcb_validate::engines::rete_engine::ReteEngine;
     use std::collections::HashMap;
 
     #[tokio::test]
@@ -68,8 +68,14 @@ rule "DomainIndependence" salience 10 {
         }
 
         // Should detect the violation
-        assert!(!violations.is_empty(), "CA001 should detect forbidden dependency in mcb-domain");
-        assert!(violations[0].message.contains("Domain layer cannot depend"), "Should have correct violation message");
+        assert!(
+            !violations.is_empty(),
+            "CA001 should detect forbidden dependency in mcb-domain"
+        );
+        assert!(
+            violations[0].message.contains("Domain layer cannot depend"),
+            "Should have correct violation message"
+        );
     }
 
     #[tokio::test]
@@ -128,6 +134,9 @@ rule "DomainIndependence" salience 10 {
         println!("CA001 violations found: {}", violations.len());
 
         // Should NOT detect violations for clean dependencies
-        assert!(violations.is_empty(), "CA001 should NOT detect violations for clean mcb-domain");
+        assert!(
+            violations.is_empty(),
+            "CA001 should NOT detect violations for clean mcb-domain"
+        );
     }
 }

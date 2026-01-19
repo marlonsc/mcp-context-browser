@@ -12,8 +12,8 @@
 use crate::{Result, ValidationError};
 use std::path::{Path, PathBuf};
 
-use super::thresholds::{MetricThresholds, MetricType};
 use super::MetricViolation;
+use super::thresholds::{MetricThresholds, MetricType};
 
 /// Supported languages for metrics analysis
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -443,7 +443,14 @@ impl TreeSitterAnalyzer {
         let control_types = language.control_flow_types();
         let logical_types = language.logical_operator_types();
 
-        self.count_decision_points(node, content, language, control_types, logical_types, &mut complexity);
+        self.count_decision_points(
+            node,
+            content,
+            language,
+            control_types,
+            logical_types,
+            &mut complexity,
+        );
 
         complexity
     }
@@ -472,7 +479,11 @@ impl TreeSitterAnalyzer {
             let end = node.end_byte();
             if end <= content.len() {
                 let text = &content[start..end];
-                if text.contains("&&") || text.contains("||") || text.contains(" and ") || text.contains(" or ") {
+                if text.contains("&&")
+                    || text.contains("||")
+                    || text.contains(" and ")
+                    || text.contains(" or ")
+                {
                     *complexity += 1;
                 }
             }
@@ -481,7 +492,14 @@ impl TreeSitterAnalyzer {
         // Recurse into children
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
-            self.count_decision_points(&child, content, language, control_types, logical_types, complexity);
+            self.count_decision_points(
+                &child,
+                content,
+                language,
+                control_types,
+                logical_types,
+                complexity,
+            );
         }
     }
 
@@ -542,14 +560,38 @@ mod tests {
 
     #[test]
     fn test_language_detection() {
-        assert_eq!(MetricsLanguage::from_extension("rs"), Some(MetricsLanguage::Rust));
-        assert_eq!(MetricsLanguage::from_extension("py"), Some(MetricsLanguage::Python));
-        assert_eq!(MetricsLanguage::from_extension("js"), Some(MetricsLanguage::JavaScript));
-        assert_eq!(MetricsLanguage::from_extension("ts"), Some(MetricsLanguage::TypeScript));
-        assert_eq!(MetricsLanguage::from_extension("go"), Some(MetricsLanguage::Go));
-        assert_eq!(MetricsLanguage::from_extension("java"), Some(MetricsLanguage::Java));
-        assert_eq!(MetricsLanguage::from_extension("c"), Some(MetricsLanguage::C));
-        assert_eq!(MetricsLanguage::from_extension("cpp"), Some(MetricsLanguage::Cpp));
+        assert_eq!(
+            MetricsLanguage::from_extension("rs"),
+            Some(MetricsLanguage::Rust)
+        );
+        assert_eq!(
+            MetricsLanguage::from_extension("py"),
+            Some(MetricsLanguage::Python)
+        );
+        assert_eq!(
+            MetricsLanguage::from_extension("js"),
+            Some(MetricsLanguage::JavaScript)
+        );
+        assert_eq!(
+            MetricsLanguage::from_extension("ts"),
+            Some(MetricsLanguage::TypeScript)
+        );
+        assert_eq!(
+            MetricsLanguage::from_extension("go"),
+            Some(MetricsLanguage::Go)
+        );
+        assert_eq!(
+            MetricsLanguage::from_extension("java"),
+            Some(MetricsLanguage::Java)
+        );
+        assert_eq!(
+            MetricsLanguage::from_extension("c"),
+            Some(MetricsLanguage::C)
+        );
+        assert_eq!(
+            MetricsLanguage::from_extension("cpp"),
+            Some(MetricsLanguage::Cpp)
+        );
         assert_eq!(MetricsLanguage::from_extension("txt"), None);
     }
 
@@ -572,8 +614,11 @@ fn complex(x: i32) -> i32 {
 }
 "#;
 
-        let thresholds = MetricThresholds::new()
-            .with_threshold(MetricType::CognitiveComplexity, 3, Severity::Warning);
+        let thresholds = MetricThresholds::new().with_threshold(
+            MetricType::CognitiveComplexity,
+            3,
+            Severity::Warning,
+        );
 
         let analyzer = TreeSitterAnalyzer::with_thresholds(thresholds);
         let violations = analyzer
@@ -599,8 +644,11 @@ def complex(x):
     return x
 "#;
 
-        let thresholds = MetricThresholds::new()
-            .with_threshold(MetricType::CognitiveComplexity, 3, Severity::Warning);
+        let thresholds = MetricThresholds::new().with_threshold(
+            MetricType::CognitiveComplexity,
+            3,
+            Severity::Warning,
+        );
 
         let analyzer = TreeSitterAnalyzer::with_thresholds(thresholds);
         let violations = analyzer
@@ -630,8 +678,11 @@ function complex(x) {
 }
 "#;
 
-        let thresholds = MetricThresholds::new()
-            .with_threshold(MetricType::CognitiveComplexity, 3, Severity::Warning);
+        let thresholds = MetricThresholds::new().with_threshold(
+            MetricType::CognitiveComplexity,
+            3,
+            Severity::Warning,
+        );
 
         let analyzer = TreeSitterAnalyzer::with_thresholds(thresholds);
         let violations = analyzer
@@ -656,8 +707,11 @@ fn many_branches(x: i32) -> i32 {
 }
 "#;
 
-        let thresholds = MetricThresholds::new()
-            .with_threshold(MetricType::CyclomaticComplexity, 2, Severity::Warning);
+        let thresholds = MetricThresholds::new().with_threshold(
+            MetricType::CyclomaticComplexity,
+            2,
+            Severity::Warning,
+        );
 
         let analyzer = TreeSitterAnalyzer::with_thresholds(thresholds);
         let violations = analyzer

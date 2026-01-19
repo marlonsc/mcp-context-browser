@@ -5,8 +5,8 @@
 
 use async_trait::async_trait;
 use dashmap::DashMap;
-use mcb_domain::ports::providers::{VectorStoreAdmin, VectorStoreProvider};
 use mcb_domain::error::{Error, Result};
+use mcb_domain::ports::providers::{VectorStoreAdmin, VectorStoreProvider};
 use mcb_domain::value_objects::{Embedding, SearchResult};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -131,7 +131,7 @@ impl VectorStoreProvider for NullVectorStoreProvider {
 // ============================================================================
 
 use mcb_application::ports::registry::{
-    VectorStoreProviderConfig, VectorStoreProviderEntry, VECTOR_STORE_PROVIDERS,
+    VECTOR_STORE_PROVIDERS, VectorStoreProviderConfig, VectorStoreProviderEntry,
 };
 
 /// Factory function for creating null vector store provider instances.

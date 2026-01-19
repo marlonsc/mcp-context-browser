@@ -9,9 +9,9 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use crate::violation_trait::{Severity, Violation, ViolationCategory};
 use crate::Result;
 use crate::ValidationConfig;
+use crate::violation_trait::{Severity, Violation, ViolationCategory};
 
 use super::expression_engine::ExpressionEngine;
 use super::rete_engine::ReteEngine;

@@ -25,7 +25,7 @@
 
 use async_nats::Client;
 use async_trait::async_trait;
-use futures::{stream, StreamExt};
+use futures::{StreamExt, stream};
 use mcb_application::ports::infrastructure::{DomainEventStream, EventBusProvider};
 use mcb_domain::error::{Error, Result};
 use mcb_domain::events::DomainEvent;

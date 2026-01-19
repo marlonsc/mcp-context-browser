@@ -19,8 +19,8 @@
 
 use crate::constants::CACHE_DEFAULT_SIZE_LIMIT;
 use async_trait::async_trait;
-use mcb_domain::ports::providers::cache::{CacheEntryConfig, CacheProvider, CacheStats};
 use mcb_domain::error::{Error, Result};
+use mcb_domain::ports::providers::cache::{CacheEntryConfig, CacheProvider, CacheStats};
 use moka::future::Cache;
 use std::time::Duration;
 
@@ -161,7 +161,7 @@ impl std::fmt::Debug for MokaCacheProvider {
 
 use std::sync::Arc;
 
-use mcb_application::ports::registry::{CacheProviderConfig, CacheProviderEntry, CACHE_PROVIDERS};
+use mcb_application::ports::registry::{CACHE_PROVIDERS, CacheProviderConfig, CacheProviderEntry};
 
 /// Factory function for creating Moka cache provider instances.
 fn moka_cache_factory(

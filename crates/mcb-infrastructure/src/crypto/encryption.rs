@@ -2,8 +2,8 @@
 
 use crate::constants::*;
 use aes_gcm::{
-    aead::{rand_core::RngCore as AeadRngCore, Aead, AeadCore, KeyInit, OsRng as AeadOsRng},
     Aes256Gcm, Key, Nonce,
+    aead::{Aead, AeadCore, KeyInit, OsRng as AeadOsRng, rand_core::RngCore as AeadRngCore},
 };
 use mcb_application::ports::providers::{CryptoProvider, EncryptedData};
 use mcb_domain::error::{Error, Result};

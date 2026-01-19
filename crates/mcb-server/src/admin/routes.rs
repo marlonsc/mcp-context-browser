@@ -5,14 +5,14 @@
 //! Migrated from Axum to Rocket in v0.1.2 (ADR-026).
 //! Authentication integration added in v0.1.2.
 
-use rocket::{routes, Build, Rocket};
+use rocket::{Build, Rocket, routes};
 use std::sync::Arc;
 
 use super::auth::AdminAuthConfig;
 use super::config_handlers::{get_config, reload_config, update_config_section};
 use super::handlers::{
-    extended_health_check, get_cache_stats, get_indexing_status, get_metrics, health_check,
-    liveness_check, readiness_check, shutdown, AdminState,
+    AdminState, extended_health_check, get_cache_stats, get_indexing_status, get_metrics,
+    health_check, liveness_check, readiness_check, shutdown,
 };
 use super::lifecycle_handlers::{
     list_services, restart_service, services_health, start_service, stop_service,
@@ -45,35 +45,32 @@ use super::sse::events_stream;
 /// Protected endpoints require the `X-Admin-Key` header (or configured header name)
 /// with a valid API key. Public endpoints (health probes) are exempt.
 pub fn admin_rocket(state: AdminState, auth_config: Arc<AdminAuthConfig>) -> Rocket<Build> {
-    rocket::build()
-        .manage(state)
-        .manage(auth_config)
-        .mount(
-            "/",
-            routes![
-                // Health and monitoring
-                health_check,
-                extended_health_check,
-                get_metrics,
-                get_indexing_status,
-                readiness_check,
-                liveness_check,
-                // Service control
-                shutdown,
-                // Configuration management
-                get_config,
-                reload_config,
-                update_config_section,
-                // SSE event stream
-                events_stream,
-                // Service lifecycle management
-                list_services,
-                services_health,
-                start_service,
-                stop_service,
-                restart_service,
-                // Cache management
-                get_cache_stats,
-            ],
-        )
+    rocket::build().manage(state).manage(auth_config).mount(
+        "/",
+        routes![
+            // Health and monitoring
+            health_check,
+            extended_health_check,
+            get_metrics,
+            get_indexing_status,
+            readiness_check,
+            liveness_check,
+            // Service control
+            shutdown,
+            // Configuration management
+            get_config,
+            reload_config,
+            update_config_section,
+            // SSE event stream
+            events_stream,
+            // Service lifecycle management
+            list_services,
+            services_health,
+            start_service,
+            stop_service,
+            restart_service,
+            // Cache management
+            get_cache_stats,
+        ],
+    )
 }

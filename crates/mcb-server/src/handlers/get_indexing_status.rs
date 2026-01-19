@@ -2,9 +2,9 @@
 //!
 //! Handles the get_indexing_status MCP tool call using the domain indexing service.
 
+use rmcp::ErrorData as McpError;
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::CallToolResult;
-use rmcp::ErrorData as McpError;
 use std::sync::Arc;
 use validator::Validate;
 

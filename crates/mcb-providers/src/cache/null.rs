@@ -4,8 +4,8 @@
 //! Useful for testing and disabling caching.
 
 use async_trait::async_trait;
-use mcb_domain::ports::providers::cache::{CacheEntryConfig, CacheProvider, CacheStats};
 use mcb_domain::error::Result;
+use mcb_domain::ports::providers::cache::{CacheEntryConfig, CacheProvider, CacheStats};
 
 /// Null cache provider that doesn't store anything
 ///
@@ -84,7 +84,7 @@ impl CacheProvider for NullCacheProvider {
 
 use std::sync::Arc;
 
-use mcb_application::ports::registry::{CacheProviderConfig, CacheProviderEntry, CACHE_PROVIDERS};
+use mcb_application::ports::registry::{CACHE_PROVIDERS, CacheProviderConfig, CacheProviderEntry};
 
 /// Factory function for creating null cache provider instances.
 fn null_cache_factory(

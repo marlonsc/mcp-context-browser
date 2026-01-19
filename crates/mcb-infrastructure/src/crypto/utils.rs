@@ -1,6 +1,6 @@
 //! Cryptographic utilities
 
-use aes_gcm::aead::{rand_core::RngCore as AeadRngCore, OsRng as AeadOsRng};
+use aes_gcm::aead::{OsRng as AeadOsRng, rand_core::RngCore as AeadRngCore};
 use mcb_domain::error::{Error, Result};
 use sha2::Sha256;
 

@@ -43,7 +43,10 @@ impl AstQueryExecutor {
     ///
     /// # Returns
     /// Violations that match the rule's AST patterns
-    pub async fn execute_rule(rule: &ValidatedRule, files: &[&Path]) -> Result<Vec<AstQueryViolation>> {
+    pub async fn execute_rule(
+        rule: &ValidatedRule,
+        files: &[&Path],
+    ) -> Result<Vec<AstQueryViolation>> {
         // Skip if no AST selectors or ast_query
         if rule.selectors.is_empty() && rule.ast_query.is_none() {
             return Ok(vec![]);
@@ -83,8 +86,7 @@ impl AstQueryExecutor {
 
             // Execute selectors
             for selector in matching_selectors {
-                let violations =
-                    Self::execute_selector(selector, &content, file, rule).await?;
+                let violations = Self::execute_selector(selector, &content, file, rule).await?;
                 all_violations.extend(violations);
             }
 
@@ -135,10 +137,12 @@ impl AstQueryExecutor {
             .map_err(|e| ValidationError::Config(format!("Failed to set language: {e}")))?;
 
         // Parse content
-        let tree = parser.parse(content, None).ok_or_else(|| ValidationError::Parse {
-            file: file.to_path_buf(),
-            message: "Failed to parse file".into(),
-        })?;
+        let tree = parser
+            .parse(content, None)
+            .ok_or_else(|| ValidationError::Parse {
+                file: file.to_path_buf(),
+                message: "Failed to parse file".into(),
+            })?;
 
         // Compile query
         let query = Query::new(&ts_language, query_str).map_err(|e| {

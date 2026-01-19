@@ -17,7 +17,7 @@ use mcb_infrastructure::config::watcher::ConfigWatcher;
 use mcb_infrastructure::infrastructure::ServiceManager;
 use rocket::http::Status;
 use rocket::serde::json::Json;
-use rocket::{get, post, State};
+use rocket::{State, get, post};
 use serde::Serialize;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -277,7 +277,10 @@ pub fn shutdown(
         "Graceful shutdown initiated, server will stop in {} seconds",
         timeout_secs
     );
-    (Status::Ok, Json(ShutdownResponse::success(msg, timeout_secs)))
+    (
+        Status::Ok,
+        Json(ShutdownResponse::success(msg, timeout_secs)),
+    )
 }
 
 fn spawn_graceful_shutdown(coord: Arc<dyn ShutdownCoordinator>, timeout: u64) {
@@ -296,7 +299,10 @@ fn spawn_graceful_shutdown(coord: Arc<dyn ShutdownCoordinator>, timeout: u64) {
 ///
 /// Requires valid admin API key via `X-Admin-Key` header.
 #[get("/health/extended")]
-pub fn extended_health_check(_auth: AdminAuth, state: &State<AdminState>) -> Json<ExtendedHealthResponse> {
+pub fn extended_health_check(
+    _auth: AdminAuth,
+    state: &State<AdminState>,
+) -> Json<ExtendedHealthResponse> {
     let metrics = state.metrics.get_performance_metrics();
     let operations = state.indexing.get_operations();
     let now = current_timestamp();
@@ -435,8 +441,10 @@ pub struct CacheErrorResponse {
 pub async fn get_cache_stats(
     _auth: AdminAuth,
     state: &State<AdminState>,
-) -> Result<Json<mcb_application::ports::providers::cache::CacheStats>, (Status, Json<CacheErrorResponse>)>
-{
+) -> Result<
+    Json<mcb_application::ports::providers::cache::CacheStats>,
+    (Status, Json<CacheErrorResponse>),
+> {
     let Some(cache) = &state.cache else {
         return Err((
             Status::ServiceUnavailable,

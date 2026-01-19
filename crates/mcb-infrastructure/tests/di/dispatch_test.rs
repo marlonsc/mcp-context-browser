@@ -67,18 +67,12 @@ async fn test_provider_selection_from_config() {
         .expect("Should initialize with null providers");
 
     // Verify correct providers were selected via handles
-    assert_eq!(
-        app_context.embedding_handle().get().provider_name(),
-        "null"
-    );
+    assert_eq!(app_context.embedding_handle().get().provider_name(), "null");
     assert_eq!(
         app_context.vector_store_handle().get().provider_name(),
         "null"
     );
-    assert_eq!(
-        app_context.cache_handle().get().provider_name(),
-        "moka"
-    ); // default cache
+    assert_eq!(app_context.cache_handle().get().provider_name(), "moka"); // default cache
     assert_eq!(
         app_context.language_handle().get().provider_name(),
         "universal"
@@ -108,10 +102,28 @@ async fn test_provider_resolution_uses_registry() {
     let _health = embedding.health_check().await;
 
     // Verify provider names are returned correctly
-    assert!(!app_context.embedding_handle().get().provider_name().is_empty());
-    assert!(!app_context.vector_store_handle().get().provider_name().is_empty());
+    assert!(
+        !app_context
+            .embedding_handle()
+            .get()
+            .provider_name()
+            .is_empty()
+    );
+    assert!(
+        !app_context
+            .vector_store_handle()
+            .get()
+            .provider_name()
+            .is_empty()
+    );
     assert!(!app_context.cache_handle().get().provider_name().is_empty());
-    assert!(!app_context.language_handle().get().provider_name().is_empty());
+    assert!(
+        !app_context
+            .language_handle()
+            .get()
+            .provider_name()
+            .is_empty()
+    );
 }
 
 #[tokio::test]
@@ -135,7 +147,10 @@ async fn test_admin_services_are_accessible() {
     // Verify cache admin
     let cache_admin = app_context.cache_admin();
     let cache_current = cache_admin.current_provider();
-    assert!(!cache_current.is_empty(), "Cache should have a current provider");
+    assert!(
+        !cache_current.is_empty(),
+        "Cache should have a current provider"
+    );
 }
 
 #[tokio::test]

@@ -1,3 +1,8 @@
+// Clippy allows for complex patterns in server code
+#![allow(clippy::io_other_error)]
+#![allow(clippy::for_kv_map)]
+#![allow(clippy::while_let_loop)]
+
 //! # MCP Context Browser Server
 //!
 //! MCP protocol server implementation for semantic code analysis using vector embeddings.

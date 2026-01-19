@@ -2,9 +2,9 @@
 
 #[cfg(test)]
 mod cargo_dependency_tests {
-    use mcb_validate::engines::rusty_rules_engine::RustyRulesEngineWrapper;
-    use mcb_validate::engines::RuleContext;
     use mcb_validate::ValidationConfig;
+    use mcb_validate::engines::RuleContext;
+    use mcb_validate::engines::rusty_rules_engine::RustyRulesEngineWrapper;
     use std::collections::HashMap;
     use std::path::PathBuf;
 
@@ -27,8 +27,8 @@ mod cargo_dependency_tests {
         // Since it's private, we'll test through the evaluate_condition method
         // by creating a test rule
 
-        use serde_json::json;
         use mcb_validate::engines::hybrid_engine::RuleEngine;
+        use serde_json::json;
 
         let rule_definition = json!({
             "type": "cargo_dependencies",
@@ -38,12 +38,21 @@ mod cargo_dependency_tests {
         });
 
         // This should work since mcb-domain doesn't depend on mcb-* crates
-        let result = tokio::runtime::Runtime::new().unwrap().block_on(engine.execute(&rule_definition, &context));
-        assert!(result.is_ok(), "Cargo dependency rule execution should succeed");
+        let result = tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(engine.execute(&rule_definition, &context));
+        assert!(
+            result.is_ok(),
+            "Cargo dependency rule execution should succeed"
+        );
 
         let violations = result.unwrap();
         // Should not find violations since mcb-domain doesn't depend on mcb-* crates
-        assert_eq!(violations.len(), 0, "Should not find violations for clean dependencies");
+        assert_eq!(
+            violations.len(),
+            0,
+            "Should not find violations for clean dependencies"
+        );
     }
 
     #[test]
@@ -72,8 +81,8 @@ mcb-domain = "0.1.0"          # This should also be detected
 
         let engine = RustyRulesEngineWrapper::new();
 
-        use serde_json::json;
         use mcb_validate::engines::hybrid_engine::RuleEngine;
+        use serde_json::json;
 
         let rule_definition = json!({
             "type": "cargo_dependencies",
@@ -82,13 +91,21 @@ mcb-domain = "0.1.0"          # This should also be detected
             "target": "test-crate"
         });
 
-        let result = tokio::runtime::Runtime::new().unwrap().block_on(engine.execute(&rule_definition, &context));
+        let result = tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(engine.execute(&rule_definition, &context));
 
-        assert!(result.is_ok(), "Cargo dependency rule execution should succeed");
+        assert!(
+            result.is_ok(),
+            "Cargo dependency rule execution should succeed"
+        );
 
         let violations = result.unwrap();
 
         // Should find violations since test-crate depends on mcb-* crates
-        assert!(!violations.is_empty(), "Should find violations for forbidden dependencies");
+        assert!(
+            !violations.is_empty(),
+            "Should find violations for forbidden dependencies"
+        );
     }
 }

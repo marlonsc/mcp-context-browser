@@ -1,3 +1,6 @@
+// Allow collapsible_if for complex conditional logic
+#![allow(clippy::collapsible_if)]
+
 //! # MCP Context Browser - Provider Implementations
 //!
 //! This crate contains all user-selectable provider implementations following
@@ -33,11 +36,11 @@
 //! ```
 
 // Re-export mcb-domain types commonly used with providers
+pub use mcb_domain::error::{Error, Result};
 pub use mcb_domain::ports::providers::{
     CacheProvider, EmbeddingProvider, HybridSearchProvider, LanguageChunkingProvider,
     VectorStoreProvider,
 };
-pub use mcb_domain::error::{Error, Result};
 
 // Re-export CryptoProvider from domain (for encrypted vector store)
 #[cfg(feature = "vectorstore-encrypted")]

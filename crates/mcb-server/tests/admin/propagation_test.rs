@@ -3,8 +3,8 @@
 //! Tests configuration propagation and callback functionality.
 
 use mcb_server::admin::propagation::{ConfigPropagator, PropagatorHandle};
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 #[tokio::test]
 async fn test_config_propagator_creation() {

@@ -15,8 +15,8 @@ use crate::constants::{
 };
 use crate::utils::JsonExt;
 use edgevec::hnsw::VectorId;
-use mcb_domain::ports::providers::{VectorStoreAdmin, VectorStoreProvider};
 use mcb_domain::error::{Error, Result};
+use mcb_domain::ports::providers::{VectorStoreAdmin, VectorStoreProvider};
 use mcb_domain::value_objects::{Embedding, SearchResult};
 
 /// EdgeVec vector store configuration
@@ -606,7 +606,7 @@ impl EdgeVecActor {
 use std::sync::Arc;
 
 use mcb_application::ports::registry::{
-    VectorStoreProviderConfig, VectorStoreProviderEntry, VECTOR_STORE_PROVIDERS,
+    VECTOR_STORE_PROVIDERS, VectorStoreProviderConfig, VectorStoreProviderEntry,
 };
 
 /// Factory function for creating EdgeVec vector store provider instances.

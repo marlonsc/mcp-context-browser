@@ -8,9 +8,9 @@ use evalexpr::{ContextWithMutableVariables, HashMapContext, Value as EvalValue};
 use serde_json::Value;
 use std::collections::HashMap;
 
+use crate::Result;
 use crate::engines::hybrid_engine::{RuleContext, RuleEngine, RuleViolation};
 use crate::violation_trait::{Severity, ViolationCategory};
-use crate::Result;
 
 /// Wrapper for evalexpr engine
 ///

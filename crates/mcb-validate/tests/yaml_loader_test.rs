@@ -118,7 +118,10 @@ config:
         match validator.validate_with_yaml_rules().await {
             Ok(report) => {
                 println!("YAML validation completed successfully");
-                println!("Total violations found: {}", report.summary.total_violations);
+                println!(
+                    "Total violations found: {}",
+                    report.summary.total_violations
+                );
 
                 // Debug: print all violations found
                 for (category, violations) in &report.violations_by_category {
@@ -129,17 +132,17 @@ config:
                 }
 
                 // Check if QUAL006 (file size rule) was loaded and executed
-                let qual006_violations = report.violations_by_category
+                let qual006_violations = report
+                    .violations_by_category
                     .get("quality")
-                    .map(|violations| {
-                        violations.iter()
-                            .filter(|v| v.id == "QUAL006")
-                            .count()
-                    })
+                    .map(|violations| violations.iter().filter(|v| v.id == "QUAL006").count())
                     .unwrap_or(0);
 
                 if qual006_violations > 0 {
-                    println!("✅ SUCCESS: QUAL006 detected {} file size violations!", qual006_violations);
+                    println!(
+                        "✅ SUCCESS: QUAL006 detected {} file size violations!",
+                        qual006_violations
+                    );
                 } else {
                     println!("⚠️  QUAL006 detected 0 violations - rule may not be working");
                 }
@@ -149,7 +152,10 @@ config:
             }
             Err(e) => {
                 // If rules directory doesn't exist in test environment, that's acceptable
-                println!("YAML validation failed (expected in some environments): {}", e);
+                println!(
+                    "YAML validation failed (expected in some environments): {}",
+                    e
+                );
                 // Allow graceful failure - the important thing is no panic
             }
         }

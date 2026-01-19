@@ -113,7 +113,10 @@ fn test_format_indexing_error() {
     let response = ResponseFormatter::format_indexing_error("Path does not exist", path);
 
     // Error responses should have is_error: true (MCP compliance)
-    assert!(response.is_error.unwrap_or(false), "Error response should have is_error: true");
+    assert!(
+        response.is_error.unwrap_or(false),
+        "Error response should have is_error: true"
+    );
 }
 
 #[test]

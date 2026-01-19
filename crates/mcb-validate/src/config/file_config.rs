@@ -507,12 +507,16 @@ mod tests {
         let config = LayerBoundariesConfig::default();
         assert!(config.domain_internal_deps.is_empty());
         assert_eq!(config.application_internal_deps, vec!["mcb-domain"]);
-        assert!(config
-            .server_internal_deps
-            .contains(&"mcb-infrastructure".to_string()));
-        assert!(!config
-            .server_internal_deps
-            .contains(&"mcb-providers".to_string()));
+        assert!(
+            config
+                .server_internal_deps
+                .contains(&"mcb-infrastructure".to_string())
+        );
+        assert!(
+            !config
+                .server_internal_deps
+                .contains(&"mcb-providers".to_string())
+        );
     }
 
     #[test]

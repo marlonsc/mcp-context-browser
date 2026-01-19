@@ -15,4 +15,4 @@ pub use encryption::CryptoService;
 // EncryptedData is in mcb-domain - use mcb_application::ports::providers::EncryptedData
 pub use password::PasswordService;
 pub use token::TokenGenerator;
-pub use utils::{bytes_to_hex, HashUtils, KeyDerivation, SecureErasure};
+pub use utils::{HashUtils, KeyDerivation, SecureErasure, bytes_to_hex};

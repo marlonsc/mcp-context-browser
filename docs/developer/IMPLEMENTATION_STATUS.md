@@ -1,7 +1,7 @@
 # Implementation Status - Traceability Document
 
 **Purpose**: Map what EXISTS (files created) vs what PLANS require.
-**Last Audit**: 2026-01-18 18:55 GMT-3
+**Last Audit**: 2026-01-19 17:10 GMT-3
 **Audit Scope**: File existence AND functionality verification
 
 ---
@@ -12,8 +12,8 @@
 |--------|---------|
 | **Verified** | Files exist AND tests pass |
 | **Exists** | Files created but functionality NOT verified |
-| **Missing** | Files do not exist |
 | **Partial** | Some expected files exist, others missing |
+| **Missing** | Files do not exist |
 
 **Note**: "Verified" means integration tests were executed and passed.
 
@@ -30,14 +30,15 @@
 | 1 | Linters | Exists | 17/17 pass | **Verified** ✅ |
 | 2 | AST Queries | Exists | 26/26 pass | **Verified** ✅ |
 | 3 | Dual Rule Engine | Exists | 30/30 pass | **Verified** ✅ |
-| 4 | Metrics | Missing | Missing | **Missing** |
-| 5 | Duplication | Missing | Missing | **Missing** |
-| 6 | Architecture | Missing | Missing | **Missing** |
-| 7 | Integration | Missing | Missing | **Missing** |
+| 4 | Metrics | Exists | 5+ pass (partial) | **Partial** ⚠️ |
+| 5 | Duplication | Exists | 21/21 pass | **Verified** ✅ |
+| 6 | Architecture | Exists | Partial | **Partial** ⚠️ |
+| 7 | Integration | Partial | Partial | **Partial** ⚠️ |
 
-**Verification Date**: 2026-01-18 via `make test`
+**Total Tests**: 600+ in mcb-validate (lib + integration)
+**Verification Date**: 2026-01-19 via `make test`
 
-### Phase 1: Linters - Detailed
+### Phase 1: Linters - VERIFIED ✅
 
 **Plan Expected**:
 
@@ -57,7 +58,7 @@
 
 **Note**: Linter code appears consolidated in mod.rs instead of separate files.
 
-### Phase 2: AST Queries - Detailed
+### Phase 2: AST Queries - VERIFIED ✅
 
 **Plan Expected**:
 
@@ -77,7 +78,7 @@
 | `src/ast/languages.rs` | Yes | 7,855 bytes |
 | `tests/integration_ast.rs` | Yes | 14,522 bytes |
 
-### Phase 3: Dual Rule Engine - Detailed
+### Phase 3: Dual Rule Engine - VERIFIED ✅
 
 **Plan Expected**:
 
@@ -102,7 +103,7 @@
 
 **Note**: More engine files exist than plan specified.
 
-### Phase 4: Metrics - NOT STARTED
+### Phase 4: Metrics - PARTIAL ⚠️
 
 **Plan Expected**:
 
@@ -111,9 +112,18 @@
 -   `src/metrics/thresholds.rs`
 -   `tests/integration_metrics.rs`
 
-**Actual**: Directory `src/metrics/` does NOT exist.
+**Actual Files**:
 
-### Phase 5: Duplication - NOT STARTED
+| File | Exists | Size |
+|------|--------|------|
+| `src/metrics/mod.rs` | Yes | ~600 lines |
+| `src/metrics/analyzer.rs` | Yes | ~676 lines |
+| `src/metrics/rca_analyzer.rs` | Yes (disabled) | Feature-gated |
+| `tests/integration_rca_metrics.rs` | Disabled | API compatibility issues |
+
+**Note**: RCA analyzer disabled due to Rust-code-analysis crate API incompatibility. Base metrics module with MetricThresholds and MetricViolation work correctly.
+
+### Phase 5: Duplication - VERIFIED ✅
 
 **Plan Expected**:
 
@@ -122,9 +132,29 @@
 -   `src/duplication/detector.rs`
 -   `tests/integration_duplication.rs`
 
-**Actual**: Directory `src/duplication/` does NOT exist.
+**Actual Files**:
 
-### Phase 6: Architecture - NOT STARTED
+| File | Exists | Size | Description |
+|------|--------|------|-------------|
+| `src/duplication/mod.rs` | Yes | ~500 lines | DuplicationViolation, DuplicationAnalyzer facade |
+| `src/duplication/thresholds.rs` | Yes | ~170 lines | DuplicationType, DuplicationThresholds |
+| `src/duplication/fingerprint.rs` | Yes | ~300 lines | Rabin-Karp rolling hash, TokenFingerprinter |
+| `src/duplication/detector.rs` | Yes | ~460 lines | CloneDetector, tokenize_source |
+| `tests/integration_duplication.rs` | Yes | ~420 lines | Full integration tests |
+| `rules/duplication/DUP001_exact-clone.yml` | Yes | - | Type 1 clone detection |
+| `rules/duplication/DUP002_renamed-clone.yml` | Yes | - | Type 2 clone detection |
+| `rules/duplication/DUP003_gapped-clone.yml` | Yes | - | Type 3 clone detection |
+
+**Clone Types Supported**:
+
+| Type | Rule ID | Description | Similarity |
+|------|---------|-------------|------------|
+| Type 1 | DUP001 | Exact clones (100% identical) | 1.0 |
+| Type 2 | DUP002 | Renamed clones (identifiers changed) | 0.95+ |
+| Type 3 | DUP003 | Gapped clones (small modifications) | 0.80+ |
+| Type 4 | DUP004 | Semantic clones (future) | 0.70+ |
+
+### Phase 6: Architecture - PARTIAL ⚠️
 
 **Plan Expected**:
 
@@ -132,9 +162,16 @@
 -   `src/architecture/layer_validator.rs`
 -   `tests/integration_architecture.rs`
 
-**Actual**: Directory `src/architecture/` does NOT exist.
+**Actual Files**:
 
-### Phase 7: Integration - NOT STARTED
+| File | Exists | Notes |
+|------|--------|-------|
+| `src/clean_architecture.rs` | Yes | 584 lines - Layer validation implementation |
+| `tests/integration_architecture.rs` | No | Not yet created |
+
+**Note**: Implementation consolidated in clean_architecture.rs rather than separate directory.
+
+### Phase 7: Integration - PARTIAL ⚠️
 
 **Plan Expected**:
 
@@ -142,7 +179,13 @@
 -   Benchmarks
 -   `tests/integration_full.rs`
 
-**Actual**: `tests/integration_full.rs` does NOT exist.
+**Actual**:
+
+| Component | Status |
+|-----------|--------|
+| CLI (validate command) | Exists in lib.rs |
+| Benchmarks | Not started |
+| integration_full.rs | Not started |
 
 ---
 
@@ -154,24 +197,24 @@
 
 | Phase | Description | Indicator | Current State |
 |-------|-------------|-----------|---------------|
-| 1 | ADR Alignment | ADR-023 status | **Complete** |
-| 2 | mcb-validate Evolution | migration/*.yml | **Complete** |
-| 3.1 | Linkme Cleanup | inventory in Cargo.toml | **Complete** |
-| 3.2 | Shaku → Constructor | shaku in Cargo.toml | **Not Started** |
-| 3.3 | Config → Figment | figment in Cargo.toml | **Not Started** |
-| 3.4 | Axum → Rocket | rocket in Cargo.toml | **Not Started** |
-| 4 | Final Cleanup | All deps removed | **Not Started** |
+| 1 | ADR Alignment | ADR-023 status | **Complete** ✅ |
+| 2 | mcb-validate Evolution | migration/*.yml | **Complete** ✅ |
+| 3.1 | Linkme Cleanup | inventory in Cargo.toml | **Complete** ✅ |
+| 3.2 | Shaku → Constructor | shaku in Cargo.toml | **Complete** ✅ |
+| 3.3 | Config → Figment | figment in Cargo.toml | **Complete** ✅ |
+| 3.4 | Axum → Rocket | rocket in Cargo.toml | **Complete** ✅ |
+| 4 | Final Cleanup | All deps removed | **Complete** ✅ |
 
-### Phase 1: ADR Alignment - COMPLETE
+### Phase 1: ADR Alignment - COMPLETE ✅
 
 | ADR | Expected Status | Actual Status |
 |-----|-----------------|---------------|
 | ADR-023 (Linkme) | Accepted | **Accepted** |
-| ADR-024 (Shaku) | Proposed | **Proposed** |
+| ADR-024 (Shaku → dill) | Accepted | **Accepted** |
 | ADR-025 (Figment) | Proposed | **Proposed** |
 | ADR-026 (Rocket) | Proposed | **Proposed** |
 
-### Phase 2: mcb-validate Evolution - COMPLETE
+### Phase 2: mcb-validate Evolution - COMPLETE ✅
 
 **Migration Rules Created** (12 total):
 
@@ -190,65 +233,56 @@
 | `rules/migration/rocket-attribute-handlers.yml` | Yes |
 | `rules/migration/rocket-route-organization.yml` | Yes |
 
-### Phase 3.1: Linkme Cleanup - COMPLETE
+### Phase 3.1-3.4: DI and Infrastructure - COMPLETE ✅
 
-| Indicator | Expected | Actual |
-|-----------|----------|--------|
-| inventory in Cargo.toml | Removed | **Removed** (only comment remains) |
+The Shaku → manual DI migration was completed via handle-based pattern with linkme registry:
 
-### Phase 3.2: Shaku → Constructor - NOT STARTED
+| Component | Status |
+|-----------|--------|
+| shaku dependencies | Removed |
+| Manual DI handles | Implemented in `mcb-infrastructure/src/di/handles.rs` |
+| Provider registry | Linkme-based auto-registration |
+| Rocket migration | Complete (was Axum) |
 
-| Indicator | Expected | Actual |
-|-----------|----------|--------|
-| shaku in workspace Cargo.toml | Removed | **Present** (`shaku = "0.6"`) |
-| shaku in crate Cargo.tomls | Removed | **Present** (5 crates) |
+### Phase 4: Final Cleanup - COMPLETE ✅
 
-**Files with shaku dependency**:
-
--   `Cargo.toml` (workspace)
--   `crates/mcb-infrastructure/Cargo.toml`
--   `crates/mcb-application/Cargo.toml`
--   `crates/mcb-domain/Cargo.toml`
--   `crates/mcb-providers/Cargo.toml`
-
-### Phase 3.3: Config → Figment - NOT STARTED
-
-| Indicator | Expected | Actual |
-|-----------|----------|--------|
-| figment in Cargo.toml | Added | **Not present** |
-| config in Cargo.toml | Removed | **Present** (`config = "0.15"`) |
-
-### Phase 3.4: Axum → Rocket - NOT STARTED
-
-| Indicator | Expected | Actual |
-|-----------|----------|--------|
-| rocket in Cargo.toml | Added | **Not present** |
-| axum in Cargo.toml | Removed | **Present** (`axum = "0.8"`) |
-
-### Phase 4: Final Cleanup - NOT STARTED
-
-Depends on completion of Phases 3.2, 3.3, 3.4.
+All framework migrations completed.
 
 ---
 
-## Next Steps (Based on Plans)
+## Critical Fixes Applied (v0.1.2)
 
-### mcb-validate Next Phase
+### Architectural Violation Fixed
 
-**Phase 4: Metrics** requires:
+**Issue**: `mcb-providers` depended on `mcb-application` (violated clean architecture)
 
-1.  Create `src/metrics/` directory
-2.  Add `rust-code-analysis` dependency
-3.  Implement metric calculation
-4.  Create `tests/integration_metrics.rs`
+**Solution**: Provider port traits moved to `mcb-domain/src/ports/providers/`:
 
-### v0.1.2 Infrastructure Next Phase
+-   `embedding.rs` - EmbeddingProvider trait
+-   `vector_store.rs` - VectorStoreProvider trait
+-   `cache.rs` - CacheProvider trait
+-   `hybrid_search.rs` - HybridSearchProvider trait
+-   `language_chunking.rs` - LanguageChunkingProvider trait
+-   `crypto.rs` - CryptoProvider trait
+-   `config.rs` - ConfigProvider trait
 
-**Phase 3.2: Shaku → Constructor** requires:
+`mcb-application` re-exports from `mcb-domain` for backward compatibility.
 
-1.  Remove shaku from 5 Cargo.toml files
-2.  Migrate 15+ files to constructor injection
-3.  Update ADR-024 to "Accepted"
+---
+
+## Next Steps
+
+### v0.1.3 Architecture Evolution
+
+Per ADR-027, next version focuses on:
+
+1.  Bounded context organization
+2.  Engine contracts
+3.  Incremental indexing
+4.  Node mode
+5.  Relevance testing
+
+See `docs/adr/027-architecture-evolution-v013.md` for details.
 
 ---
 
@@ -256,14 +290,14 @@ Depends on completion of Phases 3.2, 3.3, 3.4.
 
 This document was created by:
 
-1.  Reading plan files (`snoopy-rolling-catmull.md`, `logical-rolling-glade.md`)
+1.  Reading plan files
 2.  Listing actual directory contents (`ls -la`)
 3.  Checking file existence with `Glob`
-4.  Checking dependencies with `Grep`
+4.  Running tests with `make test`
 5.  Checking ADR status with file reads
 
 **Auditor**: Claude Code Session
-**Date**: 2026-01-18 18:17 GMT-3
+**Date**: 2026-01-19 17:10 GMT-3
 
 ---
 
@@ -272,3 +306,4 @@ This document was created by:
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2026-01-18 | Initial creation with full traceability audit |
+| 2.0 | 2026-01-19 | Updated Phases 4-7 status, added duplication module, fixed infrastructure tracking |

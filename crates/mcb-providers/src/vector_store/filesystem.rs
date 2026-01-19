@@ -10,15 +10,15 @@ use crate::constants::{
 use crate::utils::JsonExt;
 use async_trait::async_trait;
 use dashmap::DashMap;
-use mcb_domain::ports::providers::{VectorStoreAdmin, VectorStoreProvider};
 use mcb_domain::error::{Error, Result};
+use mcb_domain::ports::providers::{VectorStoreAdmin, VectorStoreProvider};
 use mcb_domain::value_objects::{Embedding, SearchResult};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::{Read, Seek, Write};
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU32, Ordering};
 
 /// Filesystem vector store configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -96,7 +96,7 @@ pub struct FilesystemVectorStore {
 // File utility helpers (inlined from infrastructure)
 mod file_utils {
     use mcb_domain::error::{Error, Result};
-    use serde::{de::DeserializeOwned, Serialize};
+    use serde::{Serialize, de::DeserializeOwned};
     use std::path::Path;
 
     pub async fn exists(path: &Path) -> bool {
@@ -753,7 +753,7 @@ impl VectorStoreProvider for FilesystemVectorStore {
 // ============================================================================
 
 use mcb_application::ports::registry::{
-    VectorStoreProviderConfig, VectorStoreProviderEntry, VECTOR_STORE_PROVIDERS,
+    VECTOR_STORE_PROVIDERS, VectorStoreProviderConfig, VectorStoreProviderEntry,
 };
 
 /// Factory function for creating filesystem vector store provider instances.

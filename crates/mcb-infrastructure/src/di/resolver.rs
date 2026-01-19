@@ -44,13 +44,13 @@
 use std::sync::Arc;
 
 use mcb_application::ports::providers::{
-    cache::CacheProvider as CacheProviderTrait, EmbeddingProvider, LanguageChunkingProvider,
-    VectorStoreProvider,
+    EmbeddingProvider, LanguageChunkingProvider, VectorStoreProvider,
+    cache::CacheProvider as CacheProviderTrait,
 };
 use mcb_application::ports::registry::{
-    resolve_cache_provider, resolve_embedding_provider, resolve_language_provider,
-    resolve_vector_store_provider, CacheProviderConfig, EmbeddingProviderConfig,
-    LanguageProviderConfig, VectorStoreProviderConfig,
+    CacheProviderConfig, EmbeddingProviderConfig, LanguageProviderConfig,
+    VectorStoreProviderConfig, resolve_cache_provider, resolve_embedding_provider,
+    resolve_language_provider, resolve_vector_store_provider,
 };
 use mcb_domain::error::{Error, Result};
 use mcb_domain::value_objects::{EmbeddingConfig, VectorStoreConfig};

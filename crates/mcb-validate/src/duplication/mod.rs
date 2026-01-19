@@ -39,8 +39,10 @@ use std::path::{Path, PathBuf};
 
 use crate::violation_trait::{Severity, Violation, ViolationCategory};
 
-pub use detector::{tokenize_source, CloneCandidate, CloneDetector};
-pub use fingerprint::{Fingerprint, FingerprintLocation, FingerprintMatch, Token, TokenFingerprinter};
+pub use detector::{CloneCandidate, CloneDetector, tokenize_source};
+pub use fingerprint::{
+    Fingerprint, FingerprintLocation, FingerprintMatch, Token, TokenFingerprinter,
+};
 pub use thresholds::{DuplicationThresholds, DuplicationType};
 
 /// A duplication violation representing a detected code clone
@@ -220,10 +222,7 @@ impl DuplicationAnalyzer {
     /// Check if a file should be analyzed based on language and patterns
     pub fn should_analyze_file(&self, path: &Path) -> bool {
         // Check extension
-        let extension = path
-            .extension()
-            .and_then(|e| e.to_str())
-            .unwrap_or("");
+        let extension = path.extension().and_then(|e| e.to_str()).unwrap_or("");
 
         let language = self.extension_to_language(extension);
         if !self.thresholds.languages.contains(&language.to_string()) {
@@ -234,9 +233,7 @@ impl DuplicationAnalyzer {
         let path_str = path.to_string_lossy();
         for pattern in &self.thresholds.exclude_patterns {
             // Simple glob matching (** = any path, * = any segment)
-            let pattern_regex = pattern
-                .replace("**", ".*")
-                .replace("*", "[^/]*");
+            let pattern_regex = pattern.replace("**", ".*").replace("*", "[^/]*");
             if regex::Regex::new(&pattern_regex)
                 .map(|r| r.is_match(&path_str))
                 .unwrap_or(false)
@@ -250,10 +247,7 @@ impl DuplicationAnalyzer {
 
     /// Detect language from file path
     fn detect_language(&self, path: &Path) -> String {
-        let extension = path
-            .extension()
-            .and_then(|e| e.to_str())
-            .unwrap_or("");
+        let extension = path.extension().and_then(|e| e.to_str()).unwrap_or("");
 
         self.extension_to_language(extension).to_string()
     }
@@ -415,7 +409,10 @@ fn main() {
         // This test verifies the flow works without errors.
         // If duplicates are found, verify they have valid structure.
         for v in &violations {
-            assert!(v.duplicated_lines >= 1, "Duplicated lines should be positive");
+            assert!(
+                v.duplicated_lines >= 1,
+                "Duplicated lines should be positive"
+            );
             assert!(v.similarity > 0.0, "Similarity should be positive");
         }
     }

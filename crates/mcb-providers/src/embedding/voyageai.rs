@@ -6,8 +6,8 @@
 use async_trait::async_trait;
 use reqwest::Client;
 
-use mcb_domain::ports::providers::EmbeddingProvider;
 use mcb_domain::error::{Error, Result};
+use mcb_domain::ports::providers::EmbeddingProvider;
 use mcb_domain::value_objects::Embedding;
 
 use crate::constants::{
@@ -181,7 +181,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use mcb_application::ports::registry::{
-    EmbeddingProviderConfig, EmbeddingProviderEntry, EMBEDDING_PROVIDERS,
+    EMBEDDING_PROVIDERS, EmbeddingProviderConfig, EmbeddingProviderEntry,
 };
 use mcb_domain::ports::providers::EmbeddingProvider as EmbeddingProviderPort;
 

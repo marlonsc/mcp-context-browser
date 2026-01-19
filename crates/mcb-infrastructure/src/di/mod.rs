@@ -39,12 +39,11 @@ pub use admin::{
 pub use bootstrap::*;
 pub use dispatch::*;
 pub use handles::{
-    CacheProviderHandle, EmbeddingProviderHandle, LanguageProviderHandle,
-    VectorStoreProviderHandle,
+    CacheProviderHandle, EmbeddingProviderHandle, LanguageProviderHandle, VectorStoreProviderHandle,
 };
 pub use modules::{DomainServicesContainer, DomainServicesFactory, ServiceDependencies};
 pub use provider_resolvers::{
     CacheProviderResolver, EmbeddingProviderResolver, LanguageProviderResolver,
     VectorStoreProviderResolver,
 };
-pub use resolver::{resolve_providers, ResolvedProviders};
+pub use resolver::{ResolvedProviders, resolve_providers};

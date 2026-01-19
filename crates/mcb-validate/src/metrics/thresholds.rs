@@ -101,7 +101,12 @@ impl MetricThresholds {
     }
 
     /// Add or update a threshold
-    pub fn with_threshold(mut self, metric: MetricType, max_value: u32, severity: Severity) -> Self {
+    pub fn with_threshold(
+        mut self,
+        metric: MetricType,
+        max_value: u32,
+        severity: Severity,
+    ) -> Self {
         self.thresholds.insert(
             metric,
             MetricThreshold {
@@ -174,8 +179,11 @@ impl MetricThresholds {
                         })
                         .unwrap_or(Severity::Warning);
 
-                    thresholds =
-                        thresholds.with_threshold(MetricType::CyclomaticComplexity, max as u32, severity);
+                    thresholds = thresholds.with_threshold(
+                        MetricType::CyclomaticComplexity,
+                        max as u32,
+                        severity,
+                    );
                 }
             }
 
@@ -200,13 +208,16 @@ impl MetricThresholds {
 
         // Fill in defaults for missing thresholds
         if thresholds.get(MetricType::CognitiveComplexity).is_none() {
-            thresholds = thresholds.with_threshold(MetricType::CognitiveComplexity, 15, Severity::Warning);
+            thresholds =
+                thresholds.with_threshold(MetricType::CognitiveComplexity, 15, Severity::Warning);
         }
         if thresholds.get(MetricType::CyclomaticComplexity).is_none() {
-            thresholds = thresholds.with_threshold(MetricType::CyclomaticComplexity, 10, Severity::Warning);
+            thresholds =
+                thresholds.with_threshold(MetricType::CyclomaticComplexity, 10, Severity::Warning);
         }
         if thresholds.get(MetricType::FunctionLength).is_none() {
-            thresholds = thresholds.with_threshold(MetricType::FunctionLength, 50, Severity::Warning);
+            thresholds =
+                thresholds.with_threshold(MetricType::FunctionLength, 50, Severity::Warning);
         }
         if thresholds.get(MetricType::NestingDepth).is_none() {
             thresholds = thresholds.with_threshold(MetricType::NestingDepth, 4, Severity::Warning);
@@ -230,7 +241,8 @@ impl MetricThresholds {
                     _ => Severity::Warning,
                 })
                 .unwrap_or(Severity::Warning);
-            thresholds = thresholds.with_threshold(MetricType::CognitiveComplexity, cc.max, severity);
+            thresholds =
+                thresholds.with_threshold(MetricType::CognitiveComplexity, cc.max, severity);
         }
 
         // Convert cyclomatic_complexity (maps to cognitive for now)

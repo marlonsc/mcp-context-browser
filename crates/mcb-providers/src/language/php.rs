@@ -1,7 +1,7 @@
 //! PHP language processor for AST-based code chunking.
 
 use crate::language::common::{
-    BaseProcessor, LanguageConfig, LanguageProcessor, NodeExtractionRule, CHUNK_SIZE_PHP,
+    BaseProcessor, CHUNK_SIZE_PHP, LanguageConfig, LanguageProcessor, NodeExtractionRule,
     TS_NODE_CLASS_DECLARATION, TS_NODE_FUNCTION_DEFINITION, TS_NODE_METHOD_DECLARATION,
 };
 use mcb_domain::entities::CodeChunk;

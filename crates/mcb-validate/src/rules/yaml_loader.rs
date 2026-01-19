@@ -313,9 +313,9 @@ impl YamlRuleLoader {
             .map(|s| s.to_string());
 
         // Extract metrics configuration (Phase 4 - rule/v3)
-        let metrics = obj.get("metrics").and_then(|v| {
-            serde_json::from_value::<MetricsConfig>(v.clone()).ok()
-        });
+        let metrics = obj
+            .get("metrics")
+            .and_then(|v| serde_json::from_value::<MetricsConfig>(v.clone()).ok());
 
         Ok(ValidatedRule {
             id,

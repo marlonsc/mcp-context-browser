@@ -1,7 +1,7 @@
 //! Python language processor for AST-based code chunking.
 
 use crate::language::common::{
-    BaseProcessor, LanguageConfig, LanguageProcessor, NodeExtractionRule, CHUNK_SIZE_PYTHON,
+    BaseProcessor, CHUNK_SIZE_PYTHON, LanguageConfig, LanguageProcessor, NodeExtractionRule,
     TS_NODE_FUNCTION_DEFINITION,
 };
 use mcb_domain::entities::CodeChunk;

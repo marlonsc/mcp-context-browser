@@ -40,11 +40,17 @@ mod yaml_metrics_tests {
 
         let fl = thresholds.get(MetricType::FunctionLength).unwrap();
         assert_eq!(fl.max_value, 30);
-        assert_eq!(fl.severity, mcb_validate::violation_trait::Severity::Warning);
+        assert_eq!(
+            fl.severity,
+            mcb_validate::violation_trait::Severity::Warning
+        );
 
         let nd = thresholds.get(MetricType::NestingDepth).unwrap();
         assert_eq!(nd.max_value, 3);
-        assert_eq!(nd.severity, mcb_validate::violation_trait::Severity::Warning);
+        assert_eq!(
+            nd.severity,
+            mcb_validate::violation_trait::Severity::Warning
+        );
     }
 
     /// Test analyzing code with thresholds from MetricsConfig
@@ -226,6 +232,9 @@ lint_select: ["F401"]
 
         assert_eq!(rules.len(), 1);
         let rule = &rules[0];
-        assert!(rule.metrics.is_none(), "Non-metrics rule should have no metrics");
+        assert!(
+            rule.metrics.is_none(),
+            "Non-metrics rule should have no metrics"
+        );
     }
 }

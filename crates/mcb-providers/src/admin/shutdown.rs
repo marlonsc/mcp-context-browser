@@ -5,8 +5,8 @@
 //! when the server is shutting down.
 
 use mcb_application::ports::admin::ShutdownCoordinator;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::sync::broadcast;
 use tracing::info;
 

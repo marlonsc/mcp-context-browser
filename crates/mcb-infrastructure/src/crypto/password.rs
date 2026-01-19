@@ -1,8 +1,8 @@
 //! Password hashing service using Argon2
 
 use argon2::{
-    password_hash::{rand_core::OsRng as ArgonOsRng, PasswordHash, PasswordVerifier, SaltString},
     Argon2, PasswordHasher,
+    password_hash::{PasswordHash, PasswordVerifier, SaltString, rand_core::OsRng as ArgonOsRng},
 };
 use mcb_domain::error::{Error, Result};
 

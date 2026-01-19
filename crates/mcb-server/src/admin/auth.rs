@@ -216,6 +216,9 @@ pub fn is_unauthenticated_route(path: &str) -> bool {
 ///     "Protected"
 /// }
 /// ```
-pub fn with_admin_auth(auth_config: AdminAuthConfig, rocket: rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
+pub fn with_admin_auth(
+    auth_config: AdminAuthConfig,
+    rocket: rocket::Rocket<rocket::Build>,
+) -> rocket::Rocket<rocket::Build> {
     rocket.manage(Arc::new(auth_config))
 }

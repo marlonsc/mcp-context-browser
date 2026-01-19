@@ -2,9 +2,9 @@
 //!
 //! Handles the search_code MCP tool call using the domain search service.
 
+use rmcp::ErrorData as McpError;
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::CallToolResult;
-use rmcp::ErrorData as McpError;
 use std::sync::Arc;
 use std::time::Instant;
 use validator::Validate;

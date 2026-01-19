@@ -1,7 +1,7 @@
 //! Go language processor for AST-based code chunking.
 
 use crate::language::common::{
-    BaseProcessor, LanguageConfig, LanguageProcessor, NodeExtractionRule, CHUNK_SIZE_GO,
+    BaseProcessor, CHUNK_SIZE_GO, LanguageConfig, LanguageProcessor, NodeExtractionRule,
     TS_NODE_FUNCTION_DECLARATION, TS_NODE_METHOD_DECLARATION,
 };
 use mcb_domain::entities::CodeChunk;

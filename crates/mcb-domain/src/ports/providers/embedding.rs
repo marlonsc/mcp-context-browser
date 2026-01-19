@@ -1,6 +1,6 @@
-use async_trait::async_trait;
 use crate::error::Result;
 use crate::value_objects::Embedding;
+use async_trait::async_trait;
 
 /// AI Semantic Understanding Interface
 ///

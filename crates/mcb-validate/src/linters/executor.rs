@@ -6,8 +6,8 @@ use std::path::{Path, PathBuf};
 
 use super::engine::LinterEngine;
 use super::types::{LintViolation, LinterType};
-use crate::rules::yaml_loader::ValidatedRule;
 use crate::Result;
+use crate::rules::yaml_loader::ValidatedRule;
 
 /// Execute a YAML rule that uses lint_select for linter-based validation
 ///

@@ -136,22 +136,24 @@ impl MetricsAnalyzer {
 
     /// Analyze a Rust file for cognitive complexity
     pub fn analyze_rust_file(&self, path: &Path) -> Result<Vec<MetricViolation>> {
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| ValidationError::Io(e))?;
+        let content = std::fs::read_to_string(path).map_err(|e| ValidationError::Io(e))?;
 
         self.analyze_rust_content(&content, path)
     }
 
     /// Analyze Rust content for cognitive complexity
-    pub fn analyze_rust_content(&self, content: &str, file_path: &Path) -> Result<Vec<MetricViolation>> {
+    pub fn analyze_rust_content(
+        &self,
+        content: &str,
+        file_path: &Path,
+    ) -> Result<Vec<MetricViolation>> {
         let mut violations = Vec::new();
 
         // Parse the Rust file
-        let syntax = syn::parse_file(content)
-            .map_err(|e| ValidationError::Parse {
-                file: file_path.to_path_buf(),
-                message: e.to_string(),
-            })?;
+        let syntax = syn::parse_file(content).map_err(|e| ValidationError::Parse {
+            file: file_path.to_path_buf(),
+            message: e.to_string(),
+        })?;
 
         // Analyze each function
         for item in &syntax.items {
@@ -162,7 +164,12 @@ impl MetricsAnalyzer {
     }
 
     /// Analyze a single item (function, impl block, etc.)
-    fn analyze_item(&self, item: &syn::Item, file_path: &Path, violations: &mut Vec<MetricViolation>) {
+    fn analyze_item(
+        &self,
+        item: &syn::Item,
+        file_path: &Path,
+        violations: &mut Vec<MetricViolation>,
+    ) {
         match item {
             syn::Item::Fn(func) => {
                 let name = func.sig.ident.to_string();
@@ -228,7 +235,9 @@ impl MetricsAnalyzer {
 
                         let complexity = self.calculate_cognitive_complexity(&method.block);
 
-                        if let Some(threshold) = self.thresholds.get(MetricType::CognitiveComplexity) {
+                        if let Some(threshold) =
+                            self.thresholds.get(MetricType::CognitiveComplexity)
+                        {
                             if complexity as u32 > threshold.max_value {
                                 violations.push(MetricViolation {
                                     file: file_path.to_path_buf(),
@@ -359,9 +368,7 @@ impl MetricsAnalyzer {
                 }
                 complexity
             }
-            syn::Expr::Block(block_expr) => {
-                self.block_complexity(&block_expr.block, nesting)
-            }
+            syn::Expr::Block(block_expr) => self.block_complexity(&block_expr.block, nesting),
             syn::Expr::Closure(closure) => {
                 // +1 for closure
                 1 + self.expr_complexity(&closure.body, nesting + 1)
@@ -372,7 +379,8 @@ impl MetricsAnalyzer {
                     syn::BinOp::And(_) | syn::BinOp::Or(_) => 1,
                     _ => 0,
                 };
-                op_complexity + self.expr_complexity(&binary.left, nesting)
+                op_complexity
+                    + self.expr_complexity(&binary.left, nesting)
                     + self.expr_complexity(&binary.right, nesting)
             }
             syn::Expr::Break(_) | syn::Expr::Continue(_) => {
@@ -415,7 +423,9 @@ impl MetricsAnalyzer {
         match expr {
             syn::Expr::If(if_expr) => {
                 let then_depth = self.block_nesting_depth(&if_expr.then_branch, current_depth + 1);
-                let else_depth = if_expr.else_branch.as_ref()
+                let else_depth = if_expr
+                    .else_branch
+                    .as_ref()
                     .map(|(_, else_expr)| self.expr_nesting_depth(else_expr, current_depth + 1))
                     .unwrap_or(current_depth);
                 then_depth.max(else_depth)
@@ -498,7 +508,10 @@ fn simple() {
             .unwrap();
 
         // Simple function should have low complexity
-        assert!(violations.is_empty(), "Simple function should have no violations");
+        assert!(
+            violations.is_empty(),
+            "Simple function should have no violations"
+        );
     }
 
     #[test]
@@ -535,7 +548,10 @@ fn complex(x: i32) -> i32 {
             .unwrap();
 
         // Complex function should trigger violations
-        assert!(!violations.is_empty(), "Complex function should have violations");
+        assert!(
+            !violations.is_empty(),
+            "Complex function should have violations"
+        );
     }
 
     #[test]
@@ -551,8 +567,8 @@ fn nested() {
     }
 }
 "#;
-        let thresholds = MetricThresholds::new()
-            .with_threshold(MetricType::NestingDepth, 2, Severity::Warning);
+        let thresholds =
+            MetricThresholds::new().with_threshold(MetricType::NestingDepth, 2, Severity::Warning);
 
         let analyzer = MetricsAnalyzer::with_thresholds(thresholds);
         let violations = analyzer
@@ -565,7 +581,10 @@ fn nested() {
             .filter(|v| v.metric_type == MetricType::NestingDepth)
             .collect();
 
-        assert!(!nesting_violations.is_empty(), "Should detect nesting depth violation");
+        assert!(
+            !nesting_violations.is_empty(),
+            "Should detect nesting depth violation"
+        );
     }
 
     #[test]
@@ -590,8 +609,11 @@ impl Foo {
     }
 }
 "#;
-        let thresholds = MetricThresholds::new()
-            .with_threshold(MetricType::CognitiveComplexity, 3, Severity::Warning);
+        let thresholds = MetricThresholds::new().with_threshold(
+            MetricType::CognitiveComplexity,
+            3,
+            Severity::Warning,
+        );
 
         let analyzer = MetricsAnalyzer::with_thresholds(thresholds);
         let violations = analyzer

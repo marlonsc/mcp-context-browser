@@ -166,12 +166,20 @@ async fn test_metrics_with_correct_key_returns_200() {
 
     // Verify metrics match what we recorded
     assert_eq!(json["total_queries"], 3, "Should have 3 total queries");
-    assert_eq!(json["successful_queries"], 2, "Should have 2 successful queries");
+    assert_eq!(
+        json["successful_queries"], 2,
+        "Should have 2 successful queries"
+    );
     assert_eq!(json["failed_queries"], 1, "Should have 1 failed query");
-    assert_eq!(json["active_connections"], 5, "Should have 5 active connections");
+    assert_eq!(
+        json["active_connections"], 5,
+        "Should have 5 active connections"
+    );
 
     // Verify cache hit rate is approximately 1/3 = 0.333
-    let cache_hit_rate = json["cache_hit_rate"].as_f64().expect("cache_hit_rate is number");
+    let cache_hit_rate = json["cache_hit_rate"]
+        .as_f64()
+        .expect("cache_hit_rate is number");
     assert!(
         (cache_hit_rate - 0.333).abs() < 0.01,
         "Cache hit rate should be ~33.3%, got {}",
@@ -179,7 +187,9 @@ async fn test_metrics_with_correct_key_returns_200() {
     );
 
     // Verify average response time is approximately (100+200+50)/3 = 116.67ms
-    let avg_response_time = json["average_response_time_ms"].as_f64().expect("avg response time");
+    let avg_response_time = json["average_response_time_ms"]
+        .as_f64()
+        .expect("avg response time");
     assert!(
         (avg_response_time - 116.67).abs() < 1.0,
         "Average response time should be ~116.67ms, got {}",
@@ -261,13 +271,21 @@ async fn test_extended_health_with_correct_key_returns_200() {
     );
 
     // Verify dependencies array has expected structure
-    let deps = json["dependencies"].as_array().expect("dependencies is array");
-    assert!(!deps.is_empty(), "Should have at least one dependency check");
+    let deps = json["dependencies"]
+        .as_array()
+        .expect("dependencies is array");
+    assert!(
+        !deps.is_empty(),
+        "Should have at least one dependency check"
+    );
 
     for dep in deps {
         assert!(dep["name"].is_string(), "Dependency should have 'name'");
         assert!(dep["status"].is_string(), "Dependency should have 'status'");
-        assert!(dep["last_check"].is_number(), "Dependency should have 'last_check'");
+        assert!(
+            dep["last_check"].is_number(),
+            "Dependency should have 'last_check'"
+        );
     }
 }
 
@@ -337,8 +355,14 @@ async fn test_health_public_no_auth_required() {
     let body = response.into_string().await.expect("response body");
     let json: serde_json::Value = serde_json::from_str(&body).expect("valid JSON");
 
-    assert_eq!(json["status"], "healthy", "Health status should be 'healthy'");
-    assert!(json["uptime_seconds"].is_number(), "Should have uptime_seconds");
+    assert_eq!(
+        json["status"], "healthy",
+        "Health status should be 'healthy'"
+    );
+    assert!(
+        json["uptime_seconds"].is_number(),
+        "Should have uptime_seconds"
+    );
     assert!(
         json["active_indexing_operations"].is_number(),
         "Should have active_indexing_operations"
@@ -366,7 +390,10 @@ async fn test_live_public_no_auth_required() {
     let body = response.into_string().await.expect("response body");
     let json: serde_json::Value = serde_json::from_str(&body).expect("valid JSON");
 
-    assert_eq!(json["alive"], true, "Liveness probe should return alive: true");
+    assert_eq!(
+        json["alive"], true,
+        "Liveness probe should return alive: true"
+    );
 }
 
 /// Test: /ready should work WITHOUT API key and return ready status
@@ -396,7 +423,10 @@ async fn test_ready_public_no_auth_required() {
     let body = response.into_string().await.expect("response body");
     let json: serde_json::Value = serde_json::from_str(&body).expect("valid JSON");
 
-    assert!(json["ready"].is_boolean(), "Ready probe should return ready boolean");
+    assert!(
+        json["ready"].is_boolean(),
+        "Ready probe should return ready boolean"
+    );
 }
 
 /// Test: /indexing should work WITHOUT API key and return valid status
@@ -436,15 +466,27 @@ async fn test_indexing_public_no_auth_required() {
     let body = response.into_string().await.expect("response body");
     let json: serde_json::Value = serde_json::from_str(&body).expect("valid JSON");
 
-    assert_eq!(json["is_indexing"], true, "Should show indexing in progress");
-    assert_eq!(json["active_operations"], 1, "Should have 1 active operation");
+    assert_eq!(
+        json["is_indexing"], true,
+        "Should show indexing in progress"
+    );
+    assert_eq!(
+        json["active_operations"], 1,
+        "Should have 1 active operation"
+    );
 
     let ops = json["operations"].as_array().expect("operations is array");
     assert_eq!(ops.len(), 1, "Should have exactly 1 operation");
 
     let op = &ops[0];
-    assert_eq!(op["collection"], "test-collection", "Collection should match");
-    assert_eq!(op["current_file"], "src/main.rs", "Current file should match");
+    assert_eq!(
+        op["collection"], "test-collection",
+        "Collection should match"
+    );
+    assert_eq!(
+        op["current_file"], "src/main.rs",
+        "Current file should match"
+    );
     assert_eq!(op["processed_files"], 25, "Processed files should be 25");
     assert_eq!(op["total_files"], 100, "Total files should be 100");
     assert_eq!(op["progress_percent"], 25.0, "Progress should be 25%");

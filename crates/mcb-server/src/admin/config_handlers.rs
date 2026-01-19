@@ -9,7 +9,7 @@
 use mcb_infrastructure::config::watcher::ConfigWatcher;
 use rocket::http::Status;
 use rocket::serde::json::Json;
-use rocket::{get, patch, post, State};
+use rocket::{State, get, patch, post};
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -46,7 +46,10 @@ enum ConfigUpdateError {
 ///
 /// Requires valid admin API key via `X-Admin-Key` header.
 #[get("/config")]
-pub async fn get_config(_auth: AdminAuth, state: &State<AdminState>) -> (Status, Json<ConfigResponse>) {
+pub async fn get_config(
+    _auth: AdminAuth,
+    state: &State<AdminState>,
+) -> (Status, Json<ConfigResponse>) {
     let Some(watcher) = &state.config_watcher else {
         return (
             Status::ServiceUnavailable,
@@ -82,7 +85,10 @@ pub async fn get_config(_auth: AdminAuth, state: &State<AdminState>) -> (Status,
 ///
 /// Requires valid admin API key via `X-Admin-Key` header.
 #[post("/config/reload")]
-pub async fn reload_config(_auth: AdminAuth, state: &State<AdminState>) -> (Status, Json<ConfigReloadResponse>) {
+pub async fn reload_config(
+    _auth: AdminAuth,
+    state: &State<AdminState>,
+) -> (Status, Json<ConfigReloadResponse>) {
     let Some(watcher) = &state.config_watcher else {
         return (
             Status::ServiceUnavailable,
@@ -280,9 +286,7 @@ fn create_service_unavailable_response(
 }
 
 /// Create path unavailable response
-fn create_path_unavailable_response(
-    section: &str,
-) -> (Status, Json<ConfigSectionUpdateResponse>) {
+fn create_path_unavailable_response(section: &str) -> (Status, Json<ConfigSectionUpdateResponse>) {
     (
         Status::ServiceUnavailable,
         Json(ConfigSectionUpdateResponse::failure(
@@ -321,9 +325,7 @@ fn create_parse_error_response(
 }
 
 /// Create invalid format response
-fn create_invalid_format_response(
-    section: &str,
-) -> (Status, Json<ConfigSectionUpdateResponse>) {
+fn create_invalid_format_response(section: &str) -> (Status, Json<ConfigSectionUpdateResponse>) {
     (
         Status::BadRequest,
         Json(ConfigSectionUpdateResponse::failure(

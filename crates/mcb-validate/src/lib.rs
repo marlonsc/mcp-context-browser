@@ -1,3 +1,13 @@
+// Clippy allows for complex patterns in validation code
+#![allow(clippy::collapsible_if)]
+#![allow(clippy::unnecessary_cast)]
+#![allow(clippy::only_used_in_recursion)]
+#![allow(clippy::redundant_closure)]
+#![allow(clippy::needless_borrow)]
+#![allow(clippy::while_let_loop)]
+#![allow(clippy::while_let_on_iterator)]
+#![allow(clippy::unwrap_or_default)]
+
 //! Architecture Validation for MCP Context Browser
 //!
 //! This crate provides comprehensive validation of workspace crates against:
@@ -119,7 +129,9 @@ pub use ast::{
 };
 
 // Re-export Metrics module types (Phase 4)
-pub use metrics::{MetricsAnalyzer, MetricThreshold, MetricThresholds, MetricType, MetricViolation};
+pub use metrics::{
+    MetricThreshold, MetricThresholds, MetricType, MetricViolation, MetricsAnalyzer,
+};
 
 // Re-export new validators
 pub use clean_architecture::{CleanArchitectureValidator, CleanArchitectureViolation};

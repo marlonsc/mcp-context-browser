@@ -1,7 +1,7 @@
 //! Kotlin language processor for AST-based code chunking.
 
 use crate::language::common::{
-    BaseProcessor, LanguageConfig, LanguageProcessor, NodeExtractionRule, CHUNK_SIZE_KOTLIN,
+    BaseProcessor, CHUNK_SIZE_KOTLIN, LanguageConfig, LanguageProcessor, NodeExtractionRule,
     TS_NODE_CLASS_DECLARATION, TS_NODE_FUNCTION_DECLARATION,
 };
 use mcb_domain::entities::CodeChunk;

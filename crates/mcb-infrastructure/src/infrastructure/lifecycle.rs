@@ -56,8 +56,8 @@ use mcb_application::ports::admin::{
 use mcb_application::ports::infrastructure::EventBusProvider;
 use mcb_domain::events::{DomainEvent, ServiceState as EventServiceState};
 use serde::Serialize;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::sync::Notify;
 use tracing::{error, info, warn};
 

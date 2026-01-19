@@ -7,8 +7,8 @@ use mcb_domain::error::{Error, Result};
 
 // Re-export LoggingConfig for convenience
 pub use crate::config::LoggingConfig;
-use tracing::{debug, error, info, warn, Level};
-use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Registry};
+use tracing::{Level, debug, error, info, warn};
+use tracing_subscriber::{EnvFilter, Registry, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
 /// Initialize logging with the provided configuration
 pub fn init_logging(config: LoggingConfig) -> Result<()> {

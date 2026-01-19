@@ -3,8 +3,8 @@
 //! Provides a unified interface for all validators and a registry
 //! for managing and running validators.
 
-use crate::violation_trait::Violation;
 use crate::ValidationConfig;
+use crate::violation_trait::Violation;
 use anyhow::Result;
 
 /// All validators implement this trait

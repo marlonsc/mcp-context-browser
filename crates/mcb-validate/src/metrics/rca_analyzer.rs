@@ -11,11 +11,11 @@
 //! Supports: Rust, Python, JavaScript, TypeScript, Java, C, C++, Kotlin
 
 use crate::{Result, ValidationError};
-use rust_code_analysis::{get_function_spaces, FuncSpace, LANG};
+use rust_code_analysis::{FuncSpace, LANG, get_function_spaces};
 use std::path::Path;
 
-use super::thresholds::{MetricThresholds, MetricType};
 use super::MetricViolation;
+use super::thresholds::{MetricThresholds, MetricType};
 
 /// Comprehensive metrics from rust-code-analysis
 #[derive(Debug, Clone, Default)]
@@ -292,10 +292,7 @@ mod tests {
             RcaAnalyzer::detect_language(Path::new("foo.kt")),
             Some(LANG::Kotlin)
         );
-        assert_eq!(
-            RcaAnalyzer::detect_language(Path::new("foo.txt")),
-            None
-        );
+        assert_eq!(RcaAnalyzer::detect_language(Path::new("foo.txt")), None);
     }
 
     #[test]
@@ -343,8 +340,11 @@ fn complex_function(a: i32, b: i32) -> i32 {
 
     #[test]
     fn test_find_violations() {
-        let thresholds = MetricThresholds::new()
-            .with_threshold(MetricType::CyclomaticComplexity, 2, Severity::Warning);
+        let thresholds = MetricThresholds::new().with_threshold(
+            MetricType::CyclomaticComplexity,
+            2,
+            Severity::Warning,
+        );
 
         let analyzer = RcaAnalyzer::with_thresholds(thresholds);
         // Note: Code must be complete and valid for rust-code-analysis
@@ -365,14 +365,19 @@ fn complex_function(a: i32, b: i32) -> i32 {
         let temp_path = temp_dir.join("rca_test.rs");
         std::fs::write(&temp_path, code).expect("Write temp file");
 
-        let violations = analyzer.find_violations(&temp_path).expect("Should analyze");
+        let violations = analyzer
+            .find_violations(&temp_path)
+            .expect("Should analyze");
         std::fs::remove_file(&temp_path).ok();
 
         // rust-code-analysis may or may not find violations depending on parsing
         // This test verifies the violation detection flow works without panicking
         // If violations are found, verify they are valid
         for v in &violations {
-            assert!(v.actual_value > v.threshold, "Violation should exceed threshold");
+            assert!(
+                v.actual_value > v.threshold,
+                "Violation should exceed threshold"
+            );
         }
     }
 }

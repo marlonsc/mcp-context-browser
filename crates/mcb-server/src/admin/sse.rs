@@ -31,7 +31,7 @@
 use futures::StreamExt;
 use mcb_domain::events::DomainEvent;
 use rocket::response::stream::{Event, EventStream};
-use rocket::{get, State};
+use rocket::{State, get};
 use tracing::{debug, warn};
 
 use super::handlers::AdminState;

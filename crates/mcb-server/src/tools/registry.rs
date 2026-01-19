@@ -3,8 +3,8 @@
 //! Manages tool definitions and schema generation for the MCP protocol.
 //! This module centralizes all tool metadata to enable consistent tool listing.
 
-use rmcp::model::Tool;
 use rmcp::ErrorData as McpError;
+use rmcp::model::Tool;
 use std::borrow::Cow;
 use std::sync::Arc;
 

@@ -7,9 +7,9 @@ use glob::Pattern;
 use serde_json::Value;
 use std::collections::HashMap;
 
+use crate::Result;
 use crate::engines::hybrid_engine::RuleViolation;
 use crate::violation_trait::{Severity, ViolationCategory};
-use crate::Result;
 
 use super::hybrid_engine::{RuleContext, RuleEngine};
 
@@ -341,7 +341,8 @@ impl RustyRulesEngineWrapper {
                                     let path_str = file_path.to_string();
                                     if !path_str.contains("/tests/")
                                         && !path_str.contains("/target/")
-                                        && !path_str.ends_with("_test.rs") {
+                                        && !path_str.ends_with("_test.rs")
+                                    {
                                         return true; // Found a file that exceeds the limit
                                     }
                                 }
@@ -388,23 +389,27 @@ impl RustyRulesEngineWrapper {
     ) -> Vec<RuleViolation> {
         match action {
             Action::Violation { message, severity } => {
-                vec![RuleViolation::new(
-                    rule_id,
-                    ViolationCategory::Architecture, // Could be made configurable
-                    *severity,
-                    message.clone(),
-                )
-                .with_context(format!("Rule triggered: {}", rule_id))]
+                vec![
+                    RuleViolation::new(
+                        rule_id,
+                        ViolationCategory::Architecture, // Could be made configurable
+                        *severity,
+                        message.clone(),
+                    )
+                    .with_context(format!("Rule triggered: {}", rule_id)),
+                ]
             }
             Action::Custom(action_str) => {
                 // Handle custom actions
-                vec![RuleViolation::new(
-                    rule_id,
-                    ViolationCategory::Quality,
-                    Severity::Info,
-                    format!("Custom action: {}", action_str),
-                )
-                .with_context("Custom rule action")]
+                vec![
+                    RuleViolation::new(
+                        rule_id,
+                        ViolationCategory::Quality,
+                        Severity::Info,
+                        format!("Custom action: {}", action_str),
+                    )
+                    .with_context("Custom rule action"),
+                ]
             }
         }
     }
@@ -428,10 +433,7 @@ impl RuleEngine for RustyRulesEngineWrapper {
                     self.execute_cargo_dependency_rule(rule_definition, context)
                         .await
                 }
-                "file_size" => {
-                    self.execute_file_size_rule(rule_definition, context)
-                        .await
-                }
+                "file_size" => self.execute_file_size_rule(rule_definition, context).await,
                 "ast_pattern" => {
                     self.execute_ast_pattern_rule(rule_definition, context)
                         .await

@@ -152,14 +152,21 @@ fn test_full_validation_report() {
     println!("{}", Reporter::to_human_readable(&legacy_report));
 
     println!("\n=== YAML RULES ===");
-    println!("YAML Report Summary: {} total violations", yaml_report.summary.total_violations);
-    println!("YAML Errors: {}, Warnings: {}", yaml_report.summary.errors, yaml_report.summary.warnings);
+    println!(
+        "YAML Report Summary: {} total violations",
+        yaml_report.summary.total_violations
+    );
+    println!(
+        "YAML Errors: {}, Warnings: {}",
+        yaml_report.summary.errors, yaml_report.summary.warnings
+    );
 
     // Show some YAML violations if any
     for (category, violations) in &yaml_report.violations_by_category {
         if !violations.is_empty() {
             println!("Category '{}': {} violations", category, violations.len());
-            for violation in violations.iter().take(3) {  // Show first 3
+            for violation in violations.iter().take(3) {
+                // Show first 3
                 println!("  - {}: {}", violation.id, violation.message);
             }
         }
@@ -173,7 +180,8 @@ fn test_full_validation_report() {
 
     let total_errors = legacy_error_count + yaml_error_count;
     let total_warnings = legacy_warning_count + yaml_warning_count;
-    let total_violations = legacy_report.summary.total_violations + yaml_report.summary.total_violations;
+    let total_violations =
+        legacy_report.summary.total_violations + yaml_report.summary.total_violations;
 
     println!(
         "Summary: {} errors, {} warnings, {} total violations",

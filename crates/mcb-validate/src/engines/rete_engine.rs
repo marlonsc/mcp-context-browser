@@ -9,9 +9,9 @@ use serde_json::Value;
 use std::path::Path;
 use walkdir::WalkDir;
 
+use crate::Result;
 use crate::engines::hybrid_engine::{RuleContext, RuleEngine, RuleViolation};
 use crate::violation_trait::{Severity, ViolationCategory};
-use crate::Result;
 
 /// RETE Engine wrapper for rust-rule-engine library
 pub struct ReteEngine {

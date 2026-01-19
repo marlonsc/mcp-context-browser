@@ -32,17 +32,23 @@ pub use mcb_domain::ports::providers::vector_store;
 // Re-export commonly used traits directly for convenience
 pub use mcb_domain::ports::providers::{
     // Cache
-    CacheEntryConfig, CacheProvider, CacheProviderFactoryInterface, CacheStats,
+    CacheEntryConfig,
+    CacheProvider,
+    CacheProviderFactoryInterface,
+    CacheStats,
     // Crypto
-    CryptoProvider, EncryptedData,
+    CryptoProvider,
     // Embedding
     EmbeddingProvider,
+    EncryptedData,
     // Hybrid Search
-    HybridSearchProvider, HybridSearchResult,
+    HybridSearchProvider,
+    HybridSearchResult,
     // Language Chunking
     LanguageChunkingProvider,
     // Config
     ProviderConfigManagerInterface,
     // Vector Store
-    VectorStoreAdmin, VectorStoreProvider,
+    VectorStoreAdmin,
+    VectorStoreProvider,
 };

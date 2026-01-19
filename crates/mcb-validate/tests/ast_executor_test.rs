@@ -106,7 +106,12 @@ fn world() {
         let violations = AstQueryExecutor::execute_rule(&rule, &files).await.unwrap();
 
         // Should find 2 function definitions
-        assert_eq!(violations.len(), 2, "Expected 2 functions, found {}", violations.len());
+        assert_eq!(
+            violations.len(),
+            2,
+            "Expected 2 functions, found {}",
+            violations.len()
+        );
     }
 
     #[tokio::test]
@@ -173,7 +178,10 @@ class MyClass:
         let files = vec![rust_file.as_path()];
         let violations = AstQueryExecutor::execute_rule(&rule, &files).await.unwrap();
 
-        assert!(violations.is_empty(), "Disabled rule should return no violations");
+        assert!(
+            violations.is_empty(),
+            "Disabled rule should return no violations"
+        );
     }
 
     #[tokio::test]
@@ -188,7 +196,10 @@ class MyClass:
 
         let violations = AstQueryExecutor::execute_rule(&rule, &files).await.unwrap();
 
-        assert!(violations.is_empty(), "Rule with no selectors should return no violations");
+        assert!(
+            violations.is_empty(),
+            "Rule with no selectors should return no violations"
+        );
     }
 
     #[tokio::test]
@@ -210,7 +221,10 @@ class MyClass:
 
         let violations = AstQueryExecutor::execute_rule(&rule, &files).await.unwrap();
 
-        assert!(violations.is_empty(), "Python selector should not match Rust file");
+        assert!(
+            violations.is_empty(),
+            "Python selector should not match Rust file"
+        );
     }
 
     #[tokio::test]

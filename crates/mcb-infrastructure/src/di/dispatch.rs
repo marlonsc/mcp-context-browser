@@ -6,7 +6,7 @@
 //! All components are resolved via Shaku DI - no manual factories.
 
 use crate::config::AppConfig;
-use crate::di::bootstrap::{init_app, DiContainer};
+use crate::di::bootstrap::{DiContainer, init_app};
 use mcb_domain::error::Result;
 
 /// Component dispatcher for infrastructure initialization

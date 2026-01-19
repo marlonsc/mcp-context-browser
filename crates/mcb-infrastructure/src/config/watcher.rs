@@ -2,8 +2,8 @@
 //!
 //! Provides automatic configuration reloading when the configuration file changes.
 
-use crate::config::loader::ConfigLoader;
 use crate::config::AppConfig;
+use crate::config::loader::ConfigLoader;
 use crate::error_ext::ErrorContext;
 use crate::logging::log_config_loaded;
 use mcb_domain::error::{Error, Result};
@@ -11,8 +11,8 @@ use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::runtime::Handle;
-use tokio::sync::broadcast::{self, Receiver, Sender};
 use tokio::sync::RwLock;
+use tokio::sync::broadcast::{self, Receiver, Sender};
 
 /// Configuration watch event
 #[derive(Debug, Clone)]

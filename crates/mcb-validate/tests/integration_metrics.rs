@@ -33,8 +33,11 @@ fn add(a: i32, b: i32) -> i32 {
     /// Test detecting high cognitive complexity
     #[test]
     fn test_detects_high_cognitive_complexity() {
-        let thresholds =
-            MetricThresholds::new().with_threshold(MetricType::CognitiveComplexity, 5, Severity::Warning);
+        let thresholds = MetricThresholds::new().with_threshold(
+            MetricType::CognitiveComplexity,
+            5,
+            Severity::Warning,
+        );
 
         let analyzer = MetricsAnalyzer::with_thresholds(thresholds);
 
@@ -114,8 +117,11 @@ fn deeply_nested(x: i32) {
     /// Test detecting long functions
     #[test]
     fn test_detects_long_function() {
-        let thresholds =
-            MetricThresholds::new().with_threshold(MetricType::FunctionLength, 5, Severity::Warning);
+        let thresholds = MetricThresholds::new().with_threshold(
+            MetricType::FunctionLength,
+            5,
+            Severity::Warning,
+        );
 
         let analyzer = MetricsAnalyzer::with_thresholds(thresholds);
 
@@ -149,8 +155,11 @@ fn long_function() {
     /// Test analyzing impl block methods
     #[test]
     fn test_analyzes_impl_methods() {
-        let thresholds =
-            MetricThresholds::new().with_threshold(MetricType::CognitiveComplexity, 3, Severity::Warning);
+        let thresholds = MetricThresholds::new().with_threshold(
+            MetricType::CognitiveComplexity,
+            3,
+            Severity::Warning,
+        );
 
         let analyzer = MetricsAnalyzer::with_thresholds(thresholds);
 
@@ -206,10 +215,10 @@ fn test_function(x: i32) -> i32 {
         .unwrap();
 
         let analyzer = MetricsAnalyzer::new();
-        let violations = analyzer.analyze_rust_file(&file_path).unwrap();
+        let _violations = analyzer.analyze_rust_file(&file_path).unwrap();
 
         // Should complete without error, violations depend on thresholds
-        assert!(violations.len() >= 0); // Just verify it runs
+        assert!(true); // Just verify it runs without panicking
     }
 
     /// Test multiple files analysis
@@ -237,8 +246,11 @@ fn complex(x: i32) {
         )
         .unwrap();
 
-        let thresholds =
-            MetricThresholds::new().with_threshold(MetricType::CognitiveComplexity, 3, Severity::Warning);
+        let thresholds = MetricThresholds::new().with_threshold(
+            MetricType::CognitiveComplexity,
+            3,
+            Severity::Warning,
+        );
 
         let analyzer = MetricsAnalyzer::with_thresholds(thresholds);
         let violations = analyzer.analyze_files(&[file1, file2]).unwrap();
@@ -284,8 +296,11 @@ fn complex(x: i32) {
     #[test]
     fn test_violation_message_format() {
         // Use threshold of 0 so any if/for/while triggers a violation
-        let thresholds =
-            MetricThresholds::new().with_threshold(MetricType::CognitiveComplexity, 0, Severity::Warning);
+        let thresholds = MetricThresholds::new().with_threshold(
+            MetricType::CognitiveComplexity,
+            0,
+            Severity::Warning,
+        );
 
         let analyzer = MetricsAnalyzer::with_thresholds(thresholds);
 
@@ -301,7 +316,10 @@ fn with_if(x: i32) {
             .analyze_rust_content(content, Path::new("msg.rs"))
             .unwrap();
 
-        assert!(!violations.is_empty(), "Should have violations with threshold=0");
+        assert!(
+            !violations.is_empty(),
+            "Should have violations with threshold=0"
+        );
         let v = &violations[0];
 
         // Check violation fields

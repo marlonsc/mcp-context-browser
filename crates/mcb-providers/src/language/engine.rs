@@ -270,9 +270,7 @@ impl Default for UniversalLanguageChunkingProvider {
     }
 }
 
-impl mcb_domain::ports::providers::LanguageChunkingProvider
-    for UniversalLanguageChunkingProvider
-{
+impl mcb_domain::ports::providers::LanguageChunkingProvider for UniversalLanguageChunkingProvider {
     fn language(&self) -> mcb_domain::value_objects::Language {
         "universal".to_string()
     }
@@ -301,10 +299,10 @@ impl mcb_domain::ports::providers::LanguageChunkingProvider
 
 use std::sync::Arc;
 
-use mcb_domain::ports::providers::LanguageChunkingProvider as LanguageProviderPort;
 use mcb_application::ports::registry::{
-    LanguageProviderConfig, LanguageProviderEntry, LANGUAGE_PROVIDERS,
+    LANGUAGE_PROVIDERS, LanguageProviderConfig, LanguageProviderEntry,
 };
+use mcb_domain::ports::providers::LanguageChunkingProvider as LanguageProviderPort;
 
 /// Factory function for creating universal language chunking provider instances.
 fn universal_language_factory(

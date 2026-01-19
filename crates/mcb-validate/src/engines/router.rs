@@ -10,11 +10,11 @@
 
 use serde_json::Value;
 
+use crate::Result;
 use crate::engines::expression_engine::ExpressionEngine;
 use crate::engines::hybrid_engine::{RuleContext, RuleViolation};
 use crate::engines::rete_engine::ReteEngine;
 use crate::engines::rusty_rules_engine::RustyRulesEngineWrapper;
-use crate::Result;
 
 /// Engine type determined by router
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

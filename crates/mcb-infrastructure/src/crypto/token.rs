@@ -1,6 +1,6 @@
 //! Secure token generation
 
-use aes_gcm::aead::{rand_core::RngCore as AeadRngCore, OsRng as AeadOsRng};
+use aes_gcm::aead::{OsRng as AeadOsRng, rand_core::RngCore as AeadRngCore};
 
 use super::utils::bytes_to_hex;
 
@@ -19,7 +19,7 @@ impl TokenGenerator {
     pub fn generate_url_safe_token(length: usize) -> String {
         let mut bytes = vec![0u8; length];
         AeadOsRng.fill_bytes(&mut bytes);
-        use base64::{engine::general_purpose, Engine as _};
+        use base64::{Engine as _, engine::general_purpose};
         general_purpose::URL_SAFE_NO_PAD.encode(bytes)
     }
 

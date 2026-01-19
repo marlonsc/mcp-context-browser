@@ -10,7 +10,7 @@
 .PHONY: validate-solid validate-org validate-kiss validate-shaku validate-refactor
 .PHONY: validate-all validate-config
 .PHONY: validate-migration validate-linkme validate-ctor validate-figment validate-rocket
-.PHONY: check-full ci-quality
+.PHONY: check-full ci-quality test-golden test-golden-full
 .PHONY: pmat-tdg pmat-diag pmat-entropy pmat-defects pmat-gate pmat-explain pmat-clean
 
 # -----------------------------------------------------------------------------
@@ -218,6 +218,24 @@ check-full: check lint test validate ## Full check with architecture validation
 
 ci-quality: fmt lint test validate-arch ## CI quality gate (all checks)
 	@echo "CI quality checks passed!"
+
+# -----------------------------------------------------------------------------
+# Golden Acceptance Tests
+# -----------------------------------------------------------------------------
+
+test-golden: ## Run golden acceptance tests (requires embedding provider)
+	@echo "=================================================================="
+	@echo "         Golden Acceptance Tests (v0.1.2)                         "
+	@echo "=================================================================="
+	@cargo test -p mcb-server golden_acceptance -- --nocapture 2>&1 | \
+		grep -v "^Compiling\|^Finished\|^Fresh\|^Downloading\|^Downloaded"
+
+test-golden-full: ## Run all golden tests including integration (requires services)
+	@echo "=================================================================="
+	@echo "         Full Golden Acceptance Tests (requires services)         "
+	@echo "=================================================================="
+	@cargo test -p mcb-server golden_acceptance -- --include-ignored --nocapture 2>&1 | \
+		grep -v "^Compiling\|^Finished\|^Fresh\|^Downloading\|^Downloaded"
 
 # =============================================================================
 # PMAT Quality Analysis (optional - requires pmat tool)

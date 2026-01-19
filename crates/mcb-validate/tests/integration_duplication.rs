@@ -14,8 +14,8 @@
 #[cfg(test)]
 mod duplication_integration_tests {
     use mcb_validate::duplication::{
-        tokenize_source, DuplicationAnalyzer, DuplicationThresholds, DuplicationType,
-        TokenFingerprinter,
+        DuplicationAnalyzer, DuplicationThresholds, DuplicationType, TokenFingerprinter,
+        tokenize_source,
     };
     use mcb_validate::violation_trait::Violation;
     use std::fs;

@@ -5,8 +5,8 @@
 
 use async_trait::async_trait;
 
-use mcb_domain::ports::providers::EmbeddingProvider;
 use mcb_domain::error::Result;
+use mcb_domain::ports::providers::EmbeddingProvider;
 use mcb_domain::value_objects::Embedding;
 
 use crate::constants::EMBEDDING_DIMENSION_NULL;
@@ -101,7 +101,7 @@ impl NullEmbeddingProvider {
 use std::sync::Arc;
 
 use mcb_application::ports::registry::{
-    EmbeddingProviderConfig, EmbeddingProviderEntry, EMBEDDING_PROVIDERS,
+    EMBEDDING_PROVIDERS, EmbeddingProviderConfig, EmbeddingProviderEntry,
 };
 use mcb_domain::ports::providers::EmbeddingProvider as EmbeddingProviderPort;
 

@@ -6,8 +6,8 @@
 use crate::utils::JsonExt;
 use async_trait::async_trait;
 use dashmap::DashMap;
-use mcb_domain::ports::providers::{VectorStoreAdmin, VectorStoreProvider};
 use mcb_domain::error::{Error, Result};
+use mcb_domain::ports::providers::{VectorStoreAdmin, VectorStoreProvider};
 use mcb_domain::value_objects::{Embedding, SearchResult};
 use serde_json::Value;
 use std::cmp::Ordering;
@@ -291,7 +291,7 @@ fn cosine_similarity_with_norm(a: &[f32], b: &[f32], norm_a: f32) -> f32 {
 // ============================================================================
 
 use mcb_application::ports::registry::{
-    VectorStoreProviderConfig, VectorStoreProviderEntry, VECTOR_STORE_PROVIDERS,
+    VECTOR_STORE_PROVIDERS, VectorStoreProviderConfig, VectorStoreProviderEntry,
 };
 
 /// Factory function for creating in-memory vector store provider instances.

@@ -2,9 +2,9 @@
 
 #[cfg(test)]
 mod expression_engine_tests {
-    use mcb_validate::engines::expression_engine::ExpressionEngine;
-    use mcb_validate::engines::RuleContext;
     use mcb_validate::ValidationConfig;
+    use mcb_validate::engines::RuleContext;
+    use mcb_validate::engines::expression_engine::ExpressionEngine;
     use std::collections::HashMap;
     use std::path::PathBuf;
 

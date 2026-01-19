@@ -251,9 +251,9 @@ impl Violation for ImplementationViolation {
                 "Replace {}!() with actual implementation",
                 macro_type
             )),
-            Self::EmptyCatchAll { .. } => Some(
-                "Handle the catch-all case explicitly or log unhandled variants".to_string(),
-            ),
+            Self::EmptyCatchAll { .. } => {
+                Some("Handle the catch-all case explicitly or log unhandled variants".to_string())
+            }
         }
     }
 }

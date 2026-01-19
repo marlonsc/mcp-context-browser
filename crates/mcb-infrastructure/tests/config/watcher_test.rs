@@ -1,8 +1,8 @@
 //! Configuration Watcher Tests
 
+use mcb_infrastructure::config::AppConfig;
 use mcb_infrastructure::config::loader::ConfigLoader;
 use mcb_infrastructure::config::watcher::{ConfigWatcher, ConfigWatcherBuilder};
-use mcb_infrastructure::config::AppConfig;
 use mcb_infrastructure::constants::DEFAULT_HTTP_PORT;
 use tempfile::TempDir;
 

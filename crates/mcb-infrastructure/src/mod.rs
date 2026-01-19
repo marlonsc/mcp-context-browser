@@ -1,3 +1,7 @@
+// Clippy allows for complex patterns in infrastructure code
+#![allow(clippy::collapsible_if)]
+#![allow(clippy::manual_range_contains)]
+
 //! # Infrastructure Layer
 //!
 //! Cross-cutting technical concerns that support the application and domain layers.

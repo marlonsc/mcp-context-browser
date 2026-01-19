@@ -14,10 +14,10 @@ The current dependency injection system uses Shaku (version 0.6), a compile-time
 
 ### Problems with Shaku
 
-1. **Macro complexity**: `#[derive(Component)]`, `#[shaku(interface = ...)]`, `#[shaku(inject)]` everywhere
-2. **Build time impact**: Extensive macro expansion slows compilation
-3. **Module sync**: Manual maintenance of module definitions as services change
-4. **Over-engineering**: DI container complexity exceeds project needs
+1.  **Macro complexity**: `#[derive(Component)]`, `#[shaku(interface = ...)]`, `#[shaku(inject)]` everywhere
+2.  **Build time impact**: Extensive macro expansion slows compilation
+3.  **Module sync**: Manual maintenance of module definitions as services change
+4.  **Over-engineering**: DI container complexity exceeds project needs
 
 ### DI Library Research
 
@@ -34,19 +34,19 @@ We evaluated modern Rust DI alternatives:
 
 After implementing the dill catalog approach, we discovered that `dill::Catalog::get_one()` doesn't work well with `add_value` for interface resolution. Instead, we adopted a handle-based pattern that provides:
 
-1. **Runtime provider switching** via RwLock handles
-2. **Compile-time discovery** via linkme distributed slices
-3. **Admin API support** for provider management
-4. **Direct service storage** for infrastructure components
+1.  **Runtime provider switching** via RwLock handles
+2.  **Compile-time discovery** via linkme distributed slices
+3.  **Admin API support** for provider management
+4.  **Direct service storage** for infrastructure components
 
 ## Decision
 
 We replace Shaku-based DI with a handle-based pattern:
 
-1. **Provider Handles**: RwLock wrappers allowing runtime provider switching
-2. **Provider Resolvers**: Components that access the linkme registry
-3. **Admin Services**: API endpoints for switching providers at runtime
-4. **Direct Storage**: Infrastructure services stored directly in AppContext
+1.  **Provider Handles**: RwLock wrappers allowing runtime provider switching
+2.  **Provider Resolvers**: Components that access the linkme registry
+3.  **Admin Services**: API endpoints for switching providers at runtime
+4.  **Direct Storage**: Infrastructure services stored directly in AppContext
 
 ### Architecture Overview
 
@@ -208,26 +208,26 @@ let embedding = context.embedding_handle().get();  // Now OpenAI
 
 ### Positive
 
-- **Runtime switching**: Providers can be changed without restart
-- **Admin API ready**: Built-in support for provider management endpoints
-- **Type-safe**: All trait bounds enforced at compile time
-- **Testable**: Handles and resolvers can be mocked independently
-- **Simple**: No complex DI macros or catalog resolution
+-   **Runtime switching**: Providers can be changed without restart
+-   **Admin API ready**: Built-in support for provider management endpoints
+-   **Type-safe**: All trait bounds enforced at compile time
+-   **Testable**: Handles and resolvers can be mocked independently
+-   **Simple**: No complex DI macros or catalog resolution
 
 ### Negative
 
-- **Manual wiring**: Services must be explicitly constructed in bootstrap.rs
-- **Boilerplate**: Each provider type needs Handle, Resolver, AdminService
-- **Lock overhead**: RwLock adds minimal runtime overhead
+-   **Manual wiring**: Services must be explicitly constructed in bootstrap.rs
+-   **Boilerplate**: Each provider type needs Handle, Resolver, AdminService
+-   **Lock overhead**: RwLock adds minimal runtime overhead
 
 ## Validation Criteria
 
-- [x] All provider types have Handle, Resolver, AdminService
-- [x] AppContext provides access to all services
-- [x] Runtime provider switching works via admin services
-- [x] All tests pass
-- [x] No Shaku references remain in production code
-- [x] Domain services use providers via handles
+-   [x] All provider types have Handle, Resolver, AdminService
+-   [x] AppContext provides access to all services
+-   [x] Runtime provider switching works via admin services
+-   [x] All tests pass
+-   [x] No Shaku references remain in production code
+-   [x] Domain services use providers via handles
 
 ## Implementation Summary (2026-01-19)
 
@@ -257,12 +257,12 @@ crates/mcb-infrastructure/src/di/
 
 ## Related ADRs
 
-- [ADR 002: Dependency Injection with Shaku](002-dependency-injection-shaku.md) - **SUPERSEDED** by this ADR
-- [ADR 012: Two-Layer DI Strategy](012-di-strategy-two-layer-approach.md) - **SUPERSEDED**
-- [ADR 013: Clean Architecture Crate Separation](013-clean-architecture-crate-separation.md) - Multi-crate organization
-- **Extended by**: [ADR 027: Architecture Evolution v0.1.3](027-architecture-evolution-v013.md) - Formalizes engine contracts using handle pattern
+-   [ADR 002: Dependency Injection with Shaku](002-dependency-injection-shaku.md) - **SUPERSEDED** by this ADR
+-   [ADR 012: Two-Layer DI Strategy](012-di-strategy-two-layer-approach.md) - **SUPERSEDED**
+-   [ADR 013: Clean Architecture Crate Separation](013-clean-architecture-crate-separation.md) - Multi-crate organization
+-   **Extended by**: [ADR 027: Architecture Evolution v0.1.3](027-architecture-evolution-v013.md) - Formalizes engine contracts using handle pattern
 
 ## References
 
-- [linkme crate](https://docs.rs/linkme) - Compile-time distributed slices for provider registration
-- [dill-rs GitHub](https://github.com/sergiimk/dill-rs) - Evaluated but `add_value` pattern insufficient
+-   [linkme crate](https://docs.rs/linkme) - Compile-time distributed slices for provider registration
+-   [dill-rs GitHub](https://github.com/sergiimk/dill-rs) - Evaluated but `add_value` pattern insufficient

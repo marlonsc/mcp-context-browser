@@ -4,8 +4,8 @@
 //! Implements the `PerformanceMetricsInterface` port from mcb-domain.
 
 use mcb_application::ports::admin::{PerformanceMetricsData, PerformanceMetricsInterface};
-use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 use std::time::Instant;
 
 /// Atomic performance metrics tracker

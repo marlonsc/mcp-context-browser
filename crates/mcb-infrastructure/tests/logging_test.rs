@@ -1,7 +1,7 @@
 //! Logging Tests
 
 use mcb_infrastructure::constants::{DEFAULT_LOG_LEVEL, LOG_MAX_FILES, LOG_ROTATION_SIZE};
-use mcb_infrastructure::logging::{parse_log_level, LoggingConfig};
+use mcb_infrastructure::logging::{LoggingConfig, parse_log_level};
 use tracing::Level;
 
 #[test]

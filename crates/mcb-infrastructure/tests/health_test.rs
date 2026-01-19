@@ -1,7 +1,8 @@
 //! Health Check Tests
+#![allow(clippy::manual_range_contains)]
 
 use mcb_infrastructure::health::{
-    checkers, HealthCheck, HealthChecker, HealthRegistry, HealthResponse, HealthStatus,
+    HealthCheck, HealthChecker, HealthRegistry, HealthResponse, HealthStatus, checkers,
 };
 
 #[tokio::test]

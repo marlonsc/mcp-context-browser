@@ -49,12 +49,12 @@ MCP Context Browser is a high-performance, extensible Model Context Protocol (MC
 
 ### Current Status
 
-**Version**: 0.1.2 (Provider Modernization + Validation Scaffolding)
+**Version**: 0.1.2 (Provider Modernization + Validation Complete)
 **Architecture Maturity**: ✅ **100% Complete DI Implementation**
 **DI Status**: ✅ 20+ Port Traits, ✅ Provider Registry, ✅ Service Factory, ✅ Full Port/Adapter Wiring
 **Provider Registration**: ✅ Linkme distributed slices (compile-time), ✅ Inventory removed
-**Validation**: ✅ mcb-validate crate Phases 1-3 verified (73 tests pass), Phases 4-7 not started
-**Port Traits**: `crates/mcb-application/src/ports/` - All traits extend `shaku::Interface` for DI compatibility
+**Validation**: ✅ mcb-validate crate Phases 1-5 verified (600+ tests pass), Phases 6-7 partial
+**Port Traits**: `crates/mcb-domain/src/ports/` - Provider traits in domain layer (Clean Architecture compliant)
 **Deployment Options**: Local development, Docker, Kubernetes, hybrid cloud-edge
 
 > **Note**: See `docs/developer/IMPLEMENTATION_STATUS.md` for detailed traceability of what exists vs what's planned.
@@ -563,6 +563,45 @@ MCP Context Browser implements Robert C. Martin's Clean Architecture with strict
 ```
 
 For complete architectural details, see [ADR-013: Clean Architecture Crate Separation](../adr/013-clean-architecture-crate-separation.md).
+
+### Dependency Validation Rules
+
+The project enforces strict dependency rules to maintain Clean Architecture compliance.
+
+#### Forbidden Dependencies
+
+| Crate | MUST NOT depend on |
+|-------|-------------------|
+| mcb-domain | Any internal crate |
+| mcb-application | mcb-infrastructure, mcb-server, mcb-providers |
+| mcb-providers | mcb-application, mcb-infrastructure, mcb-server |
+| mcb-infrastructure | mcb-server |
+
+#### Automatic Enforcement
+
+Run `make validate` to check compliance. The mcb-validate crate enforces:
+
+-   **Phase 1**: Linter checks (Clippy, Ruff)
+-   **Phase 2**: AST pattern queries (Tree-sitter)
+-   **Phase 3**: Rule engine validation (evalexpr, RETE)
+-   **Phase 4**: Metrics analysis (complexity, function length)
+-   **Phase 5**: Duplication detection (Rabin-Karp, clone types 1-4)
+
+#### Provider Port Traits Location
+
+Provider port traits are defined in `mcb-domain/src/ports/providers/`:
+
+| Trait | Purpose |
+|-------|---------|
+| `EmbeddingProvider` | Generate vector embeddings from text |
+| `VectorStoreProvider` | Store and search vector embeddings |
+| `CacheProvider` | Caching abstraction |
+| `HybridSearchProvider` | Combined vector + keyword search |
+| `LanguageChunkingProvider` | Language-aware code chunking |
+| `CryptoProvider` | Encryption services |
+| `ConfigProvider` | Configuration access |
+
+The `mcb-application` layer re-exports these traits for backward compatibility, but implementations in `mcb-providers` import directly from `mcb-domain`.
 
 ### Two-Layer DI Strategy
 

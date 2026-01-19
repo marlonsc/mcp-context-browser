@@ -40,8 +40,7 @@ use crate::di::admin::{
     CacheAdminService, EmbeddingAdminService, LanguageAdminService, VectorStoreAdminService,
 };
 use crate::di::handles::{
-    CacheProviderHandle, EmbeddingProviderHandle, LanguageProviderHandle,
-    VectorStoreProviderHandle,
+    CacheProviderHandle, EmbeddingProviderHandle, LanguageProviderHandle, VectorStoreProviderHandle,
 };
 use crate::di::provider_resolvers::{
     CacheProviderResolver, EmbeddingProviderResolver, LanguageProviderResolver,
