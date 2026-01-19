@@ -11,7 +11,8 @@
 //!              AdminService.switch_provider()
 //! ```
 
-use dill::{component, Singleton};
+// dill macros removed - they conflict with the need for manual constructors
+// that accept initial provider instances. Use add_value pattern in bootstrap.rs instead.
 use mcb_application::ports::providers::{
     CacheProvider, EmbeddingProvider, LanguageChunkingProvider, VectorStoreProvider,
 };
@@ -25,13 +26,19 @@ use std::sync::{Arc, RwLock};
 ///
 /// Wraps the current embedding provider in a RwLock, allowing admin API
 /// to switch providers without restarting the application.
-#[component]
-#[dill::scope(Singleton)]
+// Note: dill #[component] removed - requires manual constructor with initial provider
+// Use add_value pattern in bootstrap.rs instead
 pub struct EmbeddingProviderHandle {
     inner: RwLock<Arc<dyn EmbeddingProvider>>,
 }
 
 impl EmbeddingProviderHandle {
+    /// Create a new handle with an initial provider
+    pub fn new(provider: Arc<dyn EmbeddingProvider>) -> Self {
+        Self {
+            inner: RwLock::new(provider),
+        }
+    }
 
     /// Get the current provider
     pub fn get(&self) -> Arc<dyn EmbeddingProvider> {
@@ -68,13 +75,19 @@ impl std::fmt::Debug for EmbeddingProviderHandle {
 // ============================================================================
 
 /// Handle for runtime-swappable vector store provider
-#[component]
-#[dill::scope(Singleton)]
+// Note: dill #[component] removed - requires manual constructor with initial provider
+// Use add_value pattern in bootstrap.rs instead
 pub struct VectorStoreProviderHandle {
     inner: RwLock<Arc<dyn VectorStoreProvider>>,
 }
 
 impl VectorStoreProviderHandle {
+    /// Create a new handle with an initial provider
+    pub fn new(provider: Arc<dyn VectorStoreProvider>) -> Self {
+        Self {
+            inner: RwLock::new(provider),
+        }
+    }
 
     /// Get the current provider
     pub fn get(&self) -> Arc<dyn VectorStoreProvider> {
@@ -104,13 +117,19 @@ impl std::fmt::Debug for VectorStoreProviderHandle {
 // ============================================================================
 
 /// Handle for runtime-swappable cache provider
-#[component]
-#[dill::scope(Singleton)]
+// Note: dill #[component] removed - requires manual constructor with initial provider
+// Use add_value pattern in bootstrap.rs instead
 pub struct CacheProviderHandle {
     inner: RwLock<Arc<dyn CacheProvider>>,
 }
 
 impl CacheProviderHandle {
+    /// Create a new handle with an initial provider
+    pub fn new(provider: Arc<dyn CacheProvider>) -> Self {
+        Self {
+            inner: RwLock::new(provider),
+        }
+    }
 
     /// Get the current provider
     pub fn get(&self) -> Arc<dyn CacheProvider> {
@@ -147,13 +166,19 @@ impl std::fmt::Debug for CacheProviderHandle {
 // ============================================================================
 
 /// Handle for runtime-swappable language chunking provider
-#[component]
-#[dill::scope(Singleton)]
+// Note: dill #[component] removed - requires manual constructor with initial provider
+// Use add_value pattern in bootstrap.rs instead
 pub struct LanguageProviderHandle {
     inner: RwLock<Arc<dyn LanguageChunkingProvider>>,
 }
 
 impl LanguageProviderHandle {
+    /// Create a new handle with an initial provider
+    pub fn new(provider: Arc<dyn LanguageChunkingProvider>) -> Self {
+        Self {
+            inner: RwLock::new(provider),
+        }
+    }
 
     /// Get the current provider
     pub fn get(&self) -> Arc<dyn LanguageChunkingProvider> {

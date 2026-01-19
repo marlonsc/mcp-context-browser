@@ -3,15 +3,15 @@
 //! Handles server startup, dependency injection setup, and graceful shutdown.
 //! Integrates with the infrastructure layer for configuration and DI container setup.
 //!
-//! # Architecture (Clean Architecture + Shaku DI)
+//! # Architecture (Clean Architecture + dill DI)
 //!
-//! The server initialization follows a two-layer DI approach:
+//! The server initialization follows a handle-based DI approach:
 //!
-//! 1. **Shaku Modules** (Infrastructure): Provides null providers as defaults
-//! 2. **Runtime Factory** (Application): Creates domain services with production providers
+//! 1. **Provider Handles** (Infrastructure): RwLock wrappers for runtime-swappable providers
+//! 2. **Runtime Factory** (Application): Creates domain services with providers from handles
 //!
-//! Production providers are created from `AppConfig` using `EmbeddingProviderFactory`
-//! and `VectorStoreProviderFactory`, then injected into `DomainServicesFactory`.
+//! Production providers are resolved via linkme registry using `AppConfig`,
+//! wrapped in handles, and can be switched at runtime via admin API.
 //!
 //! # Transport Modes
 //!
@@ -91,11 +91,11 @@ async fn create_mcp_server(
     // Create AppContext with resolved providers
     let app_context = mcb_infrastructure::di::bootstrap::init_app(config.clone()).await?;
 
-    // Get all providers from resolved providers (no Shaku resolve needed)
-    let embedding_provider = Arc::clone(&app_context.providers.embedding);
-    let vector_store_provider = Arc::clone(&app_context.providers.vector_store);
-    let cache_provider = Arc::clone(&app_context.providers.cache);
-    let language_chunker = Arc::clone(&app_context.providers.language);
+    // Get all providers from handles (runtime-swappable via admin API)
+    let embedding_provider = app_context.embedding_handle().get();
+    let vector_store_provider = app_context.vector_store_handle().get();
+    let cache_provider = app_context.cache_handle().get();
+    let language_chunker = app_context.language_handle().get();
 
     // Create shared cache provider (conversion for domain services factory)
     let shared_cache = SharedCacheProvider::from_arc(cache_provider);

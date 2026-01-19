@@ -219,6 +219,7 @@ impl RustyRulesEngineWrapper {
                 self.evaluate_cargo_dependencies(field, operator, expected_value, context)
             }
             "file_pattern" => self.evaluate_file_pattern(field, operator, expected_value, context),
+            "file_size" => self.evaluate_file_size(field, operator, expected_value, context),
             "ast_pattern" => self.evaluate_ast_pattern(field, operator, expected_value, context),
             _ => false,
         }
@@ -251,13 +252,35 @@ impl RustyRulesEngineWrapper {
         use walkdir::WalkDir;
 
         let cargo_pattern = Pattern::new("**/Cargo.toml").unwrap();
+        let trimmed_pattern = pattern.trim_matches('"');
+        let pattern_prefix = trimmed_pattern.trim_end_matches('*');
 
         for entry in WalkDir::new(&context.workspace_root).into_iter().flatten() {
             let path = entry.path();
             if cargo_pattern.matches_path(path) {
                 if let Ok(content) = std::fs::read_to_string(path) {
-                    if content.contains(pattern) {
-                        return true;
+                    // Try to parse as TOML and check dependencies section
+                    if let Ok(toml_value) = content.parse::<toml::Value>() {
+                        if let Some(dependencies) = toml_value.get("dependencies") {
+                            if let Some(deps_table) = dependencies.as_table() {
+                                for dep_name in deps_table.keys() {
+                                    if dep_name.starts_with(pattern_prefix) {
+                                        return true;
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // Fallback to simple pattern matching
+                        for line in content.lines() {
+                            let line = line.trim();
+                            if line.contains('=') {
+                                let dep_name = line.split('=').next().unwrap().trim();
+                                if dep_name.starts_with(pattern_prefix) {
+                                    return true;
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -286,6 +309,44 @@ impl RustyRulesEngineWrapper {
                                     .any(|path| p.matches_path(std::path::Path::new(path)))
                             })
                             .unwrap_or(false);
+                    }
+                }
+                false
+            }
+            _ => false,
+        }
+    }
+
+    #[allow(dead_code)]
+    fn evaluate_file_size(
+        &self,
+        field: &str,
+        operator: &str,
+        expected_value: &Value,
+        context: &RuleContext,
+    ) -> bool {
+        match field {
+            "exceeds_limit" => {
+                if operator == "extension" {
+                    if let Some(extension) = expected_value.as_str() {
+                        // Check if any file with the given extension exceeds the configured limit
+                        // For simplicity, we'll use a hardcoded limit of 500 for now
+                        let max_lines = 500;
+
+                        for (file_path, content) in &context.file_contents {
+                            if file_path.ends_with(extension) {
+                                let line_count = content.lines().count();
+                                if line_count > max_lines {
+                                    // Check exclusions
+                                    let path_str = file_path.to_string();
+                                    if !path_str.contains("/tests/")
+                                        && !path_str.contains("/target/")
+                                        && !path_str.ends_with("_test.rs") {
+                                        return true; // Found a file that exceeds the limit
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 false
@@ -367,6 +428,10 @@ impl RuleEngine for RustyRulesEngineWrapper {
                     self.execute_cargo_dependency_rule(rule_definition, context)
                         .await
                 }
+                "file_size" => {
+                    self.execute_file_size_rule(rule_definition, context)
+                        .await
+                }
                 "ast_pattern" => {
                     self.execute_ast_pattern_rule(rule_definition, context)
                         .await
@@ -387,17 +452,47 @@ impl RustyRulesEngineWrapper {
     ) -> Result<Vec<RuleViolation>> {
         let mut violations = Vec::new();
 
+        // Get the condition (default to "not_exists" for backwards compatibility)
+        let condition = rule_definition
+            .get("condition")
+            .and_then(|v| v.as_str())
+            .unwrap_or("not_exists");
+
         if let Some(forbidden_pattern) = rule_definition.get("pattern").and_then(|v| v.as_str()) {
-            if self.has_forbidden_dependency(forbidden_pattern, context) {
-                violations.push(
-                    RuleViolation::new(
-                        "CARGO_DEP",
-                        ViolationCategory::Architecture,
-                        Severity::Error,
-                        "Forbidden dependency found",
-                    )
-                    .with_context(format!("Pattern: {}", forbidden_pattern)),
-                );
+            let has_forbidden = self.has_forbidden_dependency(forbidden_pattern, context);
+
+            match condition {
+                "not_exists" => {
+                    // Create violation if forbidden dependency EXISTS (should NOT exist)
+                    if has_forbidden {
+                        violations.push(
+                            RuleViolation::new(
+                                "CARGO_DEP",
+                                ViolationCategory::Architecture,
+                                Severity::Error,
+                                "Forbidden dependency found",
+                            )
+                            .with_context(format!("Pattern: {}", forbidden_pattern)),
+                        );
+                    }
+                }
+                "exists" => {
+                    // Create violation if forbidden dependency does NOT exist (should exist)
+                    if !has_forbidden {
+                        violations.push(
+                            RuleViolation::new(
+                                "CARGO_DEP",
+                                ViolationCategory::Architecture,
+                                Severity::Error,
+                                "Required dependency not found",
+                            )
+                            .with_context(format!("Pattern: {}", forbidden_pattern)),
+                        );
+                    }
+                }
+                _ => {
+                    // Unknown condition, do nothing
+                }
             }
         }
 
@@ -428,6 +523,64 @@ impl RustyRulesEngineWrapper {
                                 .with_context(format!("Pattern: {}", pattern)),
                             );
                         }
+                    }
+                }
+            }
+        }
+
+        Ok(violations)
+    }
+
+    async fn execute_file_size_rule(
+        &self,
+        rule_definition: &Value,
+        context: &RuleContext,
+    ) -> Result<Vec<RuleViolation>> {
+        let mut violations = Vec::new();
+
+        // Get the condition (default to "exceeds_limit")
+        let condition = rule_definition
+            .get("condition")
+            .and_then(|v| v.as_str())
+            .unwrap_or("exceeds_limit");
+
+        // Get the pattern (file extension)
+        let pattern = rule_definition
+            .get("pattern")
+            .and_then(|v| v.as_str())
+            .unwrap_or(".rs");
+
+        // Get the message
+        let message = rule_definition
+            .get("message")
+            .and_then(|v| v.as_str())
+            .unwrap_or("File exceeds size limit");
+
+        if condition == "exceeds_limit" {
+            // Check files that match the pattern
+            let max_lines = 500; // Hardcoded for now, could be configurable
+
+            for (file_path, content) in &context.file_contents {
+                if file_path.ends_with(pattern) {
+                    let line_count = content.lines().count();
+
+                    // Check exclusions
+                    let path_str = file_path.to_string();
+                    let should_exclude = path_str.contains("/tests/")
+                        || path_str.contains("/target/")
+                        || path_str.ends_with("_test.rs");
+
+                    if line_count > max_lines && !should_exclude {
+                        violations.push(
+                            RuleViolation::new(
+                                "QUAL006",
+                                ViolationCategory::Quality,
+                                Severity::Warning,
+                                format!("{}: {} lines (max: {})", message, line_count, max_lines),
+                            )
+                            .with_file(std::path::PathBuf::from(file_path))
+                            .with_context(format!("File: {}, Lines: {}", file_path, line_count)),
+                        );
                     }
                 }
             }

@@ -84,8 +84,8 @@ impl DomainServicesFactory {
     pub async fn create_indexing_service(
         app_context: &AppContext,
     ) -> Result<Arc<dyn IndexingServiceInterface>> {
-        // Get providers from resolved providers
-        let language_chunker = Arc::clone(&app_context.providers.language);
+        // Get providers from handles (runtime-swappable)
+        let language_chunker = app_context.language_handle().get();
 
         // Create context service first (dependency)
         let context_service = Self::create_context_service(app_context).await?;
@@ -100,10 +100,10 @@ impl DomainServicesFactory {
     pub async fn create_context_service(
         app_context: &AppContext,
     ) -> Result<Arc<dyn ContextServiceInterface>> {
-        // Get providers from resolved providers
-        let cache_provider = Arc::clone(&app_context.providers.cache);
-        let embedding_provider = Arc::clone(&app_context.providers.embedding);
-        let vector_store_provider = Arc::clone(&app_context.providers.vector_store);
+        // Get providers from handles (runtime-swappable)
+        let cache_provider = app_context.cache_handle().get();
+        let embedding_provider = app_context.embedding_handle().get();
+        let vector_store_provider = app_context.vector_store_handle().get();
 
         Ok(Arc::new(ContextServiceImpl::new(
             cache_provider,

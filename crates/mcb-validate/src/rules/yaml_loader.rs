@@ -29,6 +29,21 @@ pub struct ValidatedRule {
     pub lint_select: Vec<String>,
     /// Custom message for violations
     pub message: Option<String>,
+    /// AST selectors for multi-language pattern matching (Phase 2)
+    pub selectors: Vec<AstSelector>,
+    /// Tree-sitter query string for complex AST matching (Phase 2)
+    pub ast_query: Option<String>,
+}
+
+/// AST selector for language-specific pattern matching
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AstSelector {
+    /// Programming language (e.g., "rust", "python")
+    pub language: String,
+    /// AST node type to match (e.g., "call_expression", "function_definition")
+    pub node_type: String,
+    /// Tree-sitter query pattern (optional, for complex matching)
+    pub pattern: Option<String>,
 }
 
 /// Suggested fix for a rule violation
@@ -241,6 +256,36 @@ impl YamlRuleLoader {
             .and_then(|v| v.as_str())
             .map(|s| s.to_string());
 
+        // Extract AST selectors (Phase 2)
+        let selectors = obj
+            .get("selectors")
+            .and_then(|v| v.as_array())
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|sel| {
+                        if let Some(sel_obj) = sel.as_object() {
+                            Some(AstSelector {
+                                language: sel_obj.get("language")?.as_str()?.to_string(),
+                                node_type: sel_obj.get("node_type")?.as_str()?.to_string(),
+                                pattern: sel_obj
+                                    .get("pattern")
+                                    .and_then(|v| v.as_str())
+                                    .map(|s| s.to_string()),
+                            })
+                        } else {
+                            None
+                        }
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+
+        // Extract ast_query (Phase 2)
+        let ast_query = obj
+            .get("ast_query")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+
         Ok(ValidatedRule {
             id,
             name,
@@ -255,6 +300,8 @@ impl YamlRuleLoader {
             fixes,
             lint_select,
             message,
+            selectors,
+            ast_query,
         })
     }
 

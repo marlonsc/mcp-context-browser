@@ -372,7 +372,13 @@ impl QualityValidator {
             for entry in WalkDir::new(&src_dir)
                 .into_iter()
                 .filter_map(|e| e.ok())
-                .filter(|e| e.path().extension().is_some_and(|ext| ext == "rs"))
+                .filter(|e| {
+                    e.path().extension().is_some_and(|ext| ext == "rs") &&
+                    !self.config.should_exclude(e.path()) &&
+                    !e.path().to_string_lossy().contains("/tests/") &&
+                    !e.path().to_string_lossy().contains("/target/") &&
+                    !e.path().to_string_lossy().ends_with("_test.rs")
+                })
             {
                 let content = std::fs::read_to_string(entry.path())?;
                 let line_count = content.lines().count();

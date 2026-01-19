@@ -4,68 +4,20 @@
 
 **Implemented** (v0.1.2)
 
-> Replacement for [ADR 002: Dependency Injection with Shaku](002-dependency-injection-shaku.md) using the dill runtime DI framework.
+> Replacement for [ADR 002: Dependency Injection with Shaku](002-dependency-injection-shaku.md) using a handle-based DI pattern with linkme registry.
 >
-> **Implementation Note (2026-01-18)**: The `#[component]` macro approach is incompatible with our domain error types (`mcb_domain::Error` vs dill's `InjectionError`). We use dill's `add_value` pattern instead, which achieves the same result without requiring the component macro.
+> **Implementation Note (2026-01-19)**: The dill `#[component]` macro is incompatible with our domain error types and manual constructors. We use a handle-based pattern instead: Provider Handles (RwLock wrappers), Resolvers (linkme registry), and Admin Services (runtime switching via API).
 
 ## Context
 
 The current dependency injection system uses Shaku (version 0.6), a compile-time DI container that provides trait-based dependency resolution. While effective, this approach introduces substantial complexity that impacts development velocity and maintainability.
 
-### Current Shaku Implementation
+### Problems with Shaku
 
-The current system uses a two-layer DI approach (ADR 012) with:
-
-1.  **Shaku Components**: Services registered with `#[derive(Component)]` and `#[shaku(interface = dyn Trait)]`
-2.  **Runtime Factories**: Production providers created via factory functions outside Shaku
-3.  **Module Composition**: Services organized in Shaku modules with macro-generated wiring
-
-**Example of current complexity:**
-
-```rust
-// Component definition with multiple attributes
-#[derive(Component)]
-#[shaku(interface = dyn EmbeddingProvider)]
-pub struct OllamaEmbeddingProvider {
-    #[shaku(inject)]  // Runtime injection point
-    config: Arc<dyn ConfigProvider>,
-    #[shaku(inject)]
-    http_client: Arc<dyn HttpClient>,
-}
-
-// Module definition with macro
-module! {
-    pub EmbeddingModuleImpl: EmbeddingModule {
-        components = [OllamaEmbeddingProvider],
-        providers = []
-    }
-}
-
-// Runtime resolution
-let provider: Arc<dyn EmbeddingProvider> = container.resolve();
-```
-
-### Problems with Current Approach
-
-#### Developer Experience Issues
-
-1.  **Macro complexity**: `#[derive(Component)]`, `#[shaku(interface = ...)]`, `#[shaku(inject)]` everywhere
-2.  **Build time impact**: Extensive macro expansion slows compilation
-3.  **Learning curve**: Shaku API is complex for new team members
-4.  **Debugging difficulty**: DI resolution happens through macro-generated code
-
-#### Maintenance Issues
-
-1.  **Module sync**: Manual maintenance of module definitions as services change
-2.  **Trait bounds**: Complex trait bounds on component implementations
-3.  **Testing overhead**: Need to understand Shaku to write unit tests
-4.  **Refactoring friction**: Changes require updating multiple macro annotations
-
-#### Architectural Issues
-
-1.  **Over-engineering**: DI container complexity exceeds project needs
-2.  **Runtime opacity**: Service resolution happens through generated code
-3.  **Limited flexibility**: Hard to customize service creation per environment
+1. **Macro complexity**: `#[derive(Component)]`, `#[shaku(interface = ...)]`, `#[shaku(inject)]` everywhere
+2. **Build time impact**: Extensive macro expansion slows compilation
+3. **Module sync**: Manual maintenance of module definitions as services change
+4. **Over-engineering**: DI container complexity exceeds project needs
 
 ### DI Library Research
 
@@ -75,243 +27,241 @@ We evaluated modern Rust DI alternatives:
 |---------|------|-------------|-------|---------|
 | **Shaku** (current) | Compile-time | Yes | No | High boilerplate |
 | **nject** | Compile-time | **NO** | No | Rejected (cross-crate limitation) |
-| **dill** | Runtime | Yes | Tokio | **SELECTED** |
-| **dependency_injector** | Runtime | Yes | Optional | Viable alternative |
-| Manual injection | N/A | N/A | N/A | Step backwards |
+| **dill** | Runtime | Yes | Tokio | Partial use |
+| Manual injection | N/A | N/A | N/A | **SELECTED** (with patterns) |
 
-**Critical Requirement**: Cross-crate compatibility is essential for the 8-crate workspace architecture.
+### Why Handle-Based Pattern
 
-### Why dill
+After implementing the dill catalog approach, we discovered that `dill::Catalog::get_one()` doesn't work well with `add_value` for interface resolution. Instead, we adopted a handle-based pattern that provides:
 
-The [dill](https://github.com/sergiimk/dill-rs) crate (version 0.15.0, as of January 2026) provides runtime DI designed specifically for Clean/Onion Architecture:
-
-**Key Benefits:**
-
-1.  **Clean Architecture alignment**: Explicitly designed for Onion Architecture patterns
-2.  **Native `Arc<dyn Trait>`**: First-class support for trait-based DI
-3.  **Cross-crate compatible**: Works seamlessly across all 8 workspace crates
-4.  **Tokio-compatible**: Task-local scoping for async contexts
-5.  **Production-proven**: Used in [kamu-cli](https://github.com/kamu-data/kamu-cli), a large-scale Rust project with similar architecture
-6.  **Lower boilerplate**: Simple `#[component]` + `#[interface]` attributes
-
-**dill Injection Specifications:**
-
--   `OneOf<T>` - Single implementation
--   `AllOf<T>` - Collection of all implementations
--   `Maybe<T>` - Optional dependency (returns None if missing)
--   `Lazy<T>` - Deferred resolution
-
-**dill Scopes:**
-
--   `Transient` - New instance per call
--   `Singleton` - Reused after first creation
--   `Transaction` - Cached during transaction
+1. **Runtime provider switching** via RwLock handles
+2. **Compile-time discovery** via linkme distributed slices
+3. **Admin API support** for provider management
+4. **Direct service storage** for infrastructure components
 
 ## Decision
 
-We will replace Shaku-based DI with dill runtime DI:
+We replace Shaku-based DI with a handle-based pattern:
 
-1.  **Replace Shaku with dill** across all crates
-2.  **Use Catalog pattern** for service registration and resolution
-3.  **Maintain trait-based abstraction** for testability
-4.  **Keep dependency inversion** through trait objects (`Arc<dyn Trait>`)
+1. **Provider Handles**: RwLock wrappers allowing runtime provider switching
+2. **Provider Resolvers**: Components that access the linkme registry
+3. **Admin Services**: API endpoints for switching providers at runtime
+4. **Direct Storage**: Infrastructure services stored directly in AppContext
+
+### Architecture Overview
+
+```text
+AppConfig → Resolvers → Handles (RwLock) → Domain Services
+               ↑              ↑
+           linkme         AdminServices
+          registry       (switch via API)
+```
 
 ### Implementation Pattern
 
-**Before (Shaku - verbose macros):**
+**Provider Handle (RwLock wrapper for runtime switching):**
 
 ```rust
-#[derive(Component)]
-#[shaku(interface = dyn MyService)]
-pub struct MyServiceImpl {
-    #[shaku(inject)]
-    dependency: Arc<dyn OtherService>,
+// crates/mcb-infrastructure/src/di/handles.rs
+
+pub struct EmbeddingProviderHandle {
+    inner: RwLock<Arc<dyn EmbeddingProvider>>,
 }
 
-module! {
-    pub MyModule: MyModuleTrait {
-        components = [MyServiceImpl],
-        providers = []
+impl EmbeddingProviderHandle {
+    pub fn new(provider: Arc<dyn EmbeddingProvider>) -> Self {
+        Self { inner: RwLock::new(provider) }
+    }
+
+    pub fn get(&self) -> Arc<dyn EmbeddingProvider> {
+        self.inner.read().expect("lock poisoned").clone()
+    }
+
+    pub fn set(&self, new_provider: Arc<dyn EmbeddingProvider>) {
+        *self.inner.write().expect("lock poisoned") = new_provider;
     }
 }
-
-// Resolution
-let service: Arc<dyn MyService> = container.resolve();
 ```
 
-**After (dill - add_value pattern):**
+**Provider Resolver (linkme registry access):**
 
 ```rust
-use dill::{Catalog, CatalogBuilder};
+// crates/mcb-infrastructure/src/di/provider_resolvers.rs
 
-// Note: #[component] macro is incompatible with our domain error types.
-// We use add_value to register pre-instantiated Arc<dyn Trait> values.
-
-pub struct MyServiceImpl;
-
-impl MyService for MyServiceImpl {
-    // ... trait implementation
+pub struct EmbeddingProviderResolver {
+    config: Arc<AppConfig>,
 }
 
-// Catalog composition
-let catalog = CatalogBuilder::new()
-    .add_value(Arc::new(MyServiceImpl) as Arc<dyn MyService>)
-    .add_value(Arc::new(OtherServiceImpl) as Arc<dyn OtherService>)
-    .build();
+impl EmbeddingProviderResolver {
+    pub fn new(config: Arc<AppConfig>) -> Self {
+        Self { config }
+    }
 
-// Resolution
-let service: Arc<dyn MyService> = catalog.get_one().unwrap();
+    pub fn resolve_from_config(&self) -> Result<Arc<dyn EmbeddingProvider>, String> {
+        let registry_config = /* extract from config */;
+        resolve_embedding_provider(&registry_config)  // linkme registry
+    }
+
+    pub fn resolve_from_override(&self, config: &EmbeddingProviderConfig) -> Result<Arc<dyn EmbeddingProvider>, String> {
+        resolve_embedding_provider(config)
+    }
+
+    pub fn list_available(&self) -> Vec<(&'static str, &'static str)> {
+        list_embedding_providers()  // linkme registry
+    }
+}
 ```
 
-> **Why add_value instead of #[component]?** The dill `#[component]` macro generates code that uses `InjectionError` for error handling and creates a conflicting `new()` method. Our services use `mcb_domain::Error` and have existing constructors. The `add_value` pattern is simpler and compatible with our architecture.
-
-### Bootstrap Pattern (Implemented)
-
-Service composition is handled in `mcb-infrastructure/src/di/bootstrap.rs`:
+**Admin Service (runtime provider switching via API):**
 
 ```rust
-use dill::{Catalog, CatalogBuilder};
+// crates/mcb-infrastructure/src/di/admin.rs
 
-/// Build the infrastructure Catalog with all services registered
-fn build_infrastructure_catalog() -> Catalog {
-    CatalogBuilder::new()
-        // Infrastructure services
-        .add_value(Arc::new(NullAuthService::new()) as Arc<dyn AuthServiceInterface>)
-        .add_value(Arc::new(TokioBroadcastEventBus::new()) as Arc<dyn EventBusProvider>)
-        .add_value(Arc::new(NullSystemMetricsCollector::new()) as Arc<dyn SystemMetricsCollectorInterface>)
-        .add_value(Arc::new(NullSyncProvider::new()) as Arc<dyn SyncProvider>)
-        .add_value(Arc::new(NullSnapshotProvider::new()) as Arc<dyn SnapshotProvider>)
-        .add_value(Arc::new(DefaultShutdownCoordinator::new()) as Arc<dyn ShutdownCoordinator>)
-        // Admin services
-        .add_value(Arc::new(NullPerformanceMetrics) as Arc<dyn PerformanceMetricsInterface>)
-        .add_value(Arc::new(NullIndexingOperations) as Arc<dyn IndexingOperationsInterface>)
-        .build()
+pub struct EmbeddingAdminService {
+    resolver: Arc<EmbeddingProviderResolver>,
+    handle: Arc<EmbeddingProviderHandle>,
 }
+
+impl EmbeddingAdminService {
+    pub fn list_providers(&self) -> Vec<ProviderInfo> {
+        self.resolver.list_available()
+            .into_iter()
+            .map(|(name, desc)| ProviderInfo { name: name.to_string(), description: desc.to_string() })
+            .collect()
+    }
+
+    pub fn current_provider(&self) -> String {
+        self.handle.provider_name()
+    }
+
+    pub fn switch_provider(&self, config: EmbeddingProviderConfig) -> Result<(), String> {
+        let new_provider = self.resolver.resolve_from_override(&config)?;
+        self.handle.set(new_provider);
+        Ok(())
+    }
+}
+```
+
+**AppContext (Composition Root):**
+
+```rust
+// crates/mcb-infrastructure/src/di/bootstrap.rs
 
 pub struct AppContext {
-    pub config: AppConfig,
-    pub providers: ResolvedProviders,  // External providers from linkme registry
-    catalog: Catalog,  // dill Catalog with infrastructure services
+    pub config: Arc<AppConfig>,
+
+    // Provider Handles (runtime-swappable)
+    embedding_handle: Arc<EmbeddingProviderHandle>,
+    vector_store_handle: Arc<VectorStoreProviderHandle>,
+    cache_handle: Arc<CacheProviderHandle>,
+    language_handle: Arc<LanguageProviderHandle>,
+
+    // Admin Services (switch providers via API)
+    embedding_admin: Arc<EmbeddingAdminService>,
+    vector_store_admin: Arc<VectorStoreAdminService>,
+    cache_admin: Arc<CacheAdminService>,
+    language_admin: Arc<LanguageAdminService>,
+
+    // Infrastructure Services (direct storage)
+    auth_service: Arc<dyn AuthServiceInterface>,
+    event_bus: Arc<dyn EventBusProvider>,
+    // ... more infrastructure services
 }
 
 impl AppContext {
-    pub fn get<T: ?Sized + Send + Sync + 'static>(&self) -> Arc<T> {
-        self.catalog.get_one().expect("Service not registered in catalog")
+    // Provider access via handles
+    pub fn embedding_handle(&self) -> Arc<EmbeddingProviderHandle> {
+        self.embedding_handle.clone()
+    }
+
+    // Admin service access
+    pub fn embedding_admin(&self) -> Arc<EmbeddingAdminService> {
+        self.embedding_admin.clone()
+    }
+
+    // Infrastructure service access
+    pub fn auth(&self) -> Arc<dyn AuthServiceInterface> {
+        self.auth_service.clone()
     }
 }
 ```
 
-> **Hybrid Architecture**: External providers (embedding, vector_store, cache, language) are resolved via the linkme-based registry system. Internal infrastructure services are registered in the dill Catalog. This separation allows dynamic provider selection at runtime while maintaining type-safe DI for infrastructure services.
+### Usage Example
 
-### Comparative Analysis
+```rust
+// Create AppContext with provider handles
+let context = init_app(AppConfig::default()).await?;
 
-| Aspect | Shaku (Current) | dill (Proposed) |
-|--------|----------------|-----------------|
-| **API Complexity** | High (macros, modules, components) | Low (#[component], Catalog) |
-| **Build Time** | Slow (extensive macro expansion) | Faster (simpler macros) |
-| **Learning Curve** | Steep (Shaku-specific) | Moderate (catalog pattern) |
-| **Testability** | Good (but requires Shaku setup) | Excellent (catalog builder) |
-| **Cross-Crate** | Yes | Yes |
-| **Async Support** | No | Tokio task-local |
-| **Production Use** | Many projects | kamu-cli (similar architecture) |
+// Get provider via handle (current provider)
+let embedding = context.embedding_handle().get();
+let embeddings = embedding.embed_batch(&texts).await?;
+
+// Switch provider at runtime via admin API
+let admin = context.embedding_admin();
+admin.switch_provider(EmbeddingProviderConfig::new("openai"))?;
+
+// Subsequent calls use new provider
+let embedding = context.embedding_handle().get();  // Now OpenAI
+```
 
 ## Consequences
 
 ### Positive
 
--   **Reduced complexity**: Simpler attribute-based registration
--   **Better readability**: Clear catalog-based composition
--   **Faster compilation**: Less macro expansion overhead
--   **Easier debugging**: Direct catalog resolution
--   **Architecture alignment**: dill designed for Clean Architecture
--   **Maintained automation**: Unlike manual injection, keeps DI benefits
--   **Optional dependencies**: `Maybe<T>` pattern for optional services
+- **Runtime switching**: Providers can be changed without restart
+- **Admin API ready**: Built-in support for provider management endpoints
+- **Type-safe**: All trait bounds enforced at compile time
+- **Testable**: Handles and resolvers can be mocked independently
+- **Simple**: No complex DI macros or catalog resolution
 
 ### Negative
 
--   **New dependency**: Adds dill to the dependency tree
--   **Runtime resolution**: Dependencies resolved at runtime, not compile-time
--   **API change**: Different syntax from Shaku
--   **Learning curve**: Team needs to learn dill patterns
-
-### Risks
-
--   **Runtime errors**: Missing dependencies caught at runtime
--   **Catalog misconfiguration**: Must register all components
--   **Version stability**: dill is relatively newer than Shaku
-
-## Migration Strategy
-
-### Phase 1: Preparation
-
-1.  Add dill dependency alongside Shaku
-2.  Create new dill-based implementations in parallel
-3.  Add integration tests for both approaches
-
-### Phase 2: Gradual Migration
-
-1.  Migrate infrastructure services first (mcb-infrastructure)
-2.  Migrate application services (mcb-application)
-3.  Migrate server bootstrap (mcb-server)
-4.  Keep both systems running during transition
-
-### Phase 3: Cleanup
-
-1.  Remove Shaku dependencies from all crates
-2.  Delete old Shaku module definitions
-3.  Update all documentation
-4.  Run comprehensive testing
+- **Manual wiring**: Services must be explicitly constructed in bootstrap.rs
+- **Boilerplate**: Each provider type needs Handle, Resolver, AdminService
+- **Lock overhead**: RwLock adds minimal runtime overhead
 
 ## Validation Criteria
 
--   [x] All infrastructure services registered in dill Catalog (8 services)
--   [x] External providers use linkme-based registry (embedding, vector_store, cache, language)
--   [x] Test mocking works with catalog.get_one()
--   [x] All crates compile successfully
--   [x] No Shaku references remain in production code
--   [ ] Binary size remains stable (not yet measured)
+- [x] All provider types have Handle, Resolver, AdminService
+- [x] AppContext provides access to all services
+- [x] Runtime provider switching works via admin services
+- [x] All tests pass
+- [x] No Shaku references remain in production code
+- [x] Domain services use providers via handles
 
-### Implementation Summary (2026-01-18)
+## Implementation Summary (2026-01-19)
 
 | Component | Pattern | Status |
 |-----------|---------|--------|
-| Infrastructure services | dill `add_value` | ✅ Implemented |
-| External providers | linkme distributed slices | ✅ Implemented |
-| Provider factories | Function pointers (not closures) | ✅ Implemented |
-| Shaku removal | All macros removed | ✅ Completed |
-| `#[component]` macro | Incompatible with domain errors | ⚠️ Not used |
+| EmbeddingProvider | Handle + Resolver + AdminService | Implemented |
+| VectorStoreProvider | Handle + Resolver + AdminService | Implemented |
+| CacheProvider | Handle + Resolver + AdminService | Implemented |
+| LanguageChunkingProvider | Handle + Resolver + AdminService | Implemented |
+| Infrastructure services | Direct storage in AppContext | Implemented |
+| Shaku removal | All macros removed | Completed |
+| linkme registry | Function pointers (not closures) | Implemented |
+
+### File Structure
+
+```
+crates/mcb-infrastructure/src/di/
+├── admin.rs           # Admin services for runtime switching
+├── bootstrap.rs       # Composition root (AppContext, init_app)
+├── dispatch.rs        # Dispatch utilities
+├── handles.rs         # RwLock provider handles
+├── mod.rs             # Module exports
+├── modules/           # Domain services factory
+├── provider_resolvers.rs  # Linkme registry access
+└── resolver.rs        # Provider resolution utilities
+```
 
 ## Related ADRs
 
--   [ADR 002: Dependency Injection with Shaku](002-dependency-injection-shaku.md) - **SUPERSEDED** by this ADR
--   [ADR 012: Two-Layer DI Strategy](012-di-strategy-two-layer-approach.md) - **SUPERSEDED** (dill simplifies to single layer)
--   [ADR 013: Clean Architecture Crate Separation](013-clean-architecture-crate-separation.md) - Multi-crate organization
+- [ADR 002: Dependency Injection with Shaku](002-dependency-injection-shaku.md) - **SUPERSEDED** by this ADR
+- [ADR 012: Two-Layer DI Strategy](012-di-strategy-two-layer-approach.md) - **SUPERSEDED**
+- [ADR 013: Clean Architecture Crate Separation](013-clean-architecture-crate-separation.md) - Multi-crate organization
 
 ## References
 
--   [dill-rs GitHub](https://github.com/sergiimk/dill-rs) - dill source and documentation (v0.15.0)
--   [dill on crates.io](https://crates.io/crates/dill) - 56,675 downloads, actively maintained
--   [kamu-cli](https://github.com/kamu-data/kamu-cli) - Production example using dill
--   [Rust DI Libraries Comparison](https://users.rust-lang.org/t/comparing-dependency-injection-libraries-shaku-nject/102619) - Community discussion
-
-## Migration Status (Completed 2026-01-18)
-
-**Shaku Removal Summary:**
-
-| Category | Before | After |
-|----------|--------|-------|
-| `#[derive(Component)]` | 1 file | 0 files |
-| `module!` macro | 4 files | 0 files |
-| `use shaku::Interface` | ~20 files | 0 files |
-| `: Interface` trait bound | ~20 files | 0 files |
-| Shaku in Cargo.toml | 2 crates | 0 crates |
-
-**Current Architecture:**
-
-| Layer | Pattern | Files |
-|-------|---------|-------|
-| External Providers | linkme distributed slices + function pointers | 14 files (embedding, vector_store, cache, language) |
-| Infrastructure Services | dill Catalog + add_value | 1 file (bootstrap.rs) |
-| Service Resolution | AppContext.get::<dyn Trait>() | Used throughout mcb-server |
-
-**Total migration effort**: ~45 files changed, all Shaku references removed
+- [linkme crate](https://docs.rs/linkme) - Compile-time distributed slices for provider registration
+- [dill-rs GitHub](https://github.com/sergiimk/dill-rs) - Evaluated but `add_value` pattern insufficient

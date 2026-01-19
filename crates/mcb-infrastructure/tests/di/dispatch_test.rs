@@ -27,10 +27,10 @@ async fn test_di_container_builder() {
         std::mem::size_of_val(&app_context.config) > 0,
         "Config should be initialized"
     );
-    assert!(
-        std::mem::size_of_val(&app_context.providers) > 0,
-        "Providers should be initialized"
-    );
+
+    // Verify handles are accessible
+    let embedding_handle = app_context.embedding_handle();
+    assert!(!embedding_handle.provider_name().is_empty());
 }
 
 #[tokio::test]
@@ -66,11 +66,23 @@ async fn test_provider_selection_from_config() {
         .await
         .expect("Should initialize with null providers");
 
-    // Verify correct providers were selected
-    assert_eq!(app_context.providers.embedding.provider_name(), "null");
-    assert_eq!(app_context.providers.vector_store.provider_name(), "null");
-    assert_eq!(app_context.providers.cache.provider_name(), "moka"); // default cache
-    assert_eq!(app_context.providers.language.provider_name(), "universal"); // default language
+    // Verify correct providers were selected via handles
+    assert_eq!(
+        app_context.embedding_handle().get().provider_name(),
+        "null"
+    );
+    assert_eq!(
+        app_context.vector_store_handle().get().provider_name(),
+        "null"
+    );
+    assert_eq!(
+        app_context.cache_handle().get().provider_name(),
+        "moka"
+    ); // default cache
+    assert_eq!(
+        app_context.language_handle().get().provider_name(),
+        "universal"
+    ); // default language
 }
 
 #[tokio::test]
@@ -90,17 +102,61 @@ async fn test_provider_resolution_uses_registry() {
     // Verify that providers implement the expected traits
     // (This would fail at compile time if providers didn't implement the traits)
 
-    // Test that we can call methods through the trait
-    let _dimensions = app_context.providers.embedding.dimensions();
-    let _health = app_context.providers.embedding.health_check().await;
+    // Test that we can call methods through the trait via handles
+    let embedding = app_context.embedding_handle().get();
+    let _dimensions = embedding.dimensions();
+    let _health = embedding.health_check().await;
 
     // Verify provider names are returned correctly
-    assert!(!app_context.providers.embedding.provider_name().is_empty());
-    assert!(!app_context
-        .providers
-        .vector_store
-        .provider_name()
-        .is_empty());
-    assert!(!app_context.providers.cache.provider_name().is_empty());
-    assert!(!app_context.providers.language.provider_name().is_empty());
+    assert!(!app_context.embedding_handle().get().provider_name().is_empty());
+    assert!(!app_context.vector_store_handle().get().provider_name().is_empty());
+    assert!(!app_context.cache_handle().get().provider_name().is_empty());
+    assert!(!app_context.language_handle().get().provider_name().is_empty());
+}
+
+#[tokio::test]
+async fn test_admin_services_are_accessible() {
+    // Test that admin services for runtime provider switching are accessible
+
+    let config = AppConfig::default();
+    let app_context = init_app(config)
+        .await
+        .expect("Should initialize successfully");
+
+    // Verify admin services are accessible
+    let embedding_admin = app_context.embedding_admin();
+    let current = embedding_admin.current_provider();
+    assert!(!current.is_empty(), "Should have a current provider");
+
+    // Verify we can list available providers
+    let providers = embedding_admin.list_providers();
+    assert!(!providers.is_empty(), "Should have at least one provider");
+
+    // Verify cache admin
+    let cache_admin = app_context.cache_admin();
+    let cache_current = cache_admin.current_provider();
+    assert!(!cache_current.is_empty(), "Cache should have a current provider");
+}
+
+#[tokio::test]
+async fn test_infrastructure_services_from_catalog() {
+    // Test that infrastructure services are accessible from the dill catalog
+
+    let config = AppConfig::default();
+    let app_context = init_app(config)
+        .await
+        .expect("Should initialize successfully");
+
+    // Verify infrastructure services are accessible
+    let _auth = app_context.auth();
+    let _event_bus = app_context.event_bus();
+    let _metrics = app_context.metrics();
+    let _sync = app_context.sync();
+    let _snapshot = app_context.snapshot();
+    let _shutdown = app_context.shutdown();
+    let _performance = app_context.performance();
+    let _indexing = app_context.indexing();
+
+    // All should be non-null (they're Arc<dyn Trait>)
+    // If any were missing from the catalog, get() would panic
 }

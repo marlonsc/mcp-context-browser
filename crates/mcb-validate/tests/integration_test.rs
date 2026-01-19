@@ -146,17 +146,38 @@ fn test_full_validation_report() {
     let workspace_root = get_workspace_root();
     let mut validator = ArchitectureValidator::new(&workspace_root);
 
-    let report = validator.validate_all().unwrap();
+    let (legacy_report, yaml_report) = validator.validate_comprehensive().unwrap();
 
-    println!("\n{}", Reporter::to_human_readable(&report));
+    println!("\n=== LEGACY VALIDATORS ===");
+    println!("{}", Reporter::to_human_readable(&legacy_report));
 
-    // Count error-level violations
-    let error_count = Reporter::count_errors(&report);
-    let warning_count = Reporter::count_warnings(&report);
+    println!("\n=== YAML RULES ===");
+    println!("YAML Report Summary: {} total violations", yaml_report.summary.total_violations);
+    println!("YAML Errors: {}, Warnings: {}", yaml_report.summary.errors, yaml_report.summary.warnings);
+
+    // Show some YAML violations if any
+    for (category, violations) in &yaml_report.violations_by_category {
+        if !violations.is_empty() {
+            println!("Category '{}': {} violations", category, violations.len());
+            for violation in violations.iter().take(3) {  // Show first 3
+                println!("  - {}: {}", violation.id, violation.message);
+            }
+        }
+    }
+
+    // Count violations from both reports
+    let legacy_error_count = Reporter::count_errors(&legacy_report);
+    let legacy_warning_count = Reporter::count_warnings(&legacy_report);
+    let yaml_error_count = yaml_report.summary.errors;
+    let yaml_warning_count = yaml_report.summary.warnings;
+
+    let total_errors = legacy_error_count + yaml_error_count;
+    let total_warnings = legacy_warning_count + yaml_warning_count;
+    let total_violations = legacy_report.summary.total_violations + yaml_report.summary.total_violations;
 
     println!(
         "Summary: {} errors, {} warnings, {} total violations",
-        error_count, warning_count, report.summary.total_violations
+        total_errors, total_warnings, total_violations
     );
 
     // The validation should complete without panicking

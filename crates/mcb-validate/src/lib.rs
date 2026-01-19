@@ -73,7 +73,6 @@ pub mod pmat;
 pub mod quality;
 pub mod refactoring;
 pub mod reporter;
-pub mod shaku;
 pub mod solid;
 pub mod tests_org;
 
@@ -89,7 +88,7 @@ pub use violation_trait::{Violation, ViolationCategory, ViolationExt};
 // Re-export configuration system
 pub use config::{
     ArchitectureRulesConfig, FileConfig, GeneralConfig, OrganizationRulesConfig,
-    QualityRulesConfig, RulesConfig, ShakuRulesConfig, SolidRulesConfig, ValidatorsConfig,
+    QualityRulesConfig, RulesConfig, SolidRulesConfig, ValidatorsConfig,
 };
 
 // Re-export rule registry and YAML system
@@ -133,7 +132,6 @@ pub use organization::{OrganizationValidator, OrganizationViolation};
 pub use patterns::{PatternValidator, PatternViolation};
 pub use quality::{QualityValidator, QualityViolation};
 pub use reporter::{Reporter, ValidationReport, ValidationSummary};
-pub use shaku::{ShakuValidator, ShakuViolation};
 
 // Re-export ComponentType for strict directory validation
 // Used by organization and shaku validators
@@ -400,7 +398,6 @@ pub struct ArchitectureValidator {
     solid: SolidValidator,
     organization: OrganizationValidator,
     kiss: KissValidator,
-    shaku: ShakuValidator,
     refactoring: RefactoringValidator,
     implementation: ImplementationQualityValidator,
     // New validators for PMAT integration
@@ -444,7 +441,6 @@ impl ArchitectureValidator {
             solid: SolidValidator::with_config(config.clone()),
             organization: OrganizationValidator::with_config(config.clone()),
             kiss: KissValidator::with_config(config.clone()),
-            shaku: ShakuValidator::with_config(config.clone()),
             refactoring: RefactoringValidator::with_config(config.clone()),
             implementation: ImplementationQualityValidator::with_config(config.clone()),
             // New validators for PMAT integration
@@ -480,7 +476,6 @@ impl ArchitectureValidator {
         let solid_violations = self.solid.validate_all()?;
         let organization_violations = self.organization.validate_all()?;
         let kiss_violations = self.kiss.validate_all()?;
-        let shaku_violations = self.shaku.validate_all()?;
         let refactoring_violations = self.refactoring.validate_all()?;
         let implementation_violations = self.implementation.validate_all()?;
         // New validators for PMAT integration
@@ -498,7 +493,6 @@ impl ArchitectureValidator {
             + solid_violations.len()
             + organization_violations.len()
             + kiss_violations.len()
-            + shaku_violations.len()
             + refactoring_violations.len()
             + implementation_violations.len()
             + performance_violations.len()
@@ -517,7 +511,6 @@ impl ArchitectureValidator {
             solid_count: solid_violations.len(),
             organization_count: organization_violations.len(),
             kiss_count: kiss_violations.len(),
-            shaku_count: shaku_violations.len(),
             refactoring_count: refactoring_violations.len(),
             implementation_count: implementation_violations.len(),
             performance_count: performance_violations.len(),
@@ -541,7 +534,6 @@ impl ArchitectureValidator {
             solid_violations,
             organization_violations,
             kiss_violations,
-            shaku_violations,
             refactoring_violations,
             implementation_violations,
             performance_violations,
@@ -596,11 +588,6 @@ impl ArchitectureValidator {
         self.kiss.validate_all()
     }
 
-    /// Run only DI/Shaku validation
-    pub fn validate_shaku(&mut self) -> Result<Vec<ShakuViolation>> {
-        self.shaku.validate_all()
-    }
-
     /// Run only refactoring completeness validation
     pub fn validate_refactoring(&mut self) -> Result<Vec<RefactoringViolation>> {
         self.refactoring.validate_all()
@@ -640,7 +627,7 @@ impl ArchitectureValidator {
 
     /// Load and validate all YAML rules
     pub async fn load_yaml_rules(&self) -> Result<Vec<crate::rules::yaml_loader::ValidatedRule>> {
-        let rules_dir = std::env::current_dir()?.join("crates/mcb-validate/rules");
+        let rules_dir = self.config.workspace_root.join("crates/mcb-validate/rules");
 
         let mut loader = YamlRuleLoader::new(rules_dir)?;
         loader.load_all_rules().await
