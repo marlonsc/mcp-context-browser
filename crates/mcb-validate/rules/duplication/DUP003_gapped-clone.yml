@@ -1,0 +1,75 @@
+schema: "rule/v3"
+id: "DUP003"
+name: "Gapped Code Clone"
+description: "Detects Type 3 clones - near-miss clones with small modifications or gaps"
+category: "quality"
+severity: "info"
+enabled: true
+
+# Duplication detection configuration
+duplication:
+  # Clone type this rule detects
+  clone_type: "gapped"
+
+  # Minimum number of consecutive lines to consider a clone
+  min_lines: 8
+
+  # Minimum number of tokens to consider a clone
+  min_tokens: 60
+
+  # Similarity threshold (0.80 = allows small modifications)
+  similarity_threshold: 0.80
+
+  # Maximum gap size (lines) allowed within a clone
+  max_gap_size: 3
+
+  # Languages to analyze
+  languages:
+    - rust
+    - python
+    - javascript
+    - typescript
+    - go
+    - java
+    - c
+    - cpp
+    - csharp
+    - ruby
+    - php
+    - swift
+    - kotlin
+
+# Patterns to exclude from duplication checking
+exclude_patterns:
+  - "**/tests/**"
+  - "**/test/**"
+  - "**/*_test.rs"
+  - "**/*_test.py"
+  - "**/*.test.ts"
+  - "**/*.test.js"
+  - "**/fixtures/**"
+  - "**/generated/**"
+  - "**/vendor/**"
+  - "**/node_modules/**"
+  - "**/target/**"
+
+# Rationale and guidance
+rationale: |
+  Gapped clones (Type 3) are near-duplicate code fragments with small modifications,
+  additions, or deletions. These often represent similar algorithms or patterns that
+  evolved independently, or intentional variations on a common theme.
+
+suggestion: |
+  Near-duplicate code detected. Consider refactoring into a common abstraction with
+  the differences parameterized. Options include:
+  - Extract a base function with parameters for varying behavior
+  - Use the Strategy pattern for algorithmic variations
+  - Create a template method with customizable steps
+
+references:
+  - name: "Clone Detection Taxonomy"
+    url: "https://en.wikipedia.org/wiki/Duplicate_code#Types_of_code_clones"
+  - name: "Template Method Pattern"
+    url: "https://refactoring.guru/design-patterns/template-method"
+  - name: "Strategy Pattern"
+    url: "https://refactoring.guru/design-patterns/strategy"

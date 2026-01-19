@@ -1,0 +1,75 @@
+schema: "rule/v3"
+id: "METRIC005"
+name: "Halstead Volume Limit"
+category: "metrics"
+severity: "warning"
+enabled: true
+
+description: |
+  Enforces a maximum Halstead volume limit for functions.
+  Halstead volume measures the size of a program based on the number
+  of operators and operands used.
+
+rationale: |
+  High Halstead volume indicates a large, complex implementation that
+  may be difficult to understand and maintain. Volume is calculated as:
+  V = N * log2(n), where N = total operators + operands, n = unique operators + operands.
+  Functions with volume above 1000 typically need refactoring.
+
+metrics:
+  halstead_volume:
+    max: 1000
+    severity: warning
+    languages: ["rust", "python", "javascript", "typescript", "java", "c", "cpp", "kotlin"]
+
+thresholds:
+  - value: 1000
+    severity: warning
+    message: "Consider breaking down the function to reduce complexity"
+  - value: 2000
+    severity: error
+    message: "Function is too large, must be refactored"
+  - value: 5000
+    severity: error
+    message: "Critical size - immediate refactoring required"
+
+fixes:
+  - type: refactor
+    pattern: "Extract method"
+    message: "Extract logical blocks into separate functions"
+  - type: refactor
+    pattern: "Reduce parameters"
+    message: "Use parameter objects or configuration structs"
+  - type: refactor
+    pattern: "Simplify expressions"
+    message: "Break down complex expressions into named intermediate values"
+
+examples:
+  bad:
+    - code: |
+        fn process_all(a: i32, b: i32, c: i32, d: i32, e: i32, f: i32) -> i32 {
+            let x = a + b * c - d / e + f;
+            let y = x * a + b - c * d + e / f;
+            let z = y + x - a * b + c / d - e + f;
+            if x > y { z + x } else if y > z { x + y } else { y + z }
+        }
+      explanation: "High operator and operand count increases volume"
+
+  good:
+    - code: |
+        fn calculate_component(a: i32, b: i32, c: i32) -> i32 {
+            a + b * c
+        }
+
+        fn process(inputs: &ProcessInputs) -> i32 {
+            let x = calculate_component(inputs.a, inputs.b, inputs.c);
+            let y = calculate_component(inputs.d, inputs.e, inputs.f);
+            combine_results(x, y)
+        }
+      explanation: "Decomposed into smaller, focused functions"
+
+references:
+  - title: "Halstead Complexity Measures"
+    url: "https://en.wikipedia.org/wiki/Halstead_complexity_measures"
+  - title: "Software Metrics - A Rigorous Approach"
+    url: "https://www.springer.com/gp/book/9780412404405"

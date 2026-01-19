@@ -1,0 +1,91 @@
+schema: "rule/v3"
+id: "METRIC006"
+name: "Maintainability Index Minimum"
+category: "metrics"
+severity: "warning"
+enabled: true
+
+description: |
+  Enforces a minimum maintainability index for code modules.
+  The Maintainability Index (MI) is a composite metric that combines
+  Halstead Volume, Cyclomatic Complexity, and Lines of Code.
+
+rationale: |
+  The Maintainability Index provides a single score (0-100+) indicating
+  how maintainable the code is. Higher values indicate more maintainable code.
+  MI = 171 - 5.2*ln(V) - 0.23*CC - 16.2*ln(LOC)
+  Code below 65 is considered difficult to maintain.
+
+metrics:
+  maintainability_index:
+    min: 65
+    severity: warning
+    languages: ["rust", "python", "javascript", "typescript", "java", "c", "cpp", "kotlin"]
+
+thresholds:
+  - value: 65
+    severity: info
+    message: "Code maintainability is acceptable but could be improved"
+  - value: 50
+    severity: warning
+    message: "Code maintainability is below recommended levels"
+  - value: 20
+    severity: error
+    message: "Code is very difficult to maintain - refactoring required"
+
+interpretation:
+  - range: "85-100+"
+    level: "Excellent"
+    description: "Highly maintainable code"
+  - range: "65-84"
+    level: "Good"
+    description: "Moderate maintainability"
+  - range: "50-64"
+    level: "Fair"
+    description: "Difficult to maintain"
+  - range: "0-49"
+    level: "Poor"
+    description: "Very difficult to maintain"
+
+fixes:
+  - type: refactor
+    pattern: "Reduce complexity"
+    message: "Lower cyclomatic complexity by extracting methods"
+  - type: refactor
+    pattern: "Shorten functions"
+    message: "Break long functions into smaller, focused units"
+  - type: refactor
+    pattern: "Simplify expressions"
+    message: "Reduce Halstead volume by using helper functions"
+  - type: documentation
+    pattern: "Add comments"
+    message: "Comment lines can improve MI (varies by formula)"
+
+examples:
+  bad:
+    - code: |
+        fn mega_function(data: &[i32]) -> Result<Output, Error> {
+            // 500+ lines of nested logic
+            // Multiple responsibilities
+            // High cyclomatic complexity
+            // Large Halstead volume
+        }
+      explanation: "MI < 20: Very difficult to maintain"
+
+  good:
+    - code: |
+        fn process_data(data: &[i32]) -> Result<Output, Error> {
+            let validated = validate(data)?;
+            let transformed = transform(validated)?;
+            let result = aggregate(transformed)?;
+            Ok(format_output(result))
+        }
+      explanation: "MI > 85: Clean separation of concerns"
+
+references:
+  - title: "Maintainability Index (Wikipedia)"
+    url: "https://en.wikipedia.org/wiki/Maintainability#Software_engineering"
+  - title: "Code Metrics - Maintainability Index"
+    url: "https://docs.microsoft.com/en-us/visualstudio/code-quality/code-metrics-maintainability-index-range-and-meaning"
+  - title: "SEI Software Maintainability"
+    url: "https://resources.sei.cmu.edu/library/asset-view.cfm?assetid=5019"

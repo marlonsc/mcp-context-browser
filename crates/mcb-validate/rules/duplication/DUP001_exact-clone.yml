@@ -1,0 +1,68 @@
+schema: "rule/v3"
+id: "DUP001"
+name: "Exact Code Clone"
+description: "Detects Type 1 clones - exact copy-paste duplications with identical code"
+category: "quality"
+severity: "warning"
+enabled: true
+
+# Duplication detection configuration
+duplication:
+  # Clone type this rule detects
+  clone_type: "exact"
+
+  # Minimum number of consecutive lines to consider a clone
+  min_lines: 6
+
+  # Minimum number of tokens to consider a clone
+  min_tokens: 50
+
+  # Similarity threshold (1.0 = exact match)
+  similarity_threshold: 1.0
+
+  # Languages to analyze
+  languages:
+    - rust
+    - python
+    - javascript
+    - typescript
+    - go
+    - java
+    - c
+    - cpp
+    - csharp
+    - ruby
+    - php
+    - swift
+    - kotlin
+
+# Patterns to exclude from duplication checking
+exclude_patterns:
+  - "**/tests/**"
+  - "**/test/**"
+  - "**/*_test.rs"
+  - "**/*_test.py"
+  - "**/*.test.ts"
+  - "**/*.test.js"
+  - "**/fixtures/**"
+  - "**/generated/**"
+  - "**/vendor/**"
+  - "**/node_modules/**"
+  - "**/target/**"
+
+# Rationale and guidance
+rationale: |
+  Exact code clones (Type 1) indicate copy-paste programming where identical code
+  appears in multiple locations. This increases maintenance burden as changes must
+  be replicated across all copies, and bugs may be fixed in one location but not others.
+
+suggestion: |
+  Extract the duplicated code into a shared function, module, or library that can
+  be reused from both locations. Consider using traits or generics if the code
+  needs slight variations for different contexts.
+
+references:
+  - name: "Clone Detection Taxonomy"
+    url: "https://en.wikipedia.org/wiki/Duplicate_code#Types_of_code_clones"
+  - name: "DRY Principle"
+    url: "https://en.wikipedia.org/wiki/Don%27t_repeat_yourself"

@@ -143,6 +143,44 @@
         }
       }
     },
+    "duplication": {
+      "type": "object",
+      "description": "Duplication detection configuration for Phase 5 clone analysis",
+      "properties": {
+        "clone_type": {
+          "type": "string",
+          "enum": ["exact", "renamed", "gapped", "semantic"],
+          "description": "Type of clone to detect"
+        },
+        "min_lines": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Minimum lines to consider a duplicate"
+        },
+        "min_tokens": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Minimum tokens to consider a duplicate"
+        },
+        "similarity_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Similarity threshold (0.0-1.0)"
+        },
+        "max_gap_size": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Maximum gap size for gapped clones"
+        },
+        "languages": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Languages to analyze"
+        }
+      },
+      "required": ["clone_type", "min_lines", "min_tokens", "similarity_threshold"]
+    },
     "rule": {
       "description": "Engine-specific rule definition",
       "oneOf": [
@@ -227,6 +265,7 @@
       "then": {
         "anyOf": [
           { "required": ["metrics"] },
+          { "required": ["duplication"] },
           { "required": ["engine", "rule"] },
           { "required": ["selectors"] },
           { "required": ["lint_select"] },

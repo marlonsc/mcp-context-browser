@@ -1,0 +1,69 @@
+schema: "rule/v3"
+id: "DUP002"
+name: "Renamed Code Clone"
+description: "Detects Type 2 clones - structurally identical code with renamed identifiers"
+category: "quality"
+severity: "warning"
+enabled: true
+
+# Duplication detection configuration
+duplication:
+  # Clone type this rule detects
+  clone_type: "renamed"
+
+  # Minimum number of consecutive lines to consider a clone
+  min_lines: 6
+
+  # Minimum number of tokens to consider a clone
+  min_tokens: 50
+
+  # Similarity threshold (0.95 = allows identifier renaming)
+  similarity_threshold: 0.95
+
+  # Languages to analyze
+  languages:
+    - rust
+    - python
+    - javascript
+    - typescript
+    - go
+    - java
+    - c
+    - cpp
+    - csharp
+    - ruby
+    - php
+    - swift
+    - kotlin
+
+# Patterns to exclude from duplication checking
+exclude_patterns:
+  - "**/tests/**"
+  - "**/test/**"
+  - "**/*_test.rs"
+  - "**/*_test.py"
+  - "**/*.test.ts"
+  - "**/*.test.js"
+  - "**/fixtures/**"
+  - "**/generated/**"
+  - "**/vendor/**"
+  - "**/node_modules/**"
+  - "**/target/**"
+
+# Rationale and guidance
+rationale: |
+  Renamed clones (Type 2) are code fragments that are structurally identical but
+  have different variable names, function names, or literal values. These often
+  occur when developers copy code and modify names to fit a new context without
+  extracting the common pattern.
+
+suggestion: |
+  The code structure is identical with only renamed identifiers. Consider extracting
+  into a shared function with parameters or generics to capture the pattern. Use
+  descriptive parameter names that work for both use cases.
+
+references:
+  - name: "Clone Detection Taxonomy"
+    url: "https://en.wikipedia.org/wiki/Duplicate_code#Types_of_code_clones"
+  - name: "Parameterization Refactoring"
+    url: "https://refactoring.guru/parameterize-method"
