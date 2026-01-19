@@ -1,8 +1,9 @@
-# ADR-013: Clean Architecture Eight-Crate Separation
+# ADR-013: Clean Architecture Crate Separation
 
 ## Status
 
-Implemented (v0.1.2)
+Implemented (v0.1.1) - Seven crates
+Updated (v0.1.2) - Added mcb-validate as 8th crate
 
 ## Context
 

@@ -1,17 +1,13 @@
-//! Sync and Lock Provider Adapters
+//! Sync Provider Adapter
 //!
-//! Null implementations for both file sync coordination and distributed locking.
+//! Null implementation for file sync coordination.
 
 use async_trait::async_trait;
-use mcb_application::ports::infrastructure::{LockGuard, LockProvider, SyncProvider};
+use mcb_application::ports::infrastructure::SyncProvider;
 use mcb_domain::error::Result;
 use mcb_domain::value_objects::config::SyncBatch;
 use std::path::Path;
 use std::time::Duration;
-
-// ============================================================================
-// Sync Provider (File Sync Coordination)
-// ============================================================================
 
 /// Null sync provider for testing
 ///
@@ -58,38 +54,5 @@ impl SyncProvider for NullSyncProvider {
 
     fn debounce_interval(&self) -> Duration {
         Duration::from_secs(5)
-    }
-}
-
-// ============================================================================
-// Lock Provider (Distributed Locking)
-// ============================================================================
-
-/// Null lock provider for testing
-pub struct NullLockProvider;
-
-impl NullLockProvider {
-    pub fn new() -> Self {
-        Self
-    }
-}
-
-impl Default for NullLockProvider {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-#[async_trait]
-impl LockProvider for NullLockProvider {
-    async fn acquire_lock(&self, key: &str) -> Result<LockGuard> {
-        Ok(LockGuard {
-            key: key.to_string(),
-            token: "null-token".to_string(),
-        })
-    }
-
-    async fn release_lock(&self, _guard: LockGuard) -> Result<()> {
-        Ok(())
     }
 }

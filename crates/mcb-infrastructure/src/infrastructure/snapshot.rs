@@ -1,17 +1,13 @@
-//! Snapshot and State Store Adapters
+//! Snapshot Provider Adapter
 //!
-//! Null implementations of snapshot and state store ports for testing.
+//! Null implementation of snapshot port for testing.
 
 use async_trait::async_trait;
-use mcb_application::ports::infrastructure::{SnapshotProvider, StateStoreProvider};
+use mcb_application::ports::infrastructure::SnapshotProvider;
 use mcb_domain::entities::codebase::{CodebaseSnapshot, SnapshotChanges};
 use mcb_domain::error::Result;
 use std::collections::HashMap;
 use std::path::Path;
-
-// ============================================================================
-// Snapshot Provider (File Change Tracking)
-// ============================================================================
 
 /// Null snapshot provider for testing
 ///
@@ -61,39 +57,5 @@ impl SnapshotProvider for NullSnapshotProvider {
 
     async fn get_changed_files(&self, _root_path: &Path) -> Result<Vec<String>> {
         Ok(Vec::new())
-    }
-}
-
-// ============================================================================
-// State Store Provider (Key-Value Persistence)
-// ============================================================================
-
-/// Null state store provider for testing
-pub struct NullStateStoreProvider;
-
-impl NullStateStoreProvider {
-    pub fn new() -> Self {
-        Self
-    }
-}
-
-impl Default for NullStateStoreProvider {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-#[async_trait]
-impl StateStoreProvider for NullStateStoreProvider {
-    async fn save(&self, _key: &str, _data: &[u8]) -> Result<()> {
-        Ok(())
-    }
-
-    async fn load(&self, _key: &str) -> Result<Option<Vec<u8>>> {
-        Ok(None)
-    }
-
-    async fn delete(&self, _key: &str) -> Result<()> {
-        Ok(())
     }
 }

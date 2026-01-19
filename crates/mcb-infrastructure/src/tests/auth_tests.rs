@@ -1,6 +1,6 @@
 //! Tests for authentication infrastructure
 
-use crate::infrastructure::NullAuthService;
+use crate::infrastructure::auth::NullAuthService;
 use mcb_application::ports::infrastructure::AuthServiceInterface;
 
 #[test]

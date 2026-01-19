@@ -6,7 +6,7 @@
 
 > **DEPRECATED**: This ADR is being phased out in favor of a simpler DI approach. The Shaku-based DI container will be replaced with direct constructor injection and manual service composition to reduce complexity and build overhead.
 
-**Originally Implemented** (v0.1.2)
+**Originally Implemented** (v0.1.1)
 
 > Was fully implemented across all 8 crates with Shaku DI container and ServiceManager integration.
 

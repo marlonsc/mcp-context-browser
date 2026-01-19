@@ -1,6 +1,6 @@
 //! Tests for sync infrastructure
 
-use crate::infrastructure::NullSyncProvider;
+use crate::infrastructure::sync::NullSyncProvider;
 use mcb_application::ports::infrastructure::SyncProvider;
 use std::path::Path;
 use std::time::Duration;

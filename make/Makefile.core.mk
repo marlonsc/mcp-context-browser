@@ -37,6 +37,9 @@ test-doc: ## Run documentation tests (doctests)
 test-all: test test-doc ## Run all tests including doctests
 	@echo "✅ All tests passed"
 
+test-ignored: ## Run ignored tests (requires external tools: ruff, clippy)
+	@MCP_PORT=$(MCP_PORT) cargo test --all-targets --all-features -- --ignored --nocapture
+
 # -----------------------------------------------------------------------------
 # Run
 # -----------------------------------------------------------------------------

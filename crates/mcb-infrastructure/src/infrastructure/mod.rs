@@ -21,12 +21,3 @@ pub(crate) mod sync;
 
 // Public data types (NOT implementations) - these are pure DTOs
 pub use lifecycle::{ServiceInfo, ServiceManager, ServiceManagerError};
-
-// Crate-internal re-exports for tests and DI modules
-pub(crate) use admin::{NullIndexingOperations, NullPerformanceMetrics};
-pub(crate) use auth::NullAuthService;
-pub(crate) use events::{NullEventBusProvider, TokioBroadcastEventBus};
-pub(crate) use lifecycle::DefaultShutdownCoordinator;
-pub(crate) use metrics::NullSystemMetricsCollector;
-pub(crate) use snapshot::{NullSnapshotProvider, NullStateStoreProvider};
-pub(crate) use sync::{NullLockProvider, NullSyncProvider};

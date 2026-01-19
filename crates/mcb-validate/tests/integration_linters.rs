@@ -298,3 +298,176 @@ fn test_public_api_accessible() {
     // If this compiles, the public API is correctly exported
     // All public linter types are accessible (no panic)
 }
+
+// ==================== REAL LINTER EXECUTION TESTS (Phase 1 Deliverable) ====================
+//
+// These tests verify that actual linter execution and JSON parsing work end-to-end.
+// They are marked #[ignore] because they require external tools to be installed:
+// - ruff: pip install ruff
+// - cargo clippy: rustup component add clippy
+//
+// Run with: cargo test --package mcb-validate -- --ignored
+
+/// Test real ruff execution against Python files
+///
+/// Phase 1 deliverable: "cargo test integration_linters passes with real Clippy/Ruff output"
+#[test]
+#[ignore] // Requires ruff installed: pip install ruff
+fn test_ruff_real_execution() {
+    use std::process::Command;
+
+    // Create a temporary Python file with known violations
+    let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
+    let test_file = temp_dir.path().join("test_file.py");
+    std::fs::write(
+        &test_file,
+        r#"import os  # F401: unused import
+import sys  # F401: unused import
+
+def example():
+    x = 1
+    return x
+"#,
+    )
+    .expect("Failed to write test file");
+
+    // Execute ruff with JSON output
+    let output = Command::new("ruff")
+        .args([
+            "check",
+            "--output-format=json",
+            test_file.to_str().expect("Path is valid UTF-8"),
+        ])
+        .output()
+        .expect("Failed to execute ruff - is it installed? (pip install ruff)");
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    println!("Ruff output: {}", stdout);
+
+    // Parse the real output
+    let violations = LinterType::Ruff.parse_output(&stdout);
+
+    // Verify we got violations (should have at least 2 F401 for unused imports)
+    assert!(
+        violations.len() >= 2,
+        "Expected at least 2 violations (unused imports), got {}",
+        violations.len()
+    );
+
+    // Verify structure of parsed violations
+    for v in &violations {
+        assert!(!v.rule.is_empty(), "Rule should not be empty");
+        assert!(!v.file.is_empty(), "File should not be empty");
+        assert!(v.line > 0, "Line should be positive");
+        assert!(!v.severity.is_empty(), "Severity should not be empty");
+    }
+
+    // Should have F401 violations
+    let f401_count = violations.iter().filter(|v| v.rule == "F401").count();
+    assert!(
+        f401_count >= 2,
+        "Expected at least 2 F401 violations, got {}",
+        f401_count
+    );
+
+    println!(
+        "Real ruff execution: {} violations parsed successfully",
+        violations.len()
+    );
+}
+
+/// Test real clippy execution against Rust code
+///
+/// Phase 1 deliverable: "cargo test integration_linters passes with real Clippy/Ruff output"
+#[test]
+#[ignore] // Requires cargo clippy: rustup component add clippy
+fn test_clippy_real_execution() {
+    use std::process::Command;
+
+    // Run clippy on mcb-validate itself with JSON output
+    // Using -q to reduce noise and only get diagnostic messages
+    let output = Command::new("cargo")
+        .args([
+            "clippy",
+            "-p",
+            "mcb-validate",
+            "--message-format=json",
+            "-q",
+            "--",
+            "-W",
+            "clippy::all",
+        ])
+        .current_dir(get_workspace_root())
+        .output()
+        .expect("Failed to execute cargo clippy");
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    println!(
+        "Clippy output (first 1000 chars): {}",
+        &stdout.chars().take(1000).collect::<String>()
+    );
+
+    // Parse the real output
+    let violations = LinterType::Clippy.parse_output(&stdout);
+
+    // Clippy might find violations or not - the key is that parsing works
+    // and doesn't panic
+    println!(
+        "Real clippy execution: {} violations parsed successfully",
+        violations.len()
+    );
+
+    // Verify structure of any parsed violations
+    for v in &violations {
+        assert!(!v.rule.is_empty(), "Rule should not be empty");
+        assert!(!v.file.is_empty(), "File should not be empty");
+        assert!(v.line > 0, "Line should be positive");
+        assert!(!v.severity.is_empty(), "Severity should not be empty");
+        assert!(
+            v.rule.starts_with("clippy::"),
+            "Clippy rules should start with 'clippy::'"
+        );
+    }
+}
+
+/// Test LinterEngine can execute linters and aggregate results
+#[tokio::test]
+#[ignore] // Requires ruff installed
+async fn test_linter_engine_real_execution() {
+    // Create a temporary Python file with known violations
+    let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
+    let test_file = temp_dir.path().join("violations.py");
+    std::fs::write(
+        &test_file,
+        r#"import os  # unused
+import sys  # unused
+
+def foo():
+    pass
+"#,
+    )
+    .expect("Failed to write test file");
+
+    // Create engine with just Ruff (faster test)
+    let engine = LinterEngine::with_linters(vec![LinterType::Ruff]);
+
+    // Execute linter via engine
+    let result = engine.check_files(&[test_file.as_path()]).await;
+
+    match result {
+        Ok(violations) => {
+            assert!(
+                violations.len() >= 2,
+                "Expected at least 2 violations, got {}",
+                violations.len()
+            );
+            println!(
+                "LinterEngine real execution: {} violations",
+                violations.len()
+            );
+        }
+        Err(e) => {
+            panic!("LinterEngine should execute successfully: {:?}", e);
+        }
+    }
+}
