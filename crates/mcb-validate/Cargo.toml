@@ -84,8 +84,9 @@ tokio.workspace = true
 tempfile = "3.14"
 
 [features]
-default = []
+default = ["rca-metrics"]
 cli = ["clap"]
+rca-metrics = []
 
 # Binary will be added when CLI feature is implemented
 # [[bin]]

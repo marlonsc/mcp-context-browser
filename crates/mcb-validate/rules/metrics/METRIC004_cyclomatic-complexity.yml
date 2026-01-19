@@ -1,0 +1,86 @@
+schema: "rule/v3"
+id: "METRIC004"
+name: "Cyclomatic Complexity Limit"
+category: "metrics"
+severity: "warning"
+enabled: true
+
+description: |
+  Enforces a maximum cyclomatic complexity limit for functions.
+  Cyclomatic complexity measures the number of linearly independent paths
+  through the code, calculated using the control flow graph.
+
+rationale: |
+  High cyclomatic complexity indicates too many execution paths,
+  making code harder to test thoroughly. Each independent path
+  requires a separate test case for full coverage. Functions
+  with complexity above 10 typically need refactoring.
+
+metrics:
+  cyclomatic_complexity:
+    max: 10
+    severity: warning
+    languages: ["rust", "python", "javascript", "typescript", "java", "c", "cpp", "kotlin"]
+
+thresholds:
+  - value: 10
+    severity: warning
+    message: "Consider refactoring to reduce complexity"
+  - value: 20
+    severity: error
+    message: "Function is too complex, must be refactored"
+  - value: 50
+    severity: error
+    message: "Critical complexity - immediate refactoring required"
+
+fixes:
+  - type: refactor
+    pattern: "Extract method"
+    message: "Extract independent code blocks into separate functions"
+  - type: refactor
+    pattern: "Early returns"
+    message: "Use guard clauses with early returns to reduce nested branches"
+  - type: refactor
+    pattern: "Strategy pattern"
+    message: "Replace complex switch/match statements with strategy pattern"
+  - type: refactor
+    pattern: "Decompose conditionals"
+    message: "Extract complex boolean conditions into well-named helper functions"
+
+examples:
+  bad:
+    - code: |
+        fn process(a: i32, b: i32, c: i32) -> i32 {
+            if a > 0 {
+                if b > 0 {
+                    if c > 0 { return a + b + c; }
+                    else { return a + b; }
+                } else {
+                    if c > 0 { return a + c; }
+                    else { return a; }
+                }
+            } else {
+                if b > 0 {
+                    if c > 0 { return b + c; }
+                    else { return b; }
+                } else {
+                    if c > 0 { return c; }
+                    else { return 0; }
+                }
+            }
+        }
+      explanation: "Cyclomatic complexity of 8 (too many nested branches)"
+
+  good:
+    - code: |
+        fn process(a: i32, b: i32, c: i32) -> i32 {
+            let sum = [a, b, c].iter().filter(|&&x| x > 0).sum();
+            sum
+        }
+      explanation: "Simplified logic with functional approach"
+
+references:
+  - title: "Cyclomatic Complexity (McCabe, 1976)"
+    url: "https://en.wikipedia.org/wiki/Cyclomatic_complexity"
+  - title: "Code Complete - Complexity Metrics"
+    url: "https://www.oreilly.com/library/view/code-complete-2nd/0735619670/"

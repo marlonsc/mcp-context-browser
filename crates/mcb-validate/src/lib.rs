@@ -49,6 +49,9 @@ pub mod ast;
 // === Metrics Analysis (Phase 4 - Complexity Metrics) ===
 pub mod metrics;
 
+// === Duplication Detection (Phase 5 - Clone Detection) ===
+pub mod duplication;
+
 // === New Validators (using new system) ===
 pub mod clean_architecture;
 pub mod layer_flow;

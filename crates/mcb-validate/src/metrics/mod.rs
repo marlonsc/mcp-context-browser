@@ -18,10 +18,12 @@
 //! - Kotlin, Mozjs (via rust-code-analysis)
 
 mod analyzer;
+#[cfg(feature = "rca-metrics")]
 mod rca_analyzer;
 mod thresholds;
 
 pub use analyzer::{FunctionMetrics, MetricsLanguage, TreeSitterAnalyzer};
+#[cfg(feature = "rca-metrics")]
 pub use rca_analyzer::{RcaAnalyzer, RcaFunctionMetrics, RcaMetrics};
 pub use thresholds::{MetricThreshold, MetricThresholds, MetricType};
 
