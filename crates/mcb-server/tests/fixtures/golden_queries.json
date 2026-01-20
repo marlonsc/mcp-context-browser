@@ -1,85 +1,53 @@
 {
   "version": "0.1.2",
-  "description": "Golden acceptance test queries for MCP Context Browser",
+  "description": "Golden acceptance test queries for MCP Context Browser (using sample_codebase fixtures)",
   "queries": [
     {
       "id": "embedding_provider",
-      "query": "embedding provider implementation",
+      "query": "embedding provider implementation vectors",
       "description": "Find code related to embedding providers",
       "expected_files": [
-        "embedding.rs",
-        "ollama.rs",
-        "openai.rs"
+        "embedding.rs"
       ],
       "max_latency_ms": 500,
       "min_results": 1
     },
     {
       "id": "vector_store",
-      "query": "vector store search functionality",
+      "query": "vector store search similarity milvus",
       "description": "Find vector store implementations",
       "expected_files": [
-        "vector_store.rs",
-        "milvus.rs"
+        "vector_store.rs"
       ],
       "max_latency_ms": 500,
       "min_results": 1
     },
     {
       "id": "mcp_handler",
-      "query": "MCP protocol handler",
+      "query": "MCP protocol handler request response",
       "description": "Find MCP protocol handling code",
       "expected_files": [
-        "handlers",
-        "protocol"
-      ],
-      "max_latency_ms": 500,
-      "min_results": 1
-    },
-    {
-      "id": "duplication_detection",
-      "query": "code clone detection duplication",
-      "description": "Find duplication detection code",
-      "expected_files": [
-        "duplication",
-        "fingerprint.rs",
-        "detector.rs"
+        "handlers.rs"
       ],
       "max_latency_ms": 500,
       "min_results": 1
     },
     {
       "id": "cache_provider",
-      "query": "caching implementation with redis",
+      "query": "caching redis moka performance",
       "description": "Find cache provider implementations",
       "expected_files": [
-        "cache.rs",
-        "redis.rs",
-        "moka.rs"
-      ],
-      "max_latency_ms": 500,
-      "min_results": 1
-    },
-    {
-      "id": "ast_parsing",
-      "query": "abstract syntax tree parsing tree-sitter",
-      "description": "Find AST parsing code",
-      "expected_files": [
-        "ast",
-        "query.rs",
-        "languages.rs"
+        "cache.rs"
       ],
       "max_latency_ms": 500,
       "min_results": 1
     },
     {
       "id": "di_injection",
-      "query": "dependency injection service registration",
+      "query": "dependency injection service registration bootstrap",
       "description": "Find DI-related code",
       "expected_files": [
-        "bootstrap.rs",
-        "handles.rs",
-        "resolver.rs"
+        "di.rs"
       ],
       "max_latency_ms": 500,
       "min_results": 1
@@ -89,38 +57,24 @@
       "query": "error handling domain errors thiserror",
       "description": "Find error handling patterns",
       "expected_files": [
-        "error.rs",
-        "error"
-      ],
-      "max_latency_ms": 500,
-      "min_results": 1
-    },
-    {
-      "id": "rule_engine",
-      "query": "validation rule engine execution",
-      "description": "Find rule engine code",
-      "expected_files": [
-        "engine",
-        "rete_engine.rs",
-        "expression_engine.rs"
+        "error.rs"
       ],
       "max_latency_ms": 500,
       "min_results": 1
     },
     {
       "id": "chunking",
-      "query": "code chunking text splitting",
+      "query": "code chunking text splitting tree-sitter",
       "description": "Find code chunking implementations",
       "expected_files": [
-        "chunking",
-        "language_chunking.rs"
+        "chunking.rs"
       ],
       "max_latency_ms": 500,
       "min_results": 1
     }
   ],
   "config": {
-    "collection_name": "mcb-self-test",
+    "collection_name": "golden-sample-codebase",
     "timeout_ms": 30000,
     "relevance_threshold": 0.3,
     "top_k": 5

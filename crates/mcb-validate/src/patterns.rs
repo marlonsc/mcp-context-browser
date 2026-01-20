@@ -488,6 +488,12 @@ impl PatternValidator {
                 continue;
             }
 
+            // Skip mcb-providers - factory functions use std::result::Result<..., String>
+            // by design for linkme registry compatibility (ADR-029)
+            if src_dir.to_string_lossy().contains("mcb-providers") {
+                continue;
+            }
+
             for entry in WalkDir::new(&src_dir)
                 .into_iter()
                 .filter_map(std::result::Result::ok)

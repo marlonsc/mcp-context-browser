@@ -20,5 +20,5 @@ mod health;
 mod router;
 
 // Re-export for DI registration
-pub use health::{InMemoryHealthMonitor, NullHealthMonitor};
+pub use health::{HealthMonitor, InMemoryHealthMonitor, NullHealthMonitor};
 pub use router::{DefaultProviderRouter, NullProviderRouter};

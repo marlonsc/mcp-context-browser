@@ -1,9 +1,15 @@
-//! Cache configuration types
+//! Cache system configuration types
+//!
+//! This module defines infrastructure-level cache configuration.
+//!
+//! **Note:** This `CacheSystemConfig` is distinct from
+//! `mcb_domain::value_objects::CacheConfig` which configures
+//! provider-specific cache settings.
 
 use crate::constants::*;
 use serde::{Deserialize, Serialize};
 
-/// Cache providers
+/// Cache providers for infrastructure caching
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum CacheProvider {
     /// In-memory cache (Moka)
@@ -12,9 +18,26 @@ pub enum CacheProvider {
     Redis,
 }
 
-/// Cache configuration
+impl CacheProvider {
+    /// Get the provider name as a string for registry lookup
+    ///
+    /// Used by DI resolver to query the provider registry without
+    /// coupling to concrete enum variants.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            CacheProvider::Moka => "moka",
+            CacheProvider::Redis => "redis",
+        }
+    }
+}
+
+/// Infrastructure cache system configuration
+///
+/// Configures the caching layer used by the infrastructure.
+/// This is distinct from `mcb_domain::value_objects::CacheConfig`
+/// which configures provider-specific cache behavior.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CacheConfig {
+pub struct CacheSystemConfig {
     /// Cache enabled
     pub enabled: bool,
 
@@ -37,7 +60,7 @@ pub struct CacheConfig {
     pub namespace: String,
 }
 
-impl Default for CacheConfig {
+impl Default for CacheSystemConfig {
     fn default() -> Self {
         Self {
             enabled: true,

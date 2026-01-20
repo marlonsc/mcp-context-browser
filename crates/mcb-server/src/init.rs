@@ -25,7 +25,7 @@
 //!
 //! Transport mode can be set via:
 //! - Config file: `server.transport_mode = "http"`
-//! - Environment variable: `MCB_SERVER_TRANSPORT_MODE=http`
+//! - Environment variable: `MCP__SERVER__TRANSPORT_MODE=http`
 
 use std::path::Path;
 use std::sync::Arc;

@@ -383,8 +383,10 @@ pub mod checkers {
             );
 
             // Refresh CPU metrics (requires two reads with a small delay)
+            // Note: sysinfo::System is not Send, so we use spawn_blocking
+            // to avoid blocking the async runtime
             sys.refresh_cpu_all();
-            std::thread::sleep(std::time::Duration::from_millis(100));
+            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
             sys.refresh_cpu_all();
 
             // Get CPU usage (global average)

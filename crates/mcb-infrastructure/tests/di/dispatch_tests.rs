@@ -42,7 +42,7 @@ async fn test_provider_selection_from_config() {
 
     // Test with null providers (default)
     let mut config = AppConfig::default();
-    config.providers.embedding.insert(
+    config.providers.embedding.configs.insert(
         "default".to_string(),
         EmbeddingConfig {
             provider: "null".to_string(),
@@ -53,7 +53,7 @@ async fn test_provider_selection_from_config() {
             max_tokens: Some(1000),
         },
     );
-    config.providers.vector_store.insert(
+    config.providers.vector_store.configs.insert(
         "default".to_string(),
         VectorStoreConfig {
             provider: "null".to_string(),

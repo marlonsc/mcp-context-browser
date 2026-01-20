@@ -32,3 +32,12 @@ pub use lifecycle::{ServiceInfo, ServiceManager, ServiceManagerError};
 
 // Admin types - exported for mcb-server AdminState
 pub use admin::{AtomicPerformanceMetrics, DefaultIndexingOperations};
+
+// Test utilities - exported only when test-utils feature is enabled
+// These are null implementations used for testing infrastructure services
+#[cfg(feature = "test-utils")]
+pub use auth::NullAuthService;
+#[cfg(feature = "test-utils")]
+pub use snapshot::NullSnapshotProvider;
+#[cfg(feature = "test-utils")]
+pub use sync::NullSyncProvider;

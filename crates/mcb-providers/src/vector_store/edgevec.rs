@@ -431,6 +431,10 @@ struct EdgeVecActor {
     config: EdgeVecConfig,
 }
 
+// =============================================================================
+// Core - Constructor and HNSW configuration
+// =============================================================================
+
 impl EdgeVecActor {
     fn new(receiver: mpsc::Receiver<EdgeVecMessage>, config: EdgeVecConfig) -> Result<Self> {
         let hnsw_config = edgevec::HnswConfig {
@@ -460,23 +464,309 @@ impl EdgeVecActor {
             config,
         })
     }
+}
 
+// =============================================================================
+// Collection Handlers - Create, delete, exists
+// =============================================================================
+
+impl EdgeVecActor {
+    fn handle_create_collection(&self, name: String) -> Result<()> {
+        self.metadata_store.insert(name, HashMap::new());
+        Ok(())
+    }
+
+    fn handle_delete_collection(&mut self, name: String) -> Result<()> {
+        if let Some((_, collection_metadata)) = self.metadata_store.remove(&name) {
+            for external_id in collection_metadata.keys() {
+                if let Some(vector_id) = self.id_map.remove(external_id) {
+                    let _ = self.index.soft_delete(vector_id.1);
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn handle_collection_exists(&self, name: &str) -> Result<bool> {
+        Ok(self.metadata_store.contains_key(name))
+    }
+}
+
+// =============================================================================
+// Vector CRUD Handlers - Insert, delete, get, list vectors
+// =============================================================================
+
+impl EdgeVecActor {
+    fn handle_insert_vectors(
+        &mut self,
+        collection: String,
+        vectors: Vec<Embedding>,
+        metadata: Vec<HashMap<String, serde_json::Value>>,
+    ) -> Result<Vec<String>> {
+        let mut ids = Vec::with_capacity(vectors.len());
+        let mut collection_metadata = self.metadata_store.entry(collection.clone()).or_default();
+
+        for (vector, meta) in vectors.into_iter().zip(metadata.into_iter()) {
+            let external_id = format!("{}_{}", collection, uuid::Uuid::new_v4());
+
+            match self.index.insert(&vector.vector, &mut self.storage) {
+                Ok(vector_id) => {
+                    self.id_map.insert(external_id.clone(), vector_id);
+                    let mut enriched_metadata = meta.clone();
+                    enriched_metadata.insert("id".to_string(), serde_json::json!(external_id));
+                    collection_metadata
+                        .insert(external_id.clone(), serde_json::json!(enriched_metadata));
+                    ids.push(external_id);
+                }
+                Err(e) => {
+                    return Err(Error::internal(format!("Failed to insert vector: {}", e)));
+                }
+            }
+        }
+        Ok(ids)
+    }
+
+    fn handle_delete_vectors(&mut self, collection: &str, ids: Vec<String>) -> Result<()> {
+        if let Some(mut collection_metadata) = self.metadata_store.get_mut(collection) {
+            for id in ids {
+                if let Some((_, vector_id)) = self.id_map.remove(&id) {
+                    let _ = self.index.soft_delete(vector_id);
+                }
+                collection_metadata.remove(&id);
+            }
+        }
+        Ok(())
+    }
+
+    fn handle_get_vectors_by_ids(&self, collection: &str, ids: Vec<String>) -> Vec<SearchResult> {
+        let mut final_results = Vec::new();
+        if let Some(collection_metadata) = self.metadata_store.get(collection) {
+            for id in ids {
+                if let Some(meta_val) = collection_metadata.get(&id) {
+                    let meta = meta_val.as_object().cloned().unwrap_or_default();
+                    final_results.push(SearchResult {
+                        id: id.clone(),
+                        file_path: meta.string_or("file_path", "unknown"),
+                        start_line: meta
+                            .opt_u64("start_line")
+                            .or_else(|| meta.opt_u64("line_number"))
+                            .unwrap_or(0) as u32,
+                        content: meta.string_or("content", ""),
+                        score: 1.0,
+                        language: meta.string_or("language", "unknown"),
+                    });
+                }
+            }
+        }
+        final_results
+    }
+
+    fn handle_list_vectors(&self, collection: &str, limit: usize) -> Vec<SearchResult> {
+        let mut final_results = Vec::new();
+        if let Some(collection_metadata) = self.metadata_store.get(collection) {
+            for (ext_id, meta_val) in collection_metadata.iter().take(limit) {
+                let meta = meta_val.as_object().cloned().unwrap_or_default();
+                final_results.push(SearchResult {
+                    id: ext_id.clone(),
+                    file_path: meta.string_or("file_path", "unknown"),
+                    start_line: meta
+                        .opt_u64("start_line")
+                        .or_else(|| meta.opt_u64("line_number"))
+                        .unwrap_or(0) as u32,
+                    content: meta.string_or("content", ""),
+                    score: 1.0,
+                    language: meta.string_or("language", "unknown"),
+                });
+            }
+        }
+        final_results
+    }
+}
+
+// =============================================================================
+// Search Handlers - Similarity search
+// =============================================================================
+
+impl EdgeVecActor {
+    fn handle_search_similar(
+        &self,
+        collection: &str,
+        query_vector: &[f32],
+        limit: usize,
+    ) -> Result<Vec<SearchResult>> {
+        match self.index.search(query_vector, limit, &self.storage) {
+            Ok(results) => {
+                let mut final_results = Vec::with_capacity(results.len());
+                if let Some(collection_metadata) = self.metadata_store.get(collection) {
+                    for res in results {
+                        let external_id = self.id_map.iter().find_map(|entry| {
+                            if *entry.value() == res.vector_id {
+                                Some(entry.key().clone())
+                            } else {
+                                None
+                            }
+                        });
+
+                        if let Some(ext_id) = external_id {
+                            if let Some(meta_val) = collection_metadata.get(&ext_id) {
+                                let meta = meta_val.as_object().cloned().unwrap_or_default();
+                                let start_line =
+                                    meta.opt_u64("start_line")
+                                        .or_else(|| meta.opt_u64("line_number"))
+                                        .unwrap_or(0) as u32;
+                                final_results.push(SearchResult {
+                                    id: ext_id,
+                                    file_path: meta.string_or("file_path", "unknown"),
+                                    start_line,
+                                    content: meta.string_or("content", ""),
+                                    score: res.distance as f64,
+                                    language: meta.string_or("language", "unknown"),
+                                });
+                            }
+                        }
+                    }
+                }
+                Ok(final_results)
+            }
+            Err(e) => Err(Error::internal(format!("Search failed: {}", e))),
+        }
+    }
+}
+
+// =============================================================================
+// Stats Handlers - Get collection statistics
+// =============================================================================
+
+impl EdgeVecActor {
+    fn handle_get_stats(&self, collection: &str) -> HashMap<String, serde_json::Value> {
+        let vector_count = self
+            .metadata_store
+            .get(collection)
+            .map(|m| m.len())
+            .unwrap_or(0);
+        let mut stats = HashMap::new();
+        stats.insert("collection".to_string(), serde_json::json!(collection));
+        stats.insert("vector_count".to_string(), serde_json::json!(vector_count));
+        stats.insert(
+            "total_indexed_vectors".to_string(),
+            serde_json::json!(self.index.len()),
+        );
+        stats.insert(
+            "dimensions".to_string(),
+            serde_json::json!(self.config.dimensions),
+        );
+        stats
+    }
+}
+
+// =============================================================================
+// Browse Handlers - List collections, files, and chunks
+// =============================================================================
+
+impl EdgeVecActor {
+    fn handle_list_collections(&self) -> Vec<CollectionInfo> {
+        self.metadata_store
+            .iter()
+            .map(|entry| {
+                let name = entry.key().clone();
+                let vector_count = entry.value().len() as u64;
+
+                // Count unique file paths
+                let file_paths: std::collections::HashSet<&str> = entry
+                    .value()
+                    .values()
+                    .filter_map(|v| {
+                        v.as_object()
+                            .and_then(|o| o.get("file_path"))
+                            .and_then(|v| v.as_str())
+                    })
+                    .collect();
+                let file_count = file_paths.len() as u64;
+
+                CollectionInfo::new(name, vector_count, file_count, None, "edgevec")
+            })
+            .collect()
+    }
+
+    fn handle_list_file_paths(&self, collection: &str, limit: usize) -> Vec<FileInfo> {
+        let mut files = Vec::new();
+        if let Some(collection_metadata) = self.metadata_store.get(collection) {
+            let mut file_map: HashMap<String, (u32, String)> = HashMap::new();
+
+            for meta_val in collection_metadata.values() {
+                if let Some(meta) = meta_val.as_object() {
+                    if let Some(file_path) = meta.get("file_path").and_then(|v| v.as_str()) {
+                        let language = meta
+                            .get("language")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("unknown")
+                            .to_string();
+
+                        let entry = file_map
+                            .entry(file_path.to_string())
+                            .or_insert((0, language));
+                        entry.0 += 1;
+                    }
+                }
+            }
+
+            files = file_map
+                .into_iter()
+                .take(limit)
+                .map(|(path, (chunk_count, language))| {
+                    FileInfo::new(path, chunk_count, language, None)
+                })
+                .collect();
+        }
+        files
+    }
+
+    fn handle_get_chunks_by_file(&self, collection: &str, file_path: &str) -> Vec<SearchResult> {
+        let mut results = Vec::new();
+        if let Some(collection_metadata) = self.metadata_store.get(collection) {
+            for (ext_id, meta_val) in collection_metadata.iter() {
+                if let Some(meta) = meta_val.as_object() {
+                    if meta
+                        .get("file_path")
+                        .and_then(|v| v.as_str())
+                        .is_some_and(|p| p == file_path)
+                    {
+                        let start_line = meta
+                            .opt_u64("start_line")
+                            .or_else(|| meta.opt_u64("line_number"))
+                            .unwrap_or(0) as u32;
+
+                        results.push(SearchResult {
+                            id: ext_id.clone(),
+                            file_path: file_path.to_string(),
+                            start_line,
+                            content: meta.string_or("content", ""),
+                            score: 1.0,
+                            language: meta.string_or("language", "unknown"),
+                        });
+                    }
+                }
+            }
+        }
+        // Sort by start_line
+        results.sort_by_key(|r| r.start_line);
+        results
+    }
+}
+
+// =============================================================================
+// Message Loop - Main actor run loop
+// =============================================================================
+
+impl EdgeVecActor {
     async fn run(mut self) {
         while let Some(msg) = self.receiver.recv().await {
             match msg {
                 EdgeVecMessage::CreateCollection { name, tx } => {
-                    self.metadata_store.insert(name, HashMap::new());
-                    let _ = tx.send(Ok(()));
+                    let _ = tx.send(self.handle_create_collection(name));
                 }
                 EdgeVecMessage::DeleteCollection { name, tx } => {
-                    if let Some((_, collection_metadata)) = self.metadata_store.remove(&name) {
-                        for external_id in collection_metadata.keys() {
-                            if let Some(vector_id) = self.id_map.remove(external_id) {
-                                let _ = self.index.soft_delete(vector_id.1);
-                            }
-                        }
-                    }
-                    let _ = tx.send(Ok(()));
+                    let _ = tx.send(self.handle_delete_collection(name));
                 }
                 EdgeVecMessage::InsertVectors {
                     collection,
@@ -484,35 +774,7 @@ impl EdgeVecActor {
                     metadata,
                     tx,
                 } => {
-                    let mut ids = Vec::with_capacity(vectors.len());
-                    let mut collection_metadata =
-                        self.metadata_store.entry(collection.clone()).or_default();
-                    let mut result = Ok(Vec::new());
-
-                    for (vector, meta) in vectors.into_iter().zip(metadata.into_iter()) {
-                        let external_id = format!("{}_{}", collection, uuid::Uuid::new_v4());
-
-                        match self.index.insert(&vector.vector, &mut self.storage) {
-                            Ok(vector_id) => {
-                                self.id_map.insert(external_id.clone(), vector_id);
-                                let mut enriched_metadata = meta.clone();
-                                enriched_metadata
-                                    .insert("id".to_string(), serde_json::json!(external_id));
-                                collection_metadata.insert(
-                                    external_id.clone(),
-                                    serde_json::json!(enriched_metadata),
-                                );
-                                ids.push(external_id);
-                            }
-                            Err(e) => {
-                                result =
-                                    Err(Error::internal(format!("Failed to insert vector: {}", e)));
-                                break;
-                            }
-                        }
-                    }
-                    let response = if result.is_ok() { Ok(ids) } else { result };
-                    let _ = tx.send(response);
+                    let _ = tx.send(self.handle_insert_vectors(collection, vectors, metadata));
                 }
                 EdgeVecMessage::SearchSimilar {
                     collection,
@@ -520,237 +782,51 @@ impl EdgeVecActor {
                     limit,
                     tx,
                 } => {
-                    let result = match self.index.search(&query_vector, limit, &self.storage) {
-                        Ok(results) => {
-                            let mut final_results = Vec::with_capacity(results.len());
-                            if let Some(collection_metadata) = self.metadata_store.get(&collection)
-                            {
-                                for res in results {
-                                    let external_id = self.id_map.iter().find_map(|entry| {
-                                        if *entry.value() == res.vector_id {
-                                            Some(entry.key().clone())
-                                        } else {
-                                            None
-                                        }
-                                    });
-
-                                    if let Some(ext_id) = external_id {
-                                        if let Some(meta_val) = collection_metadata.get(&ext_id) {
-                                            let meta =
-                                                meta_val.as_object().cloned().unwrap_or_default();
-                                            let start_line = meta
-                                                .opt_u64("start_line")
-                                                .or_else(|| meta.opt_u64("line_number"))
-                                                .unwrap_or(0)
-                                                as u32;
-                                            final_results.push(SearchResult {
-                                                id: ext_id,
-                                                file_path: meta.string_or("file_path", "unknown"),
-                                                start_line,
-                                                content: meta.string_or("content", ""),
-                                                score: res.distance as f64,
-                                                language: meta.string_or("language", "unknown"),
-                                            });
-                                        }
-                                    }
-                                }
-                            }
-                            Ok(final_results)
-                        }
-                        Err(e) => Err(Error::internal(format!("Search failed: {}", e))),
-                    };
-                    let _ = tx.send(result);
+                    let _ = tx.send(self.handle_search_similar(&collection, &query_vector, limit));
                 }
                 EdgeVecMessage::DeleteVectors {
                     collection,
                     ids,
                     tx,
                 } => {
-                    if let Some(mut collection_metadata) = self.metadata_store.get_mut(&collection)
-                    {
-                        for id in ids {
-                            if let Some((_, vector_id)) = self.id_map.remove(&id) {
-                                let _ = self.index.soft_delete(vector_id);
-                            }
-                            collection_metadata.remove(&id);
-                        }
-                    }
-                    let _ = tx.send(Ok(()));
+                    let _ = tx.send(self.handle_delete_vectors(&collection, ids));
                 }
                 EdgeVecMessage::GetStats { collection, tx } => {
-                    let vector_count = self
-                        .metadata_store
-                        .get(&collection)
-                        .map(|m| m.len())
-                        .unwrap_or(0);
-                    let mut stats = HashMap::new();
-                    stats.insert("collection".to_string(), serde_json::json!(collection));
-                    stats.insert("vector_count".to_string(), serde_json::json!(vector_count));
-                    stats.insert(
-                        "total_indexed_vectors".to_string(),
-                        serde_json::json!(self.index.len()),
-                    );
-                    stats.insert(
-                        "dimensions".to_string(),
-                        serde_json::json!(self.config.dimensions),
-                    );
-                    let _ = tx.send(Ok(stats));
+                    let _ = tx.send(Ok(self.handle_get_stats(&collection)));
                 }
                 EdgeVecMessage::ListVectors {
                     collection,
                     limit,
                     tx,
                 } => {
-                    let mut final_results = Vec::new();
-                    if let Some(collection_metadata) = self.metadata_store.get(&collection) {
-                        for (ext_id, meta_val) in collection_metadata.iter().take(limit) {
-                            let meta = meta_val.as_object().cloned().unwrap_or_default();
-
-                            final_results.push(SearchResult {
-                                id: ext_id.clone(),
-                                file_path: meta.string_or("file_path", "unknown"),
-                                start_line: meta
-                                    .opt_u64("start_line")
-                                    .or_else(|| meta.opt_u64("line_number"))
-                                    .unwrap_or(0)
-                                    as u32,
-                                content: meta.string_or("content", ""),
-                                score: 1.0,
-                                language: meta.string_or("language", "unknown"),
-                            });
-                        }
-                    }
-                    let _ = tx.send(Ok(final_results));
+                    let _ = tx.send(Ok(self.handle_list_vectors(&collection, limit)));
                 }
                 EdgeVecMessage::GetVectorsByIds {
                     collection,
                     ids,
                     tx,
                 } => {
-                    let mut final_results = Vec::new();
-                    if let Some(collection_metadata) = self.metadata_store.get(&collection) {
-                        for id in ids {
-                            if let Some(meta_val) = collection_metadata.get(&id) {
-                                let meta = meta_val.as_object().cloned().unwrap_or_default();
-                                final_results.push(SearchResult {
-                                    id: id.clone(),
-                                    file_path: meta.string_or("file_path", "unknown"),
-                                    start_line: meta
-                                        .opt_u64("start_line")
-                                        .or_else(|| meta.opt_u64("line_number"))
-                                        .unwrap_or(0)
-                                        as u32,
-                                    content: meta.string_or("content", ""),
-                                    score: 1.0,
-                                    language: meta.string_or("language", "unknown"),
-                                });
-                            }
-                        }
-                    }
-                    let _ = tx.send(Ok(final_results));
+                    let _ = tx.send(Ok(self.handle_get_vectors_by_ids(&collection, ids)));
                 }
                 EdgeVecMessage::CollectionExists { name, tx } => {
-                    let exists = self.metadata_store.contains_key(&name);
-                    let _ = tx.send(Ok(exists));
+                    let _ = tx.send(self.handle_collection_exists(&name));
                 }
                 EdgeVecMessage::ListCollections { tx } => {
-                    let collections: Vec<CollectionInfo> = self
-                        .metadata_store
-                        .iter()
-                        .map(|entry| {
-                            let name = entry.key().clone();
-                            let vector_count = entry.value().len() as u64;
-
-                            // Count unique file paths
-                            let file_paths: std::collections::HashSet<&str> = entry
-                                .value()
-                                .values()
-                                .filter_map(|v| {
-                                    v.as_object()
-                                        .and_then(|o| o.get("file_path"))
-                                        .and_then(|v| v.as_str())
-                                })
-                                .collect();
-                            let file_count = file_paths.len() as u64;
-
-                            CollectionInfo::new(name, vector_count, file_count, None, "edgevec")
-                        })
-                        .collect();
-                    let _ = tx.send(Ok(collections));
+                    let _ = tx.send(Ok(self.handle_list_collections()));
                 }
                 EdgeVecMessage::ListFilePaths {
                     collection,
                     limit,
                     tx,
                 } => {
-                    let mut files = Vec::new();
-                    if let Some(collection_metadata) = self.metadata_store.get(&collection) {
-                        let mut file_map: HashMap<String, (u32, String)> = HashMap::new();
-
-                        for meta_val in collection_metadata.values() {
-                            if let Some(meta) = meta_val.as_object() {
-                                if let Some(file_path) =
-                                    meta.get("file_path").and_then(|v| v.as_str())
-                                {
-                                    let language = meta
-                                        .get("language")
-                                        .and_then(|v| v.as_str())
-                                        .unwrap_or("unknown")
-                                        .to_string();
-
-                                    let entry = file_map
-                                        .entry(file_path.to_string())
-                                        .or_insert((0, language));
-                                    entry.0 += 1;
-                                }
-                            }
-                        }
-
-                        files = file_map
-                            .into_iter()
-                            .take(limit)
-                            .map(|(path, (chunk_count, language))| {
-                                FileInfo::new(path, chunk_count, language, None)
-                            })
-                            .collect();
-                    }
-                    let _ = tx.send(Ok(files));
+                    let _ = tx.send(Ok(self.handle_list_file_paths(&collection, limit)));
                 }
                 EdgeVecMessage::GetChunksByFile {
                     collection,
                     file_path,
                     tx,
                 } => {
-                    let mut results = Vec::new();
-                    if let Some(collection_metadata) = self.metadata_store.get(&collection) {
-                        for (ext_id, meta_val) in collection_metadata.iter() {
-                            if let Some(meta) = meta_val.as_object() {
-                                if meta
-                                    .get("file_path")
-                                    .and_then(|v| v.as_str())
-                                    .is_some_and(|p| p == file_path)
-                                {
-                                    let start_line = meta
-                                        .opt_u64("start_line")
-                                        .or_else(|| meta.opt_u64("line_number"))
-                                        .unwrap_or(0)
-                                        as u32;
-
-                                    results.push(SearchResult {
-                                        id: ext_id.clone(),
-                                        file_path: file_path.to_string(),
-                                        start_line,
-                                        content: meta.string_or("content", ""),
-                                        score: 1.0,
-                                        language: meta.string_or("language", "unknown"),
-                                    });
-                                }
-                            }
-                        }
-                    }
-                    // Sort by start_line
-                    results.sort_by_key(|r| r.start_line);
-                    let _ = tx.send(Ok(results));
+                    let _ = tx.send(Ok(self.handle_get_chunks_by_file(&collection, &file_path)));
                 }
             }
         }

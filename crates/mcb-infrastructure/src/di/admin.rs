@@ -26,6 +26,18 @@ use std::sync::Arc;
 // ============================================================================
 
 /// Interface for embedding provider admin operations
+///
+/// # Example
+///
+/// ```ignore
+/// // List available providers
+/// let providers = admin.list_providers();
+/// println!("Available: {:?}", providers);
+///
+/// // Switch to a different provider
+/// let config = EmbeddingProviderConfig::new("ollama");
+/// admin.switch_provider(config)?;
+/// ```
 pub trait EmbeddingAdminInterface: Send + Sync + std::fmt::Debug {
     /// List all available embedding providers
     fn list_providers(&self) -> Vec<ProviderInfo>;
@@ -38,6 +50,21 @@ pub trait EmbeddingAdminInterface: Send + Sync + std::fmt::Debug {
 }
 
 /// Interface for vector store provider admin operations
+///
+/// # Example
+///
+/// ```ignore
+/// // List available vector store providers
+/// let providers = admin.list_providers();
+/// for provider in &providers {
+///     println!("{}: {}", provider.name, provider.description);
+/// }
+///
+/// // Switch to Milvus vector store
+/// let config = VectorStoreProviderConfig::new("milvus")
+///     .with_uri("http://localhost:19530");
+/// admin.switch_provider(config)?;
+/// ```
 pub trait VectorStoreAdminInterface: Send + Sync + std::fmt::Debug {
     /// List all available vector store providers
     fn list_providers(&self) -> Vec<ProviderInfo>;
@@ -48,6 +75,22 @@ pub trait VectorStoreAdminInterface: Send + Sync + std::fmt::Debug {
 }
 
 /// Interface for cache provider admin operations
+///
+/// # Example
+///
+/// ```ignore
+/// // Check current cache provider
+/// let current = admin.current_provider();
+/// println!("Current cache: {}", current);
+///
+/// // Switch to Redis cache
+/// let config = CacheProviderConfig::new("redis")
+///     .with_url("redis://localhost:6379");
+/// admin.switch_provider(config)?;
+///
+/// // Reload from persisted config
+/// admin.reload_from_config()?;
+/// ```
 pub trait CacheAdminInterface: Send + Sync + std::fmt::Debug {
     /// List all available cache providers
     fn list_providers(&self) -> Vec<ProviderInfo>;
@@ -60,6 +103,21 @@ pub trait CacheAdminInterface: Send + Sync + std::fmt::Debug {
 }
 
 /// Interface for language provider admin operations
+///
+/// # Example
+///
+/// ```ignore
+/// // List available language chunking providers
+/// let providers = admin.list_providers();
+/// println!("Available language providers:");
+/// for p in providers {
+///     println!("  - {}", p.name);
+/// }
+///
+/// // Switch to tree-sitter based chunking
+/// let config = LanguageProviderConfig::new("tree-sitter");
+/// admin.switch_provider(config)?;
+/// ```
 pub trait LanguageAdminInterface: Send + Sync + std::fmt::Debug {
     /// List all available language providers
     fn list_providers(&self) -> Vec<ProviderInfo>;

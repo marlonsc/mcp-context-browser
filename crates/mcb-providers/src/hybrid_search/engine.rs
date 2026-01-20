@@ -30,7 +30,7 @@ use mcb_domain::ports::providers::HybridSearchProvider;
 use mcb_domain::{entities::CodeChunk, error::Result, value_objects::SearchResult};
 use serde_json::Value;
 use std::collections::HashMap;
-use std::sync::RwLock;
+use tokio::sync::RwLock;
 
 use super::bm25::{BM25Params, BM25Scorer};
 use crate::constants::{HYBRID_SEARCH_BM25_WEIGHT, HYBRID_SEARCH_SEMANTIC_WEIGHT};
@@ -116,10 +116,7 @@ impl HybridSearchProvider for HybridSearchEngine {
     /// Builds a BM25 index for the specified collection. If the collection
     /// already exists, the new chunks are added to the existing index.
     async fn index_chunks(&self, collection: &str, chunks: &[CodeChunk]) -> Result<()> {
-        let mut collections = self
-            .collections
-            .write()
-            .map_err(|e| mcb_domain::error::Error::internal(format!("Lock poisoned: {}", e)))?;
+        let mut collections = self.collections.write().await;
 
         // Build document index and deduplicate
         let mut documents = Vec::new();
@@ -167,10 +164,7 @@ impl HybridSearchProvider for HybridSearchEngine {
         semantic_results: Vec<SearchResult>,
         limit: usize,
     ) -> Result<Vec<SearchResult>> {
-        let collections = self
-            .collections
-            .read()
-            .map_err(|e| mcb_domain::error::Error::internal(format!("Lock poisoned: {}", e)))?;
+        let collections = self.collections.read().await;
 
         // If collection doesn't exist, return semantic results as-is
         let Some(index) = collections.get(collection) else {
@@ -220,21 +214,14 @@ impl HybridSearchProvider for HybridSearchEngine {
 
     /// Clear indexed data for a collection
     async fn clear_collection(&self, collection: &str) -> Result<()> {
-        let mut collections = self
-            .collections
-            .write()
-            .map_err(|e| mcb_domain::error::Error::internal(format!("Lock poisoned: {}", e)))?;
-
+        let mut collections = self.collections.write().await;
         collections.remove(collection);
         Ok(())
     }
 
     /// Get hybrid search statistics
     async fn get_stats(&self) -> HashMap<String, Value> {
-        let collections = match self.collections.read() {
-            Ok(c) => c,
-            Err(_) => return HashMap::new(),
-        };
+        let collections = self.collections.read().await;
 
         let mut stats = HashMap::new();
 

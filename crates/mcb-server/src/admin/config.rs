@@ -21,7 +21,9 @@
 
 use mcb_domain::value_objects::{EmbeddingConfig, VectorStoreConfig};
 use mcb_infrastructure::config::data::AppConfig;
-use mcb_infrastructure::config::types::{CacheConfig, LimitsConfig, MetricsConfig};
+use mcb_infrastructure::config::types::cache::CacheSystemConfig;
+use mcb_infrastructure::config::types::limits::LimitsConfig;
+use mcb_infrastructure::config::types::metrics::MetricsConfig;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -65,8 +67,8 @@ impl SanitizedConfig {
     pub fn from_app_config(config: &AppConfig) -> Self {
         Self {
             server: Self::server_view(config),
-            embedding: Self::embedding_views(&config.providers.embedding),
-            vector_store: Self::vector_store_views(&config.providers.vector_store),
+            embedding: Self::embedding_views(&config.providers.embedding.configs),
+            vector_store: Self::vector_store_views(&config.providers.vector_store.configs),
             logging: Self::logging_view(config),
             cache: Self::cache_view(&config.system.infrastructure.cache),
             metrics: Self::metrics_view(&config.system.infrastructure.metrics),
@@ -132,7 +134,7 @@ impl SanitizedConfig {
         }
     }
 
-    fn cache_view(c: &CacheConfig) -> CacheConfigView {
+    fn cache_view(c: &CacheSystemConfig) -> CacheConfigView {
         CacheConfigView {
             enabled: c.enabled,
             provider: format!("{:?}", c.provider),

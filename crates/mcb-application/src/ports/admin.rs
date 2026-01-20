@@ -157,9 +157,12 @@ pub struct DependencyHealthCheck {
     pub last_check: u64,
 }
 
-/// Service lifecycle state
+/// Port service lifecycle state (simplified, Copy-able version)
+///
+/// This is a simplified version of ServiceState for port interfaces.
+/// For domain events with failure reasons, use `mcb_domain::events::ServiceState`.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
-pub enum ServiceState {
+pub enum PortServiceState {
     /// Service is starting up
     Starting,
     /// Service is running normally
@@ -179,12 +182,12 @@ pub enum ServiceState {
 /// # Example
 ///
 /// ```no_run
-/// use mcb_application::ports::admin::{LifecycleManaged, ServiceState};
+/// use mcb_application::ports::admin::{LifecycleManaged, PortServiceState};
 /// use std::sync::Arc;
 ///
 /// async fn check_service(service: Arc<dyn LifecycleManaged>) -> mcb_domain::Result<()> {
 ///     // Check service state
-///     if service.state() == ServiceState::Running {
+///     if service.state() == PortServiceState::Running {
 ///         // Perform health check
 ///         let health = service.health_check().await;
 ///         println!("Service health: {:?}", health.status);
@@ -201,7 +204,7 @@ pub trait LifecycleManaged: Send + Sync {
     fn name(&self) -> &str;
 
     /// Get the current service state
-    fn state(&self) -> ServiceState;
+    fn state(&self) -> PortServiceState;
 
     /// Start the service
     async fn start(&self) -> mcb_domain::error::Result<()>;

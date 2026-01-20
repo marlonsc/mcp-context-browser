@@ -1,10 +1,14 @@
 //! Tests for hybrid search providers
 
-use crate::constants::{HYBRID_SEARCH_BM25_WEIGHT, HYBRID_SEARCH_SEMANTIC_WEIGHT};
-use crate::hybrid_search::{BM25Params, BM25Scorer, HybridSearchEngine, NullHybridSearchProvider};
+#![cfg(feature = "hybrid-search")]
+
 use mcb_domain::entities::CodeChunk;
 use mcb_domain::ports::providers::HybridSearchProvider;
 use mcb_domain::value_objects::SearchResult;
+use mcb_providers::constants::{HYBRID_SEARCH_BM25_WEIGHT, HYBRID_SEARCH_SEMANTIC_WEIGHT};
+use mcb_providers::hybrid_search::{
+    BM25Params, BM25Scorer, HybridSearchEngine, NullHybridSearchProvider,
+};
 
 // ============================================================================
 // Test Helpers
@@ -248,7 +252,8 @@ async fn test_null_provider_index() {
     let chunks = vec![create_test_chunk("fn test() {}", "test.rs", 1)];
 
     // Should succeed without error
-    provider.index_chunks("test", &chunks).await.unwrap();
+    let result = provider.index_chunks("test", &chunks).await;
+    assert!(result.is_ok(), "Null provider index should always succeed");
 }
 
 #[tokio::test]
@@ -278,7 +283,8 @@ async fn test_null_provider_clear() {
     let provider = NullHybridSearchProvider::new();
 
     // Should succeed without error
-    provider.clear_collection("test").await.unwrap();
+    let result = provider.clear_collection("test").await;
+    assert!(result.is_ok(), "Null provider clear should always succeed");
 }
 
 #[tokio::test]

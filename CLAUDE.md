@@ -1,4 +1,4 @@
-# CLAUDE.md
+# Claude.md
 
 This file provides guidance to Claude Code (Claude.ai/code) when working with code in this repository.
 
@@ -123,9 +123,10 @@ pub struct AppContext {
 ```
 
 **Key Architecture Rules** (enforced by mcb-validate CA007/CA008):
-- Ports defined in `mcb-domain/src/ports/providers/`
-- Application imports ports from mcb-domain (not duplicated)
-- Infrastructure uses `Arc<dyn Trait>` for admin services
+
+-   Ports defined in `mcb-domain/src/ports/providers/`
+-   Application imports ports from mcb-domain (not duplicated)
+-   Infrastructure uses `Arc<dyn Trait>` for admin services
 
 ## Provider Registration (ADR-023: linkme)
 

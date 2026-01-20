@@ -796,7 +796,7 @@ impl VectorStoreBrowser for MilvusVectorStoreProvider {
 
         let expr = "id >= 0".to_string();
         let query_options = QueryOptions::new()
-            .limit(10000) // Get a large sample for aggregation
+            .limit(crate::constants::MILVUS_DEFAULT_QUERY_LIMIT)
             .output_fields(vec!["file_path".to_string()]);
 
         let query_results = match self.client.query(collection, &expr, &query_options).await {
@@ -945,7 +945,10 @@ fn milvus_factory(
     config: &VectorStoreProviderConfig,
 ) -> std::result::Result<Arc<dyn VectorStoreProvider>, String> {
     let uri = config.uri.clone().ok_or_else(|| {
-        "Milvus requires 'uri' configuration (e.g., http://localhost:19530)".to_string()
+        format!(
+            "Milvus requires 'uri' configuration (e.g., http://localhost:{})",
+            crate::constants::MILVUS_DEFAULT_PORT
+        )
     })?;
     let token = config.api_key.clone();
 

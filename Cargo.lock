@@ -3230,6 +3230,7 @@ dependencies = [
  "futures",
  "linkme",
  "mcb-domain",
+ "mcb-providers",
  "serde",
  "serde_json",
  "tempfile",

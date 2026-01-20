@@ -42,8 +42,7 @@ else ifeq ($(STRICT),1)
 else
 	@echo "Architecture validation..."
 	@cargo test --package mcb-validate -- --nocapture 2>&1 | \
-		grep -E "(Total Violations:|Dependency:|Quality:|Patterns:|Tests:|Documentation:|Naming:|SOLID:|Organization:|KISS:|Status:|\[Error\]|\[Warning\])" | \
-		head -30
+		grep -E "(Total Violations:|Dependency:|Quality:|Patterns:|Tests:|Documentation:|Naming:|SOLID:|Organization:|KISS:|Status:|\[Error\]|\[Warning\])"
 endif
 
 # =============================================================================

@@ -496,6 +496,5 @@ pub const TS_NODE_METHOD_DECLARATION: &str = "method_declaration";
 
 /// Tree-sitter node type: class declaration (JS, Java, C#, PHP, Swift, Kotlin)
 pub const TS_NODE_CLASS_DECLARATION: &str = "class_declaration";
-
 // Re-export domain constants for convenience
 pub use mcb_domain::constants::*;

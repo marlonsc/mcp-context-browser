@@ -121,7 +121,7 @@ Transform MCP Context Browser into a comprehensive development platform combinin
 
 -   Tree view navigation with collapsible directories
 -   Full syntax highlighting with chunk boundary markers
--   Inline search result highlighting
+-   Inline search Result highlighting
 -   Keyboard shortcuts and dark mode
 -   Real-time SSE updates during indexing
 

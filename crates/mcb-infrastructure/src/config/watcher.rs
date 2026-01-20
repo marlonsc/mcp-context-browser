@@ -241,6 +241,10 @@ pub struct ConfigWatcherUtils;
 
 impl ConfigWatcherUtils {
     /// Create a watcher that automatically reloads on file changes
+    ///
+    /// Before calling this, check if watching is enabled via
+    /// `config.system.data.sync.watching_enabled`. This method
+    /// assumes the caller has already verified watching should proceed.
     pub async fn watch_config_file(
         config_path: PathBuf,
         initial_config: AppConfig,
@@ -248,12 +252,7 @@ impl ConfigWatcherUtils {
         ConfigWatcher::new(config_path, initial_config).await
     }
 
-    /// Check if file watching is supported on the current platform
-    pub fn is_file_watching_supported() -> bool {
-        // File watching is generally supported on most platforms
-        // but can be disabled in some environments
-        !std::env::var("DISABLE_CONFIG_WATCHING")
-            .map(|v| v == "1" || v.to_lowercase() == "true")
-            .unwrap_or(false)
-    }
+    // NOTE: is_file_watching_supported() was removed per ADR-025.
+    // Use config.system.data.sync.watching_enabled instead.
+    // Configure via MCP__SYSTEM__DATA__SYNC__WATCHING_ENABLED=false to disable.
 }

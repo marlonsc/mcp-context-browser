@@ -1,7 +1,7 @@
 //! Tests for authentication infrastructure
 
-use crate::infrastructure::auth::NullAuthService;
 use mcb_application::ports::infrastructure::AuthServiceInterface;
+use mcb_infrastructure::infrastructure::NullAuthService;
 
 #[test]
 fn test_null_auth_service_creation() {

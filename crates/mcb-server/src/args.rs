@@ -154,10 +154,10 @@ fn validate_file_path(path: &str) -> Result<(), validator::ValidationError> {
         ));
     }
 
-    // Check for sensitive system paths
-    let sensitive_paths = ["/etc/", "/proc/", "/sys/", "/root/", "/home/"];
+    // Check for sensitive system paths (but allow /home/ for user code)
+    let sensitive_paths = ["/etc/", "/proc/", "/sys/", "/root/"];
     for sensitive in &sensitive_paths {
-        if path.starts_with(sensitive) && !path.starts_with("/tmp/") {
+        if path.starts_with(sensitive) {
             return Err(validator::ValidationError::new(
                 "Access to sensitive system paths is not allowed",
             ));

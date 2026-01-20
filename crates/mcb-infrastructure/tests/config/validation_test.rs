@@ -3,7 +3,7 @@
 //! Tests for configuration validation across all config types.
 
 use mcb_infrastructure::config::data::{
-    AuthConfig, CacheConfig, CacheProvider, ServerConfig, ServerSslConfig,
+    AuthConfig, CacheProvider, CacheSystemConfig, ServerConfig, ServerSslConfig,
 };
 use mcb_infrastructure::config::server::{
     ServerConfigBuilder, ServerConfigPresets, ServerConfigUtils,
@@ -39,18 +39,22 @@ fn test_server_config_port_validation() {
 
 #[test]
 fn test_auth_config_jwt_secret_length() {
-    // Default config generates a secure secret
+    // Default config has empty secret - MUST be configured when auth is enabled
+    // per ADR-025: fail-fast on missing configuration
     let default_auth = AuthConfig::default();
-    // JWT secret should be at least 32 characters (256 bits)
     assert!(
-        default_auth.jwt.secret.len() >= 32,
-        "JWT secret should be at least 32 characters"
+        default_auth.jwt.secret.is_empty(),
+        "Default JWT secret should be empty (must be configured via MCP__AUTH__JWT__SECRET)"
     );
 
-    // Custom secret can be set
+    // Custom secret can be set - minimum 32 characters required
     let mut custom_auth = AuthConfig::default();
     custom_auth.jwt.secret = "custom_secret_at_least_32_chars_long!".to_string();
     assert_eq!(custom_auth.jwt.secret.len(), 37);
+    assert!(
+        custom_auth.jwt.secret.len() >= 32,
+        "Configured JWT secret should be at least 32 characters"
+    );
 
     // Expiration times should be reasonable
     assert!(default_auth.jwt.expiration_secs > 0);
@@ -60,7 +64,7 @@ fn test_auth_config_jwt_secret_length() {
 #[test]
 fn test_cache_config_ttl_when_enabled() {
     // When cache is enabled, TTL should be positive
-    let enabled_cache = CacheConfig {
+    let enabled_cache = CacheSystemConfig {
         enabled: true,
         provider: CacheProvider::Moka,
         default_ttl_secs: 300,
@@ -73,7 +77,7 @@ fn test_cache_config_ttl_when_enabled() {
     assert!(enabled_cache.max_size > 0);
 
     // Default cache config has reasonable TTL
-    let default_cache = CacheConfig::default();
+    let default_cache = CacheSystemConfig::default();
     assert!(
         default_cache.default_ttl_secs >= 60,
         "Default TTL should be at least 60 seconds"
@@ -84,7 +88,7 @@ fn test_cache_config_ttl_when_enabled() {
     );
 
     // Disabled cache still maintains valid config
-    let disabled_cache = CacheConfig {
+    let disabled_cache = CacheSystemConfig {
         enabled: false,
         ..Default::default()
     };
@@ -93,7 +97,7 @@ fn test_cache_config_ttl_when_enabled() {
     assert!(disabled_cache.default_ttl_secs > 0);
 
     // Redis provider config
-    let redis_cache = CacheConfig {
+    let redis_cache = CacheSystemConfig {
         enabled: true,
         provider: CacheProvider::Redis,
         redis_url: Some("redis://localhost:6379".to_string()),
@@ -188,13 +192,16 @@ fn test_default_config_is_valid() {
     // Production config is a template, SSL paths must be added by user
     // So we just verify the address is valid
 
-    // Default auth config should have valid values
+    // Default auth config - JWT secret is empty by design (must be configured)
     let auth_config = AuthConfig::default();
-    assert!(auth_config.jwt.secret.len() >= 32);
+    assert!(
+        auth_config.jwt.secret.is_empty(),
+        "Default JWT secret should be empty per ADR-025"
+    );
     assert!(auth_config.jwt.expiration_secs > 0);
 
     // Default cache config should have valid values
-    let cache_config = CacheConfig::default();
+    let cache_config = CacheSystemConfig::default();
     assert!(cache_config.default_ttl_secs > 0);
     assert!(cache_config.max_size > 0);
 }

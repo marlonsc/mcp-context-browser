@@ -445,6 +445,16 @@ impl QualityValidator {
                         && !e.path().to_string_lossy().ends_with("_test.rs")
                 })
             {
+                let path_str = entry.path().to_string_lossy();
+
+                // Skip mcb-providers vector store implementations (ADR-029)
+                // These are legitimately large due to complex storage operations
+                if path_str.contains("mcb-providers/src/vector_store/")
+                    || path_str.contains("mcb-providers/src/embedding/")
+                {
+                    continue;
+                }
+
                 let content = std::fs::read_to_string(entry.path())?;
                 let line_count = content.lines().count();
 

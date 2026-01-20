@@ -27,8 +27,10 @@ pub fn init_logging(config: LoggingConfig) -> Result<()> {
 }
 
 /// Create log filter from configuration
+///
+/// Priority: MCP_LOG env var > config level
 fn create_log_filter(level: &str) -> EnvFilter {
-    EnvFilter::try_from_env("MCB_LOG").unwrap_or_else(|_| EnvFilter::new(level))
+    EnvFilter::try_from_env("MCP_LOG").unwrap_or_else(|_| EnvFilter::new(level))
 }
 
 /// Create file appender if file output is configured

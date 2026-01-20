@@ -6,13 +6,20 @@ use mcb_infrastructure::config::watcher::{ConfigWatcher, ConfigWatcherBuilder};
 use mcb_infrastructure::constants::DEFAULT_HTTP_PORT;
 use tempfile::TempDir;
 
+/// Create test config with auth disabled (avoids JWT secret validation)
+fn test_config() -> AppConfig {
+    let mut config = AppConfig::default();
+    config.auth.enabled = false;
+    config
+}
+
 #[tokio::test]
 async fn test_config_watcher_creation() {
     let temp_dir = TempDir::new().unwrap();
     let config_path = temp_dir.path().join("test_config.toml");
 
-    // Create initial config file
-    let initial_config = AppConfig::default();
+    // Create initial config file with auth disabled
+    let initial_config = test_config();
     let loader = ConfigLoader::new();
     loader.save_to_file(&initial_config, &config_path).unwrap();
 
@@ -29,7 +36,7 @@ async fn test_manual_reload() {
     let temp_dir = TempDir::new().unwrap();
     let config_path = temp_dir.path().join("test_config.toml");
 
-    let initial_config = AppConfig::default();
+    let initial_config = test_config();
     let loader = ConfigLoader::new();
     loader.save_to_file(&initial_config, &config_path).unwrap();
 
@@ -37,8 +44,8 @@ async fn test_manual_reload() {
         .await
         .unwrap();
 
-    // Modify config file
-    let mut new_config = AppConfig::default();
+    // Modify config file with new port (keep auth disabled)
+    let mut new_config = test_config();
     new_config.server.network.port = 9999;
     loader.save_to_file(&new_config, &config_path).unwrap();
 
@@ -64,7 +71,7 @@ fn test_watcher_builder() {
 
     let builder = ConfigWatcherBuilder::new()
         .with_config_path(&config_path)
-        .with_initial_config(AppConfig::default());
+        .with_initial_config(test_config());
 
     // Builder should validate that config file exists
     let result = tokio::runtime::Runtime::new()

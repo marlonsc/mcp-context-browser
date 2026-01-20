@@ -41,31 +41,32 @@ impl EmbeddingProviderResolver {
 
     /// Resolve provider from current application config
     pub fn resolve_from_config(&self) -> Result<Arc<dyn EmbeddingProvider>, String> {
-        // First, check simple config (flat env vars like MCP__PROVIDERS__EMBEDDING__PROVIDER)
-        if let Some(ref provider_name) = self.config.providers.embedding_simple.provider {
+        // First, check direct config (flat env vars like MCP__PROVIDERS__EMBEDDING__PROVIDER)
+        if let Some(ref provider_name) = self.config.providers.embedding.provider {
             let mut registry_config = EmbeddingProviderConfig::new(provider_name);
-            if let Some(ref model) = self.config.providers.embedding_simple.model {
+            if let Some(ref model) = self.config.providers.embedding.model {
                 registry_config = registry_config.with_model(model);
             }
-            if let Some(ref base_url) = self.config.providers.embedding_simple.base_url {
+            if let Some(ref base_url) = self.config.providers.embedding.base_url {
                 registry_config = registry_config.with_base_url(base_url);
             }
-            if let Some(ref api_key) = self.config.providers.embedding_simple.api_key {
+            if let Some(ref api_key) = self.config.providers.embedding.api_key {
                 registry_config = registry_config.with_api_key(api_key);
             }
-            if let Some(dimensions) = self.config.providers.embedding_simple.dimensions {
+            if let Some(dimensions) = self.config.providers.embedding.dimensions {
                 registry_config = registry_config.with_dimensions(dimensions);
             }
             return resolve_embedding_provider(&registry_config);
         }
 
-        // Fallback to HashMap config (TOML: [providers.embedding.default])
-        if let Some(default_config) = self.config.providers.embedding.get("default") {
+        // Fallback to named config (TOML: [providers.embedding.default])
+        if let Some(default_config) = self.config.providers.embedding.configs.get("default") {
             // If there's a specific config for this provider, use it
             if let Some(specific_config) = self
                 .config
                 .providers
                 .embedding
+                .configs
                 .get(&default_config.provider.to_string())
             {
                 let registry_config = embedding_config_to_registry(specific_config);
@@ -121,28 +122,29 @@ impl VectorStoreProviderResolver {
 
     /// Resolve provider from current application config
     pub fn resolve_from_config(&self) -> Result<Arc<dyn VectorStoreProvider>, String> {
-        // First, check simple config (flat env vars like MCP__PROVIDERS__VECTOR_STORE__PROVIDER)
-        if let Some(ref provider_name) = self.config.providers.vector_store_simple.provider {
+        // First, check direct config (flat env vars like MCP__PROVIDERS__VECTOR_STORE__PROVIDER)
+        if let Some(ref provider_name) = self.config.providers.vector_store.provider {
             let mut registry_config = VectorStoreProviderConfig::new(provider_name);
-            if let Some(ref address) = self.config.providers.vector_store_simple.address {
+            if let Some(ref address) = self.config.providers.vector_store.address {
                 registry_config = registry_config.with_uri(address);
             }
-            if let Some(dimensions) = self.config.providers.vector_store_simple.dimensions {
+            if let Some(dimensions) = self.config.providers.vector_store.dimensions {
                 registry_config = registry_config.with_dimensions(dimensions);
             }
-            if let Some(ref collection) = self.config.providers.vector_store_simple.collection {
+            if let Some(ref collection) = self.config.providers.vector_store.collection {
                 registry_config = registry_config.with_collection(collection);
             }
             return resolve_vector_store_provider(&registry_config);
         }
 
-        // Fallback to HashMap config (TOML: [providers.vector_store.default])
-        if let Some(default_config) = self.config.providers.vector_store.get("default") {
+        // Fallback to named config (TOML: [providers.vector_store.default])
+        if let Some(default_config) = self.config.providers.vector_store.configs.get("default") {
             // If there's a specific config for this provider, use it
             if let Some(specific_config) = self
                 .config
                 .providers
                 .vector_store
+                .configs
                 .get(&default_config.provider.to_string())
             {
                 let registry_config = vector_store_config_to_registry(specific_config);

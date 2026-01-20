@@ -39,7 +39,7 @@ fn test_provider_selection_pattern() {
     let mut config = AppConfig::default();
 
     // Add OpenAI embedding provider configuration
-    config.providers.embedding.insert(
+    config.providers.embedding.configs.insert(
         "default".to_string(),
         EmbeddingConfig {
             provider: "openai".to_string(),
@@ -52,7 +52,7 @@ fn test_provider_selection_pattern() {
     );
 
     // Add Milvus vector store configuration
-    config.providers.vector_store.insert(
+    config.providers.vector_store.configs.insert(
         "default".to_string(),
         VectorStoreConfig {
             provider: "milvus".to_string(),
@@ -66,13 +66,20 @@ fn test_provider_selection_pattern() {
 
     // Verify configuration was set correctly
     assert_eq!(
-        config.providers.embedding.get("default").unwrap().provider,
+        config
+            .providers
+            .embedding
+            .configs
+            .get("default")
+            .unwrap()
+            .provider,
         "openai"
     );
     assert_eq!(
         config
             .providers
             .vector_store
+            .configs
             .get("default")
             .unwrap()
             .provider,

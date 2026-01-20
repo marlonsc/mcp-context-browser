@@ -101,29 +101,67 @@ impl std::fmt::Debug for ResolvedProviders {
 /// * `Ok(ResolvedProviders)` - All providers successfully resolved
 /// * `Err(Error)` - Provider not found or creation failed
 pub fn resolve_providers(config: &AppConfig) -> Result<ResolvedProviders> {
-    // Get the first (default) embedding config or use defaults
-    let embedding_config = config
-        .providers
-        .embedding
-        .values()
-        .next()
-        .map(embedding_config_to_registry)
-        .unwrap_or_else(default_embedding_config);
+    // Get embedding config: prefer direct config (env vars), fallback to named config
+    let embedding_config = if config.providers.embedding.provider.is_some() {
+        // Direct config from env vars like MCP__PROVIDERS__EMBEDDING__PROVIDER
+        EmbeddingProviderConfig {
+            provider: config
+                .providers
+                .embedding
+                .provider
+                .clone()
+                .unwrap_or_default(),
+            model: config.providers.embedding.model.clone(),
+            api_key: config.providers.embedding.api_key.clone(),
+            base_url: config.providers.embedding.base_url.clone(),
+            dimensions: config.providers.embedding.dimensions,
+            extra: Default::default(),
+        }
+    } else {
+        // Fallback to named config (TOML)
+        config
+            .providers
+            .embedding
+            .configs
+            .values()
+            .next()
+            .map(embedding_config_to_registry)
+            .unwrap_or_else(default_embedding_config)
+    };
 
-    // Get the first (default) vector store config or use defaults
-    let vector_store_config = config
-        .providers
-        .vector_store
-        .values()
-        .next()
-        .map(vector_store_config_to_registry)
-        .unwrap_or_else(default_vector_store_config);
+    // Get vector store config: prefer direct config (env vars), fallback to named config
+    let vector_store_config = if config.providers.vector_store.provider.is_some() {
+        // Direct config from env vars like MCP__PROVIDERS__VECTOR_STORE__PROVIDER
+        VectorStoreProviderConfig {
+            provider: config
+                .providers
+                .vector_store
+                .provider
+                .clone()
+                .unwrap_or_default(),
+            uri: config.providers.vector_store.address.clone(),
+            collection: config.providers.vector_store.collection.clone(),
+            dimensions: config.providers.vector_store.dimensions,
+            api_key: None,
+            encrypted: None,
+            encryption_key: None,
+            extra: Default::default(),
+        }
+    } else {
+        // Fallback to named config (TOML)
+        config
+            .providers
+            .vector_store
+            .configs
+            .values()
+            .next()
+            .map(vector_store_config_to_registry)
+            .unwrap_or_else(default_vector_store_config)
+    };
 
     // Cache config from system.infrastructure.cache
-    let cache_provider_name = match &config.system.infrastructure.cache.provider {
-        crate::config::CacheProvider::Moka => "moka",
-        crate::config::CacheProvider::Redis => "redis",
-    };
+    // Use as_str() to decouple from concrete enum - enables registry-based resolution
+    let cache_provider_name = config.system.infrastructure.cache.provider.as_str();
 
     let cache_config = CacheProviderConfig {
         provider: cache_provider_name.to_string(),

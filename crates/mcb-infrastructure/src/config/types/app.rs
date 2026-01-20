@@ -8,7 +8,7 @@ use std::collections::HashMap;
 pub use super::{
     auth::{AuthConfig, JwtConfig, PasswordAlgorithm},
     backup::BackupConfig,
-    cache::{CacheConfig, CacheProvider},
+    cache::{CacheProvider, CacheSystemConfig},
     daemon::DaemonConfig,
     event_bus::{EventBusConfig, EventBusProvider},
     limits::LimitsConfig,
@@ -24,59 +24,63 @@ pub use super::{
     sync::SyncConfig,
 };
 
-/// Simple embedding config for flat env vars (MCP__PROVIDERS__EMBEDDING__PROVIDER)
+/// Embedding configuration container that supports both:
+/// - Flat env vars: MCP__PROVIDERS__EMBEDDING__PROVIDER, MCP__PROVIDERS__EMBEDDING__MODEL
+/// - TOML named configs: [providers.embedding.configs.default]
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct SimpleEmbeddingConfig {
-    /// Provider name (ollama, openai, fastembed, etc.)
+pub struct EmbeddingConfigContainer {
+    /// Provider name (from MCP__PROVIDERS__EMBEDDING__PROVIDER)
     pub provider: Option<String>,
-    /// Model name
+    /// Model name (from MCP__PROVIDERS__EMBEDDING__MODEL)
     pub model: Option<String>,
-    /// Base URL for API
+    /// Base URL for API (from MCP__PROVIDERS__EMBEDDING__BASE_URL)
     pub base_url: Option<String>,
-    /// API key
+    /// API key (from MCP__PROVIDERS__EMBEDDING__API_KEY)
     pub api_key: Option<String>,
-    /// Embedding dimensions
+    /// Embedding dimensions (from MCP__PROVIDERS__EMBEDDING__DIMENSIONS)
     pub dimensions: Option<usize>,
+
+    /// Named configs for TOML format (e.g., [providers.embedding.configs.default])
+    #[serde(default)]
+    pub configs: HashMap<String, EmbeddingConfig>,
 }
 
-/// Simple vector store config for flat env vars (MCP__PROVIDERS__VECTOR_STORE__PROVIDER)
+/// Vector store configuration container that supports both:
+/// - Flat env vars: MCP__PROVIDERS__VECTOR_STORE__PROVIDER, MCP__PROVIDERS__VECTOR_STORE__ADDRESS
+/// - TOML named configs: [providers.vector_store.configs.default]
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct SimpleVectorStoreConfig {
-    /// Provider name (milvus, filesystem, in_memory, etc.)
+pub struct VectorStoreConfigContainer {
+    /// Provider name (from MCP__PROVIDERS__VECTOR_STORE__PROVIDER)
     pub provider: Option<String>,
-    /// Server address
+    /// Server address (from MCP__PROVIDERS__VECTOR_STORE__ADDRESS)
     pub address: Option<String>,
-    /// Embedding dimensions
+    /// Embedding dimensions (from MCP__PROVIDERS__VECTOR_STORE__DIMENSIONS)
     pub dimensions: Option<usize>,
-    /// Collection name
+    /// Collection name (from MCP__PROVIDERS__VECTOR_STORE__COLLECTION)
     pub collection: Option<String>,
+
+    /// Named configs for TOML format (e.g., [providers.vector_store.configs.default])
+    #[serde(default)]
+    pub configs: HashMap<String, VectorStoreConfig>,
 }
 
 /// Provider configurations (embedding and vector store)
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ProvidersConfig {
-    /// Simple embedding config (for flat env vars like MCP__PROVIDERS__EMBEDDING__PROVIDER)
-    #[serde(flatten)]
-    pub embedding_simple: SimpleEmbeddingConfig,
-
-    /// Embedding provider configurations (for TOML: [providers.embedding.default])
+    /// Embedding provider configuration
     #[serde(default)]
-    pub embedding: HashMap<String, EmbeddingConfig>,
+    pub embedding: EmbeddingConfigContainer,
 
-    /// Simple vector store config (for flat env vars like MCP__PROVIDERS__VECTOR_STORE__PROVIDER)
-    #[serde(flatten)]
-    pub vector_store_simple: SimpleVectorStoreConfig,
-
-    /// Vector store provider configurations (for TOML: [providers.vector_store.default])
+    /// Vector store provider configuration
     #[serde(default)]
-    pub vector_store: HashMap<String, VectorStoreConfig>,
+    pub vector_store: VectorStoreConfigContainer,
 }
 
 /// Infrastructure configurations (cache, event_bus, metrics, resilience, limits)
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct InfrastructureConfig {
-    /// Cache configuration
-    pub cache: CacheConfig,
+    /// Cache system configuration
+    pub cache: CacheSystemConfig,
 
     /// EventBus configuration
     pub event_bus: EventBusConfig,

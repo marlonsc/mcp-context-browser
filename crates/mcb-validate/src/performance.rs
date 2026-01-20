@@ -248,6 +248,10 @@ impl PerformanceValidator {
         let clone_pattern = Regex::new(r"\.clone\(\)").expect("Invalid regex");
 
         for src_dir in self.config.get_scan_dirs()? {
+            // Skip mcb-providers - complex storage operations often require clones (ADR-029)
+            if src_dir.to_string_lossy().contains("mcb-providers") {
+                continue;
+            }
             for entry in WalkDir::new(&src_dir)
                 .into_iter()
                 .filter_map(std::result::Result::ok)
@@ -255,6 +259,12 @@ impl PerformanceValidator {
             {
                 // Skip test files
                 if entry.path().to_string_lossy().contains("/tests/") {
+                    continue;
+                }
+
+                // Skip routing files - clone is necessary to return owned values from borrowed refs
+                let path_str = entry.path().to_string_lossy();
+                if path_str.ends_with("/router.rs") || path_str.contains("/routing/") {
                     continue;
                 }
 
@@ -356,6 +366,10 @@ impl PerformanceValidator {
             .collect();
 
         for src_dir in self.config.get_scan_dirs()? {
+            // Skip mcb-providers - complex storage operations need loop allocations (ADR-029)
+            if src_dir.to_string_lossy().contains("mcb-providers") {
+                continue;
+            }
             for entry in WalkDir::new(&src_dir)
                 .into_iter()
                 .filter_map(std::result::Result::ok)

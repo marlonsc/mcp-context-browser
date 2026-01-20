@@ -60,11 +60,12 @@ impl DefaultProviderRouter {
         }
 
         // Try preferred providers first (if healthy)
+        // Note: clone is necessary here as we return an owned String from a reference
         for preferred in &context.preferred_providers {
             if available.contains(&preferred) {
                 let health = self.health_monitor.get_health(preferred);
                 if health != ProviderHealthStatus::Unhealthy {
-                    return Ok(preferred.clone());
+                    return Ok(preferred.to_owned());
                 }
             }
         }

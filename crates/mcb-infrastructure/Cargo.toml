@@ -160,6 +160,11 @@ criterion = { workspace = true }
 # Links providers into linkme distributed slices
 mcb-providers = { path = "../mcb-providers" }
 
+[features]
+default = []
+# Export internal test utilities (null implementations) for integration tests
+test-utils = []
+
 [dev-dependencies]
 tempfile = "3.10"
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }

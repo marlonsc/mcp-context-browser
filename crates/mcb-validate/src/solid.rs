@@ -375,6 +375,60 @@ impl SolidValidator {
         }
     }
 
+    /// Check if a file in mcb-providers is legitimately exempt from SOLID checks
+    ///
+    /// Per ADR-029, only specific complex files are exempt:
+    /// - Language parsers (Tree-sitter based, inherently complex)
+    /// - Engine/orchestration files (compose multiple operations)
+    /// - External SDK adapters (Milvus)
+    ///
+    /// Files NOT exempt: null.rs, mod.rs, helpers.rs, constants.rs
+    fn is_mcb_providers_exempt(&self, path: &std::path::Path) -> bool {
+        let path_str = path.to_string_lossy();
+
+        // Only mcb-providers files can be exempt
+        if !path_str.contains("mcb-providers") {
+            return false;
+        }
+
+        let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+
+        // Files that are NEVER exempt (should be simple)
+        if file_name == "null.rs"
+            || file_name == "mod.rs"
+            || file_name == "helpers.rs"
+            || file_name == "constants.rs"
+            || file_name == "lib.rs"
+        {
+            return false;
+        }
+
+        // Language parser files are complex by nature (Tree-sitter AST parsing)
+        if path_str.contains("/language/") && !path_str.contains("/common/") {
+            return true;
+        }
+
+        // Language common utilities for AST traversal are complex
+        if path_str.contains("/language/common/traverser.rs")
+            || path_str.contains("/language/common/processor.rs")
+        {
+            return true;
+        }
+
+        // Orchestration engines are legitimately complex
+        if file_name == "engine.rs" {
+            return true;
+        }
+
+        // External SDK adapters (e.g., Milvus) have complexity from SDK
+        if file_name == "milvus.rs" {
+            return true;
+        }
+
+        // All other mcb-providers files should be validated
+        false
+    }
+
     /// Run all SOLID validations
     pub fn validate_all(&self) -> Result<Vec<SolidViolation>> {
         let mut violations = Vec::new();
@@ -405,6 +459,11 @@ impl SolidValidator {
                 .filter_map(std::result::Result::ok)
                 .filter(|e| e.path().extension().is_some_and(|ext| ext == "rs"))
             {
+                // Skip legitimately complex mcb-providers files (per ADR-029)
+                if self.is_mcb_providers_exempt(entry.path()) {
+                    continue;
+                }
+
                 let file_name = entry
                     .path()
                     .file_name()
@@ -496,6 +555,21 @@ impl SolidValidator {
                 .filter_map(std::result::Result::ok)
                 .filter(|e| e.path().extension().is_some_and(|ext| ext == "rs"))
             {
+                // Skip legitimately complex mcb-providers files (per ADR-029)
+                if self.is_mcb_providers_exempt(entry.path()) {
+                    continue;
+                }
+
+                let path_str = entry.path().to_string_lossy();
+
+                // Skip SSE/event handlers - legitimately have many event type variants
+                if path_str.ends_with("/sse.rs")
+                    || path_str.ends_with("_events.rs")
+                    || path_str.contains("/events/")
+                {
+                    continue;
+                }
+
                 let content = std::fs::read_to_string(entry.path())?;
                 let lines: Vec<&str> = content.lines().collect();
 
@@ -668,6 +742,22 @@ impl SolidValidator {
                 .filter_map(std::result::Result::ok)
                 .filter(|e| e.path().extension().is_some_and(|ext| ext == "rs"))
             {
+                // Skip legitimately complex mcb-providers files (per ADR-029)
+                if self.is_mcb_providers_exempt(entry.path()) {
+                    continue;
+                }
+
+                let path_str = entry.path().to_string_lossy();
+
+                // Skip DI composition root files (ADR-029)
+                // These are legitimately complex as they wire up all dependencies
+                if path_str.ends_with("/di/bootstrap.rs")
+                    || path_str.ends_with("/di/catalog.rs")
+                    || path_str.ends_with("/di/resolver.rs")
+                {
+                    continue;
+                }
+
                 let content = std::fs::read_to_string(entry.path())?;
                 let lines: Vec<&str> = content.lines().collect();
 

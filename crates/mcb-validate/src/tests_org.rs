@@ -669,9 +669,11 @@ impl TestValidator {
 
         let test_attr_pattern = Regex::new(r"#\[(?:tokio::)?test\]").ok();
         let fn_pattern = Regex::new(r"(?:async\s+)?fn\s+([a-z_][a-z0-9_]*)\s*\(").ok();
-        // Match common assertion macros (including word boundaries to avoid false positives)
+        // Match common assertion macros - allow leading whitespace for indented code
+        // The pattern checks for assertions at the start of a line (with optional whitespace)
+        // or preceded by whitespace/punctuation to avoid false positives like "some_assert!"
         let real_assert_pattern = Regex::new(
-            r"(?:^|\s|;|\()(assert!|assert_eq!|assert_ne!|assert_matches!|debug_assert!|debug_assert_eq!|debug_assert_ne!|panic!)",
+            r"(?:^|\s)(assert!|assert_eq!|assert_ne!|assert_matches!|debug_assert!|debug_assert_eq!|debug_assert_ne!|panic!)",
         )
         .ok();
         let unwrap_pattern = Regex::new(r"\.unwrap\(|\.expect\(").ok();
@@ -693,6 +695,12 @@ impl TestValidator {
                 let mut i = 0;
                 while i < lines.len() {
                     let line = lines[i];
+
+                    // Skip module documentation comments (//!)
+                    if line.trim().starts_with("//!") {
+                        i += 1;
+                        continue;
+                    }
 
                     // Check for test attribute
                     let is_test_attr = test_attr_pattern.as_ref().is_some_and(|p| p.is_match(line));

@@ -16,6 +16,11 @@ pub enum PasswordAlgorithm {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JwtConfig {
     /// JWT secret key
+    ///
+    /// **REQUIRED** when authentication is enabled.
+    /// Configure via `MCP__AUTH__JWT__SECRET` environment variable
+    /// or `auth.jwt.secret` in config file.
+    /// Must be at least 32 characters for security.
     pub secret: String,
 
     /// JWT expiration time in seconds
@@ -28,7 +33,9 @@ pub struct JwtConfig {
 impl Default for JwtConfig {
     fn default() -> Self {
         Self {
-            secret: crate::crypto::TokenGenerator::generate_secure_token(32),
+            // Empty by default - MUST be configured when auth is enabled
+            // Validation in loader.rs enforces minimum 32 chars
+            secret: String::new(),
             expiration_secs: JWT_DEFAULT_EXPIRATION_SECS,
             refresh_expiration_secs: JWT_REFRESH_EXPIRATION_SECS,
         }
@@ -64,7 +71,10 @@ pub struct AdminApiKeyConfig {
     #[serde(default = "default_admin_key_header")]
     pub header: String,
 
-    /// The actual admin API key (can be set via config or MCB_ADMIN_API_KEY env var)
+    /// The actual admin API key
+    ///
+    /// Configure via `MCP__AUTH__ADMIN__KEY` environment variable
+    /// or `auth.admin.key` in config file.
     #[serde(default)]
     pub key: Option<String>,
 }
@@ -78,7 +88,7 @@ impl Default for AdminApiKeyConfig {
         Self {
             enabled: false, // Disabled by default for safety
             header: default_admin_key_header(),
-            key: std::env::var("MCB_ADMIN_API_KEY").ok(),
+            key: None, // Figment fills via MCP__AUTH__ADMIN__KEY
         }
     }
 }

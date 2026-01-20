@@ -76,7 +76,13 @@ impl ConfigLoader {
 
         // Add environment variables
         // Uses double underscore as separator for nested keys (e.g., MCP__SERVER__PORT)
-        figment = figment.merge(Env::prefixed(&format!("{}_", self.env_prefix)).split("__"));
+        // Prefix is MCP__ (double underscore) to match mcp-config.json env format
+        // lowercase(true) converts PROVIDERS__EMBEDDING to providers.embedding
+        figment = figment.merge(
+            Env::prefixed(&format!("{}__", self.env_prefix))
+                .split("__")
+                .lowercase(true),
+        );
 
         // Extract and deserialize configuration
         let app_config: AppConfig = figment
@@ -110,27 +116,46 @@ impl ConfigLoader {
     }
 
     /// Find default configuration file paths to try
+    ///
+    /// Per ADR-025: No implicit fallbacks. Only valid paths are considered.
+    /// If a directory (config_dir, home_dir) is unavailable, it is skipped
+    /// rather than silently falling back to an empty path.
     fn find_default_config_path() -> Option<PathBuf> {
         let current_dir = env::current_dir().ok()?;
 
-        // Try various common config file locations
-        let candidates = vec![
-            current_dir.join(DEFAULT_CONFIG_FILENAME),
-            current_dir
-                .join(DEFAULT_CONFIG_DIR)
-                .join(DEFAULT_CONFIG_FILENAME),
-            dirs::config_dir()
-                .map(|d| d.join(DEFAULT_CONFIG_DIR).join(DEFAULT_CONFIG_FILENAME))
-                .unwrap_or_default(),
-            dirs::home_dir()
-                .map(|d| {
-                    d.join(format!(".{}", DEFAULT_CONFIG_DIR))
-                        .join(DEFAULT_CONFIG_FILENAME)
-                })
-                .unwrap_or_default(),
+        // Build candidate list, filtering out unavailable paths
+        // No unwrap_or_default() - skip unavailable directories instead
+        let mut candidates = vec![
+            Some(current_dir.join(DEFAULT_CONFIG_FILENAME)),
+            Some(
+                current_dir
+                    .join(DEFAULT_CONFIG_DIR)
+                    .join(DEFAULT_CONFIG_FILENAME),
+            ),
         ];
 
-        candidates.into_iter().find(|path| path.exists())
+        // Add XDG config dir if available (no fallback)
+        if let Some(config_dir) = dirs::config_dir() {
+            candidates.push(Some(
+                config_dir
+                    .join(DEFAULT_CONFIG_DIR)
+                    .join(DEFAULT_CONFIG_FILENAME),
+            ));
+        }
+
+        // Add home dir if available (no fallback)
+        if let Some(home_dir) = dirs::home_dir() {
+            candidates.push(Some(
+                home_dir
+                    .join(format!(".{}", DEFAULT_CONFIG_DIR))
+                    .join(DEFAULT_CONFIG_FILENAME),
+            ));
+        }
+
+        candidates
+            .into_iter()
+            .flatten() // Remove None values
+            .find(|path| path.exists())
     }
 
     /// Validate configuration values
@@ -296,7 +321,7 @@ impl ConfigBuilder {
         name: String,
         config: mcb_domain::value_objects::EmbeddingConfig,
     ) -> Self {
-        self.config.providers.embedding.insert(name, config);
+        self.config.providers.embedding.configs.insert(name, config);
         self
     }
 
@@ -306,7 +331,11 @@ impl ConfigBuilder {
         name: String,
         config: mcb_domain::value_objects::VectorStoreConfig,
     ) -> Self {
-        self.config.providers.vector_store.insert(name, config);
+        self.config
+            .providers
+            .vector_store
+            .configs
+            .insert(name, config);
         self
     }
 
@@ -316,8 +345,8 @@ impl ConfigBuilder {
         self
     }
 
-    /// Set cache configuration
-    pub fn with_cache(mut self, cache: crate::config::data::CacheConfig) -> Self {
+    /// Set cache system configuration
+    pub fn with_cache(mut self, cache: crate::config::data::CacheSystemConfig) -> Self {
         self.config.system.infrastructure.cache = cache;
         self
     }

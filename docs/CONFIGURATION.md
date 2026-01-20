@@ -1,409 +1,215 @@
-# Configuration Guide
+# Configuration Reference
 
-**MCP Context Browser**uses environment variables and configuration files for security-first setup. This guide documents all configuration options for production deployment.
+MCP Context Browser uses Figment for configuration management per [ADR-025](adr/025-figment-configuration.md).
 
-## Security Design Principles
+## Overview
 
-1.**No Hardcoded Credentials**- All secrets must come from environment or config files
-2.**Graceful Degradation**- Missing optional credentials disable features, never crash
-3.**Environment Variables First**- Configuration follows 12-factor app principles
-4.**Validation by Default**- All credentials validated at startup
-5.**Production Warnings**- Security issues logged at startup with clear guidance
+All configuration follows a strict precedence order (later sources override earlier):
 
-## Quick Start
+1.  **Default values** (built into code)
+2.  **TOML configuration file** (`mcb.toml`)
+3.  **Environment variables** (highest precedence)
 
-### Local Development (Auth Disabled)
+## Environment Variable Pattern
+
+All environment variables **MUST** follow the pattern:
+
+```
+MCP__<SECTION>__<SUBSECTION>__<KEY>
+```
+
+-   Double underscore (`__`) as separator
+-   Prefix is `MCP__` (not `MCB_`)
+-   Keys are lowercased during parsing
+
+### Examples
 
 ```bash
+# Embedding provider
+export MCP__PROVIDERS__EMBEDDING__PROVIDER=ollama
+export MCP__PROVIDERS__EMBEDDING__MODEL=nomic-embed-text
+export MCP__PROVIDERS__EMBEDDING__BASE_URL=http://localhost:11434
 
-# Minimal setup - auth disabled, all services optional
-cargo run
+# Vector store provider
+export MCP__PROVIDERS__VECTOR_STORE__PROVIDER=memory
+export MCP__PROVIDERS__VECTOR_STORE__DIMENSIONS=768
+
+# Authentication
+export MCP__AUTH__ENABLED=true
+export MCP__AUTH__JWT__SECRET=your-secret-at-least-32-characters-long
+
+# Admin API key
+export MCP__AUTH__ADMIN__ENABLED=true
+export MCP__AUTH__ADMIN__KEY=your-admin-api-key
+
+# Server
+export MCP__SERVER__NETWORK__PORT=8080
+export MCP__SERVER__NETWORK__HOST=127.0.0.1
+
+# Cache system
+export MCP__SYSTEM__INFRASTRUCTURE__CACHE__PROVIDER=Moka
+export MCP__SYSTEM__INFRASTRUCTURE__CACHE__ENABLED=true
+
+# File watching (for config hot-reload)
+export MCP__SYSTEM__DATA__SYNC__WATCHING_ENABLED=false
 ```
 
-### Production with Auth
+## Required Configuration
 
-```bash
+### Authentication (when enabled)
 
-# Set required credentials
-export ADMIN_USERNAME=admin
-export ADMIN_PASSWORD="your-secure-password"
-export JWT_SECRET="your-32-character-minimum-jwt-secret-key"
+When `auth.enabled = true`, the following **MUST** be configured:
 
-# Optional: enable database
-export DATABASE_URL="postgresql://user:pass@localhost:5432/mcp"
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `MCP__AUTH__JWT__SECRET` | **Yes** | JWT signing secret (minimum 32 characters) |
 
-# Run server
-cargo run --release
-```
+The JWT secret is intentionally not auto-generated. This ensures:
 
-## Configuration Priority
+-   No weak secrets in production
+-   Fail-fast behavior if config is missing
+-   Explicit security configuration
 
-1.**Environment Variables**- Highest priority (production)
-2.**Config File**- Secondary (optional `~/.config/mcp-context-browser/config.toml`)
-3.**Defaults**- Lowest priority (local development)
+### Providers
 
-## Environment Variables Reference
+When not using TOML configuration:
 
-### Admin Interface Configuration
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `MCP__PROVIDERS__EMBEDDING__PROVIDER` | Yes | Embedding provider name (`ollama`, `openai`, etc.) |
+| `MCP__PROVIDERS__VECTOR_STORE__PROVIDER` | Yes | Vector store provider name (`memory`, `milvus`, etc.) |
 
-**Required for Production**(if enabling admin dashboard)
+## TOML Configuration File
 
-| Variable | Type | Min Length | Default | Purpose |
-|----------|------|-----------|---------|---------|
-| `ADMIN_USERNAME` | String | 1 char | None | Admin login username |
-| `ADMIN_PASSWORD` | String | 8 chars | None | Admin login password |
-| `JWT_SECRET` | String | 32 chars | None | JWT signing secret |
-| `JWT_EXPIRATION` | u64 | 1+ | 3600 | Token expiration in seconds |
+Default search locations (in order):
 
-**Behavior:**
+1.  `./mcb.toml` (current directory)
+2.  `./mcb/mcb.toml` (mcb subdirectory)
+3.  `$XDG_CONFIG_HOME/mcb/mcb.toml` (XDG config directory)
+4.  `~/.mcb/mcb.toml` (home directory)
 
--   If ALL THREE (`ADMIN_USERNAME`, `ADMIN_PASSWORD`, `JWT_SECRET`) are set and valid:
--   ✅ Admin interface ENABLED
--   Admin user created automatically
--   Credentials stored securely
--   If ANY are missing or invalid:
--   ✅ Server starts normally
--   ❌ Admin interface DISABLED
--   **No error or crash**- graceful degradation
-
-**Example:**
-
-```bash
-export ADMIN_USERNAME="admin"
-export ADMIN_PASSWORD="secure-8-char-minimum-password"
-export JWT_SECRET="your-32-character-minimum-jwt-secret-key"
-export JWT_EXPIRATION="86400"  # 24 hours
-```
-
-### Authentication Configuration
-
-**Optional**(for API JWT authentication)
-
-| Variable | Type | Min Length | Default | Purpose |
-|----------|------|-----------|---------|---------|
-| `JWT_SECRET` | String | 32 chars | Empty | JWT signing secret (also used for admin) |
-| `ADMIN_PASSWORD` | String | 8 chars | Empty | Admin password (also used for admin) |
-
-**Behavior:**
-
--   If BOTH `JWT_SECRET` AND `ADMIN_PASSWORD` are set and valid:
--   ✅ Authentication ENABLED
--   Admin user created with hashed password
--   JWT tokens required for API access
--   If either is missing:
--   ✅ Authentication DISABLED
--   API endpoints accessible without auth
--   **No error or crash**- graceful degradation
-
-**Example:**
-
-```bash
-export JWT_SECRET="minimum-32-char-jwt-secret-key"
-export ADMIN_PASSWORD="min-8-char-password"
-```
-
-### Database Configuration
-
-**Optional**(PostgreSQL required only if database enabled)
-
-| Variable | Type | Min | Default | Purpose |
-|----------|------|-----|---------|---------|
-| `DATABASE_URL` | String | 1 | Empty | PostgreSQL connection String (`postgresql://user:pass@host:5432/db`) |
-| `DATABASE_MAX_CONNECTIONS` | u32 | 1 | 20 | Connection pool size |
-| `DATABASE_MIN_IDLE` | u32 | 0 | 5 | Minimum idle connections |
-| `DATABASE_MAX_LIFETIME_SECS` | u64 | 0 | 1800 | Max connection lifetime (seconds) |
-| `DATABASE_IDLE_TIMEOUT_SECS` | u64 | 0 | 600 | Idle timeout (seconds) |
-| `DATABASE_CONNECTION_TIMEOUT_SECS` | u64 | 0 | 30 | Connection timeout (seconds) |
-
-**Behavior:**
-
--   If `DATABASE_URL` is set and valid:
--   ✅ Database ENABLED
--   Connection pool created with specified parameters
--   Health checks performed at startup
--   If `DATABASE_URL` is empty or missing:
--   ✅ Database DISABLED
--   All database operations use in-memory fallbacks
--   **No error or crash**- graceful degradation
-
-**Example:**
-
-```bash
-export DATABASE_URL="postgresql://user:password@localhost:5432/mcp_context"
-export DATABASE_MAX_CONNECTIONS="30"
-export DATABASE_MIN_IDLE="10"
-export DATABASE_MAX_LIFETIME_SECS="1800"
-export DATABASE_IDLE_TIMEOUT_SECS="600"
-export DATABASE_CONNECTION_TIMEOUT_SECS="30"
-```
-
-### Vector Store Configuration
-
-**Optional**(defaults to in-memory if not configured)
-
-| Variable | Type | Default | Purpose |
-|----------|------|---------|---------|
-| `VECTOR_STORE_PROVIDER` | String | `in-memory` | Vector store backend: `in-memory`, `encrypted`, `null` |
-
-> **Note**: Additional vector stores (Milvus, EdgeVec, Filesystem) are planned for v0.2.0+. Currently only 3 providers are implemented.
-
-**Example:**
-
-```bash
-export VECTOR_STORE_PROVIDER="in-memory"
-```
-
-### Embedding Provider Configuration
-
-**Optional**(defaults to Ollama if not configured)
-
-| Variable | Type | Default | Purpose |
-|----------|------|---------|---------|
-| `EMBEDDING_PROVIDER` | String | `ollama` | Embedding provider: `ollama`, `openai`, `voyageai`, `gemini` |
-| `OLLAMA_BASE_URL` | String | `http://localhost:11434` | Ollama server URL |
-| `OLLAMA_MODEL` | String | `nomic-embed-text` | Model name for Ollama |
-| `OPENAI_API_KEY` | String | Empty | OpenAI API key (required for OpenAI provider) |
-| `VOYAGEAI_API_KEY` | String | Empty | VoyageAI API key (required for voyageai provider) |
-| `GEMINI_API_KEY` | String | Empty | Google Gemini API key (required for gemini provider) |
-
-**Example:**
-
-```bash
-export EMBEDDING_PROVIDER="ollama"
-export OLLAMA_BASE_URL="http://localhost:11434"
-export OLLAMA_MODEL="nomic-embed-text"
-```
-
-### Server Configuration
-
-**Optional**(defaults provided)
-
-| Variable | Type | Default | Purpose |
-|----------|------|---------|---------|
-| `SERVER_HOST` | String | `0.0.0.0` | Server bind address |
-| `SERVER_PORT` | u16 | `3000` | Server port |
-| `METRICS_PORT` | u16 | `3001` | Metrics/admin HTTP port |
-| `MCP__TRANSPORT__MODE` | String | `Hybrid` | Transport mode: `Stdio`, `Http`, `Hybrid` |
-
-**Example:**
-
-```bash
-export SERVER_HOST="127.0.0.1"
-export SERVER_PORT="3000"
-export METRICS_PORT="3001"
-export MCP__TRANSPORT__MODE="Hybrid"
-```
-
-## Configuration Files
-
-### Default Location
-
-```
-~/.config/mcp-context-browser/config.toml
-```
-
-### Example Configuration File
+### Example `mcb.toml`
 
 ```toml
-[server]
-host = "0.0.0.0"
-port = 3000
+[server.network]
+host = "127.0.0.1"
+port = 8080
 
-[metrics]
+[server.ssl]
+https = false
+
+[auth]
 enabled = true
-port = 3001
 
-[providers]
-embedding_provider = "ollama"
-vector_store_provider = "milvus"
+[auth.jwt]
+secret = "your-secret-at-least-32-characters-long"
+expiration_secs = 86400
 
-[database]
+[auth.admin]
 enabled = false
-max_connections = 20
+header = "X-Admin-Key"
+# key = "your-admin-key"  # Optional
 
-[cache]
+[providers.embedding]
+provider = "ollama"
+model = "nomic-embed-text"
+base_url = "http://localhost:11434"
+
+[providers.vector_store]
+provider = "memory"
+dimensions = 768
+
+[system.infrastructure.cache]
 enabled = true
-ttl_seconds = 3600
+provider = "Moka"
+default_ttl_secs = 3600
+max_size = 104857600  # 100MB
+
+[system.data.sync]
+enabled = true
+watching_enabled = true  # Set to false in containers
 ```
 
-## Startup Security Checks
+## Migration from Previous Versions
 
-At server startup, the following security validations occur:
+### Deprecated Environment Variables
 
-### Admin Configuration
+The following environment variables are **no longer supported**:
 
-```
-✅ If all credentials present and valid:
--   Admin username: validated (non-empty)
--   Admin password: validated (8+ chars)
--   JWT secret: validated (32+ chars)
--   Password: hashed with Argon2id
-   → Admin interface ENABLED
+| Old Variable | New Variable | Notes |
+|-------------|--------------|-------|
+| `MCB_ADMIN_API_KEY` | `MCP__AUTH__ADMIN__KEY` | Prefix changed to `MCP__` |
+| `DISABLE_CONFIG_WATCHING` | `MCP__SYSTEM__DATA__SYNC__WATCHING_ENABLED=false` | Now part of config |
 
-❌ If any credential invalid:
--   Error logged and ADMIN DISABLED
--   Server continues normally
-```
+### Breaking Changes in v0.1.2
 
-### Authentication Configuration
+1.  **JWT Secret Required**: The default JWT secret is now empty. When authentication is enabled, you **must** configure `MCP__AUTH__JWT__SECRET` with at least 32 characters.
 
-```
-✅ If JWT secret and admin password valid:
--   JWT secret length: validated (32+ chars)
--   Auth ENABLED for API endpoints
+2.  **Environment Variable Prefix**: All environment variables now use `MCP__` prefix (double underscore) instead of `MCB_`.
 
-❌ If invalid:
--   Auth DISABLED
--   API endpoints accessible without auth
-```
+3.  **Config Watching**: File watching is now configured via `watching_enabled` in config instead of an environment variable.
 
-### Database Configuration
+## Validation
 
-```
-✅ If DATABASE_URL is set:
--   Connection string validated
--   Pool created with configured parameters
--   Health check performed
--   Database ENABLED
+Configuration is validated at startup. The following cause startup failure:
 
-❌ If DATABASE_URL is empty:
--   Database DISABLED
--   In-memory fallback used
-```
+1.  **Server port 0** when not using random port allocation
+2.  **HTTPS enabled without SSL certificate/key paths**
+3.  **Auth enabled with empty/short JWT secret** (< 32 chars)
+4.  **Cache enabled with TTL = 0**
+5.  **Memory/CPU limit = 0**
+6.  **Daemon enabled with max_restart_attempts = 0**
+7.  **Backup enabled with interval = 0**
+8.  **Operations tracking enabled with cleanup_interval = 0 or retention = 0**
 
-## Security Warnings
+## Provider Configuration
 
-The server logs security issues at startup. Common warnings:
+### Embedding Providers
 
-### Critical (Application blocks)
+| Provider | Required Config |
+|----------|-----------------|
+| `ollama` | `base_url`, `model` |
+| `openai` | `api_key`, `model` |
+| `voyageai` | `api_key`, `model` |
+| `gemini` | `api_key` |
+| `fastembed` | (none) |
+| `null` | (none, for testing) |
 
-```
-[SECURITY] ADMIN_INTERFACE_DISABLED: Admin credentials required
-[SECURITY] INSECURE_JWT_SECRET: JWT secret < 32 characters
-```
+### Vector Store Providers
 
-### High (Should fix)
+| Provider | Required Config |
+|----------|-----------------|
+| `memory` | (none) |
+| `milvus` | `address` |
+| `filesystem` | `address` (path) |
+| `edgevec` | `address` (path) |
+| `null` | (none, for testing) |
 
-```
-[SECURITY] WEAK_PASSWORD: Admin password < 8 characters
-[SECURITY] MISSING_DATABASE_URL: Database not configured
-```
+### Cache Providers
 
-### Info (Monitor)
+| Provider | Required Config |
+|----------|-----------------|
+| `moka` | (none) |
+| `redis` | `redis_url` |
+| `null` | (none, for testing) |
 
-```
-[SECURITY] AUTH_DISABLED: Authentication not configured
-[SECURITY] ADMIN_INTERFACE_DISABLED: Admin not configured
-```
+## Debugging Configuration
 
-## Production Deployment Checklist
-
--   [ ]**Admin Credentials**
--   [ ] Set `ADMIN_USERNAME` (non-empty)
--   [ ] Set `ADMIN_PASSWORD` (8+ chars, complex)
--   [ ] Set `JWT_SECRET` (32+ chars, random)
--   [ ] Verify admin interface starts with `✅ Admin interface enabled`
-
--   [ ]**Authentication**
--   [ ] JWT tokens working for API access
--   [ ] Token expiration set appropriately
--   [ ] Revocation working (if needed)
-
--   [ ]**Database**(if using PostgreSQL)
--   [ ] Set `DATABASE_URL` with production credentials
--   [ ] Connection pool parameters tuned
--   [ ] Health checks passing
--   [ ] Backups configured
-
--   [ ]**Embedding & Vector Stores**
--   [ ] Embedding provider configured
--   [ ] Vector store accessible
--   [ ] Indexing working
-
--   [ ]**Monitoring**
--   [ ] Metrics endpoint accessible
--   [ ] Logs configured
--   [ ] Alerts set up
-
--   [ ]**Security**
--   [ ] No hardcoded credentials in code
--   [ ] Environment variables validated
--   [ ] Secrets stored securely
--   [ ] HTTPS enabled (if exposed publicly)
-
-## Troubleshooting
-
-### Admin Interface Not Appearing
-
-**Cause:**Missing or invalid credentials
+To see the loaded configuration at startup, set:
 
 ```bash
-
-# Check what's configured
-echo "ADMIN_USERNAME: $ADMIN_USERNAME"
-echo "ADMIN_PASSWORD: ${ADMIN_PASSWORD:0:5}***"
-echo "JWT_SECRET: ${JWT_SECRET:0:5}***"
-
-# JWT_SECRET must be 32+ chars
-if [ ${#JWT_SECRET} -lt 32 ]; then
-  echo "ERROR: JWT_SECRET too short (${#JWT_SECRET} < 32)"
-fi
-
-# Password must be 8+ chars
-if [ ${#ADMIN_PASSWORD} -lt 8 ]; then
-  echo "ERROR: ADMIN_PASSWORD too short (${#ADMIN_PASSWORD} < 8)"
-fi
+export RUST_LOG=mcb_infrastructure::config=debug
 ```
 
-### Database Connection Failed
-
-**Cause:**Invalid `DATABASE_URL`
-
-```bash
-
-# Verify connection string format
-
-# postgresql://username:password@hostname:5432/database
-
-# Test connection manually
-psql "$DATABASE_URL" -c "SELECT version();"
-```
-
-### Authentication Not Working
-
-**Cause:**JWT_SECRET not set or too short
-
-```bash
-
-# Generate secure JWT secret (32+ chars)
-openssl rand -base64 32
-
-# Set it
-export JWT_SECRET="$(openssl rand -base64 32)"
-```
-
-### High Memory Usage
-
-**Cause:**Connection pool or cache too large
-
-```bash
-
-# Reduce connection pool
-export DATABASE_MAX_CONNECTIONS="10"
-
-# Reduce cache TTL
-export CACHE_TTL_SECONDS="1800"
-```
+This will log which config file was loaded and from where.
 
 ## Related Documentation
 
 -   [Architecture Overview](./architecture/ARCHITECTURE.md) - v0.1.2 Eight-Crate Structure
--   [ADR-012: Two-Layer DI Strategy](./adr/012-di-strategy-two-layer-approach.md) - Configuration-driven provider factories
--   [ADR-013: Clean Architecture Crate Separation](./adr/013-clean-architecture-crate-separation.md) - Crate organization
--   [Deployment Guide](./operations/DEPLOYMENT.md) - Production deployment
--   [Module: Infrastructure](./modules/infrastructure.md) - Configuration management in `mcb-infrastructure`
+-   [ADR-025: Figment Configuration](./adr/025-figment-configuration.md) - Configuration management
+-   [ADR-029: Hexagonal Architecture](./adr/029-hexagonal-architecture-dill.md) - DI and provider patterns
 
 ---
 
-**Last Updated:** 2026-01-18
+**Last Updated:** 2026-01-20
 **Version:** 0.1.2

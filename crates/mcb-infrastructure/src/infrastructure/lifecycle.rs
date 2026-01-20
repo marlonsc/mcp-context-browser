@@ -55,7 +55,7 @@
 
 use dashmap::DashMap;
 use mcb_application::ports::admin::{
-    DependencyHealthCheck, LifecycleManaged, ServiceState as PortServiceState, ShutdownCoordinator,
+    DependencyHealthCheck, LifecycleManaged, PortServiceState, ShutdownCoordinator,
 };
 use mcb_application::ports::infrastructure::EventBusProvider;
 use mcb_domain::events::{DomainEvent, ServiceState as EventServiceState};

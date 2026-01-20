@@ -99,7 +99,3 @@ pub mod hybrid_search;
 // Re-export hybrid search providers when feature is enabled
 #[cfg(feature = "hybrid-search")]
 pub use hybrid_search::{HybridSearchEngine, NullHybridSearchProvider};
-
-// Internal tests module (can access crate internals)
-#[cfg(test)]
-mod tests;

@@ -255,6 +255,12 @@ pub const MILVUS_METADATA_VARCHAR_MAX_LENGTH: i32 = 65535;
 /// Milvus IvfFlat nlist parameter
 pub const MILVUS_IVFFLAT_NLIST: u32 = 128;
 
+/// Milvus default port
+pub const MILVUS_DEFAULT_PORT: u16 = 19530;
+
+/// Milvus default query limit for aggregation queries
+pub const MILVUS_DEFAULT_QUERY_LIMIT: i64 = 10_000;
+
 // ============================================================================
 // HYBRID SEARCH CONSTANTS
 // ============================================================================

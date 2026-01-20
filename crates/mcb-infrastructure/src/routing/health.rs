@@ -33,6 +33,28 @@ impl Default for ProviderHealthData {
 }
 
 /// Health monitor interface for DI
+///
+/// # Example
+///
+/// ```ignore
+/// // Get health status of a provider
+/// let status = monitor.get_health("ollama-embedding");
+/// match status {
+///     ProviderHealthStatus::Healthy => println!("Provider is healthy"),
+///     ProviderHealthStatus::Degraded => println!("Provider is degraded"),
+///     ProviderHealthStatus::Unhealthy => println!("Provider is unhealthy"),
+/// }
+///
+/// // Record operation results
+/// monitor.record_success("ollama-embedding");
+/// monitor.record_failure("milvus-store");
+///
+/// // Get all health statuses
+/// let all_health = monitor.get_all_health();
+/// for (provider, status) in all_health {
+///     println!("{}: {:?}", provider, status);
+/// }
+/// ```
 #[async_trait]
 pub trait HealthMonitor: Send + Sync {
     /// Get health status for a provider

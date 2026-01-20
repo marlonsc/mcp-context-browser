@@ -61,7 +61,3 @@ pub use utils::TimedOperation;
 
 // Provider registration happens automatically via linkme distributed slices
 // when mcb-providers is compiled as a dependency
-
-// Internal tests module (can access pub(crate) items)
-#[cfg(test)]
-mod tests;

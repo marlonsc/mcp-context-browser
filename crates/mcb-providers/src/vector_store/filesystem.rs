@@ -150,6 +150,10 @@ mod file_utils {
     }
 }
 
+// =============================================================================
+// Core implementation - Constructor
+// =============================================================================
+
 impl FilesystemVectorStore {
     /// Create a new filesystem vector store
     pub async fn new(config: FilesystemVectorStoreConfig) -> Result<Self> {
@@ -167,7 +171,13 @@ impl FilesystemVectorStore {
 
         Ok(store)
     }
+}
 
+// =============================================================================
+// State Management - Load and save collection state to disk
+// =============================================================================
+
+impl FilesystemVectorStore {
     /// Load existing state from disk for a collection
     async fn load_collection_state(&self, collection: &str) -> Result<()> {
         // Load global index
@@ -248,7 +258,13 @@ impl FilesystemVectorStore {
         }
         Ok(())
     }
+}
 
+// =============================================================================
+// Shard Management - Path utilities, allocation, and capacity
+// =============================================================================
+
+impl FilesystemVectorStore {
     /// Get shard file path for a collection
     fn get_shard_path(&self, collection: &str, shard_id: u32) -> PathBuf {
         self.config
@@ -290,6 +306,39 @@ impl FilesystemVectorStore {
         Ok(())
     }
 
+    /// Find optimal shard for new vector
+    fn find_optimal_shard(&self, collection: &str) -> u32 {
+        // Find shard with most available capacity
+        let mut best_shard = None;
+        let mut min_vectors = usize::MAX;
+
+        for r in self.shard_cache.iter() {
+            let (c, shard_id) = r.key();
+            if c == collection {
+                let metadata = r.value();
+                if metadata.vector_count < self.config.max_vectors_per_shard
+                    && metadata.vector_count < min_vectors
+                {
+                    min_vectors = metadata.vector_count;
+                    best_shard = Some(*shard_id);
+                }
+            }
+        }
+
+        if let Some(shard_id) = best_shard {
+            shard_id
+        } else {
+            // Allocate new shard
+            self.allocate_shard_id(collection)
+        }
+    }
+}
+
+// =============================================================================
+// Vector I/O - Read and write vectors to shard files
+// =============================================================================
+
+impl FilesystemVectorStore {
     /// Write vector to shard
     async fn write_vector_to_shard(
         &self,
@@ -380,34 +429,13 @@ impl FilesystemVectorStore {
         .map_err(|e| Error::internal(format!("Blocking task failed: {}", e)))?
         .map_err(|e: std::io::Error| Error::io(format!("Failed to read from shard: {}", e)))
     }
+}
 
-    /// Find optimal shard for new vector
-    fn find_optimal_shard(&self, collection: &str) -> u32 {
-        // Find shard with most available capacity
-        let mut best_shard = None;
-        let mut min_vectors = usize::MAX;
+// =============================================================================
+// Search - Similarity search implementations
+// =============================================================================
 
-        for r in self.shard_cache.iter() {
-            let (c, shard_id) = r.key();
-            if c == collection {
-                let metadata = r.value();
-                if metadata.vector_count < self.config.max_vectors_per_shard
-                    && metadata.vector_count < min_vectors
-                {
-                    min_vectors = metadata.vector_count;
-                    best_shard = Some(*shard_id);
-                }
-            }
-        }
-
-        if let Some(shard_id) = best_shard {
-            shard_id
-        } else {
-            // Allocate new shard
-            self.allocate_shard_id(collection)
-        }
-    }
-
+impl FilesystemVectorStore {
     /// Perform similarity search using brute force
     async fn brute_force_search(
         &self,
@@ -461,7 +489,13 @@ impl FilesystemVectorStore {
 
         Ok(results)
     }
+}
 
+// =============================================================================
+// Math Utilities - Vector operations and conversions
+// =============================================================================
+
+impl FilesystemVectorStore {
     /// Calculate cosine similarity between two vectors
     fn cosine_similarity(&self, a: &[f32], b: &[f32]) -> f32 {
         let (dot_product, norm_a, norm_b) = a

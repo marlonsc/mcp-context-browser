@@ -9,9 +9,17 @@ mod test_utils;
 mod tools;
 
 // Golden acceptance tests
-#[path = "integration/golden_acceptance.rs"]
-mod golden_acceptance;
+#[path = "integration/golden_acceptance_integration.rs"]
+mod golden_acceptance_integration;
 
-// Browse API tests
-#[path = "integration/browse_api_test.rs"]
-mod browse_api_test;
+// Browse API integration tests
+#[path = "integration/browse_api_integration.rs"]
+mod browse_api_integration;
+
+// Full-stack DI integration tests
+#[path = "integration/full_stack_integration.rs"]
+mod full_stack_integration;
+
+// Error recovery tests
+#[path = "integration/error_recovery_test.rs"]
+mod error_recovery_test;

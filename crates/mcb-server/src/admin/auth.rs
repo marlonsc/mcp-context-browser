@@ -7,7 +7,7 @@
 //!
 //! Authentication can be configured via:
 //! - Config file: `auth.admin.enabled = true` and `auth.admin.key = "your-key"`
-//! - Environment variable: `MCB_ADMIN_API_KEY=your-key`
+//! - Environment variable: `MCP__AUTH__ADMIN__KEY=your-key`
 //!
 //! # Unauthenticated Routes
 //!
@@ -95,7 +95,7 @@ impl AuthErrorResponse {
             Json(Self {
                 error: "auth_not_configured",
                 message: "Admin authentication is enabled but no API key is configured. \
-                         Set MCB_ADMIN_API_KEY environment variable or auth.admin.key in config."
+                         Set MCP__AUTH__ADMIN__KEY environment variable or auth.admin.key in config."
                     .to_string(),
             }),
         )

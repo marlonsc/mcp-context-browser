@@ -6,17 +6,17 @@
 
 > Not yet implemented. Key dependencies:
 >
-> - v0.1.2 basic browse feature (REST APIs + UI pages)
-> - Syntax highlighting library integration
-> - Optional: Language Server Protocol support
+> -   v0.1.2 basic browse feature (REST APIs + UI pages)
+> -   Syntax highlighting library integration
+> -   Optional: Language Server Protocol support
 >
 > **v0.1.2 Foundation (Implemented)**:
 >
-> - `crates/mcb-domain/src/ports/providers/vector_store.rs` - VectorStoreBrowser trait
-> - `crates/mcb-domain/src/value_objects/browse.rs` - CollectionInfo struct
-> - `crates/mcb-providers/src/vector_store/*.rs` - 6 provider implementations
-> - `crates/mcb-server/src/admin/browse_handlers.rs` - REST API handlers
-> - `crates/mcb-server/src/admin/web/templates/browse*.html` - UI pages
+> -   `crates/mcb-domain/src/ports/providers/vector_store.rs` - VectorStoreBrowser trait
+> -   `crates/mcb-domain/src/value_objects/browse.rs` - CollectionInfo struct
+> -   `crates/mcb-providers/src/vector_store/*.rs` - 6 provider implementations
+> -   `crates/mcb-server/src/admin/browse_handlers.rs` - REST API handlers
+> -   `crates/mcb-server/src/admin/web/templates/browse*.html` - UI pages
 
 ## Context
 
@@ -24,19 +24,19 @@ v0.1.2 provides basic code browsing with file listing and chunk display. Users n
 
 **Current v0.1.2 capabilities:**
 
-- List indexed collections with stats (vector count, file count, provider)
-- List files in a collection with language badges
-- View code chunks with Prism.js syntax highlighting
-- Navigate via breadcrumbs and nav links
+-   List indexed collections with stats (vector count, file count, provider)
+-   List files in a collection with language badges
+-   View code chunks with Prism.js syntax highlighting
+-   Navigate via breadcrumbs and nav links
 
 **User demand for v0.2.0:**
 
-- Tree view navigation for large codebases
-- Full syntax highlighting with line numbers
-- Inline search result highlighting
-- Chunk metadata panel with embedding stats
-- Diff view between indexed versions
-- Keyboard shortcuts for power users
+-   Tree view navigation for large codebases
+-   Full syntax highlighting with line numbers
+-   Inline search Result highlighting
+-   Chunk metadata panel with embedding stats
+-   Diff view between indexed versions
+-   Keyboard shortcuts for power users
 
 ## Decision
 
@@ -44,83 +44,83 @@ Implement advanced code browser in v0.2.0 with IDE-like capabilities:
 
 ### 1. Navigation Features
 
-- **Tree view** with collapsible directories
-- **Breadcrumb navigation** for file paths
-- **Quick file search** (fuzzy match on indexed files)
-- **Recent files** and **favorites**
-- **Keyboard shortcuts** (vim-like optional)
+-   **Tree view** with collapsible directories
+-   **Breadcrumb navigation** for file paths
+-   **Quick file search** (fuzzy match on indexed files)
+-   **Recent files** and **favorites**
+-   **Keyboard shortcuts** (vim-like optional)
 
 ### 2. Code Display
 
-- **Full syntax highlighting** (tree-sitter based, not regex)
-- **Line numbers** with clickable links
-- **Chunk boundaries** visually marked
-- **Minimap** for large files
-- **Word wrap** toggle
+-   **Full syntax highlighting** (tree-sitter based, not regex)
+-   **Line numbers** with clickable links
+-   **Chunk boundaries** visually marked
+-   **Minimap** for large files
+-   **Word wrap** toggle
 
 ### 3. Search Integration
 
-- **Inline semantic search** results highlighted in code
-- **Jump to chunk** from search results
-- **Related chunks** suggestions
-- **Similarity score** visualization
+-   **Inline semantic search** results highlighted in code
+-   **Jump to chunk** from search results
+-   **Related chunks** suggestions
+-   **Similarity score** visualization
 
 ### 4. Metadata Panel
 
-- **Chunk details**: ID, lines, language, embedding stats
-- **File metadata**: size, modification time, chunk count
-- **Collection stats**: total vectors, dimensions, provider
+-   **Chunk details**: ID, lines, language, embedding stats
+-   **File metadata**: size, modification time, chunk count
+-   **Collection stats**: total vectors, dimensions, provider
 
 ### 5. Advanced Features
 
-- **Diff view** between indexed versions (if git-aware indexing enabled)
-- **Export** chunks as JSON/Markdown
-- **Share link** to specific chunk/line
-- **Dark mode** toggle
-- **Mobile responsive** layout
+-   **Diff view** between indexed versions (if git-aware indexing enabled)
+-   **Export** chunks as JSON/Markdown
+-   **Share link** to specific chunk/line
+-   **Dark mode** toggle
+-   **Mobile responsive** layout
 
 ### 6. Performance
 
-- **Virtual scrolling** for large files
-- **Lazy loading** chunks on scroll
-- **Client-side caching** of viewed files
-- **WebSocket** for real-time index updates
+-   **Virtual scrolling** for large files
+-   **Lazy loading** chunks on scroll
+-   **Client-side caching** of viewed files
+-   **WebSocket** for real-time index updates
 
 ## Consequences
 
 ### Positive
 
-- **Better UX**: Developers can explore indexed code naturally
-- **Discovery**: Related code surfaces through navigation
-- **Debugging**: Easier to understand what's indexed
-- **Adoption**: Lower barrier to entry
+-   **Better UX**: Developers can explore indexed code naturally
+-   **Discovery**: Related code surfaces through navigation
+-   **Debugging**: Easier to understand what's indexed
+-   **Adoption**: Lower barrier to entry
 
 ### Negative
 
-- **Complexity**: ~3000+ LOC for full implementation
-- **Dependencies**: Additional JS libraries
-- **Maintenance**: UI requires more testing
-- **Performance**: Tree rendering for huge codebases
+-   **Complexity**: ~3000+ LOC for full implementation
+-   **Dependencies**: Additional JS libraries
+-   **Maintenance**: UI requires more testing
+-   **Performance**: Tree rendering for huge codebases
 
 ## Alternatives Considered
 
 ### Alternative 1: Monaco Editor Integration
 
-- **Pros**: Full IDE experience, LSP support
-- **Cons**: Heavy dependency (~2MB), complex integration
-- **Deferred**: Consider for v0.3.0
+-   **Pros**: Full IDE experience, LSP support
+-   **Cons**: Heavy dependency (~2MB), complex integration
+-   **Deferred**: Consider for v0.3.0
 
 ### Alternative 2: CodeMirror 6
 
-- **Pros**: Lightweight, extensible
-- **Cons**: Still requires significant JS
-- **Partially accepted**: Good fallback option
+-   **Pros**: Lightweight, extensible
+-   **Cons**: Still requires significant JS
+-   **Partially accepted**: Good fallback Option
 
 ### Alternative 3: Keep Basic Browse
 
-- **Pros**: Simplicity, minimal maintenance
-- **Cons**: Does not meet user demand for exploration
-- **Rejected**: Essential for adoption
+-   **Pros**: Simplicity, minimal maintenance
+-   **Cons**: Does not meet user demand for exploration
+-   **Rejected**: Essential for adoption
 
 ## Implementation Notes
 
@@ -170,9 +170,9 @@ pub struct ChunkHighlight {
 
 **Features:**
 
-- Full syntax highlighting with tree-sitter
-- Chunk boundary markers (CSS borders/backgrounds)
-- Line linking (click to share URL)
+-   Full syntax highlighting with tree-sitter
+-   Chunk boundary markers (CSS borders/backgrounds)
+-   Line linking (click to share URL)
 
 ### Phase 3: Search Integration
 
@@ -190,16 +190,16 @@ pub async fn search_in_collection(
 
 **Features:**
 
-- Inline result highlighting
-- Related chunks sidebar
-- Similarity score badges
+-   Inline Result highlighting
+-   Related chunks sidebar
+-   Similarity score badges
 
 ### Phase 4: Advanced UX
 
-- Keyboard navigation (j/k for scroll, Enter to open)
-- Minimap for large files
-- Dark mode with CSS variables
-- Responsive layout for mobile
+-   Keyboard navigation (j/k for scroll, Enter to open)
+-   Minimap for large files
+-   Dark mode with CSS variables
+-   Responsive layout for mobile
 
 ### Phase 5: Real-time Features
 
@@ -212,9 +212,9 @@ pub fn browse_events(name: &str) -> EventStream![Event + '_]
 
 **Events:**
 
-- `IndexingProgress` - Show progress during indexing
-- `ChunkAdded` - Update file view when new chunks indexed
-- `CollectionUpdated` - Refresh stats
+-   `IndexingProgress` - Show progress during indexing
+-   `ChunkAdded` - Update file view when new chunks indexed
+-   `CollectionUpdated` - Refresh stats
 
 ## Files to Create (v0.2.0)
 
@@ -251,39 +251,39 @@ pub fn browse_events(name: &str) -> EventStream![Event + '_]
 
 **JavaScript Libraries (CDN):**
 
-- Alpine.js (client state, tree view)
-- Prism.js (syntax highlighting - already in v0.1.2)
-- Optional: Monaco Editor (v0.3.0)
+-   Alpine.js (client state, tree view)
+-   Prism.js (syntax highlighting - already in v0.1.2)
+-   Optional: Monaco Editor (v0.3.0)
 
 **Rust Crates (existing):**
 
-- rocket (web framework)
-- serde (JSON serialization)
+-   rocket (web framework)
+-   serde (JSON serialization)
 
 ## Technical Approach
 
 ### Frontend
 
-- **HTMX** for server-driven updates (keep consistency with v0.1.2)
-- **Alpine.js** for complex client state (tree view, keyboard nav)
-- **Prism.js** or **highlight.js** for syntax highlighting
-- **CSS Variables** for theming (dark mode)
+-   **HTMX** for server-driven updates (keep consistency with v0.1.2)
+-   **Alpine.js** for complex client state (tree view, keyboard nav)
+-   **Prism.js** or **highlight.js** for syntax highlighting
+-   **CSS Variables** for theming (dark mode)
 
 ### Backend
 
-- New endpoints for tree structure
-- Chunk streaming for large files
-- WebSocket endpoint for live updates
+-   New endpoints for tree structure
+-   Chunk streaming for large files
+-   WebSocket endpoint for live updates
 
 ## Related ADRs
 
-- [ADR-007: Integrated Web Administration Interface](007-integrated-web-administration-interface.md) - Base admin UI
-- [ADR-008: Git-Aware Semantic Indexing](008-git-aware-semantic-indexing-v0.2.0.md) - Git metadata for diff view
-- [ADR-026: Routing Refactor Rocket](026-routing-refactor-rocket-poem.md) - Rocket web framework
+-   [ADR-007: Integrated Web Administration Interface](007-integrated-web-administration-interface.md) - Base admin UI
+-   [ADR-008: Git-Aware Semantic Indexing](008-git-aware-semantic-indexing-v0.2.0.md) - Git metadata for diff view
+-   [ADR-026: Routing Refactor Rocket](026-routing-refactor-rocket-poem.md) - Rocket web framework
 
 ## References
 
-- [HTMX Documentation](https://htmx.org/docs/)
-- [Alpine.js Guide](https://alpinejs.dev/start-here)
-- [Prism.js](https://prismjs.com/)
-- [Tree-sitter](https://tree-sitter.github.io/tree-sitter/)
+-   [HTMX Documentation](https://htmx.org/docs/)
+-   [Alpine.js Guide](https://alpinejs.dev/start-here)
+-   [Prism.js](https://prismjs.com/)
+-   [Tree-sitter](https://tree-sitter.github.io/tree-sitter/)
