@@ -52,11 +52,14 @@ async fn test_index_codebase_nonexistent_path() {
 
     let result = handler.handle(Parameters(args)).await;
 
-    // Should return a success result with error message (not an MCP error)
+    // Should return a result indicating an error (path doesn't exist)
     assert!(result.is_ok());
     let response = result.expect("Expected response");
-    // The response content should indicate path doesn't exist
-    assert!(!response.is_error.unwrap_or(false));
+    // Nonexistent path should be reported as an error
+    assert!(
+        response.is_error.unwrap_or(false),
+        "Nonexistent path should return is_error: true"
+    );
 }
 
 #[tokio::test]

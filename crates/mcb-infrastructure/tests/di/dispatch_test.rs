@@ -163,15 +163,52 @@ async fn test_infrastructure_services_from_catalog() {
         .expect("Should initialize successfully");
 
     // Verify infrastructure services are accessible
-    let _auth = app_context.auth();
-    let _event_bus = app_context.event_bus();
-    let _metrics = app_context.metrics();
-    let _sync = app_context.sync();
-    let _snapshot = app_context.snapshot();
-    let _shutdown = app_context.shutdown();
-    let _performance = app_context.performance();
-    let _indexing = app_context.indexing();
+    // Arc<dyn Trait> types have a strong_count >= 1 if valid
+    let auth = app_context.auth();
+    assert!(
+        std::sync::Arc::strong_count(&auth) >= 1,
+        "Auth service should have valid Arc reference"
+    );
 
-    // All should be non-null (they're Arc<dyn Trait>)
-    // If any were missing from the catalog, get() would panic
+    let event_bus = app_context.event_bus();
+    assert!(
+        std::sync::Arc::strong_count(&event_bus) >= 1,
+        "EventBus service should have valid Arc reference"
+    );
+
+    let metrics = app_context.metrics();
+    assert!(
+        std::sync::Arc::strong_count(&metrics) >= 1,
+        "Metrics service should have valid Arc reference"
+    );
+
+    let sync = app_context.sync();
+    assert!(
+        std::sync::Arc::strong_count(&sync) >= 1,
+        "Sync service should have valid Arc reference"
+    );
+
+    let snapshot = app_context.snapshot();
+    assert!(
+        std::sync::Arc::strong_count(&snapshot) >= 1,
+        "Snapshot service should have valid Arc reference"
+    );
+
+    let shutdown = app_context.shutdown();
+    assert!(
+        std::sync::Arc::strong_count(&shutdown) >= 1,
+        "Shutdown service should have valid Arc reference"
+    );
+
+    let performance = app_context.performance();
+    assert!(
+        std::sync::Arc::strong_count(&performance) >= 1,
+        "Performance service should have valid Arc reference"
+    );
+
+    let indexing = app_context.indexing();
+    assert!(
+        std::sync::Arc::strong_count(&indexing) >= 1,
+        "Indexing service should have valid Arc reference"
+    );
 }

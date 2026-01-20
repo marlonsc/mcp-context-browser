@@ -12,6 +12,7 @@ VERSION := $(shell grep '^version' crates/mcb/Cargo.toml | head -1 | sed 's/.*"\
 # Installation directory
 INSTALL_DIR := $(HOME)/.claude/servers/claude-context-mcp
 SERVICE_NAME := claude-context-daemon.service
+BINARY_NAME := mcb-server
 
 # =============================================================================
 # RELEASE - Full release pipeline
@@ -25,9 +26,9 @@ release: ## Full release pipeline (lint + test + validate + build)
 	@$(MAKE) build RELEASE=1
 	@echo "Packaging..."
 	@mkdir -p dist
-	@cp target/release/mcp-context-browser dist/ 2>/dev/null || echo "Binary not found"
-	@cd dist && tar -czf mcp-context-browser-$(VERSION).tar.gz mcp-context-browser 2>/dev/null || true
-	@echo "Release v$(VERSION) ready: dist/mcp-context-browser-$(VERSION).tar.gz"
+	@cp target/release/$(BINARY_NAME) dist/ 2>/dev/null || echo "Binary not found"
+	@cd dist && tar -czf $(BINARY_NAME)-$(VERSION).tar.gz $(BINARY_NAME) 2>/dev/null || true
+	@echo "Release v$(VERSION) ready: dist/$(BINARY_NAME)-$(VERSION).tar.gz"
 
 # =============================================================================
 # INSTALL - Install binary to system
@@ -39,8 +40,8 @@ ifeq ($(RELEASE),1)
 	@$(MAKE) build RELEASE=1
 	@mkdir -p $(INSTALL_DIR)
 	@systemctl --user stop $(SERVICE_NAME) 2>/dev/null || true
-	@cp target/release/mcp-context-browser $(INSTALL_DIR)/
-	@chmod +x $(INSTALL_DIR)/mcp-context-browser
+	@cp target/release/$(BINARY_NAME) $(INSTALL_DIR)/
+	@chmod +x $(INSTALL_DIR)/$(BINARY_NAME)
 	@systemctl --user start $(SERVICE_NAME) 2>/dev/null || echo "Service not enabled"
 	@echo "Installed v$(VERSION) to $(INSTALL_DIR)"
 else
@@ -48,8 +49,8 @@ else
 	@$(MAKE) build
 	@mkdir -p $(INSTALL_DIR)
 	@systemctl --user stop $(SERVICE_NAME) 2>/dev/null || true
-	@cp target/debug/mcp-context-browser $(INSTALL_DIR)/
-	@chmod +x $(INSTALL_DIR)/mcp-context-browser
+	@cp target/debug/$(BINARY_NAME) $(INSTALL_DIR)/
+	@chmod +x $(INSTALL_DIR)/$(BINARY_NAME)
 	@systemctl --user start $(SERVICE_NAME) 2>/dev/null || echo "Service not enabled"
 	@echo "Installed v$(VERSION) (debug) to $(INSTALL_DIR)"
 endif

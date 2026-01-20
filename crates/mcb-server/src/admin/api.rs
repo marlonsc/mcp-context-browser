@@ -154,7 +154,7 @@ impl AdminApi {
             rocket_config.port
         );
 
-        let rocket = admin_rocket(self.state, self.auth_config).configure(rocket_config);
+        let rocket = admin_rocket(self.state, self.auth_config, None).configure(rocket_config);
 
         rocket.launch().await.map_err(|e| {
             Box::new(std::io::Error::new(
@@ -183,7 +183,7 @@ impl AdminApi {
             rocket_config.port
         );
 
-        let rocket = admin_rocket(self.state, self.auth_config)
+        let rocket = admin_rocket(self.state, self.auth_config, None)
             .configure(rocket_config)
             .ignite()
             .await

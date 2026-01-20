@@ -33,6 +33,16 @@ MCP Context Browser v0.1.2 modernizes provider registration using compile-time l
 -   ✅ 12 migration validation rules (YAML files in rules/migration/)
 -   ❌ Phases 4-7: Not started (directories do not exist)
 
+**Admin UI Code Browser:**
+
+-   ✅ VectorStoreBrowser trait in mcb-domain (ports layer)
+-   ✅ CollectionInfo value object for browse metadata
+-   ✅ 6 provider implementations (Milvus, InMemory, Filesystem, EdgeVec, Null, Encrypted)
+-   ✅ REST API handlers (list collections, files, chunks)
+-   ✅ 3 UI pages (collections grid, files list, code chunks)
+-   ✅ Prism.js syntax highlighting in code viewer
+-   ✅ Nav links added to all admin pages
+
 **Verification Date**: 2026-01-18 via `make test`. See `docs/developer/IMPLEMENTATION_STATUS.md`.
 
 **Maintained from v0.1.1:**
@@ -81,15 +91,15 @@ MCP Context Browser v0.1.0 is the first stable release, providing a complete dro
 
 ## Upcoming Releases
 
-### v0.2.0 - Git-Aware Indexing + Persistent Session Memory 🚧 PLANNED
+### v0.2.0 - Git-Aware Indexing + Session Memory + Advanced Browser 🚧 PLANNED
 
-**Status**: Planning Complete (ADR-008, ADR-009)
+**Status**: Planning Complete (ADR-008, ADR-009, ADR-028)
 **Priority**: High
-**Estimated Effort**: 20 phases (10 git + 10 memory)
+**Estimated Effort**: 25 phases (10 git + 10 memory + 5 browser)
 
 #### Vision
 
-Transform MCP Context Browser into a comprehensive development platform combining git-aware semantic search with persistent cross-session memory, enabling both powerful code navigation and context preservation across Claude Code sessions.
+Transform MCP Context Browser into a comprehensive development platform combining git-aware semantic search with persistent cross-session memory and IDE-like code browsing, enabling powerful code navigation and context preservation across Claude Code sessions.
 
 #### Objectives
 
@@ -106,6 +116,14 @@ Transform MCP Context Browser into a comprehensive development platform combinin
 -   Semantic search over past decisions and work
 -   Token-efficient progressive disclosure (3-layer workflow)
 -   Context injection for session continuity
+
+3.**Advanced Code Browser UI**(ADR-028)
+
+-   Tree view navigation with collapsible directories
+-   Full syntax highlighting with chunk boundary markers
+-   Inline search result highlighting
+-   Keyboard shortcuts and dark mode
+-   Real-time SSE updates during indexing
 
 #### New Capabilities - Git Integration
 
@@ -128,6 +146,17 @@ Transform MCP Context Browser into a comprehensive development platform combinin
 | Progressive Disclosure | 3-layer workflow: search → timeline → get_observations (10x token savings) |
 | Context Injection | Automatic context generation for SessionStart hooks |
 | Git-Tagged Memory | Observations tagged with git context (branch, commit) |
+
+#### New Capabilities - Code Browser
+
+| Capability | Description |
+|------------|-------------|
+| Tree View Navigation | Collapsible directory tree for large codebases |
+| Enhanced Code Display | Tree-sitter highlighting with chunk boundaries |
+| Search Integration | Inline semantic search results with similarity scores |
+| Keyboard Navigation | Vim-like shortcuts (j/k scroll, Enter to open) |
+| Real-time Updates | SSE events for indexing progress and updates |
+| Dark Mode | CSS variable-based theming |
 
 #### New MCP Tools - Git
 
@@ -164,6 +193,14 @@ Transform MCP Context Browser into a comprehensive development platform combinin
 -   **New Files**: ~15 source files
 -   **Estimated LOC**: ~3000
 -   **ADR**: [009-persistent-session-memory-v0.2.0](../adr/009-persistent-session-memory-v0.2.0.md)
+
+**Code Browser:**
+
+-   **New Dependencies**: Alpine.js (CDN)
+-   **New Files**: ~6 source files
+-   **Estimated LOC**: ~1500
+-   **ADR**: [028-advanced-code-browser-v020](../adr/028-advanced-code-browser-v020.md)
+-   **Foundation**: v0.1.2 basic browse (already implemented)
 
 #### Configuration Defaults
 
@@ -321,8 +358,8 @@ Deliver a fully production-ready enterprise platform with SLA guarantees, profes
 | v0.0.3 | Released | Production foundation |
 | v0.1.0 | Released | Documentation excellence, clean architecture, first stable release |
 | v0.1.1 | Released | Modular crate architecture (7 crates), DI foundation |
-| v0.1.2 | **Current** | Linkme provider registration, mcb-validate Phases 1-3 verified (73 tests) |
-| v0.2.0 | Planned | Git-aware semantic indexing, persistent session memory |
+| v0.1.2 | **Current** | Linkme provider registration, mcb-validate Phases 1-3, Admin UI Browse |
+| v0.2.0 | Planned | Git-aware indexing, session memory, advanced code browser |
 | v0.3.0 | Future | Advanced code intelligence |
 | v0.4.0 | Future | Enterprise features |
 | v1.0.0 | Future | Production enterprise |

@@ -3,9 +3,9 @@
 use mcb_server::builder::{BuilderError, McpServerBuilder};
 use std::sync::Arc;
 
-mod test_utils;
-
-use test_utils::mock_services::{MockContextService, MockIndexingService, MockSearchService};
+use crate::test_utils::mock_services::{
+    MockContextService, MockIndexingService, MockSearchService,
+};
 
 #[test]
 fn test_builder_all_services_provided() {

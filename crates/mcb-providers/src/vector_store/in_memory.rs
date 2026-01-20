@@ -7,11 +7,11 @@ use crate::utils::JsonExt;
 use async_trait::async_trait;
 use dashmap::DashMap;
 use mcb_domain::error::{Error, Result};
-use mcb_domain::ports::providers::{VectorStoreAdmin, VectorStoreProvider};
-use mcb_domain::value_objects::{Embedding, SearchResult};
+use mcb_domain::ports::providers::{VectorStoreAdmin, VectorStoreBrowser, VectorStoreProvider};
+use mcb_domain::value_objects::{CollectionInfo, Embedding, FileInfo, SearchResult};
 use serde_json::Value;
 use std::cmp::Ordering;
-use std::collections::{BinaryHeap, HashMap};
+use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::sync::Arc;
 
 /// In-memory storage entry type
@@ -217,6 +217,91 @@ impl VectorStoreProvider for InMemoryVectorStoreProvider {
             .take(limit)
             .map(|(_embedding, metadata)| metadata_to_search_result(metadata, 1.0))
             .collect();
+
+        Ok(results)
+    }
+}
+
+#[async_trait]
+impl VectorStoreBrowser for InMemoryVectorStoreProvider {
+    async fn list_collections(&self) -> Result<Vec<CollectionInfo>> {
+        let collections: Vec<CollectionInfo> = self
+            .collections
+            .iter()
+            .map(|entry| {
+                let name = entry.key().clone();
+                let data = entry.value();
+                let vector_count = data.len() as u64;
+
+                // Count unique file paths
+                let file_paths: HashSet<&str> = data
+                    .iter()
+                    .filter_map(|(_, metadata)| metadata.get("file_path").and_then(|v| v.as_str()))
+                    .collect();
+                let file_count = file_paths.len() as u64;
+
+                CollectionInfo::new(name, vector_count, file_count, None, self.provider_name())
+            })
+            .collect();
+        Ok(collections)
+    }
+
+    async fn list_file_paths(&self, collection: &str, limit: usize) -> Result<Vec<FileInfo>> {
+        let coll = self
+            .collections
+            .get(collection)
+            .ok_or_else(|| Error::vector_db(format!("Collection '{}' not found", collection)))?;
+
+        // Aggregate file info from chunks
+        let mut file_map: HashMap<String, (u32, String)> = HashMap::new();
+
+        for (_embedding, metadata) in coll.iter() {
+            if let Some(file_path) = metadata.get("file_path").and_then(|v| v.as_str()) {
+                let language = metadata
+                    .get("language")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("unknown")
+                    .to_string();
+
+                let entry = file_map
+                    .entry(file_path.to_string())
+                    .or_insert((0, language));
+                entry.0 += 1; // Increment chunk count
+            }
+        }
+
+        let files: Vec<FileInfo> = file_map
+            .into_iter()
+            .take(limit)
+            .map(|(path, (chunk_count, language))| FileInfo::new(path, chunk_count, language, None))
+            .collect();
+
+        Ok(files)
+    }
+
+    async fn get_chunks_by_file(
+        &self,
+        collection: &str,
+        file_path: &str,
+    ) -> Result<Vec<SearchResult>> {
+        let coll = self
+            .collections
+            .get(collection)
+            .ok_or_else(|| Error::vector_db(format!("Collection '{}' not found", collection)))?;
+
+        let mut results: Vec<SearchResult> = coll
+            .iter()
+            .filter(|(_embedding, metadata)| {
+                metadata
+                    .get("file_path")
+                    .and_then(|v| v.as_str())
+                    .is_some_and(|p| p == file_path)
+            })
+            .map(|(_embedding, metadata)| metadata_to_search_result(metadata, 1.0))
+            .collect();
+
+        // Sort by start_line for logical ordering
+        results.sort_by_key(|r| r.start_line);
 
         Ok(results)
     }

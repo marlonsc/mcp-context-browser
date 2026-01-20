@@ -1,10 +1,8 @@
 //! Tests for Refactoring Validation
 
-mod test_utils;
-
+use crate::test_utils::create_test_crate;
 use mcb_validate::refactoring::RefactoringValidator;
 use tempfile::TempDir;
-use test_utils::create_test_crate;
 
 #[test]
 fn test_duplicate_definition_detection() {

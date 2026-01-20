@@ -1,11 +1,9 @@
 //! Tests for Code Organization Validation
 
-mod test_utils;
-
+use crate::test_utils::create_test_crate;
 use mcb_validate::OrganizationValidator;
 use std::fs;
 use tempfile::TempDir;
-use test_utils::create_test_crate;
 
 #[test]
 fn test_magic_number_detection() {

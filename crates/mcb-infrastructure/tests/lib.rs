@@ -1,10 +1,19 @@
 //! Integration Tests for mcb-infrastructure
 //!
-//! This module aggregates all integration tests organized by subsystem.
-//! NOTE: adapters tests moved to adapters.bak pending migration to mcb-providers
+//! This module provides shared test utilities for integration tests.
+//!
+//! Test Structure:
+//! - `tests/unit.rs` - Unit tests (constants, crypto, error_ext, health, logging)
+//! - `tests/integration.rs` - Integration tests (cache, config, di, utils)
+//!
+//! Run all tests: `cargo test -p mcb-infrastructure`
+//! Run unit tests: `cargo test -p mcb-infrastructure --test unit`
+//! Run integration: `cargo test -p mcb-infrastructure --test integration`
 
-mod cache;
-mod config;
-mod constants_test;
-mod di;
-mod utils;
+// Shared test utilities
+pub mod test_helpers {
+    /// Create a temporary test directory
+    pub fn temp_dir() -> tempfile::TempDir {
+        tempfile::tempdir().expect("Failed to create temp directory")
+    }
+}

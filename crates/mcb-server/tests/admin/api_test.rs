@@ -58,9 +58,13 @@ fn create_test_state() -> AdminState {
 #[rocket::async_test]
 async fn test_health_endpoint() {
     let state = create_test_state();
-    let client = Client::tracked(admin_rocket(state, Arc::new(AdminAuthConfig::default())))
-        .await
-        .expect("valid rocket instance");
+    let client = Client::tracked(admin_rocket(
+        state,
+        Arc::new(AdminAuthConfig::default()),
+        None,
+    ))
+    .await
+    .expect("valid rocket instance");
 
     let response = client.get("/health").dispatch().await;
 
@@ -83,9 +87,13 @@ async fn test_metrics_endpoint() {
     state.metrics.record_query(200, false, false);
     state.metrics.update_active_connections(3);
 
-    let client = Client::tracked(admin_rocket(state, Arc::new(AdminAuthConfig::default())))
-        .await
-        .expect("valid rocket instance");
+    let client = Client::tracked(admin_rocket(
+        state,
+        Arc::new(AdminAuthConfig::default()),
+        None,
+    ))
+    .await
+    .expect("valid rocket instance");
 
     let response = client.get("/metrics").dispatch().await;
 
@@ -104,9 +112,13 @@ async fn test_metrics_endpoint() {
 #[rocket::async_test]
 async fn test_indexing_endpoint_no_operations() {
     let state = create_test_state();
-    let client = Client::tracked(admin_rocket(state, Arc::new(AdminAuthConfig::default())))
-        .await
-        .expect("valid rocket instance");
+    let client = Client::tracked(admin_rocket(
+        state,
+        Arc::new(AdminAuthConfig::default()),
+        None,
+    ))
+    .await
+    .expect("valid rocket instance");
 
     let response = client.get("/indexing").dispatch().await;
 
@@ -139,9 +151,13 @@ async fn test_indexing_endpoint_with_operations() {
     let op_id = indexing.start_operation("test-collection", 50);
     indexing.update_progress(&op_id, Some("src/main.rs".to_string()), 10);
 
-    let client = Client::tracked(admin_rocket(state, Arc::new(AdminAuthConfig::default())))
-        .await
-        .expect("valid rocket instance");
+    let client = Client::tracked(admin_rocket(
+        state,
+        Arc::new(AdminAuthConfig::default()),
+        None,
+    ))
+    .await
+    .expect("valid rocket instance");
 
     let response = client.get("/indexing").dispatch().await;
 
@@ -168,9 +184,13 @@ async fn test_indexing_endpoint_with_operations() {
 async fn test_readiness_probe_not_ready() {
     // Create a fresh state - uptime will be < 1 second
     let state = create_test_state();
-    let client = Client::tracked(admin_rocket(state, Arc::new(AdminAuthConfig::default())))
-        .await
-        .expect("valid rocket instance");
+    let client = Client::tracked(admin_rocket(
+        state,
+        Arc::new(AdminAuthConfig::default()),
+        None,
+    ))
+    .await
+    .expect("valid rocket instance");
 
     let response = client.get("/ready").dispatch().await;
 
@@ -198,9 +218,13 @@ async fn test_readiness_probe_ready() {
     // Wait for uptime to be >= 1 second
     tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
 
-    let client = Client::tracked(admin_rocket(state, Arc::new(AdminAuthConfig::default())))
-        .await
-        .expect("valid rocket instance");
+    let client = Client::tracked(admin_rocket(
+        state,
+        Arc::new(AdminAuthConfig::default()),
+        None,
+    ))
+    .await
+    .expect("valid rocket instance");
 
     let response = client.get("/ready").dispatch().await;
 
@@ -215,9 +239,13 @@ async fn test_readiness_probe_ready() {
 #[rocket::async_test]
 async fn test_liveness_probe() {
     let state = create_test_state();
-    let client = Client::tracked(admin_rocket(state, Arc::new(AdminAuthConfig::default())))
-        .await
-        .expect("valid rocket instance");
+    let client = Client::tracked(admin_rocket(
+        state,
+        Arc::new(AdminAuthConfig::default()),
+        None,
+    ))
+    .await
+    .expect("valid rocket instance");
 
     let response = client.get("/live").dispatch().await;
 
@@ -248,9 +276,13 @@ async fn test_health_with_active_operations() {
     indexing.start_operation("coll-1", 100);
     indexing.start_operation("coll-2", 200);
 
-    let client = Client::tracked(admin_rocket(state, Arc::new(AdminAuthConfig::default())))
-        .await
-        .expect("valid rocket instance");
+    let client = Client::tracked(admin_rocket(
+        state,
+        Arc::new(AdminAuthConfig::default()),
+        None,
+    ))
+    .await
+    .expect("valid rocket instance");
 
     let response = client.get("/health").dispatch().await;
 
@@ -273,9 +305,13 @@ async fn test_metrics_with_cache_hits() {
     state.metrics.record_query(40, true, false);
     state.metrics.record_query(50, true, false);
 
-    let client = Client::tracked(admin_rocket(state, Arc::new(AdminAuthConfig::default())))
-        .await
-        .expect("valid rocket instance");
+    let client = Client::tracked(admin_rocket(
+        state,
+        Arc::new(AdminAuthConfig::default()),
+        None,
+    ))
+    .await
+    .expect("valid rocket instance");
 
     let response = client.get("/metrics").dispatch().await;
 

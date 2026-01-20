@@ -94,7 +94,7 @@ fn create_auth_config_no_key() -> AdminAuthConfig {
 async fn test_metrics_without_key_returns_401() {
     let state = create_test_state();
     let auth_config = Arc::new(create_auth_config());
-    let client = Client::tracked(admin_rocket(state, auth_config))
+    let client = Client::tracked(admin_rocket(state, auth_config, None))
         .await
         .expect("valid rocket instance");
 
@@ -115,7 +115,7 @@ async fn test_metrics_without_key_returns_401() {
 async fn test_metrics_with_wrong_key_returns_401() {
     let state = create_test_state();
     let auth_config = Arc::new(create_auth_config());
-    let client = Client::tracked(admin_rocket(state, auth_config))
+    let client = Client::tracked(admin_rocket(state, auth_config, None))
         .await
         .expect("valid rocket instance");
 
@@ -144,7 +144,7 @@ async fn test_metrics_with_correct_key_returns_200() {
     state.metrics.update_active_connections(5);
 
     let auth_config = Arc::new(create_auth_config());
-    let client = Client::tracked(admin_rocket(state, auth_config))
+    let client = Client::tracked(admin_rocket(state, auth_config, None))
         .await
         .expect("valid rocket instance");
 
@@ -202,7 +202,7 @@ async fn test_metrics_with_correct_key_returns_200() {
 async fn test_extended_health_without_key_returns_401() {
     let state = create_test_state();
     let auth_config = Arc::new(create_auth_config());
-    let client = Client::tracked(admin_rocket(state, auth_config))
+    let client = Client::tracked(admin_rocket(state, auth_config, None))
         .await
         .expect("valid rocket instance");
 
@@ -224,7 +224,7 @@ async fn test_extended_health_with_correct_key_returns_200() {
     state.metrics.record_query(100, true, true);
 
     let auth_config = Arc::new(create_auth_config());
-    let client = Client::tracked(admin_rocket(state, auth_config))
+    let client = Client::tracked(admin_rocket(state, auth_config, None))
         .await
         .expect("valid rocket instance");
 
@@ -294,7 +294,7 @@ async fn test_extended_health_with_correct_key_returns_200() {
 async fn test_shutdown_without_key_returns_401() {
     let state = create_test_state();
     let auth_config = Arc::new(create_auth_config());
-    let client = Client::tracked(admin_rocket(state, auth_config))
+    let client = Client::tracked(admin_rocket(state, auth_config, None))
         .await
         .expect("valid rocket instance");
 
@@ -317,7 +317,7 @@ async fn test_shutdown_without_key_returns_401() {
 async fn test_cache_stats_without_key_returns_401() {
     let state = create_test_state();
     let auth_config = Arc::new(create_auth_config());
-    let client = Client::tracked(admin_rocket(state, auth_config))
+    let client = Client::tracked(admin_rocket(state, auth_config, None))
         .await
         .expect("valid rocket instance");
 
@@ -339,7 +339,7 @@ async fn test_cache_stats_without_key_returns_401() {
 async fn test_health_public_no_auth_required() {
     let state = create_test_state();
     let auth_config = Arc::new(create_auth_config());
-    let client = Client::tracked(admin_rocket(state, auth_config))
+    let client = Client::tracked(admin_rocket(state, auth_config, None))
         .await
         .expect("valid rocket instance");
 
@@ -374,7 +374,7 @@ async fn test_health_public_no_auth_required() {
 async fn test_live_public_no_auth_required() {
     let state = create_test_state();
     let auth_config = Arc::new(create_auth_config());
-    let client = Client::tracked(admin_rocket(state, auth_config))
+    let client = Client::tracked(admin_rocket(state, auth_config, None))
         .await
         .expect("valid rocket instance");
 
@@ -405,7 +405,7 @@ async fn test_ready_public_no_auth_required() {
     // Wait for uptime > 1s to ensure ready
     tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
 
-    let client = Client::tracked(admin_rocket(state, auth_config))
+    let client = Client::tracked(admin_rocket(state, auth_config, None))
         .await
         .expect("valid rocket instance");
 
@@ -450,7 +450,7 @@ async fn test_indexing_public_no_auth_required() {
         cache: None,
     };
     let auth_config = Arc::new(create_auth_config());
-    let client = Client::tracked(admin_rocket(state, auth_config))
+    let client = Client::tracked(admin_rocket(state, auth_config, None))
         .await
         .expect("valid rocket instance");
 
@@ -501,7 +501,7 @@ async fn test_indexing_public_no_auth_required() {
 async fn test_auth_enabled_no_key_configured_returns_503() {
     let state = create_test_state();
     let auth_config = Arc::new(create_auth_config_no_key());
-    let client = Client::tracked(admin_rocket(state, auth_config))
+    let client = Client::tracked(admin_rocket(state, auth_config, None))
         .await
         .expect("valid rocket instance");
 
@@ -523,7 +523,7 @@ async fn test_custom_header_name() {
         header_name: "X-Custom-Auth".to_string(),
         api_key: Some("custom-key".to_string()),
     });
-    let client = Client::tracked(admin_rocket(state, auth_config))
+    let client = Client::tracked(admin_rocket(state, auth_config, None))
         .await
         .expect("valid rocket instance");
 
@@ -559,7 +559,7 @@ async fn test_custom_header_name() {
 async fn test_auth_disabled_allows_all() {
     let state = create_test_state();
     let auth_config = Arc::new(AdminAuthConfig::default()); // enabled: false
-    let client = Client::tracked(admin_rocket(state, auth_config))
+    let client = Client::tracked(admin_rocket(state, auth_config, None))
         .await
         .expect("valid rocket instance");
 
@@ -581,7 +581,7 @@ async fn test_auth_disabled_allows_all() {
 async fn test_config_without_key_returns_401() {
     let state = create_test_state();
     let auth_config = Arc::new(create_auth_config());
-    let client = Client::tracked(admin_rocket(state, auth_config))
+    let client = Client::tracked(admin_rocket(state, auth_config, None))
         .await
         .expect("valid rocket instance");
 
@@ -599,7 +599,7 @@ async fn test_config_without_key_returns_401() {
 async fn test_config_reload_without_key_returns_401() {
     let state = create_test_state();
     let auth_config = Arc::new(create_auth_config());
-    let client = Client::tracked(admin_rocket(state, auth_config))
+    let client = Client::tracked(admin_rocket(state, auth_config, None))
         .await
         .expect("valid rocket instance");
 
@@ -617,7 +617,7 @@ async fn test_config_reload_without_key_returns_401() {
 async fn test_config_update_without_key_returns_401() {
     let state = create_test_state();
     let auth_config = Arc::new(create_auth_config());
-    let client = Client::tracked(admin_rocket(state, auth_config))
+    let client = Client::tracked(admin_rocket(state, auth_config, None))
         .await
         .expect("valid rocket instance");
 
@@ -644,7 +644,7 @@ async fn test_config_update_without_key_returns_401() {
 async fn test_services_list_without_key_returns_401() {
     let state = create_test_state();
     let auth_config = Arc::new(create_auth_config());
-    let client = Client::tracked(admin_rocket(state, auth_config))
+    let client = Client::tracked(admin_rocket(state, auth_config, None))
         .await
         .expect("valid rocket instance");
 
@@ -662,7 +662,7 @@ async fn test_services_list_without_key_returns_401() {
 async fn test_services_start_without_key_returns_401() {
     let state = create_test_state();
     let auth_config = Arc::new(create_auth_config());
-    let client = Client::tracked(admin_rocket(state, auth_config))
+    let client = Client::tracked(admin_rocket(state, auth_config, None))
         .await
         .expect("valid rocket instance");
 
@@ -680,7 +680,7 @@ async fn test_services_start_without_key_returns_401() {
 async fn test_services_stop_without_key_returns_401() {
     let state = create_test_state();
     let auth_config = Arc::new(create_auth_config());
-    let client = Client::tracked(admin_rocket(state, auth_config))
+    let client = Client::tracked(admin_rocket(state, auth_config, None))
         .await
         .expect("valid rocket instance");
 
@@ -698,7 +698,7 @@ async fn test_services_stop_without_key_returns_401() {
 async fn test_services_restart_without_key_returns_401() {
     let state = create_test_state();
     let auth_config = Arc::new(create_auth_config());
-    let client = Client::tracked(admin_rocket(state, auth_config))
+    let client = Client::tracked(admin_rocket(state, auth_config, None))
         .await
         .expect("valid rocket instance");
 
@@ -716,7 +716,7 @@ async fn test_services_restart_without_key_returns_401() {
 async fn test_services_health_without_key_returns_401() {
     let state = create_test_state();
     let auth_config = Arc::new(create_auth_config());
-    let client = Client::tracked(admin_rocket(state, auth_config))
+    let client = Client::tracked(admin_rocket(state, auth_config, None))
         .await
         .expect("valid rocket instance");
 
@@ -738,7 +738,7 @@ async fn test_services_health_without_key_returns_401() {
 async fn test_config_with_correct_key_does_not_return_401() {
     let state = create_test_state();
     let auth_config = Arc::new(create_auth_config());
-    let client = Client::tracked(admin_rocket(state, auth_config))
+    let client = Client::tracked(admin_rocket(state, auth_config, None))
         .await
         .expect("valid rocket instance");
 
@@ -761,7 +761,7 @@ async fn test_config_with_correct_key_does_not_return_401() {
 async fn test_services_with_correct_key_does_not_return_401() {
     let state = create_test_state();
     let auth_config = Arc::new(create_auth_config());
-    let client = Client::tracked(admin_rocket(state, auth_config))
+    let client = Client::tracked(admin_rocket(state, auth_config, None))
         .await
         .expect("valid rocket instance");
 

@@ -253,7 +253,7 @@ jsonpath-rust = "1.0.4"
 once_cell = "1.19"
 
 # Code metrics analysis (fork with tree-sitter 0.26.3 + Kotlin)
-rust-code-analysis = { git = "https://github.com/marlon-costa-dc/rust-code-analysis", branch = "tree-sitter-0.26-kotlin" }
+rust-code-analysis = { git = "https://github.com/marlon-costa-dc/rust-code-analysis", branch = "master" }
 
 # ============================================
 # Build Profiles

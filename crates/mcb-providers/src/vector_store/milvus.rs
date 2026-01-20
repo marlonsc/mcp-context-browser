@@ -9,8 +9,8 @@ use crate::constants::{
 use crate::utils::JsonExt;
 use async_trait::async_trait;
 use mcb_domain::error::{Error, Result};
-use mcb_domain::ports::providers::{VectorStoreAdmin, VectorStoreProvider};
-use mcb_domain::value_objects::{Embedding, SearchResult};
+use mcb_domain::ports::providers::{VectorStoreAdmin, VectorStoreBrowser, VectorStoreProvider};
+use mcb_domain::value_objects::{CollectionInfo, Embedding, FileInfo, SearchResult};
 use milvus::client::Client;
 use milvus::data::FieldColumn;
 use milvus::proto::schema::DataType;
@@ -620,23 +620,255 @@ impl VectorStoreProvider for MilvusVectorStoreProvider {
                 Error::vector_db(format!("Failed to load collection '{}': {}", collection, e))
             })?;
 
+        // Use pagination to avoid gRPC message size limits (4MB default)
+        // Batch size of 100 keeps responses well under the limit
+        const BATCH_SIZE: usize = 100;
+        let mut all_results = Vec::new();
+        let mut offset = 0i64;
+
         let expr = "id >= 0".to_string();
         use milvus::query::QueryOptions;
-        let mut query_options = QueryOptions::new();
-        query_options = query_options.limit(limit as i64).output_fields(vec![
-            "id".to_string(),
-            "file_path".to_string(),
-            "start_line".to_string(),
-            "content".to_string(),
-        ]);
 
-        let query_results = Self::map_milvus_error(
-            self.client.query(collection, &expr, &query_options).await,
-            "list vectors",
-        )?;
+        loop {
+            let remaining = limit.saturating_sub(all_results.len());
+            if remaining == 0 {
+                break;
+            }
 
-        // Convert results to our format
-        let mut results = Vec::new();
+            let batch_limit = remaining.min(BATCH_SIZE) as i64;
+            let query_options = QueryOptions::new()
+                .limit(batch_limit)
+                .offset(offset)
+                .output_fields(vec![
+                    "id".to_string(),
+                    "file_path".to_string(),
+                    "start_line".to_string(),
+                    "content".to_string(),
+                ]);
+
+            let query_results = match self.client.query(collection, &expr, &query_options).await {
+                Ok(results) => results,
+                Err(e) => {
+                    let err_str = e.to_string();
+                    // If we hit message size limit even with smaller batch, log and break
+                    if err_str.contains("message length too large") {
+                        tracing::warn!(
+                            "Hit gRPC message size limit at offset {}, returning {} results",
+                            offset,
+                            all_results.len()
+                        );
+                        break;
+                    }
+                    return Err(Error::vector_db(format!("Failed to list vectors: {}", e)));
+                }
+            };
+
+            // Map columns by name
+            let mut columns_map = HashMap::new();
+            for column in &query_results {
+                columns_map.insert(column.name.as_str(), column);
+            }
+
+            let row_count = if let Some(col) = query_results.first() {
+                col.len()
+            } else {
+                0
+            };
+
+            // No more results
+            if row_count == 0 {
+                break;
+            }
+
+            for i in 0..row_count {
+                let id_str = columns_map
+                    .get("id")
+                    .and_then(|col| col.get(i))
+                    .map(|v| match v {
+                        Value::Long(id) => id.to_string(),
+                        Value::String(id) => id.to_string(),
+                        _ => "unknown".to_string(),
+                    })
+                    .unwrap_or_else(|| "unknown".to_string());
+
+                let file_path = columns_map
+                    .get("file_path")
+                    .and_then(|col| col.get(i))
+                    .map(|v| match v {
+                        Value::String(s) => s.to_string(),
+                        _ => "unknown".to_string(),
+                    })
+                    .unwrap_or_else(|| "unknown".to_string());
+
+                let start_line = columns_map
+                    .get("start_line")
+                    .or_else(|| columns_map.get("line_number"))
+                    .and_then(|col| col.get(i))
+                    .map(|v| match v {
+                        Value::Long(n) => n as u32,
+                        _ => 0,
+                    })
+                    .unwrap_or(0);
+
+                let content = columns_map
+                    .get("content")
+                    .and_then(|col| col.get(i))
+                    .map(|v| match v {
+                        Value::String(s) => s.to_string(),
+                        _ => "".to_string(),
+                    })
+                    .unwrap_or_default();
+
+                all_results.push(SearchResult {
+                    id: id_str,
+                    file_path,
+                    start_line,
+                    content,
+                    score: 1.0,
+                    language: "unknown".to_string(),
+                });
+            }
+
+            offset += row_count as i64;
+
+            // If we got fewer results than requested, we've reached the end
+            if row_count < batch_limit as usize {
+                break;
+            }
+        }
+
+        Ok(all_results)
+    }
+}
+
+#[async_trait]
+impl VectorStoreBrowser for MilvusVectorStoreProvider {
+    async fn list_collections(&self) -> Result<Vec<CollectionInfo>> {
+        let collection_names =
+            Self::map_milvus_error(self.client.list_collections().await, "list collections")?;
+
+        let mut collections = Vec::new();
+
+        for name in collection_names {
+            // Get stats for each collection
+            let stats = self.get_stats(&name).await.unwrap_or_default();
+            let vector_count = stats
+                .get("vectors_count")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(0);
+
+            // For now, we don't have a quick way to count unique files without querying all data
+            // In a future optimization, we could cache this or use Milvus aggregation
+            collections.push(CollectionInfo::new(
+                name,
+                vector_count,
+                0, // file_count will be populated when listing files
+                None,
+                self.provider_name(),
+            ));
+        }
+
+        Ok(collections)
+    }
+
+    async fn list_file_paths(&self, collection: &str, limit: usize) -> Result<Vec<FileInfo>> {
+        if limit == 0 {
+            return Ok(Vec::new());
+        }
+
+        // Ensure collection is loaded
+        if let Err(e) = self.client.load_collection(collection, None).await {
+            let err_str = e.to_string();
+            if err_str.contains("CollectionNotExists")
+                || err_str.contains("collection not found")
+                || err_str.contains("not exist")
+            {
+                return Ok(Vec::new());
+            }
+            return Err(Error::vector_db(format!(
+                "Failed to load collection '{}': {}",
+                collection, e
+            )));
+        }
+
+        // Query all file_path values and aggregate
+        use milvus::query::QueryOptions;
+
+        let expr = "id >= 0".to_string();
+        let query_options = QueryOptions::new()
+            .limit(10000) // Get a large sample for aggregation
+            .output_fields(vec!["file_path".to_string()]);
+
+        let query_results = match self.client.query(collection, &expr, &query_options).await {
+            Ok(results) => results,
+            Err(e) => {
+                tracing::warn!("Failed to query file paths: {}", e);
+                return Ok(Vec::new());
+            }
+        };
+
+        // Aggregate file paths
+        let mut file_counts: HashMap<String, u32> = HashMap::new();
+
+        for column in &query_results {
+            if column.name == "file_path" {
+                for i in 0..column.len() {
+                    if let Some(Value::String(path)) = column.get(i) {
+                        *file_counts.entry(path.to_string()).or_insert(0) += 1;
+                    }
+                }
+            }
+        }
+
+        let files: Vec<FileInfo> = file_counts
+            .into_iter()
+            .take(limit)
+            .map(|(path, chunk_count)| FileInfo::new(path, chunk_count, "unknown", None))
+            .collect();
+
+        Ok(files)
+    }
+
+    async fn get_chunks_by_file(
+        &self,
+        collection: &str,
+        file_path: &str,
+    ) -> Result<Vec<SearchResult>> {
+        // Ensure collection is loaded
+        if let Err(e) = self.client.load_collection(collection, None).await {
+            let err_str = e.to_string();
+            if err_str.contains("CollectionNotExists")
+                || err_str.contains("collection not found")
+                || err_str.contains("not exist")
+            {
+                return Ok(Vec::new());
+            }
+            return Err(Error::vector_db(format!(
+                "Failed to load collection '{}': {}",
+                collection, e
+            )));
+        }
+
+        use milvus::query::QueryOptions;
+
+        // Query with filter on file_path
+        let expr = format!("file_path == \"{}\"", file_path.replace('"', "\\\""));
+        let query_options = QueryOptions::new()
+            .limit(1000) // Reasonable limit for chunks per file
+            .output_fields(vec![
+                "id".to_string(),
+                "file_path".to_string(),
+                "start_line".to_string(),
+                "content".to_string(),
+            ]);
+
+        let query_results = match self.client.query(collection, &expr, &query_options).await {
+            Ok(results) => results,
+            Err(e) => {
+                tracing::warn!("Failed to query chunks by file: {}", e);
+                return Ok(Vec::new());
+            }
+        };
 
         // Map columns by name
         let mut columns_map = HashMap::new();
@@ -650,6 +882,8 @@ impl VectorStoreProvider for MilvusVectorStoreProvider {
             0
         };
 
+        let mut results = Vec::new();
+
         for i in 0..row_count {
             let id_str = columns_map
                 .get("id")
@@ -661,18 +895,8 @@ impl VectorStoreProvider for MilvusVectorStoreProvider {
                 })
                 .unwrap_or_else(|| "unknown".to_string());
 
-            let file_path = columns_map
-                .get("file_path")
-                .and_then(|col| col.get(i))
-                .map(|v| match v {
-                    Value::String(s) => s.to_string(),
-                    _ => "unknown".to_string(),
-                })
-                .unwrap_or_else(|| "unknown".to_string());
-
             let start_line = columns_map
                 .get("start_line")
-                .or_else(|| columns_map.get("line_number"))
                 .and_then(|col| col.get(i))
                 .map(|v| match v {
                     Value::Long(n) => n as u32,
@@ -691,13 +915,16 @@ impl VectorStoreProvider for MilvusVectorStoreProvider {
 
             results.push(SearchResult {
                 id: id_str,
-                file_path,
+                file_path: file_path.to_string(),
                 start_line,
                 content,
                 score: 1.0,
                 language: "unknown".to_string(),
             });
         }
+
+        // Sort by start_line
+        results.sort_by_key(|r| r.start_line);
 
         Ok(results)
     }

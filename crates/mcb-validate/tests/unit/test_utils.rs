@@ -36,10 +36,9 @@ members = ["crates/*"]
         cargo_dir.join("Cargo.toml"),
         format!(
             r#"[package]
-name = "{}"
+name = "{name}"
 version = "0.1.1"
-"#,
-            name
+"#
         ),
     )
     .unwrap();
@@ -124,10 +123,9 @@ pub fn create_constants_file(temp: &TempDir, name: &str, content: &str) {
             cargo_path,
             format!(
                 r#"[package]
-name = "{}"
+name = "{name}"
 version = "0.1.1"
-"#,
-                name
+"#
             ),
         )
         .unwrap();
@@ -147,10 +145,9 @@ pub fn create_null_provider_file(temp: &TempDir, name: &str, content: &str) {
             cargo_path,
             format!(
                 r#"[package]
-name = "{}"
+name = "{name}"
 version = "0.1.1"
-"#,
-                name
+"#
             ),
         )
         .unwrap();

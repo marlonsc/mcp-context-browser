@@ -150,7 +150,7 @@ version = "1.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "40c48f72fd53cd289104fc64099abca73db4166ad86ea0b4341abe65af83dadc"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -161,7 +161,7 @@ checksum = "291e6a250ff86cd4a820112fb8898808a366d8f9f58ce16d1f538353ad55747d"
 dependencies = [
  "anstyle",
  "once_cell_polyfill",
- "windows-sys 0.61.2",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -1432,7 +1432,7 @@ dependencies = [
  "libc",
  "option-ext",
  "redox_users",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -1629,7 +1629,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -2861,7 +2861,7 @@ checksum = "3640c1c38b8e4e43584d8df18be5fc6b0aa314ce6ebf51b53313d4306cca8e46"
 dependencies = [
  "hermit-abi",
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -3213,7 +3213,7 @@ dependencies = [
 
 [[package]]
 name = "mcb"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "mcb-domain",
  "mcb-infrastructure",
@@ -3223,7 +3223,7 @@ dependencies = [
 
 [[package]]
 name = "mcb-application"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3241,7 +3241,7 @@ dependencies = [
 
 [[package]]
 name = "mcb-domain"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "async-trait",
  "base64 0.22.1",
@@ -3260,7 +3260,7 @@ dependencies = [
 
 [[package]]
 name = "mcb-infrastructure"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "aes-gcm",
  "anyhow",
@@ -3332,7 +3332,7 @@ dependencies = [
 
 [[package]]
 name = "mcb-providers"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "aes-gcm",
  "anyhow",
@@ -3365,12 +3365,12 @@ dependencies = [
  "tree-sitter-cpp",
  "tree-sitter-go",
  "tree-sitter-java",
- "tree-sitter-javascript 0.25.0",
+ "tree-sitter-javascript",
  "tree-sitter-kotlin-ng",
  "tree-sitter-php",
- "tree-sitter-python 0.25.0",
+ "tree-sitter-python",
  "tree-sitter-ruby",
- "tree-sitter-rust 0.24.0",
+ "tree-sitter-rust",
  "tree-sitter-swift",
  "tree-sitter-typescript",
  "unicode-segmentation",
@@ -3379,7 +3379,7 @@ dependencies = [
 
 [[package]]
 name = "mcb-server"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "argon2",
@@ -3426,7 +3426,7 @@ dependencies = [
 
 [[package]]
 name = "mcb-validate"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3458,9 +3458,9 @@ dependencies = [
  "tree-sitter-cpp",
  "tree-sitter-go",
  "tree-sitter-java",
- "tree-sitter-javascript 0.25.0",
- "tree-sitter-python 0.25.0",
- "tree-sitter-rust 0.24.0",
+ "tree-sitter-javascript",
+ "tree-sitter-python",
+ "tree-sitter-rust",
  "tree-sitter-typescript",
  "validator",
  "walkdir",
@@ -3794,7 +3794,7 @@ version = "0.50.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7957b9740744892f114936ab4a57b3f487491bbeafaf8083688b16841a4240e5"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -5493,7 +5493,7 @@ dependencies = [
 [[package]]
 name = "rust-code-analysis"
 version = "0.0.25"
-source = "git+https://github.com/marlon-costa-dc/rust-code-analysis?branch=tree-sitter-0.26-kotlin#d683273c6f0f1bf2a9f102a0df1c07ad37c17235"
+source = "git+https://github.com/marlon-costa-dc/rust-code-analysis?branch=master#ecafc19e7f37151f730e8c8a5489681f05f86498"
 dependencies = [
  "aho-corasick",
  "crossbeam",
@@ -5509,13 +5509,13 @@ dependencies = [
  "tree-sitter",
  "tree-sitter-ccomment",
  "tree-sitter-java",
- "tree-sitter-javascript 0.23.1",
+ "tree-sitter-javascript",
  "tree-sitter-kotlin-codanna",
  "tree-sitter-mozcpp",
  "tree-sitter-mozjs",
  "tree-sitter-preproc",
- "tree-sitter-python 0.23.6",
- "tree-sitter-rust 0.23.2",
+ "tree-sitter-python",
+ "tree-sitter-rust",
  "tree-sitter-typescript",
  "walkdir",
 ]
@@ -5560,7 +5560,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -5655,7 +5655,7 @@ dependencies = [
  "security-framework 3.5.1",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -6380,7 +6380,7 @@ dependencies = [
  "getrandom 0.3.4",
  "once_cell",
  "rustix",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -7030,7 +7030,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-ccomment"
 version = "0.20.3"
-source = "git+https://github.com/marlon-costa-dc/rust-code-analysis?branch=tree-sitter-0.26-kotlin#d683273c6f0f1bf2a9f102a0df1c07ad37c17235"
+source = "git+https://github.com/marlon-costa-dc/rust-code-analysis?branch=master#ecafc19e7f37151f730e8c8a5489681f05f86498"
 dependencies = [
  "cc",
  "tree-sitter-language",
@@ -7061,16 +7061,6 @@ name = "tree-sitter-java"
 version = "0.23.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0aa6cbcdc8c679b214e616fd3300da67da0e492e066df01bcf5a5921a71e90d6"
-dependencies = [
- "cc",
- "tree-sitter-language",
-]
-
-[[package]]
-name = "tree-sitter-javascript"
-version = "0.23.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf40bf599e0416c16c125c3cec10ee5ddc7d1bb8b0c60fa5c4de249ad34dc1b1"
 dependencies = [
  "cc",
  "tree-sitter-language",
@@ -7115,7 +7105,7 @@ checksum = "4ae62f7eae5eb549c71b76658648b72cc6111f2d87d24a1e31fa907f4943e3ce"
 [[package]]
 name = "tree-sitter-mozcpp"
 version = "0.20.4"
-source = "git+https://github.com/marlon-costa-dc/rust-code-analysis?branch=tree-sitter-0.26-kotlin#d683273c6f0f1bf2a9f102a0df1c07ad37c17235"
+source = "git+https://github.com/marlon-costa-dc/rust-code-analysis?branch=master#ecafc19e7f37151f730e8c8a5489681f05f86498"
 dependencies = [
  "cc",
  "tree-sitter-cpp",
@@ -7125,10 +7115,10 @@ dependencies = [
 [[package]]
 name = "tree-sitter-mozjs"
 version = "0.20.3"
-source = "git+https://github.com/marlon-costa-dc/rust-code-analysis?branch=tree-sitter-0.26-kotlin#d683273c6f0f1bf2a9f102a0df1c07ad37c17235"
+source = "git+https://github.com/marlon-costa-dc/rust-code-analysis?branch=master#ecafc19e7f37151f730e8c8a5489681f05f86498"
 dependencies = [
  "cc",
- "tree-sitter-javascript 0.23.1",
+ "tree-sitter-javascript",
  "tree-sitter-language",
 ]
 
@@ -7145,17 +7135,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-preproc"
 version = "0.20.3"
-source = "git+https://github.com/marlon-costa-dc/rust-code-analysis?branch=tree-sitter-0.26-kotlin#d683273c6f0f1bf2a9f102a0df1c07ad37c17235"
-dependencies = [
- "cc",
- "tree-sitter-language",
-]
-
-[[package]]
-name = "tree-sitter-python"
-version = "0.23.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d065aaa27f3aaceaf60c1f0e0ac09e1cb9eb8ed28e7bcdaa52129cffc7f4b04"
+source = "git+https://github.com/marlon-costa-dc/rust-code-analysis?branch=master#ecafc19e7f37151f730e8c8a5489681f05f86498"
 dependencies = [
  "cc",
  "tree-sitter-language",
@@ -7176,16 +7156,6 @@ name = "tree-sitter-ruby"
 version = "0.23.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be0484ea4ef6bb9c575b4fdabde7e31340a8d2dbc7d52b321ac83da703249f95"
-dependencies = [
- "cc",
- "tree-sitter-language",
-]
-
-[[package]]
-name = "tree-sitter-rust"
-version = "0.23.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a4d64d449ca63e683c562c7743946a646671ca23947b9c925c0cfbe65051a4af"
 dependencies = [
  "cc",
  "tree-sitter-language",
@@ -7737,7 +7707,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]

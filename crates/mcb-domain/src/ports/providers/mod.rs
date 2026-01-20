@@ -10,6 +10,7 @@
 //! |------|-------------|
 //! | [`EmbeddingProvider`] | Text embedding generation services |
 //! | [`VectorStoreProvider`] | Vector storage and similarity search |
+//! | [`VectorStoreBrowser`] | Collection and file browsing for Admin UI |
 //! | [`HybridSearchProvider`] | Combined semantic and keyword search |
 //! | [`LanguageChunkingProvider`] | Language-specific code chunking |
 //! | [`CacheProvider`] | Caching backend services |
@@ -37,4 +38,4 @@ pub use crypto::{CryptoProvider, EncryptedData};
 pub use embedding::EmbeddingProvider;
 pub use hybrid_search::{HybridSearchProvider, HybridSearchResult};
 pub use language_chunking::LanguageChunkingProvider;
-pub use vector_store::{VectorStoreAdmin, VectorStoreProvider};
+pub use vector_store::{VectorStoreAdmin, VectorStoreBrowser, VectorStoreProvider};

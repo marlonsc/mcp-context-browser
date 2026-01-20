@@ -4,11 +4,15 @@
 //!
 //! Migrated from Axum to Rocket in v0.1.2 (ADR-026).
 //! Authentication integration added in v0.1.2.
+//! Browse API added in v0.1.2 for code navigation.
 
 use rocket::{Build, Rocket, routes};
 use std::sync::Arc;
 
 use super::auth::AdminAuthConfig;
+use super::browse_handlers::{
+    BrowseState, get_file_chunks, list_collection_files, list_collections,
+};
 use super::config_handlers::{get_config, reload_config, update_config_section};
 use super::handlers::{
     AdminState, extended_health_check, get_cache_stats, get_indexing_status, get_metrics,
@@ -39,13 +43,23 @@ use super::sse::events_stream;
 /// - POST /services/:name/stop - Stop a service (protected)
 /// - POST /services/:name/restart - Restart a service (protected)
 /// - GET /cache/stats - Cache statistics (protected)
+/// - GET /collections - List indexed collections (protected)
+/// - GET /collections/:name/files - List files in collection (protected)
+/// - GET /collections/:name/files/*path/chunks - Get file chunks (protected)
 ///
 /// # Authentication
 ///
 /// Protected endpoints require the `X-Admin-Key` header (or configured header name)
 /// with a valid API key. Public endpoints (health probes) are exempt.
-pub fn admin_rocket(state: AdminState, auth_config: Arc<AdminAuthConfig>) -> Rocket<Build> {
-    rocket::build().manage(state).manage(auth_config).mount(
+pub fn admin_rocket(
+    state: AdminState,
+    auth_config: Arc<AdminAuthConfig>,
+    browse_state: Option<BrowseState>,
+) -> Rocket<Build> {
+    let mut rocket = rocket::build().manage(state).manage(auth_config);
+
+    // Mount base routes
+    rocket = rocket.mount(
         "/",
         routes![
             // Health and monitoring
@@ -72,5 +86,15 @@ pub fn admin_rocket(state: AdminState, auth_config: Arc<AdminAuthConfig>) -> Roc
             // Cache management
             get_cache_stats,
         ],
-    )
+    );
+
+    // Add browse routes only if BrowseState is available
+    if let Some(browse) = browse_state {
+        rocket = rocket.manage(browse).mount(
+            "/",
+            routes![list_collections, list_collection_files, get_file_chunks,],
+        );
+    }
+
+    rocket
 }

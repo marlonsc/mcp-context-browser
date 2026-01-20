@@ -1,5 +1,5 @@
 use crate::error::Result;
-use crate::value_objects::{Embedding, SearchResult};
+use crate::value_objects::{CollectionInfo, Embedding, FileInfo, SearchResult};
 use async_trait::async_trait;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -179,4 +179,75 @@ pub trait VectorStoreProvider: VectorStoreAdmin + Send + Sync {
     /// # Returns
     /// Ok(vector_of_results) containing the vectors in the collection
     async fn list_vectors(&self, collection: &str, limit: usize) -> Result<Vec<SearchResult>>;
+}
+
+/// Vector Store Browse Operations for Admin UI
+///
+/// Provides collection and file browsing capabilities for the Admin UI.
+/// This trait extends the base vector store functionality with navigation
+/// operations useful for exploring indexed codebases.
+///
+/// # Example
+///
+/// ```ignore
+/// use mcb_domain::ports::providers::VectorStoreBrowser;
+///
+/// // List all indexed collections
+/// let collections = provider.list_collections().await?;
+/// for coll in collections {
+///     println!("Collection: {} ({} vectors)", coll.name, coll.vector_count);
+/// }
+///
+/// // List files in a collection
+/// let files = provider.list_file_paths("my-project", 100).await?;
+/// for file in files {
+///     println!("File: {}", file.path);
+/// }
+///
+/// // Get chunks for a specific file
+/// let chunks = provider.get_chunks_by_file("my-project", "src/main.rs").await?;
+/// for chunk in chunks {
+///     println!("Chunk {}: lines {}-{}", chunk.id, chunk.start_line, chunk.end_line);
+/// }
+/// ```
+#[async_trait]
+pub trait VectorStoreBrowser: Send + Sync {
+    /// List all collections with their statistics
+    ///
+    /// Returns metadata about all indexed collections, including
+    /// vector counts, file counts, and provider information.
+    ///
+    /// # Returns
+    /// Ok(vector_of_collection_info) containing info about all collections
+    async fn list_collections(&self) -> Result<Vec<CollectionInfo>>;
+
+    /// List unique file paths in a collection
+    ///
+    /// Returns information about all files indexed in a collection,
+    /// useful for building file browser UIs.
+    ///
+    /// # Arguments
+    /// * `collection` - Name of the collection to list files from
+    /// * `limit` - Maximum number of files to return
+    ///
+    /// # Returns
+    /// Ok(vector_of_file_info) containing info about indexed files
+    async fn list_file_paths(&self, collection: &str, limit: usize) -> Result<Vec<FileInfo>>;
+
+    /// Get all chunks for a specific file path
+    ///
+    /// Retrieves all code chunks that were extracted from a specific
+    /// file, ordered by line number.
+    ///
+    /// # Arguments
+    /// * `collection` - Name of the collection to search in
+    /// * `file_path` - Path of the file to get chunks for
+    ///
+    /// # Returns
+    /// Ok(vector_of_results) containing chunks from the specified file
+    async fn get_chunks_by_file(
+        &self,
+        collection: &str,
+        file_path: &str,
+    ) -> Result<Vec<SearchResult>>;
 }

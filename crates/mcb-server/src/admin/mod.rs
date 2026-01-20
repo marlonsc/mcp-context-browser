@@ -29,6 +29,7 @@
 
 pub mod api;
 pub mod auth;
+pub mod browse_handlers;
 pub mod config;
 pub mod config_handlers;
 pub mod handlers;
@@ -42,6 +43,7 @@ pub mod web;
 // Re-export main types
 pub use api::{AdminApi, AdminApiConfig};
 pub use auth::{AdminAuthConfig, AuthErrorResponse, with_admin_auth};
+pub use browse_handlers::BrowseState;
 pub use config::{
     ConfigReloadResponse, ConfigResponse, ConfigSectionUpdateRequest, ConfigSectionUpdateResponse,
     SanitizedConfig,

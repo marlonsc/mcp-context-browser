@@ -6,8 +6,8 @@
 use async_trait::async_trait;
 use dashmap::DashMap;
 use mcb_domain::error::{Error, Result};
-use mcb_domain::ports::providers::{VectorStoreAdmin, VectorStoreProvider};
-use mcb_domain::value_objects::{Embedding, SearchResult};
+use mcb_domain::ports::providers::{VectorStoreAdmin, VectorStoreBrowser, VectorStoreProvider};
+use mcb_domain::value_objects::{CollectionInfo, Embedding, FileInfo, SearchResult};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -122,6 +122,33 @@ impl VectorStoreProvider for NullVectorStoreProvider {
     }
 
     async fn list_vectors(&self, _collection: &str, _limit: usize) -> Result<Vec<SearchResult>> {
+        Ok(Vec::new())
+    }
+}
+
+#[async_trait]
+impl VectorStoreBrowser for NullVectorStoreProvider {
+    async fn list_collections(&self) -> Result<Vec<CollectionInfo>> {
+        // Return info for all tracked collections
+        let collections: Vec<CollectionInfo> = self
+            .collections
+            .iter()
+            .map(|entry| CollectionInfo::new(entry.key().clone(), 0, 0, None, self.provider_name()))
+            .collect();
+        Ok(collections)
+    }
+
+    async fn list_file_paths(&self, _collection: &str, _limit: usize) -> Result<Vec<FileInfo>> {
+        // Null provider has no files
+        Ok(Vec::new())
+    }
+
+    async fn get_chunks_by_file(
+        &self,
+        _collection: &str,
+        _file_path: &str,
+    ) -> Result<Vec<SearchResult>> {
+        // Null provider has no chunks
         Ok(Vec::new())
     }
 }

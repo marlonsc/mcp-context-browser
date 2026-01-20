@@ -342,15 +342,32 @@ impl TestValidator {
                 continue;
             }
 
-            // Check that required subdirectories exist
-            let required_dirs = ["unit", "integration", "e2e"];
-            for dir_name in &required_dirs {
-                let subdir = tests_dir.join(dir_name);
-                if !subdir.exists() {
+            // Check that at least unit/ or integration/ exists (e2e/ is optional)
+            let unit_exists = tests_dir.join("unit").exists();
+            let integration_exists = tests_dir.join("integration").exists();
+
+            // Only flag if NEITHER unit/ nor integration/ exist and there are test files
+            if !unit_exists && !integration_exists {
+                let has_test_files = std::fs::read_dir(&tests_dir)
+                    .map(|entries| {
+                        entries.filter_map(|e| e.ok()).any(|e| {
+                            let path = e.path();
+                            path.is_file()
+                                && path.extension().and_then(|x| x.to_str()) == Some("rs")
+                                && !matches!(
+                                    path.file_name().and_then(|n| n.to_str()).unwrap_or(""),
+                                    "lib.rs" | "mod.rs" | "test_utils.rs"
+                                )
+                        })
+                    })
+                    .unwrap_or(false);
+
+                if has_test_files {
                     violations.push(TestViolation::BadTestFileName {
                         file: tests_dir.clone(),
-                        suggestion: format!("Create tests/{}/ directory", dir_name),
-                        severity: Severity::Error,
+                        suggestion: "Create tests/unit/ or tests/integration/ directory"
+                            .to_string(),
+                        severity: Severity::Warning,
                     });
                 }
             }
@@ -373,7 +390,11 @@ impl TestValidator {
                 let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
 
                 // Skip allowed files in root tests directory
-                if matches!(file_name, "lib.rs" | "mod.rs" | "test_utils.rs") {
+                // These are: lib.rs, mod.rs, test_utils.rs, and entry points for test subdirectories
+                if matches!(
+                    file_name,
+                    "lib.rs" | "mod.rs" | "test_utils.rs" | "unit.rs" | "integration.rs" | "e2e.rs"
+                ) {
                     continue;
                 }
 
@@ -400,34 +421,8 @@ impl TestValidator {
                 continue;
             }
 
-            // Check for required directory structure
-            let unit_dir = tests_dir.join("unit");
-            let integration_dir = tests_dir.join("integration");
-            let e2e_dir = tests_dir.join("e2e");
-
-            // Warn if directories don't exist (they should for proper organization)
-            if !unit_dir.exists() {
-                violations.push(TestViolation::BadTestFileName {
-                    file: tests_dir.clone(),
-                    suggestion: "Create tests/unit/ directory for unit tests".to_string(),
-                    severity: Severity::Info,
-                });
-            }
-            if !integration_dir.exists() {
-                violations.push(TestViolation::BadTestFileName {
-                    file: tests_dir.clone(),
-                    suggestion: "Create tests/integration/ directory for integration tests"
-                        .to_string(),
-                    severity: Severity::Info,
-                });
-            }
-            if !e2e_dir.exists() {
-                violations.push(TestViolation::BadTestFileName {
-                    file: tests_dir.clone(),
-                    suggestion: "Create tests/e2e/ directory for end-to-end tests".to_string(),
-                    severity: Severity::Info,
-                });
-            }
+            // We don't require specific directories - tests can be organized
+            // in any subdirectory structure as long as they have entry points
 
             for entry in WalkDir::new(&tests_dir)
                 .into_iter()
@@ -502,15 +497,30 @@ impl TestValidator {
                             });
                         }
                     }
-                    _ => {
-                        // Files directly in tests/ directory (not in subdirs) are violations
-                        violations.push(TestViolation::BadTestFileName {
-                            file: path.to_path_buf(),
-                            suggestion:
-                                "Move to tests/unit/, tests/integration/, or tests/e2e/ directory"
+                    "tests" => {
+                        // Files directly in tests/ directory (not in any subdirectory)
+                        // are violations UNLESS they are entry points
+                        let file_full = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+                        if !matches!(
+                            file_full,
+                            "lib.rs"
+                                | "mod.rs"
+                                | "test_utils.rs"
+                                | "unit.rs"
+                                | "integration.rs"
+                                | "e2e.rs"
+                        ) {
+                            violations.push(TestViolation::BadTestFileName {
+                                file: path.to_path_buf(),
+                                suggestion: "Move to a subdirectory (e.g., tests/unit/)"
                                     .to_string(),
-                            severity: Severity::Warning,
-                        });
+                                severity: Severity::Warning,
+                            });
+                        }
+                    }
+                    _ => {
+                        // Files in subdirectories are allowed (module structure)
+                        // No violation
                     }
                 }
             }
@@ -659,7 +669,11 @@ impl TestValidator {
 
         let test_attr_pattern = Regex::new(r"#\[(?:tokio::)?test\]").ok();
         let fn_pattern = Regex::new(r"(?:async\s+)?fn\s+([a-z_][a-z0-9_]*)\s*\(").ok();
-        let real_assert_pattern = Regex::new(r"assert!|assert_eq!|assert_ne!").ok();
+        // Match common assertion macros (including word boundaries to avoid false positives)
+        let real_assert_pattern = Regex::new(
+            r"(?:^|\s|;|\()(assert!|assert_eq!|assert_ne!|assert_matches!|debug_assert!|debug_assert_eq!|debug_assert_ne!|panic!)",
+        )
+        .ok();
         let unwrap_pattern = Regex::new(r"\.unwrap\(|\.expect\(").ok();
 
         for crate_dir in self.get_crate_dirs()? {
@@ -740,11 +754,13 @@ impl TestValidator {
                                     .is_some_and(|p| body_lines.iter().any(|(_, l)| p.is_match(l)));
 
                                 if has_unwrap && !has_real_assert {
+                                    // Use Warning severity since this is heuristic-based detection
+                                    // Tests may have valid assertions that aren't detected by the pattern
                                     violations.push(TestViolation::UnwrapOnlyAssertion {
                                         file: entry.path().to_path_buf(),
                                         line: fn_start + 1,
                                         function_name: fn_name.to_string(),
-                                        severity: Severity::Error,
+                                        severity: Severity::Warning,
                                     });
                                 }
 

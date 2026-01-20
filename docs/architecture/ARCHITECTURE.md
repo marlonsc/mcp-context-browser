@@ -570,12 +570,20 @@ The project enforces strict dependency rules to maintain Clean Architecture comp
 
 #### Forbidden Dependencies
 
-| Crate | MUST NOT depend on |
-|-------|-------------------|
-| mcb-domain | Any internal crate |
-| mcb-application | mcb-infrastructure, mcb-server, mcb-providers |
-| mcb-providers | mcb-application, mcb-infrastructure, mcb-server |
-| mcb-infrastructure | mcb-server |
+| Crate | MUST NOT depend on | Allowed Dependencies |
+|-------|--------------------|----------------------|
+| mcb-domain | Any internal crate | None (pure domain) |
+| mcb-application | mcb-infrastructure, mcb-server, mcb-providers | mcb-domain only |
+| mcb-providers | mcb-infrastructure, mcb-server | mcb-domain, mcb-application* |
+| mcb-infrastructure | mcb-server | mcb-domain, mcb-application |
+
+**Note**: `mcb-providers` → `mcb-application` dependency is allowed ONLY for:
+
+-   Registry auto-registration (`ports::registry`)
+-   Admin interfaces (`ports::admin`)
+-   Infrastructure ports (`ports::infrastructure`)
+
+Provider trait implementations MUST import from `mcb-domain::ports::providers`.
 
 #### Automatic Enforcement
 
@@ -627,10 +635,11 @@ pub trait NewServiceProvider: Send + Sync {
 ```
 
 **Guidelines:**
-- Use domain types only (no external dependencies)
-- Return `Result<T, Error>` from domain layer
-- Mark trait with `Send + Sync` for async safety
-- Include health check method
+
+-   Use domain types only (no external dependencies)
+-   Return `Result<T, Error>` from domain layer
+-   Mark trait with `Send + Sync` for async safety
+-   Include health check method
 
 #### Step 2: Implement in Providers
 
@@ -668,10 +677,11 @@ impl NewServiceProvider for ConcreteNewService {
 ```
 
 **Guidelines:**
-- Import trait from `mcb_domain::ports::providers`
-- Use `Arc<dyn Trait>` for shared ownership
-- Implement error conversion from external errors
-- Add configuration struct if needed
+
+-   Import trait from `mcb_domain::ports::providers`
+-   Use `Arc<dyn Trait>` for shared ownership
+-   Implement error conversion from external errors
+-   Add configuration struct if needed
 
 #### Step 3: Register via Linkme
 
@@ -695,10 +705,11 @@ pub static CONCRETE_NEW_SERVICE: ProviderRegistration = ProviderRegistration {
 ```
 
 **Guidelines:**
-- Define registry slice in `mcb-application/src/ports/registry/`
-- Register all implementations in provider module
-- Use async factory for initialization
-- Return `Arc<dyn Trait>` from factory
+
+-   Define registry slice in `mcb-application/src/ports/registry/`
+-   Register all implementations in provider module
+-   Use async factory for initialization
+-   Return `Arc<dyn Trait>` from factory
 
 This pattern enables compile-time provider discovery with zero runtime overhead while maintaining Clean Architecture boundaries.
 

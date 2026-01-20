@@ -16,6 +16,9 @@ use super::handlers;
 /// - GET `/ui/config` - Configuration page
 /// - GET `/ui/health` - Health status page
 /// - GET `/ui/indexing` - Indexing status page
+/// - GET `/ui/browse` - Browse collections page
+/// - GET `/ui/browse/<collection>` - Browse collection files page
+/// - GET `/ui/browse/<collection>/file` - Browse file chunks page
 /// - GET `/favicon.ico` - Favicon
 pub fn web_rocket() -> Rocket<Build> {
     rocket::build().mount(
@@ -26,6 +29,9 @@ pub fn web_rocket() -> Rocket<Build> {
             handlers::config_page,
             handlers::health_page,
             handlers::indexing_page,
+            handlers::browse_page,
+            handlers::browse_collection_page,
+            handlers::browse_file_page,
             handlers::favicon,
         ],
     )
@@ -39,6 +45,9 @@ pub fn web_routes() -> Vec<rocket::Route> {
         handlers::config_page,
         handlers::health_page,
         handlers::indexing_page,
+        handlers::browse_page,
+        handlers::browse_collection_page,
+        handlers::browse_file_page,
         handlers::favicon,
     ]
 }

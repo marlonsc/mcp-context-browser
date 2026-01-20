@@ -13,6 +13,9 @@ const INDEX_HTML: &str = include_str!("templates/index.html");
 const CONFIG_HTML: &str = include_str!("templates/config.html");
 const HEALTH_HTML: &str = include_str!("templates/health.html");
 const INDEXING_HTML: &str = include_str!("templates/indexing.html");
+const BROWSE_HTML: &str = include_str!("templates/browse.html");
+const BROWSE_COLLECTION_HTML: &str = include_str!("templates/browse_collection.html");
+const BROWSE_FILE_HTML: &str = include_str!("templates/browse_file.html");
 
 /// Dashboard page handler
 #[get("/")]
@@ -51,4 +54,22 @@ pub fn favicon() -> (ContentType, &'static str) {
         ContentType::SVG,
         r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📊</text></svg>"#,
     )
+}
+
+/// Browse collections page handler
+#[get("/ui/browse")]
+pub fn browse_page() -> RawHtml<&'static str> {
+    RawHtml(BROWSE_HTML)
+}
+
+/// Browse collection files page handler
+#[get("/ui/browse/<_collection>")]
+pub fn browse_collection_page(_collection: &str) -> RawHtml<&'static str> {
+    RawHtml(BROWSE_COLLECTION_HTML)
+}
+
+/// Browse file chunks page handler
+#[get("/ui/browse/<_collection>/file")]
+pub fn browse_file_page(_collection: &str) -> RawHtml<&'static str> {
+    RawHtml(BROWSE_FILE_HTML)
 }

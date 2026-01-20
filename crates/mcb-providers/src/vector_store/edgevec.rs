@@ -16,8 +16,8 @@ use crate::constants::{
 use crate::utils::JsonExt;
 use edgevec::hnsw::VectorId;
 use mcb_domain::error::{Error, Result};
-use mcb_domain::ports::providers::{VectorStoreAdmin, VectorStoreProvider};
-use mcb_domain::value_objects::{Embedding, SearchResult};
+use mcb_domain::ports::providers::{VectorStoreAdmin, VectorStoreBrowser, VectorStoreProvider};
+use mcb_domain::value_objects::{CollectionInfo, Embedding, FileInfo, SearchResult};
 
 /// EdgeVec vector store configuration
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize, schemars::JsonSchema)]
@@ -175,6 +175,20 @@ enum EdgeVecMessage {
     CollectionExists {
         name: String,
         tx: oneshot::Sender<Result<bool>>,
+    },
+    // Browse operations
+    ListCollections {
+        tx: oneshot::Sender<Result<Vec<CollectionInfo>>>,
+    },
+    ListFilePaths {
+        collection: String,
+        limit: usize,
+        tx: oneshot::Sender<Result<Vec<FileInfo>>>,
+    },
+    GetChunksByFile {
+        collection: String,
+        file_path: String,
+        tx: oneshot::Sender<Result<Vec<SearchResult>>>,
     },
 }
 
@@ -355,6 +369,51 @@ impl VectorStoreProvider for EdgeVecVectorStoreProvider {
             .send(EdgeVecMessage::ListVectors {
                 collection: collection.to_string(),
                 limit,
+                tx,
+            })
+            .await;
+        rx.await
+            .unwrap_or_else(|_| Err(Error::internal("Actor closed")))
+    }
+}
+
+#[async_trait]
+impl VectorStoreBrowser for EdgeVecVectorStoreProvider {
+    async fn list_collections(&self) -> Result<Vec<CollectionInfo>> {
+        let (tx, rx) = oneshot::channel();
+        let _ = self
+            .sender
+            .send(EdgeVecMessage::ListCollections { tx })
+            .await;
+        rx.await
+            .unwrap_or_else(|_| Err(Error::internal("Actor closed")))
+    }
+
+    async fn list_file_paths(&self, collection: &str, limit: usize) -> Result<Vec<FileInfo>> {
+        let (tx, rx) = oneshot::channel();
+        let _ = self
+            .sender
+            .send(EdgeVecMessage::ListFilePaths {
+                collection: collection.to_string(),
+                limit,
+                tx,
+            })
+            .await;
+        rx.await
+            .unwrap_or_else(|_| Err(Error::internal("Actor closed")))
+    }
+
+    async fn get_chunks_by_file(
+        &self,
+        collection: &str,
+        file_path: &str,
+    ) -> Result<Vec<SearchResult>> {
+        let (tx, rx) = oneshot::channel();
+        let _ = self
+            .sender
+            .send(EdgeVecMessage::GetChunksByFile {
+                collection: collection.to_string(),
+                file_path: file_path.to_string(),
                 tx,
             })
             .await;
@@ -593,6 +652,105 @@ impl EdgeVecActor {
                 EdgeVecMessage::CollectionExists { name, tx } => {
                     let exists = self.metadata_store.contains_key(&name);
                     let _ = tx.send(Ok(exists));
+                }
+                EdgeVecMessage::ListCollections { tx } => {
+                    let collections: Vec<CollectionInfo> = self
+                        .metadata_store
+                        .iter()
+                        .map(|entry| {
+                            let name = entry.key().clone();
+                            let vector_count = entry.value().len() as u64;
+
+                            // Count unique file paths
+                            let file_paths: std::collections::HashSet<&str> = entry
+                                .value()
+                                .values()
+                                .filter_map(|v| {
+                                    v.as_object()
+                                        .and_then(|o| o.get("file_path"))
+                                        .and_then(|v| v.as_str())
+                                })
+                                .collect();
+                            let file_count = file_paths.len() as u64;
+
+                            CollectionInfo::new(name, vector_count, file_count, None, "edgevec")
+                        })
+                        .collect();
+                    let _ = tx.send(Ok(collections));
+                }
+                EdgeVecMessage::ListFilePaths {
+                    collection,
+                    limit,
+                    tx,
+                } => {
+                    let mut files = Vec::new();
+                    if let Some(collection_metadata) = self.metadata_store.get(&collection) {
+                        let mut file_map: HashMap<String, (u32, String)> = HashMap::new();
+
+                        for meta_val in collection_metadata.values() {
+                            if let Some(meta) = meta_val.as_object() {
+                                if let Some(file_path) =
+                                    meta.get("file_path").and_then(|v| v.as_str())
+                                {
+                                    let language = meta
+                                        .get("language")
+                                        .and_then(|v| v.as_str())
+                                        .unwrap_or("unknown")
+                                        .to_string();
+
+                                    let entry = file_map
+                                        .entry(file_path.to_string())
+                                        .or_insert((0, language));
+                                    entry.0 += 1;
+                                }
+                            }
+                        }
+
+                        files = file_map
+                            .into_iter()
+                            .take(limit)
+                            .map(|(path, (chunk_count, language))| {
+                                FileInfo::new(path, chunk_count, language, None)
+                            })
+                            .collect();
+                    }
+                    let _ = tx.send(Ok(files));
+                }
+                EdgeVecMessage::GetChunksByFile {
+                    collection,
+                    file_path,
+                    tx,
+                } => {
+                    let mut results = Vec::new();
+                    if let Some(collection_metadata) = self.metadata_store.get(&collection) {
+                        for (ext_id, meta_val) in collection_metadata.iter() {
+                            if let Some(meta) = meta_val.as_object() {
+                                if meta
+                                    .get("file_path")
+                                    .and_then(|v| v.as_str())
+                                    .is_some_and(|p| p == file_path)
+                                {
+                                    let start_line = meta
+                                        .opt_u64("start_line")
+                                        .or_else(|| meta.opt_u64("line_number"))
+                                        .unwrap_or(0)
+                                        as u32;
+
+                                    results.push(SearchResult {
+                                        id: ext_id.clone(),
+                                        file_path: file_path.to_string(),
+                                        start_line,
+                                        content: meta.string_or("content", ""),
+                                        score: 1.0,
+                                        language: meta.string_or("language", "unknown"),
+                                    });
+                                }
+                            }
+                        }
+                    }
+                    // Sort by start_line
+                    results.sort_by_key(|r| r.start_line);
+                    let _ = tx.send(Ok(results));
                 }
             }
         }

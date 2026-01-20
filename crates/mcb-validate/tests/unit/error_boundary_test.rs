@@ -1,7 +1,5 @@
 //! Tests for Error Boundary Validation
 
-mod test_utils;
-
 use mcb_validate::error_boundary::ErrorBoundaryValidator;
 use std::fs;
 use tempfile::TempDir;

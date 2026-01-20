@@ -123,7 +123,7 @@
 | `tests/integration_rca_metrics.rs` | Yes | 9 tests pass |
 | `tests/integration_metrics.rs` | Yes | Additional Tree-sitter based tests |
 
-**RCA Metrics Available** (via rust-code-analysis fork):
+**RCA Metrics Available** (via Rust-code-analysis fork):
 
 | Metric | Description |
 |--------|-------------|
@@ -141,7 +141,7 @@
 
 **Supported Languages**: Rust, Python, JavaScript, TypeScript, Java, C, C++, Kotlin
 
-**Note**: Uses forked rust-code-analysis with tree-sitter 0.26.3 compatibility.
+**Note**: Uses forked Rust-code-analysis with tree-sitter 0.26.3 compatibility.
 
 ### Phase 5: Duplication - VERIFIED ✅
 
@@ -340,7 +340,38 @@ This document was created by:
 5.  Checking ADR status with file reads
 
 **Auditor**: Claude Code Session
-**Date**: 2026-01-19 15:10 GMT-3
+**Date**: 2026-01-19 20:15 GMT-3
+
+---
+
+## Workspace Validation Results
+
+**Last Run**: 2026-01-19 20:15 GMT-3 via `make validate`
+
+### Summary
+
+| Category | Count | Severity |
+|----------|-------|----------|
+| Clean Architecture Violations | 0 | - |
+| Test Organization Issues | 26 | Error |
+| Test Naming Warnings | 4 | Warning |
+| **Total** | **30** | - |
+
+### Findings
+
+**No architectural violations detected** - The MCB codebase correctly follows clean architecture:
+
+-   CA001 (Domain contains implementation): Not found
+-   CA002 (Handler creates service): Not found
+-   CA003 (Port missing Component derive): Not found
+-   CA004 (Entity missing identity): Not found
+-   CA005 (Value object mutable): Not found
+-   CA006 (Server imports provider): Not found
+
+**Test organization warnings** (non-blocking):
+
+-   1 inline test module in `mcb-infrastructure/src/di/resolver.rs`
+-   25 test files not in standard `tests/unit/`, `tests/integration/`, or `tests/e2e/` directories
 
 ---
 
@@ -351,4 +382,5 @@ This document was created by:
 | 1.0 | 2026-01-18 | Initial creation with full traceability audit |
 | 2.0 | 2026-01-19 | Updated Phases 4-7 status, added duplication module, fixed infrastructure tracking |
 | 3.0 | 2026-01-19 | Phase 6 (Architecture) and Phase 7 (Integration) now VERIFIED - integration tests and benchmarks complete |
-| 4.0 | 2026-01-19 | Phase 4 (Metrics) now VERIFIED - rust-code-analysis fork working with tree-sitter 0.26.3 + Kotlin support |
+| 4.0 | 2026-01-19 | Phase 4 (Metrics) now VERIFIED - Rust-code-analysis fork working with tree-sitter 0.26.3 + Kotlin support |
+| 5.0 | 2026-01-19 | RCA dependency updated to master branch - all 750+ tests pass, validation detects 26 test organization violations |

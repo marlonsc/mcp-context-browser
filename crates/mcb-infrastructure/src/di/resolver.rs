@@ -251,29 +251,4 @@ impl std::fmt::Display for AvailableProviders {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_list_available_providers() {
-        // Should not panic
-        let providers = list_available_providers();
-        // Providers will be empty in unit tests since mcb-providers isn't linked
-        assert!(providers.embedding.is_empty() || !providers.embedding.is_empty());
-    }
-
-    #[test]
-    fn test_available_providers_display() {
-        let providers = AvailableProviders {
-            embedding: vec![("null", "Null provider")],
-            vector_store: vec![("memory", "In-memory store")],
-            cache: vec![("moka", "Moka cache")],
-            language: vec![("universal", "Universal chunker")],
-        };
-
-        let display = format!("{}", providers);
-        assert!(display.contains("Embedding Providers"));
-        assert!(display.contains("null"));
-    }
-}
+// Tests moved to tests/unit/di.rs per test organization standards

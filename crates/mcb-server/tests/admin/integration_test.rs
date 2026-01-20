@@ -69,9 +69,13 @@ fn create_shared_test_state() -> (
 async fn test_full_admin_stack_integration() {
     // 1. Create shared state for metrics and indexing
     let (state, metrics, indexing) = create_shared_test_state();
-    let client = Client::tracked(admin_rocket(state, Arc::new(AdminAuthConfig::default())))
-        .await
-        .expect("valid rocket instance");
+    let client = Client::tracked(admin_rocket(
+        state,
+        Arc::new(AdminAuthConfig::default()),
+        None,
+    ))
+    .await
+    .expect("valid rocket instance");
 
     // 2. Verify initial health status
     let response = client.get("/health").dispatch().await;
@@ -174,9 +178,13 @@ async fn test_full_admin_stack_integration() {
 #[rocket::async_test]
 async fn test_metrics_accumulation_integration() {
     let (state, metrics, _) = create_shared_test_state();
-    let client = Client::tracked(admin_rocket(state, Arc::new(AdminAuthConfig::default())))
-        .await
-        .expect("valid rocket instance");
+    let client = Client::tracked(admin_rocket(
+        state,
+        Arc::new(AdminAuthConfig::default()),
+        None,
+    ))
+    .await
+    .expect("valid rocket instance");
 
     // First batch of metrics
     for _ in 0..10 {
@@ -215,9 +223,13 @@ async fn test_metrics_accumulation_integration() {
 #[rocket::async_test]
 async fn test_indexing_lifecycle_integration() {
     let (state, _, indexing) = create_shared_test_state();
-    let client = Client::tracked(admin_rocket(state, Arc::new(AdminAuthConfig::default())))
-        .await
-        .expect("valid rocket instance");
+    let client = Client::tracked(admin_rocket(
+        state,
+        Arc::new(AdminAuthConfig::default()),
+        None,
+    ))
+    .await
+    .expect("valid rocket instance");
 
     // Start 3 concurrent operations
     let op1 = indexing.start_operation("repo-1", 50);

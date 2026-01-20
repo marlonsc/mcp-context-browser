@@ -265,6 +265,21 @@ fn func3(x: i32) -> i32 {
             .analyze_code(code, &LANG::Rust, Path::new("empty.rs"))
             .expect("Should handle empty file");
 
-        assert!(results.is_empty(), "Empty file should have no functions");
+        // Empty file should have no actual functions (may have root space entry named after file)
+        // RCA creates a file-level space entry with name = filename, which is not a function
+        let actual_functions: Vec<_> = results
+            .iter()
+            .filter(|f| {
+                !f.name.is_empty()
+                    && !std::path::Path::new(&f.name)
+                        .extension()
+                        .is_some_and(|ext| ext.eq_ignore_ascii_case("rs"))
+            })
+            .collect();
+        assert!(
+            actual_functions.is_empty(),
+            "Empty file should have no actual functions, got: {:?}",
+            actual_functions.iter().map(|f| &f.name).collect::<Vec<_>>()
+        );
     }
 }

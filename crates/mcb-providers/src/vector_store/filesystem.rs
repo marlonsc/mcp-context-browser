@@ -11,10 +11,10 @@ use crate::utils::JsonExt;
 use async_trait::async_trait;
 use dashmap::DashMap;
 use mcb_domain::error::{Error, Result};
-use mcb_domain::ports::providers::{VectorStoreAdmin, VectorStoreProvider};
-use mcb_domain::value_objects::{Embedding, SearchResult};
+use mcb_domain::ports::providers::{VectorStoreAdmin, VectorStoreBrowser, VectorStoreProvider};
+use mcb_domain::value_objects::{CollectionInfo, Embedding, FileInfo, SearchResult};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::io::{Read, Seek, Write};
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -744,6 +744,162 @@ impl VectorStoreProvider for FilesystemVectorStore {
                 });
             }
         }
+        Ok(results)
+    }
+}
+
+#[async_trait]
+impl VectorStoreBrowser for FilesystemVectorStore {
+    async fn list_collections(&self) -> Result<Vec<CollectionInfo>> {
+        // Find all collection index files
+        let mut collections = Vec::new();
+
+        let entries = tokio::fs::read_dir(&self.config.base_path)
+            .await
+            .map_err(|e| Error::io(format!("Failed to read base directory: {}", e)))?;
+
+        let mut entries = entries;
+        while let Some(entry) = entries
+            .next_entry()
+            .await
+            .map_err(|e| Error::io(format!("Failed to read directory entry: {}", e)))?
+        {
+            let path = entry.path();
+            if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                if name.ends_with("_index.json") {
+                    let collection_name = name.trim_end_matches("_index.json");
+
+                    // Get stats for this collection
+                    let stats = self.get_stats(collection_name).await.unwrap_or_default();
+                    let vector_count = stats
+                        .get("total_vectors")
+                        .and_then(|v| v.as_u64())
+                        .unwrap_or(0);
+
+                    // Count unique files from index cache
+                    let file_paths: HashSet<String> = self
+                        .index_cache
+                        .iter()
+                        .filter(|r| r.key().0 == collection_name)
+                        .filter_map(|r| {
+                            r.value()
+                                .metadata
+                                .get("file_path")
+                                .and_then(|v| v.as_str())
+                                .map(|s| s.to_string())
+                        })
+                        .collect();
+                    let file_count = file_paths.len() as u64;
+
+                    collections.push(CollectionInfo::new(
+                        collection_name,
+                        vector_count,
+                        file_count,
+                        None,
+                        self.provider_name(),
+                    ));
+                }
+            }
+        }
+
+        Ok(collections)
+    }
+
+    async fn list_file_paths(&self, collection: &str, limit: usize) -> Result<Vec<FileInfo>> {
+        // Ensure state is loaded
+        if !self.next_shard_ids.contains_key(collection) {
+            self.load_collection_state(collection).await?;
+        }
+
+        // Aggregate file info from index cache
+        let mut file_map: HashMap<String, (u32, String)> = HashMap::new();
+
+        for entry in self.index_cache.iter() {
+            if entry.key().0 == collection {
+                if let Some(file_path) = entry
+                    .value()
+                    .metadata
+                    .get("file_path")
+                    .and_then(|v| v.as_str())
+                {
+                    let language = entry
+                        .value()
+                        .metadata
+                        .get("language")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("unknown")
+                        .to_string();
+
+                    let e = file_map
+                        .entry(file_path.to_string())
+                        .or_insert((0, language));
+                    e.0 += 1; // Increment chunk count
+                }
+            }
+        }
+
+        let files: Vec<FileInfo> = file_map
+            .into_iter()
+            .take(limit)
+            .map(|(path, (chunk_count, language))| FileInfo::new(path, chunk_count, language, None))
+            .collect();
+
+        Ok(files)
+    }
+
+    async fn get_chunks_by_file(
+        &self,
+        collection: &str,
+        file_path: &str,
+    ) -> Result<Vec<SearchResult>> {
+        // Ensure state is loaded
+        if !self.next_shard_ids.contains_key(collection) {
+            self.load_collection_state(collection).await?;
+        }
+
+        let mut results = Vec::new();
+
+        // Find all entries for this file
+        let entries: Vec<_> = self
+            .index_cache
+            .iter()
+            .filter(|r| {
+                r.key().0 == collection
+                    && r.value()
+                        .metadata
+                        .get("file_path")
+                        .and_then(|v| v.as_str())
+                        .is_some_and(|p| p == file_path)
+            })
+            .map(|r| (r.key().1.clone(), r.value().clone()))
+            .collect();
+
+        for (id, entry) in entries {
+            if let Ok((_, metadata)) = self
+                .read_vector_from_shard(collection, entry.shard_id, entry.offset)
+                .await
+            {
+                let start_line = metadata
+                    .opt_u64("start_line")
+                    .or_else(|| metadata.opt_u64("line_number"))
+                    .unwrap_or(0) as u32;
+                let content = metadata.string_or("content", "");
+                let language = metadata.string_or("language", "unknown");
+
+                results.push(SearchResult {
+                    id,
+                    file_path: file_path.to_string(),
+                    start_line,
+                    content,
+                    score: 1.0,
+                    language,
+                });
+            }
+        }
+
+        // Sort by start_line
+        results.sort_by_key(|r| r.start_line);
+
         Ok(results)
     }
 }

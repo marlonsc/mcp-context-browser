@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browse Collections - MCP Context Browser Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        .card { background: white; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 1.5rem; }
+        .card:hover { box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .btn { padding: 0.5rem 1rem; border-radius: 0.375rem; font-weight: 500; transition: background-color 0.2s; cursor: pointer; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .stat-value { font-size: 1.5rem; font-weight: 600; }
+        .stat-label { font-size: 0.75rem; color: #6b7280; text-transform: uppercase; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <nav class="bg-gray-800 text-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-bold">MCP Context Browser</span>
+                    <span class="ml-2 text-sm text-gray-400">Admin</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Dashboard</a>
+                    <a href="/ui/config" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Config</a>
+                    <a href="/ui/health" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Health</a>
+                    <a href="/ui/indexing" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Indexing</a>
+                    <a href="/ui/browse" class="px-3 py-2 rounded-md text-sm font-medium bg-gray-900">Browse</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Browse Indexed Code</h1>
+            <p class="mt-2 text-gray-600">Explore collections, files, and code chunks</p>
+        </div>
+
+        <!-- Collections Grid -->
+        <div id="collections-container">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-gray-900">Collections</h2>
+                <button class="btn btn-primary" onclick="loadCollections()">
+                    Refresh
+                </button>
+            </div>
+
+            <div id="collections-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="card flex items-center justify-center h-32">
+                    <p class="text-gray-500">Loading collections...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-gray-400 py-4 mt-8">
+        <div class="max-w-7xl mx-auto px-4 text-center text-sm">
+            MCP Context Browser v0.1.2 | Browse Indexed Code
+        </div>
+    </footer>
+
+    <script>
+        async function loadCollections() {
+            const grid = document.getElementById('collections-grid');
+            grid.innerHTML = '<div class="card flex items-center justify-center h-32"><p class="text-gray-500">Loading...</p></div>';
+
+            try {
+                const response = await fetch('/collections');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                const data = await response.json();
+                renderCollections(data.collections);
+            } catch (e) {
+                console.error('Error loading collections:', e);
+                grid.innerHTML = `
+                    <div class="card flex flex-col items-center justify-center h-32 col-span-full">
+                        <p class="text-red-500 font-medium">Error loading collections</p>
+                        <p class="text-gray-500 text-sm mt-2">${escapeHtml(e.message)}</p>
+                        <p class="text-gray-400 text-xs mt-2">Ensure browse state is configured on the server.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderCollections(collections) {
+            const grid = document.getElementById('collections-grid');
+
+            if (!collections || collections.length === 0) {
+                grid.innerHTML = `
+                    <div class="card flex flex-col items-center justify-center h-32 col-span-full">
+                        <p class="text-gray-500 font-medium">No collections found</p>
+                        <p class="text-gray-400 text-sm mt-2">Index a codebase to see it here.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = collections.map(coll => `
+                <a href="/ui/browse/${encodeURIComponent(coll.name)}" class="card block hover:shadow-md transition-shadow">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900">${escapeHtml(coll.name)}</h3>
+                            <p class="text-sm text-gray-500 mt-1">${escapeHtml(coll.provider)}</p>
+                        </div>
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </div>
+                    <div class="mt-4 grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="stat-value">${formatNumber(coll.vector_count)}</p>
+                            <p class="stat-label">Vectors</p>
+                        </div>
+                        <div>
+                            <p class="stat-value">${formatNumber(coll.file_count)}</p>
+                            <p class="stat-label">Files</p>
+                        </div>
+                    </div>
+                    ${coll.last_indexed ? `
+                        <p class="text-xs text-gray-400 mt-4">
+                            Last indexed: ${formatTimestamp(coll.last_indexed)}
+                        </p>
+                    ` : ''}
+                </a>
+            `).join('');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatNumber(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return num.toString();
+        }
+
+        function formatTimestamp(ts) {
+            return new Date(ts * 1000).toLocaleString();
+        }
+
+        // Load on page ready
+        document.addEventListener('DOMContentLoaded', loadCollections);
+    </script>
+</body>
+</html>

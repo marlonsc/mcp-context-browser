@@ -1,10 +1,8 @@
 //! Tests for Documentation Validation
 
-mod test_utils;
-
+use crate::test_utils::create_test_crate;
 use mcb_validate::{DocumentationValidator, DocumentationViolation};
 use tempfile::TempDir;
-use test_utils::create_test_crate;
 
 #[test]
 fn test_missing_struct_doc() {

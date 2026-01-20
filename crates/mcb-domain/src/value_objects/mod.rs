@@ -12,7 +12,11 @@
 //! | [`SearchResult`] | Ranked result from semantic search operation |
 //! | [`Language`] | Programming language identifier |
 //! | [`OperationType`] | Operation type for metrics and rate limiting |
+//! | [`CollectionInfo`] | Metadata about an indexed collection |
+//! | [`FileInfo`] | Metadata about an indexed file |
 
+/// Browse-related value objects for code navigation
+pub mod browse;
 /// Configuration value objects
 pub mod config;
 /// Semantic embedding value objects
@@ -23,6 +27,7 @@ pub mod search;
 pub mod types;
 
 // Re-export commonly used value objects
+pub use browse::{CollectionInfo, FileInfo};
 pub use config::{CacheConfig, EmbeddingConfig, VectorStoreConfig};
 pub use embedding::Embedding;
 pub use search::SearchResult;

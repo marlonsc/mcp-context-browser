@@ -1,10 +1,8 @@
 //! Tests for KISS (Keep It Simple, Stupid) Validation
 
-mod test_utils;
-
+use crate::test_utils::create_test_crate;
 use mcb_validate::{KissValidator, KissViolation};
 use tempfile::TempDir;
-use test_utils::create_test_crate;
 
 #[test]
 fn test_struct_too_many_fields() {

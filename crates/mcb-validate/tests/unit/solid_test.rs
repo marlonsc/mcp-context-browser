@@ -1,10 +1,9 @@
 //! Tests for SOLID Principles Validation
 
-mod test_utils;
-
 use mcb_validate::{SolidValidator, SolidViolation};
 use tempfile::TempDir;
-use test_utils::create_test_crate;
+
+use crate::test_utils::create_test_crate;
 
 #[test]
 fn test_large_trait_detection() {

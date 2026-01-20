@@ -1,6 +1,6 @@
-//! Unit tests for mcb_validate::lib module
+//! Unit tests for `mcb_validate::lib` module
 
-use mcb_validate::{ArchitectureValidator, ValidationConfig, Severity};
+use mcb_validate::{ArchitectureValidator, Severity, ValidationConfig};
 use std::path::PathBuf;
 
 #[test]
@@ -36,9 +36,9 @@ fn test_validation_config_should_exclude() {
         .with_exclude_pattern("target/")
         .with_exclude_pattern("fixtures/");
 
-    assert!(config.should_exclude(PathBuf::from("/workspace/target/debug")));
-    assert!(config.should_exclude(PathBuf::from("/workspace/tests/fixtures/data.json")));
-    assert!(!config.should_exclude(PathBuf::from("/workspace/src/lib.rs")));
+    assert!(config.should_exclude(&PathBuf::from("/workspace/target/debug")));
+    assert!(config.should_exclude(&PathBuf::from("/workspace/tests/fixtures/data.json")));
+    assert!(!config.should_exclude(&PathBuf::from("/workspace/src/lib.rs")));
 }
 
 #[test]

@@ -5,9 +5,7 @@ use mcb_server::formatter::ResponseFormatter;
 use std::path::Path;
 use std::time::Duration;
 
-mod test_utils;
-
-use test_utils::test_fixtures::{create_test_search_result, create_test_search_results};
+use crate::test_utils::test_fixtures::{create_test_search_result, create_test_search_results};
 
 #[test]
 fn test_format_search_response_with_results() {

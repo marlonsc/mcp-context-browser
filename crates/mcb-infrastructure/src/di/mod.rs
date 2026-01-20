@@ -46,4 +46,6 @@ pub use provider_resolvers::{
     CacheProviderResolver, EmbeddingProviderResolver, LanguageProviderResolver,
     VectorStoreProviderResolver,
 };
-pub use resolver::{ResolvedProviders, resolve_providers};
+pub use resolver::{
+    AvailableProviders, ResolvedProviders, list_available_providers, resolve_providers,
+};

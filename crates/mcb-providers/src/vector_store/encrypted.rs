@@ -22,8 +22,8 @@
 use async_trait::async_trait;
 use mcb_domain::error::{Error, Result};
 use mcb_domain::ports::providers::{CryptoProvider, EncryptedData};
-use mcb_domain::ports::providers::{VectorStoreAdmin, VectorStoreProvider};
-use mcb_domain::value_objects::{Embedding, SearchResult};
+use mcb_domain::ports::providers::{VectorStoreAdmin, VectorStoreBrowser, VectorStoreProvider};
+use mcb_domain::value_objects::{CollectionInfo, Embedding, FileInfo, SearchResult};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -194,6 +194,34 @@ impl<P: VectorStoreProvider> VectorStoreProvider for EncryptedVectorStoreProvide
     async fn list_vectors(&self, collection: &str, limit: usize) -> Result<Vec<SearchResult>> {
         // Delegate to inner provider - SearchResult fields are extracted from stored metadata
         self.inner.list_vectors(collection, limit).await
+    }
+}
+
+/// VectorStoreBrowser implementation for encrypted provider
+///
+/// Delegates all browse operations to the inner provider.
+/// Only available when the inner provider also implements VectorStoreBrowser.
+#[async_trait]
+impl<P: VectorStoreProvider + VectorStoreBrowser> VectorStoreBrowser
+    for EncryptedVectorStoreProvider<P>
+{
+    async fn list_collections(&self) -> Result<Vec<CollectionInfo>> {
+        // Delegate to inner provider
+        self.inner.list_collections().await
+    }
+
+    async fn list_file_paths(&self, collection: &str, limit: usize) -> Result<Vec<FileInfo>> {
+        // Delegate to inner provider
+        self.inner.list_file_paths(collection, limit).await
+    }
+
+    async fn get_chunks_by_file(
+        &self,
+        collection: &str,
+        file_path: &str,
+    ) -> Result<Vec<SearchResult>> {
+        // Delegate to inner provider
+        self.inner.get_chunks_by_file(collection, file_path).await
     }
 }
 

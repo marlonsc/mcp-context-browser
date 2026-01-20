@@ -26,8 +26,9 @@ use std::sync::{Arc, RwLock};
 ///
 /// Wraps the current embedding provider in a RwLock, allowing admin API
 /// to switch providers without restarting the application.
-// Note: dill #[component] removed - requires manual constructor with initial provider
-// Use add_value pattern in bootstrap.rs instead
+///
+/// Note: dill `#[component]` removed - requires manual constructor with initial provider.
+/// Use `add_value` pattern in bootstrap.rs instead.
 pub struct EmbeddingProviderHandle {
     inner: RwLock<Arc<dyn EmbeddingProvider>>,
 }
@@ -75,8 +76,12 @@ impl std::fmt::Debug for EmbeddingProviderHandle {
 // ============================================================================
 
 /// Handle for runtime-swappable vector store provider
-// Note: dill #[component] removed - requires manual constructor with initial provider
-// Use add_value pattern in bootstrap.rs instead
+///
+/// Wraps the current vector store provider in a RwLock, allowing admin API
+/// to switch providers without restarting the application.
+///
+/// Note: dill `#[component]` removed - requires manual constructor with initial provider.
+/// Use `add_value` pattern in bootstrap.rs instead.
 pub struct VectorStoreProviderHandle {
     inner: RwLock<Arc<dyn VectorStoreProvider>>,
 }
@@ -117,8 +122,12 @@ impl std::fmt::Debug for VectorStoreProviderHandle {
 // ============================================================================
 
 /// Handle for runtime-swappable cache provider
-// Note: dill #[component] removed - requires manual constructor with initial provider
-// Use add_value pattern in bootstrap.rs instead
+///
+/// Wraps the current cache provider in a RwLock, allowing admin API
+/// to switch providers without restarting the application.
+///
+/// Note: dill `#[component]` removed - requires manual constructor with initial provider.
+/// Use `add_value` pattern in bootstrap.rs instead.
 pub struct CacheProviderHandle {
     inner: RwLock<Arc<dyn CacheProvider>>,
 }
@@ -166,8 +175,12 @@ impl std::fmt::Debug for CacheProviderHandle {
 // ============================================================================
 
 /// Handle for runtime-swappable language chunking provider
-// Note: dill #[component] removed - requires manual constructor with initial provider
-// Use add_value pattern in bootstrap.rs instead
+///
+/// Wraps the current language chunking provider in a RwLock, allowing admin API
+/// to switch providers without restarting the application.
+///
+/// Note: dill `#[component]` removed - requires manual constructor with initial provider.
+/// Use `add_value` pattern in bootstrap.rs instead.
 pub struct LanguageProviderHandle {
     inner: RwLock<Arc<dyn LanguageChunkingProvider>>,
 }

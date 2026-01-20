@@ -1,6 +1,7 @@
-//! Unit tests for mcb_validate::quality module
+//! Unit tests for `mcb_validate::quality` module
 
 use mcb_validate::{QualityValidator, QualityViolation};
+use std::fmt::Write;
 use std::fs;
 use tempfile::TempDir;
 
@@ -15,10 +16,9 @@ fn create_test_crate(temp: &TempDir, name: &str, content: &str) {
         cargo_dir.join("Cargo.toml"),
         format!(
             r#"[package]
-name = "{}"
+name = "{name}"
 version = "0.1.1"
-"#,
-            name
+"#
         ),
     )
     .unwrap();
@@ -30,12 +30,12 @@ fn test_unwrap_detection() {
     create_test_crate(
         &temp,
         "mcb-test",
-        r#"
+        r"
 pub fn bad_function() {
     let x: Option<i32> = Some(1);
     let _ = x.unwrap();
 }
-"#,
+",
     );
 
     let validator = QualityValidator::new(temp.path());
@@ -56,14 +56,14 @@ fn test_safe_unwrap_patterns() {
     create_test_crate(
         &temp,
         "mcb-test",
-        r#"
+        r"
 pub fn good_function() {
     let x: Option<i32> = Some(1);
     let _ = x.unwrap_or(0);
     let _ = x.unwrap_or_else(|| 0);
     let _ = x.unwrap_or_default();
 }
-"#,
+",
     );
 
     let validator = QualityValidator::new(temp.path());
@@ -71,8 +71,7 @@ pub fn good_function() {
 
     assert!(
         violations.is_empty(),
-        "Safe patterns should not trigger violations: {:?}",
-        violations
+        "Safe patterns should not trigger violations: {violations:?}"
     );
 }
 
@@ -82,7 +81,7 @@ fn test_test_module_exemption() {
     create_test_crate(
         &temp,
         "mcb-test",
-        r#"
+        r"
 pub fn good_function() -> i32 {
     42
 }
@@ -97,7 +96,7 @@ mod tests {
         assert_eq!(x, 1);
     }
 }
-"#,
+",
     );
 
     let validator = QualityValidator::new(temp.path());
@@ -105,17 +104,17 @@ mod tests {
 
     assert!(
         violations.is_empty(),
-        "Test modules should be exempt: {:?}",
-        violations
+        "Test modules should be exempt: {violations:?}"
     );
 }
 
 #[test]
 fn test_file_size_validation() {
     let temp = TempDir::new().unwrap();
-    let content = (0..600)
-        .map(|i| format!("// line {}\n", i))
-        .collect::<String>();
+    let content = (0..600).fold(String::new(), |mut acc, i| {
+        let _ = writeln!(acc, "// line {i}");
+        acc
+    });
     create_test_crate(&temp, "mcb-test", &content);
 
     let validator = QualityValidator::new(temp.path());
@@ -140,11 +139,7 @@ fn test_todo_detection() {
     let msg1 = ["implement", "this"].join(" ");
     let msg2 = ["needs", "repair"].join(" ");
     let test_content = format!(
-        "// {todo}: {m1}\npub fn incomplete() {{}}\n\n// {fixme}: {m2}\npub fn needs_work() {{}}",
-        todo = todo_marker,
-        fixme = fixme_marker,
-        m1 = msg1,
-        m2 = msg2
+        "// {todo_marker}: {msg1}\npub fn incomplete() {{}}\n\n// {fixme_marker}: {msg2}\npub fn needs_work() {{}}"
     );
     create_test_crate(&temp, "mcb-test", &test_content);
 
