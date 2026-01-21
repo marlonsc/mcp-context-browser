@@ -1,6 +1,6 @@
-//! Code Metrics Module (Phase 4)
+//! Code Metrics Module
 //!
-//! Provides code complexity metrics analysis using Tree-sitter for multiple languages.
+//! Provides code complexity metrics analysis.
 //!
 //! ## Supported Metrics
 //!
@@ -14,14 +14,12 @@
 //!
 //! ## Supported Languages
 //!
-//! - Rust, Python, JavaScript, TypeScript, Go, Java, C, C++ (via Tree-sitter)
-//! - Kotlin, Mozjs (via rust-code-analysis)
+//! - Rust (via syn-based MetricsAnalyzer)
+//! - Rust, Python, JavaScript, TypeScript, Go, Java, C, C++, Kotlin (via RcaAnalyzer)
 
-mod analyzer;
 mod rca_analyzer;
 mod thresholds;
 
-pub use analyzer::{FunctionMetrics, MetricsLanguage, TreeSitterAnalyzer};
 pub use rca_analyzer::{RcaAnalyzer, RcaFunctionMetrics, RcaMetrics};
 pub use thresholds::{MetricThreshold, MetricThresholds, MetricType};
 

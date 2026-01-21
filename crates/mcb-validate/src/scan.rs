@@ -1,7 +1,7 @@
 //! Shared file-scanning helpers for validators.
 
 use crate::{Result, ValidationConfig};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use walkdir::WalkDir;
 
 /// True if a path points to a test file or tests directory.
@@ -58,15 +58,4 @@ where
     }
 
     Ok(())
-}
-
-/// Build a list of Rust source files in configured scan directories.
-#[allow(dead_code)]
-pub fn scan_rs_paths(config: &ValidationConfig, skip_validate_crate: bool) -> Result<Vec<PathBuf>> {
-    let mut files = Vec::new();
-    for_each_scan_rs_path(config, skip_validate_crate, |path, _src_dir| {
-        files.push(path.to_path_buf());
-        Ok(())
-    })?;
-    Ok(files)
 }

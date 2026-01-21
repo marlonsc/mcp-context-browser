@@ -185,12 +185,6 @@ impl UnwrapDetector {
         matches!(method, "unwrap" | "expect")
     }
 
-    /// Check if a method is a safe alternative
-    #[allow(dead_code)]
-    fn is_safe_alternative(&self, method: &str) -> bool {
-        matches!(method, "unwrap_or" | "unwrap_or_else" | "unwrap_or_default")
-    }
-
     /// Find byte ranges of test modules
     fn find_test_module_ranges(
         &self,

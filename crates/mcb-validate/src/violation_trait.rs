@@ -111,17 +111,3 @@ pub trait Violation: Display + Send + Sync {
         Box::new(self)
     }
 }
-
-/// Extension trait for converting violations to boxed trait objects
-pub trait ViolationExt {
-    /// Convert to a vector of boxed violations
-    fn into_boxed(self) -> Vec<Box<dyn Violation>>;
-}
-
-impl<T: Violation + 'static> ViolationExt for Vec<T> {
-    fn into_boxed(self) -> Vec<Box<dyn Violation>> {
-        self.into_iter()
-            .map(|v| Box::new(v) as Box<dyn Violation>)
-            .collect()
-    }
-}

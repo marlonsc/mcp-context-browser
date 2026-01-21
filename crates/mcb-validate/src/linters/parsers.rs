@@ -121,16 +121,23 @@ pub fn parse_clippy_output(output: &str) -> Vec<LintViolation> {
             };
 
             // Extract the code (either from nested structure or direct)
-            let rule_code = msg
+            let raw_code = msg
                 .code
                 .as_ref()
                 .map(|c| c.code.clone())
                 .unwrap_or_default();
 
             // Skip if no rule code (likely a build error, not a lint)
-            if rule_code.is_empty() {
+            if raw_code.is_empty() {
                 continue;
             }
+
+            // Normalize rule code: ensure clippy:: prefix for consistency
+            let rule_code = if raw_code.starts_with("clippy::") {
+                raw_code
+            } else {
+                format!("clippy::{}", raw_code)
+            };
 
             violations.push(LintViolation {
                 rule: rule_code.clone(),

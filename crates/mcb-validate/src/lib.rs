@@ -97,7 +97,7 @@ use thiserror::Error;
 // Re-export new DRY violation system
 pub use generic_reporter::{GenericReport, GenericReporter, GenericSummary, ViolationEntry};
 pub use validator_trait::{LegacyValidatorAdapter, Validator, ValidatorRegistry};
-pub use violation_trait::{Violation, ViolationCategory, ViolationExt};
+pub use violation_trait::{Violation, ViolationCategory};
 
 // Re-export configuration system
 pub use config::{
