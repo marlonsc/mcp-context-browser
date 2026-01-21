@@ -25,13 +25,16 @@ pub mod services;
 
 // Re-export commonly used port traits for convenience
 pub use admin::{
-    IndexingOperation, IndexingOperationsInterface, PerformanceMetricsData,
-    PerformanceMetricsInterface,
+    DependencyHealth, DependencyHealthCheck, ExtendedHealthResponse, IndexingOperation,
+    IndexingOperationsInterface, LifecycleManaged, PerformanceMetricsData,
+    PerformanceMetricsInterface, PortServiceState, ShutdownCoordinator,
 };
 pub use infrastructure::snapshot::SyncProvider;
 pub use infrastructure::{
-    AuthServiceInterface, EventBusProvider, LockGuard, LockProvider, SnapshotProvider,
-    StateStoreProvider, SyncCoordinator, SystemMetrics, SystemMetricsCollectorInterface,
+    AuthServiceInterface, DomainEventStream, EventBusProvider, LockGuard, LockProvider,
+    ProviderContext, ProviderHealthStatus, ProviderRouter, SharedSyncCoordinator, SnapshotProvider,
+    StateStoreProvider, SyncCoordinator, SyncOptions, SyncResult, SystemMetrics,
+    SystemMetricsCollectorInterface,
 };
 pub use providers::{EmbeddingProvider, HybridSearchProvider, VectorStoreProvider};
 pub use registry::{

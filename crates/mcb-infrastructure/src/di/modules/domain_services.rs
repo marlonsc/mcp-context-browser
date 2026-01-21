@@ -15,11 +15,11 @@ use crate::crypto::CryptoService;
 use mcb_application::domain_services::search::{
     ContextServiceInterface, IndexingServiceInterface, SearchServiceInterface,
 };
-use mcb_application::ports::providers::{
-    EmbeddingProvider, LanguageChunkingProvider, VectorStoreProvider,
-};
 use mcb_application::use_cases::{ContextServiceImpl, IndexingServiceImpl, SearchServiceImpl};
 use mcb_domain::error::Result;
+use mcb_domain::ports::providers::{
+    EmbeddingProvider, LanguageChunkingProvider, VectorStoreProvider,
+};
 use std::sync::Arc;
 
 use super::super::bootstrap::AppContext;

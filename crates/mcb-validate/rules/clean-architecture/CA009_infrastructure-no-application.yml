@@ -7,6 +7,10 @@ enabled: true
 engine: "rusty-rules"
 
 description: "Infrastructure layer should NOT depend on Application layer"
+
+patterns:
+  app_import: 'use\s+mcb_application(?:::|;)'
+  app_import_path: 'use\s+(mcb_application::\S+)'
 rationale: |
   Per Clean Architecture, infrastructure layer (mcb-infrastructure) should only
   depend on mcb-domain (for port traits).

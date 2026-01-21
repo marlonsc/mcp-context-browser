@@ -4,7 +4,7 @@
 
 use async_trait::async_trait;
 use dashmap::DashMap;
-use mcb_application::ports::infrastructure::routing::ProviderHealthStatus;
+use mcb_domain::ports::infrastructure::routing::ProviderHealthStatus;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::Instant;
 

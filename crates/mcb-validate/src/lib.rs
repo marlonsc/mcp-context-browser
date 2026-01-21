@@ -72,12 +72,6 @@ pub mod port_adapter;
 pub mod test_quality;
 pub mod visibility;
 
-// === Migration Validators (v0.2.0) ===
-// pub mod linkme;
-// pub mod constructor_injection;
-// pub mod figment;
-// pub mod rocket;
-
 // === Legacy Validators (being migrated to new system) ===
 pub mod async_patterns;
 pub mod dependency;
@@ -144,12 +138,6 @@ pub use layer_flow::{LayerFlowValidator, LayerFlowViolation};
 pub use port_adapter::{PortAdapterValidator, PortAdapterViolation};
 pub use test_quality::{TestQualityValidator, TestQualityViolation};
 pub use visibility::{VisibilityValidator, VisibilityViolation};
-
-// Re-export migration validators (v0.1.2)
-// pub use linkme::{LinkmeValidator, LinkmeViolation};
-// pub use constructor_injection::{ConstructorInjectionValidator, ConstructorInjectionViolation};
-// pub use figment::{FigmentValidator, FigmentViolation};
-// pub use rocket::{RocketValidator, RocketViolation};
 
 // Re-export legacy validators
 pub use dependency::{DependencyValidator, DependencyViolation};

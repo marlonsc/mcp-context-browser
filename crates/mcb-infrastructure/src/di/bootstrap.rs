@@ -57,14 +57,14 @@ use crate::infrastructure::{
     snapshot::NullSnapshotProvider,
     sync::NullSyncProvider,
 };
-use mcb_application::ports::admin::{
+use mcb_domain::error::Result;
+use mcb_domain::ports::admin::{
     IndexingOperationsInterface, PerformanceMetricsInterface, ShutdownCoordinator,
 };
-use mcb_application::ports::infrastructure::{
+use mcb_domain::ports::infrastructure::{
     AuthServiceInterface, EventBusProvider, SnapshotProvider, SyncProvider,
     SystemMetricsCollectorInterface,
 };
-use mcb_domain::error::Result;
 use std::sync::Arc;
 use tracing::info;
 

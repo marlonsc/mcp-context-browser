@@ -8,9 +8,9 @@
 //! - Value objects are immutable
 //! - Server layer boundaries are respected
 
+use crate::pattern_registry::PATTERNS;
 use crate::violation_trait::{Violation, ViolationCategory};
 use crate::{Result, Severity, ValidationConfig};
-use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use walkdir::WalkDir;
@@ -417,7 +417,9 @@ impl CleanArchitectureValidator {
             return Ok(violations);
         }
 
-        let provider_import_re = Regex::new(r"use\s+mcb_providers(?:::|;)").expect("Invalid regex");
+        let provider_import_re = PATTERNS
+            .get("CA001.provider_import")
+            .expect("Pattern CA001.provider_import not found");
 
         for entry in WalkDir::new(server_crate.join("src"))
             .into_iter()
@@ -457,15 +459,21 @@ impl CleanArchitectureValidator {
         // Patterns for direct service creation
         let service_creation_patterns = [
             (
-                Regex::new(r"(\w+Service)(?:Impl)?::new\s*\(").expect("Invalid regex"),
+                PATTERNS
+                    .get("CA001.service_constructor")
+                    .expect("Pattern CA001.service_constructor not found"),
                 "service creation",
             ),
             (
-                Regex::new(r"(\w+Provider)(?:Impl)?::new\s*\(").expect("Invalid regex"),
+                PATTERNS
+                    .get("CA001.provider_constructor")
+                    .expect("Pattern CA001.provider_constructor not found"),
                 "provider creation",
             ),
             (
-                Regex::new(r"(\w+Repository)(?:Impl)?::new\s*\(").expect("Invalid regex"),
+                PATTERNS
+                    .get("CA001.repository_constructor")
+                    .expect("Pattern CA001.repository_constructor not found"),
                 "repository creation",
             ),
         ];
@@ -523,8 +531,12 @@ impl CleanArchitectureValidator {
         }
 
         // Look for struct definitions that should have id fields
-        let struct_re = Regex::new(r"pub\s+struct\s+(\w+)\s*\{").expect("Invalid regex");
-        let id_field_re = Regex::new(r"\bid\s*:|uuid\s*:|entity_id\s*:").expect("Invalid regex");
+        let struct_re = PATTERNS
+            .get("CA001.pub_struct_brace")
+            .expect("Pattern CA001.pub_struct_brace not found");
+        let id_field_re = PATTERNS
+            .get("CA001.id_field")
+            .expect("Pattern CA001.id_field not found");
 
         for entry in WalkDir::new(entities_dir)
             .into_iter()
@@ -609,8 +621,12 @@ impl CleanArchitectureValidator {
         }
 
         // Look for &mut self methods in value objects
-        let impl_re = Regex::new(r"impl\s+(\w+)\s*\{").expect("Invalid regex");
-        let mut_method_re = Regex::new(r"fn\s+(\w+)\s*\(\s*&mut\s+self").expect("Invalid regex");
+        let impl_re = PATTERNS
+            .get("CA001.impl_block")
+            .expect("Pattern CA001.impl_block not found");
+        let mut_method_re = PATTERNS
+            .get("CA001.mut_self_method")
+            .expect("Pattern CA001.mut_self_method not found");
 
         for entry in WalkDir::new(vo_dir)
             .into_iter()
@@ -689,14 +705,14 @@ impl CleanArchitectureValidator {
 
         // Patterns for concrete types that should NOT be imported
         // These match patterns like: use mcb_application::services::ContextServiceImpl
-        let concrete_type_re =
-            Regex::new(r"use\s+mcb_application::(services|use_cases)::(\w+Impl)\b")
-                .expect("Invalid regex");
+        let concrete_type_re = PATTERNS
+            .get("CA002.app_impl_import")
+            .expect("Pattern CA002.app_impl_import not found");
 
         // Also catch any concrete service imports
-        let concrete_service_re =
-            Regex::new(r"use\s+mcb_application::\w+::(\w+Service)(?:Impl)?\b")
-                .expect("Invalid regex");
+        let concrete_service_re = PATTERNS
+            .get("CA002.app_service_import")
+            .expect("Pattern CA002.app_service_import not found");
 
         for entry in WalkDir::new(infra_crate.join("src"))
             .into_iter()
@@ -775,12 +791,14 @@ impl CleanArchitectureValidator {
         }
 
         // Patterns to detect local trait definitions (violations)
-        let local_trait_re =
-            Regex::new(r"^\s*pub\s+trait\s+(\w+(?:Provider|Service))\s*(?::|where|\{)")
-                .expect("Invalid regex");
+        let local_trait_re = PATTERNS
+            .get("CA002.port_trait_decl")
+            .expect("Pattern CA002.port_trait_decl not found");
 
         // Pattern for allowed re-exports from mcb-domain
-        let reexport_re = Regex::new(r"pub\s+use\s+mcb_domain::").expect("Invalid regex");
+        let reexport_re = PATTERNS
+            .get("CA002.domain_reexport")
+            .expect("Pattern CA002.domain_reexport not found");
 
         for entry in WalkDir::new(&ports_dir)
             .into_iter()
@@ -851,16 +869,28 @@ impl CleanArchitectureValidator {
         }
 
         // Pattern for any import from mcb_application
-        let app_import_re = Regex::new(r"use\s+mcb_application(?:::|;)").expect("Invalid regex");
+        let app_import_re = PATTERNS
+            .get("CA009.app_import")
+            .expect("Pattern CA009.app_import not found");
 
         // Extract specific import path
-        let import_path_re = Regex::new(r"use\s+(mcb_application::\S+)").expect("Invalid regex");
+        let import_path_re = PATTERNS
+            .get("CA009.app_import_path")
+            .expect("Pattern CA009.app_import_path not found");
 
         for entry in WalkDir::new(infra_crate.join("src"))
             .into_iter()
             .filter_map(std::result::Result::ok)
         {
             let path = entry.path();
+
+            // Skip composition root (di/ directory) - allowed to import application layer
+            // for wiring up dependencies. This is the standard Clean Architecture exception
+            // where the composition root needs to know about all layers to assemble them.
+            if path.to_string_lossy().contains("/di/") {
+                continue;
+            }
+
             if path.extension().is_some_and(|e| e == "rs") {
                 let content = std::fs::read_to_string(path)?;
 
@@ -917,7 +947,9 @@ mod tests {
 
     #[test]
     fn test_server_import_pattern() {
-        let re = Regex::new(r"use\s+mcb_providers(?:::|;)").unwrap();
+        let re = PATTERNS
+            .get("CA001.provider_import")
+            .expect("Pattern CA001.provider_import not found");
         assert!(re.is_match("use mcb_providers::embedding::OllamaProvider;"));
         assert!(re.is_match("use mcb_providers;"));
         assert!(!re.is_match("use mcb_infrastructure::providers;"));
@@ -925,7 +957,9 @@ mod tests {
 
     #[test]
     fn test_service_creation_pattern() {
-        let re = Regex::new(r"(\w+Service)(?:Impl)?::new\s*\(").unwrap();
+        let re = PATTERNS
+            .get("CA001.service_constructor")
+            .expect("Pattern CA001.service_constructor not found");
         assert!(re.is_match("let svc = IndexingService::new(config);"));
         assert!(re.is_match("SearchServiceImpl::new()"));
         assert!(!re.is_match("Arc<dyn IndexingService>"));
@@ -934,7 +968,9 @@ mod tests {
     #[test]
     fn test_ca007_concrete_type_pattern() {
         // Pattern for concrete Impl types
-        let re = Regex::new(r"use\s+mcb_application::(services|use_cases)::(\w+Impl)\b").unwrap();
+        let re = PATTERNS
+            .get("CA002.app_impl_import")
+            .expect("Pattern CA002.app_impl_import not found");
 
         // Should match concrete implementations
         assert!(re.is_match("use mcb_application::services::ContextServiceImpl;"));
@@ -948,7 +984,9 @@ mod tests {
     #[test]
     fn test_ca007_service_import_pattern() {
         // Pattern for direct service imports from services module
-        let re = Regex::new(r"use\s+mcb_application::\w+::(\w+Service)(?:Impl)?\b").unwrap();
+        let re = PATTERNS
+            .get("CA002.app_service_import")
+            .expect("Pattern CA002.app_service_import not found");
 
         // Should match service imports from services module
         assert!(re.is_match("use mcb_application::services::ContextService;"));
@@ -963,8 +1001,9 @@ mod tests {
     #[test]
     fn test_ca008_local_trait_pattern() {
         // Pattern for local trait definitions
-        let re =
-            Regex::new(r"^\s*pub\s+trait\s+(\w+(?:Provider|Service))\s*(?::|where|\{)").unwrap();
+        let re = PATTERNS
+            .get("CA002.port_trait_decl")
+            .expect("Pattern CA002.port_trait_decl not found");
 
         // Should match local trait definitions
         assert!(re.is_match("pub trait EmbeddingProvider: Send + Sync {"));
@@ -979,7 +1018,9 @@ mod tests {
     #[test]
     fn test_ca008_reexport_pattern() {
         // Pattern for allowed re-exports
-        let re = Regex::new(r"pub\s+use\s+mcb_domain::").unwrap();
+        let re = PATTERNS
+            .get("CA002.domain_reexport")
+            .expect("Pattern CA002.domain_reexport not found");
 
         // Should match re-exports from mcb-domain
         assert!(re.is_match("pub use mcb_domain::ports::providers::*;"));
@@ -993,7 +1034,9 @@ mod tests {
     #[test]
     fn test_ca009_infrastructure_imports_application() {
         // Pattern for mcb_application imports
-        let re = Regex::new(r"use\s+mcb_application(?:::|;)").unwrap();
+        let re = PATTERNS
+            .get("CA009.app_import")
+            .expect("Pattern CA009.app_import not found");
 
         // Should match any mcb_application import
         assert!(re.is_match("use mcb_application::ports::providers::CacheProvider;"));
@@ -1010,7 +1053,9 @@ mod tests {
     #[test]
     fn test_ca009_import_path_extraction() {
         // Pattern for extracting specific import path
-        let re = Regex::new(r"use\s+(mcb_application::\S+)").unwrap();
+        let re = PATTERNS
+            .get("CA009.app_import_path")
+            .expect("Pattern CA009.app_import_path not found");
 
         // Should extract full import path
         let captures = re.captures("use mcb_application::ports::providers::CacheProvider;");

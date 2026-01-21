@@ -1,27 +1,2 @@
-//! System Metrics Collector Port
-//!
-//! Defines the contract for collecting system metrics.
-
-use async_trait::async_trait;
-use mcb_domain::error::Result;
-
-/// System metrics data
-#[derive(Debug, Clone, Default)]
-pub struct SystemMetrics {
-    pub cpu_percent: f64,
-    pub memory_percent: f64,
-    pub disk_percent: f64,
-}
-
-/// System metrics collector interface
-#[async_trait]
-pub trait SystemMetricsCollectorInterface: Send + Sync {
-    /// Collect current system metrics
-    async fn collect(&self) -> Result<SystemMetrics>;
-
-    /// Get CPU usage percentage
-    fn cpu_usage(&self) -> f64;
-
-    /// Get memory usage percentage
-    fn memory_usage(&self) -> f64;
-}
+//! System metrics collector port - re-exports from mcb-domain
+pub use mcb_domain::ports::infrastructure::metrics::*;

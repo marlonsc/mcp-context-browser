@@ -3,8 +3,8 @@
 //! Null implementation for file sync coordination.
 
 use async_trait::async_trait;
-use mcb_application::ports::infrastructure::SyncProvider;
 use mcb_domain::error::Result;
+use mcb_domain::ports::infrastructure::SyncProvider;
 use mcb_domain::value_objects::config::SyncBatch;
 use std::path::Path;
 use std::time::Duration;

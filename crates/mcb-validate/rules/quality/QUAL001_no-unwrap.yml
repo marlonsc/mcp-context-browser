@@ -8,6 +8,10 @@ enabled: true
 description: "Production code should not use .unwrap()"
 rationale: "Unwrap can cause panics; use ? operator or proper error handling"
 
+patterns:
+  unwrap_call: '\.unwrap\(\)'
+  expect_call: '\.expect\('
+
 # Phase 1: Uses Clippy linter integration
 lint_select: ["clippy::unwrap_used"]
 

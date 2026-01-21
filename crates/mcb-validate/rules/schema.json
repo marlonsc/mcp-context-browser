@@ -31,7 +31,8 @@
         "configuration",
         "web_framework",
         "migration",
-        "metrics"
+        "metrics",
+        "performance"
       ],
       "description": "Rule category for grouping"
     },

@@ -46,14 +46,14 @@ use crate::infrastructure::{
     sync::NullSyncProvider,
 };
 use dill::{Catalog, CatalogBuilder};
-use mcb_application::ports::admin::{
+use mcb_domain::error::Result;
+use mcb_domain::ports::admin::{
     IndexingOperationsInterface, PerformanceMetricsInterface, ShutdownCoordinator,
 };
-use mcb_application::ports::infrastructure::{
+use mcb_domain::ports::infrastructure::{
     AuthServiceInterface, EventBusProvider, SnapshotProvider, SyncProvider,
     SystemMetricsCollectorInterface,
 };
-use mcb_domain::error::Result;
 // Provider traits imported for documentation and future use
 #[allow(unused_imports)]
 use mcb_domain::ports::providers::{

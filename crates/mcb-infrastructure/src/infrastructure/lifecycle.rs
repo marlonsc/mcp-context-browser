@@ -54,11 +54,11 @@
 //! ```
 
 use dashmap::DashMap;
-use mcb_application::ports::admin::{
+use mcb_domain::events::{DomainEvent, ServiceState as EventServiceState};
+use mcb_domain::ports::admin::{
     DependencyHealthCheck, LifecycleManaged, PortServiceState, ShutdownCoordinator,
 };
-use mcb_application::ports::infrastructure::EventBusProvider;
-use mcb_domain::events::{DomainEvent, ServiceState as EventServiceState};
+use mcb_domain::ports::infrastructure::EventBusProvider;
 use serde::Serialize;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};

@@ -3,9 +3,9 @@
 //! Null implementation of snapshot port for testing.
 
 use async_trait::async_trait;
-use mcb_application::ports::infrastructure::SnapshotProvider;
 use mcb_domain::entities::codebase::{CodebaseSnapshot, SnapshotChanges};
 use mcb_domain::error::Result;
+use mcb_domain::ports::infrastructure::SnapshotProvider;
 use std::collections::HashMap;
 use std::path::Path;
 

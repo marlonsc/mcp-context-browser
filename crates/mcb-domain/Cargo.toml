@@ -50,6 +50,9 @@ regex = { workspace = true }
 # Date/time handling
 chrono = { workspace = true }
 
+# Async stream traits for event ports
+futures = { workspace = true }
+
 [dev-dependencies]
 # Testing utilities
 tempfile = "3.10"

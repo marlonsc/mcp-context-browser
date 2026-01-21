@@ -6,6 +6,7 @@
 //! - Spawn patterns (missing JoinHandle handling)
 //! - Wrong mutex types in async code
 
+use crate::pattern_registry::PATTERNS;
 use crate::violation_trait::{Violation, ViolationCategory};
 use crate::{Result, Severity, ValidationConfig};
 use regex::Regex;
@@ -206,7 +207,9 @@ impl AsyncPatternValidator {
     pub fn validate_blocking_in_async(&self) -> Result<Vec<AsyncViolation>> {
         let mut violations = Vec::new();
 
-        let async_fn_pattern = Regex::new(r"async\s+fn\s+(\w+)").unwrap();
+        let async_fn_pattern = PATTERNS
+            .get("ASYNC001.async_fn_named")
+            .expect("Pattern ASYNC001.async_fn_named not found");
 
         let blocking_patterns = [
             (
@@ -334,7 +337,9 @@ impl AsyncPatternValidator {
     pub fn validate_block_on_usage(&self) -> Result<Vec<AsyncViolation>> {
         let mut violations = Vec::new();
 
-        let async_fn_pattern = Regex::new(r"async\s+fn\s+").unwrap();
+        let async_fn_pattern = PATTERNS
+            .get("ASYNC001.async_fn")
+            .expect("Pattern ASYNC001.async_fn not found");
         let block_on_patterns = [
             r"block_on\(",
             r"futures::executor::block_on",
@@ -419,7 +424,9 @@ impl AsyncPatternValidator {
     pub fn validate_mutex_types(&self) -> Result<Vec<AsyncViolation>> {
         let mut violations = Vec::new();
 
-        let async_indicator = Regex::new(r"async\s+fn|\.await").unwrap();
+        let async_indicator = PATTERNS
+            .get("ASYNC001.async_indicator")
+            .expect("Pattern ASYNC001.async_indicator not found");
         let std_mutex_patterns = [
             (
                 r"use\s+std::sync::Mutex",
@@ -510,9 +517,15 @@ impl AsyncPatternValidator {
         let mut violations = Vec::new();
 
         // Pattern: tokio::spawn without assigning to variable or awaiting
-        let spawn_pattern = Regex::new(r"tokio::spawn\s*\(").unwrap();
-        let assigned_spawn_pattern = Regex::new(r"let\s+\w+\s*=\s*tokio::spawn").unwrap();
-        let fn_pattern = Regex::new(r"(?:pub\s+)?(?:async\s+)?fn\s+(\w+)").unwrap();
+        let spawn_pattern = PATTERNS
+            .get("ASYNC001.tokio_spawn")
+            .expect("Pattern ASYNC001.tokio_spawn not found");
+        let assigned_spawn_pattern = PATTERNS
+            .get("ASYNC001.assigned_spawn")
+            .expect("Pattern ASYNC001.assigned_spawn not found");
+        let fn_pattern = PATTERNS
+            .get("ASYNC001.fn_decl")
+            .expect("Pattern ASYNC001.fn_decl not found");
 
         // Function name patterns that indicate intentional fire-and-forget spawns
         // Includes constructor patterns that often spawn background workers

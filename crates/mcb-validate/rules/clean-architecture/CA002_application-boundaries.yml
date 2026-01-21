@@ -9,6 +9,12 @@ engine: "rusty-rules"
 description: "Application crate only depends on domain"
 rationale: "Application orchestrates domain logic without infrastructure details"
 
+patterns:
+  app_impl_import: 'use\s+mcb_application::(services|use_cases)::(\w+Impl)\b'
+  app_service_import: 'use\s+mcb_application::\w+::(\w+Service)(?:Impl)?\b'
+  port_trait_decl: '^\s*pub\s+trait\s+(\w+(?:Provider|Service))\s*(?::|where|\{)'
+  domain_reexport: 'pub\s+use\s+mcb_domain::'
+
 crate_name: "mcb-application"
 forbidden_prefixes: []
 allowed_dependencies: ["mcb-domain"]

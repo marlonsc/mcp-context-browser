@@ -9,6 +9,18 @@ engine: "rust-rule-engine"
 description: "Domain crate must have zero internal mcb-* dependencies"
 rationale: "Domain layer contains pure business logic independent of frameworks"
 
+patterns:
+  provider_import: 'use\s+mcb_providers(?:::|;)'
+  service_constructor: '(\w+Service)(?:Impl)?::new\s*\('
+  provider_constructor: '(\w+Provider)(?:Impl)?::new\s*\('
+  repository_constructor: '(\w+Repository)(?:Impl)?::new\s*\('
+  app_import: 'use\s+mcb_application(?:::|;)'
+  app_import_path: 'use\s+(mcb_application::\S+)'
+  pub_struct_brace: 'pub\s+struct\s+(\w+)\s*\{'
+  id_field: '\bid\s*:|uuid\s*:|entity_id\s*:'
+  impl_block: 'impl\s+(\w+)\s*\{'
+  mut_self_method: 'fn\s+(\w+)\s*\(\s*&mut\s+self'
+
 crate_name: "mcb-domain"
 forbidden_prefixes: ["mcb-"]
 allowed_dependencies: ["std", "serde", "thiserror", "uuid", "chrono"]

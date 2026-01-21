@@ -9,6 +9,12 @@ engine: "rust-rule-engine"
 description: "Impl block has too many methods"
 rationale: "Large impl blocks suggest the struct has too many responsibilities"
 
+patterns:
+  impl_decl: 'impl(?:<[^>]*>)?\s+(?:([A-Z][a-zA-Z0-9_]*)|[A-Z][a-zA-Z0-9_]*\s+for\s+([A-Z][a-zA-Z0-9_]*))'
+  struct_decl: '(?:pub\s+)?struct\s+([A-Z][a-zA-Z0-9_]*)'
+  fn_decl: '(?:pub\s+)?(?:async\s+)?fn\s+([a-z_][a-z0-9_]*)\s*[<(]'
+  impl_for_decl: 'impl(?:<[^>]*>)?\s+([A-Z][a-zA-Z0-9_]*)\s+for\s+([A-Z][a-zA-Z0-9_]*)'
+
 config:
   max_methods: 15
   exclude_patterns: ["**/tests/**"]

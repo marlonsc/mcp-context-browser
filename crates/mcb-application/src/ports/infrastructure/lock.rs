@@ -1,25 +1,2 @@
-//! Distributed Lock Provider Port
-//!
-//! Defines the contract for distributed lock coordination services.
-
-use async_trait::async_trait;
-use mcb_domain::error::Result;
-
-/// Lock guard token returned when a lock is acquired
-#[derive(Debug, Clone)]
-pub struct LockGuard {
-    /// Lock key
-    pub key: String,
-    /// Unique token for this lock acquisition
-    pub token: String,
-}
-
-/// Distributed lock provider interface
-#[async_trait]
-pub trait LockProvider: Send + Sync {
-    /// Acquire a distributed lock
-    async fn acquire_lock(&self, key: &str) -> Result<LockGuard>;
-
-    /// Release a distributed lock
-    async fn release_lock(&self, guard: LockGuard) -> Result<()>;
-}
+//! Distributed lock provider port - re-exports from mcb-domain
+pub use mcb_domain::ports::infrastructure::lock::*;

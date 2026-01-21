@@ -1132,95 +1132,6 @@ impl OrganizationValidator {
     }
 
     /// Check for declaration collisions (same name defined in multiple places)
-    ///
-    /// DEPRECATED: Use RefactoringValidator::validate_duplicate_definitions() instead.
-    /// It provides better categorization with known migration pairs and severity levels.
-    #[allow(dead_code)]
-    pub fn validate_declaration_collisions(&self) -> Result<Vec<OrganizationViolation>> {
-        let mut violations = Vec::new();
-        let mut declarations: HashMap<String, Vec<(PathBuf, usize, String)>> = HashMap::new();
-
-        let struct_pattern =
-            Regex::new(r"(?:pub\s+)?struct\s+([A-Z][a-zA-Z0-9_]*)").expect("Invalid regex");
-        let enum_pattern =
-            Regex::new(r"(?:pub\s+)?enum\s+([A-Z][a-zA-Z0-9_]*)").expect("Invalid regex");
-        let trait_pattern =
-            Regex::new(r"(?:pub\s+)?trait\s+([A-Z][a-zA-Z0-9_]*)").expect("Invalid regex");
-
-        for_each_crate_rs_path(&self.config, |path, _src_dir, _crate_name| {
-            let content = std::fs::read_to_string(path)?;
-
-            for (line_num, line) in content.lines().enumerate() {
-                let trimmed = line.trim();
-
-                // Skip comments
-                if trimmed.starts_with("//") {
-                    continue;
-                }
-
-                // Check structs
-                if let Some(cap) = struct_pattern.captures(line) {
-                    let name = cap.get(1).map_or("", |m| m.as_str());
-                    declarations.entry(name.to_string()).or_default().push((
-                        path.to_path_buf(),
-                        line_num + 1,
-                        "struct".to_string(),
-                    ));
-                }
-
-                // Check enums
-                if let Some(cap) = enum_pattern.captures(line) {
-                    let name = cap.get(1).map_or("", |m| m.as_str());
-                    declarations.entry(name.to_string()).or_default().push((
-                        path.to_path_buf(),
-                        line_num + 1,
-                        "enum".to_string(),
-                    ));
-                }
-
-                // Check traits
-                if let Some(cap) = trait_pattern.captures(line) {
-                    let name = cap.get(1).map_or("", |m| m.as_str());
-                    declarations.entry(name.to_string()).or_default().push((
-                        path.to_path_buf(),
-                        line_num + 1,
-                        "trait".to_string(),
-                    ));
-                }
-            }
-
-            Ok(())
-        })?;
-
-        // Report names with multiple declarations
-        for (name, locations) in declarations {
-            // Check if declarations are in different crates
-            let unique_crates: HashSet<_> = locations
-                .iter()
-                .filter_map(|(path, _, _)| {
-                    path.components()
-                        .find(|c| c.as_os_str().to_string_lossy().starts_with("mcb-"))
-                })
-                .collect();
-
-            if unique_crates.len() > 1 {
-                // Skip common names that are expected to have multiple declarations
-                let common_names = ["Error", "Result", "Config", "Options", "Builder"];
-                if common_names.contains(&name.as_str()) {
-                    continue;
-                }
-
-                violations.push(OrganizationViolation::DeclarationCollision {
-                    name,
-                    locations,
-                    severity: Severity::Info,
-                });
-            }
-        }
-
-        Ok(violations)
-    }
-
     /// Validate Clean Architecture layer violations
     pub fn validate_layer_violations(&self) -> Result<Vec<OrganizationViolation>> {
         let mut violations = Vec::new();
@@ -1323,12 +1234,6 @@ impl OrganizationValidator {
         })?;
 
         Ok(violations)
-    }
-
-    /// Check if a path is from legacy/additional source directories
-    #[allow(dead_code)]
-    fn is_legacy_path(&self, path: &std::path::Path) -> bool {
-        self.config.is_legacy_path(path)
     }
 
     /// Validate strict directory placement based on component type

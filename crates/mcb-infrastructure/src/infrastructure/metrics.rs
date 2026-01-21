@@ -3,8 +3,8 @@
 //! Null implementation of the system metrics port for testing.
 
 use async_trait::async_trait;
-use mcb_application::ports::infrastructure::{SystemMetrics, SystemMetricsCollectorInterface};
 use mcb_domain::error::Result;
+use mcb_domain::ports::infrastructure::{SystemMetrics, SystemMetricsCollectorInterface};
 
 /// Null implementation for testing
 pub struct NullSystemMetricsCollector;

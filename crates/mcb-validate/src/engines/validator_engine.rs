@@ -121,6 +121,7 @@ fn validate_category(category: &str) -> std::result::Result<(), ValidationErrors
         "configuration",
         "web_framework",
         "migration",
+        "performance",
     ];
 
     if valid_categories.contains(&category) {

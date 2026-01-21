@@ -54,9 +54,6 @@ mod performance;
 #[path = "unit/quality_test_tests.rs"]
 mod quality;
 
-#[path = "unit/quality_tests.rs"]
-mod quality_tests;
-
 #[path = "unit/refactoring_test_tests.rs"]
 mod refactoring;
 

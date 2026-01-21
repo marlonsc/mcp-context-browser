@@ -414,12 +414,6 @@ impl DocumentationValidator {
     fn get_crate_dirs(&self) -> Result<Vec<PathBuf>> {
         self.config.get_source_dirs()
     }
-
-    /// Check if a path is from legacy/additional source directories
-    #[allow(dead_code)]
-    fn is_legacy_path(&self, path: &std::path::Path) -> bool {
-        self.config.is_legacy_path(path)
-    }
 }
 
 impl crate::validator_trait::Validator for DocumentationValidator {

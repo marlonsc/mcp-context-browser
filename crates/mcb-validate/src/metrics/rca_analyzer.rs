@@ -10,169 +10,11 @@
 //!
 //! Supports: Rust, Python, JavaScript, TypeScript, Java, C, C++, Kotlin
 
-use crate::{Result, ValidationError};
-use rust_code_analysis::LANG;
-// use rust_code_analysis::{FuncSpace, LANG, get_function_spaces}; // TODO: Re-enable when dependency is available
-
-// Temporary local types until rust-code-analysis dependency is available
-#[derive(Debug, Clone)]
-pub struct FuncSpace {
-    pub name: Option<String>,
-    pub metrics: FuncMetrics,
-    pub start_line: usize,
-    pub end_line: usize,
-    pub spaces: Vec<FuncSpace>,
-}
-
-#[derive(Debug, Clone)]
-pub struct FuncMetrics {
-    pub cyclomatic: Cyclomatic,
-    pub cognitive: Cognitive,
-    pub halstead: Halstead,
-    pub mi: MaintainabilityIndex,
-    pub loc: Loc,
-    pub nom: Nom,
-    pub nargs: Nargs,
-    pub nexits: Nexits,
-}
-
-#[derive(Debug, Clone)]
-pub struct Cyclomatic(pub f64);
-impl Cyclomatic {
-    pub fn cyclomatic(&self) -> f64 {
-        self.0
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct Cognitive(pub f64);
-impl Cognitive {
-    pub fn cognitive(&self) -> f64 {
-        self.0
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct Halstead {
-    volume: f64,
-    difficulty: f64,
-    effort: f64,
-}
-impl Halstead {
-    pub fn volume(&self) -> f64 {
-        self.volume
-    }
-    pub fn difficulty(&self) -> f64 {
-        self.difficulty
-    }
-    pub fn effort(&self) -> f64 {
-        self.effort
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct MaintainabilityIndex(pub f64);
-impl MaintainabilityIndex {
-    pub fn mi_original(&self) -> f64 {
-        self.0
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct Loc {
-    sloc: usize,
-    ploc: usize,
-    lloc: usize,
-    cloc: usize,
-    blank: usize,
-}
-impl Loc {
-    pub fn sloc(&self) -> usize {
-        self.sloc
-    }
-    pub fn ploc(&self) -> usize {
-        self.ploc
-    }
-    pub fn lloc(&self) -> usize {
-        self.lloc
-    }
-    pub fn cloc(&self) -> usize {
-        self.cloc
-    }
-    pub fn blank(&self) -> usize {
-        self.blank
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct Nom {
-    functions: usize,
-    closures: usize,
-}
-impl Nom {
-    pub fn functions(&self) -> usize {
-        self.functions
-    }
-    pub fn closures(&self) -> usize {
-        self.closures
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct Nargs(pub usize);
-impl Nargs {
-    pub fn fn_args_sum(&self) -> usize {
-        self.0
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct Nexits(pub usize);
-impl Nexits {
-    pub fn exit_sum(&self) -> usize {
-        self.0
-    }
-}
-
-// Stub implementation until rust-code-analysis is available
-pub fn get_function_spaces(
-    _lang: LANG,
-    _code: Vec<u8>,
-    _path: &Path,
-    _opt: Option<()>,
-) -> std::result::Result<FuncSpace, Box<dyn std::error::Error>> {
-    Ok(FuncSpace {
-        name: None,
-        metrics: FuncMetrics {
-            cyclomatic: Cyclomatic(1.0),
-            cognitive: Cognitive(1.0),
-            halstead: Halstead {
-                volume: 0.0,
-                difficulty: 0.0,
-                effort: 0.0,
-            },
-            mi: MaintainabilityIndex(100.0),
-            loc: Loc {
-                sloc: 0,
-                ploc: 0,
-                lloc: 0,
-                cloc: 0,
-                blank: 0,
-            },
-            nom: Nom {
-                functions: 0,
-                closures: 0,
-            },
-            nargs: Nargs(0),
-            nexits: Nexits(0),
-        },
-        start_line: 0,
-        end_line: 0,
-        spaces: Vec::new(),
-    })
-}
-
 use std::path::Path;
+
+use rust_code_analysis::{FuncSpace, LANG, get_function_spaces};
+
+use crate::{Result, ValidationError};
 
 use super::MetricViolation;
 use super::thresholds::{MetricThresholds, MetricType};
@@ -280,13 +122,34 @@ impl RcaAnalyzer {
         lang: &LANG,
         path: &Path,
     ) -> Result<Vec<RcaFunctionMetrics>> {
-        let func_space = get_function_spaces(*lang, code.to_vec(), path, None);
-
-        let root = func_space.map_err(|e| ValidationError::Config(e.to_string()))?;
+        let root = get_function_spaces(lang, code.to_vec(), path, None).ok_or_else(|| {
+            ValidationError::Config(format!("Failed to analyze code for: {}", path.display()))
+        })?;
 
         let mut results = Vec::new();
         self.extract_function_metrics(&root, &mut results);
         Ok(results)
+    }
+
+    /// Convert RCA CodeMetrics to our RcaMetrics
+    fn extract_metrics(space: &FuncSpace) -> RcaMetrics {
+        let m = &space.metrics;
+        RcaMetrics {
+            cyclomatic: m.cyclomatic.cyclomatic(),
+            cognitive: m.cognitive.cognitive(),
+            halstead_volume: m.halstead.volume(),
+            halstead_difficulty: m.halstead.difficulty(),
+            halstead_effort: m.halstead.effort(),
+            maintainability_index: m.mi.mi_original(),
+            sloc: m.loc.sloc() as usize,
+            ploc: m.loc.ploc() as usize,
+            lloc: m.loc.lloc() as usize,
+            cloc: m.loc.cloc() as usize,
+            blank: m.loc.blank() as usize,
+            nom: (m.nom.functions() + m.nom.closures()) as usize,
+            nargs: m.nargs.fn_args_sum() as usize,
+            nexits: m.nexits.exit_sum() as usize,
+        }
     }
 
     /// Recursively extract metrics from function spaces
@@ -294,28 +157,11 @@ impl RcaAnalyzer {
         // Only process actual functions/methods, not the file-level space
         let name = space.name.as_deref().unwrap_or("");
         if !name.is_empty() && name != "<unit>" {
-            let metrics = RcaMetrics {
-                cyclomatic: space.metrics.cyclomatic.cyclomatic(),
-                cognitive: space.metrics.cognitive.cognitive(),
-                halstead_volume: space.metrics.halstead.volume(),
-                halstead_difficulty: space.metrics.halstead.difficulty(),
-                halstead_effort: space.metrics.halstead.effort(),
-                maintainability_index: space.metrics.mi.mi_original(),
-                sloc: space.metrics.loc.sloc() as usize,
-                ploc: space.metrics.loc.ploc() as usize,
-                lloc: space.metrics.loc.lloc() as usize,
-                cloc: space.metrics.loc.cloc() as usize,
-                blank: space.metrics.loc.blank() as usize,
-                nom: (space.metrics.nom.functions() + space.metrics.nom.closures()) as usize,
-                nargs: space.metrics.nargs.fn_args_sum() as usize,
-                nexits: space.metrics.nexits.exit_sum() as usize,
-            };
-
             results.push(RcaFunctionMetrics {
                 name: name.to_string(),
                 start_line: space.start_line,
                 end_line: space.end_line,
-                metrics,
+                metrics: Self::extract_metrics(space),
             });
         }
 
@@ -396,25 +242,11 @@ impl RcaAnalyzer {
             ))
         })?;
 
-        let root = get_function_spaces(lang, code.clone(), path, None)
-            .map_err(|e| ValidationError::Config(e.to_string()))?;
+        let root = get_function_spaces(&lang, code.clone(), path, None).ok_or_else(|| {
+            ValidationError::Config(format!("Failed to analyze code for: {}", path.display()))
+        })?;
 
-        Ok(RcaMetrics {
-            cyclomatic: root.metrics.cyclomatic.cyclomatic(),
-            cognitive: root.metrics.cognitive.cognitive(),
-            halstead_volume: root.metrics.halstead.volume(),
-            halstead_difficulty: root.metrics.halstead.difficulty(),
-            halstead_effort: root.metrics.halstead.effort(),
-            maintainability_index: root.metrics.mi.mi_original(),
-            sloc: root.metrics.loc.sloc() as usize,
-            ploc: root.metrics.loc.ploc() as usize,
-            lloc: root.metrics.loc.lloc() as usize,
-            cloc: root.metrics.loc.cloc() as usize,
-            blank: root.metrics.loc.blank() as usize,
-            nom: (root.metrics.nom.functions() + root.metrics.nom.closures()) as usize,
-            nargs: root.metrics.nargs.fn_args_sum() as usize,
-            nexits: root.metrics.nexits.exit_sum() as usize,
-        })
+        Ok(Self::extract_metrics(&root))
     }
 }
 
@@ -453,7 +285,6 @@ mod tests {
     #[test]
     fn test_analyze_rust_code() {
         let analyzer = RcaAnalyzer::new();
-        // Note: rust-code-analysis needs valid Rust code with proper syntax
         let code = br#"fn simple_function() -> i32 {
     let x = 1;
     let y = 2;
@@ -476,19 +307,19 @@ fn complex_function(a: i32, b: i32) -> i32 {
             .analyze_code(code, &LANG::Rust, path)
             .expect("Should analyze");
 
-        // rust-code-analysis should find functions in valid Rust code
-        // If empty, the library may have parsing issues with the test input
-        if results.is_empty() {
-            eprintln!("Warning: rust-code-analysis returned no functions for test code");
-            return; // Skip assertions if library doesn't parse
-        }
+        // rust-code-analysis should find functions
+        assert!(
+            !results.is_empty(),
+            "Should find at least one function, got {}",
+            results.len()
+        );
 
-        // Find complex_function and check it has higher complexity
-        if let Some(complex) = results.iter().find(|f| f.name == "complex_function") {
+        // Verify we got real metrics
+        for func in &results {
             assert!(
-                complex.metrics.cyclomatic >= 1.0,
-                "Complex function should have cyclomatic >= 1, got {}",
-                complex.metrics.cyclomatic
+                func.metrics.cyclomatic >= 1.0,
+                "Cyclomatic should be >= 1 for {}",
+                func.name
             );
         }
     }
@@ -502,7 +333,6 @@ fn complex_function(a: i32, b: i32) -> i32 {
         );
 
         let analyzer = RcaAnalyzer::with_thresholds(thresholds);
-        // Note: Code must be complete and valid for rust-code-analysis
         let code = br#"fn complex_function(a: i32, b: i32) -> i32 {
     if a > b {
         if a > 10 {
@@ -515,7 +345,7 @@ fn complex_function(a: i32, b: i32) -> i32 {
     a + b
 }"#;
 
-        // We need to write to a temp file for find_violations
+        // Write to temp file for find_violations
         let temp_dir = std::env::temp_dir();
         let temp_path = temp_dir.join("rca_test.rs");
         std::fs::write(&temp_path, code).expect("Write temp file");
@@ -525,14 +355,42 @@ fn complex_function(a: i32, b: i32) -> i32 {
             .expect("Should analyze");
         std::fs::remove_file(&temp_path).ok();
 
-        // rust-code-analysis may or may not find violations depending on parsing
-        // This test verifies the violation detection flow works without panicking
-        // If violations are found, verify they are valid
+        // Should find violations for complex function
         for v in &violations {
             assert!(
                 v.actual_value > v.threshold,
                 "Violation should exceed threshold"
             );
         }
+    }
+
+    #[test]
+    fn test_file_aggregate_metrics() {
+        let analyzer = RcaAnalyzer::new();
+        let code = br#"fn function_one() -> i32 {
+    let x = 1;
+    x
+}
+
+fn function_two(a: i32) -> i32 {
+    if a > 0 {
+        return a * 2;
+    }
+    a
+}"#;
+
+        // Write to temp file
+        let temp_dir = std::env::temp_dir();
+        let temp_path = temp_dir.join("rca_aggregate_test.rs");
+        std::fs::write(&temp_path, code).expect("Write temp file");
+
+        let metrics = analyzer
+            .analyze_file_aggregate(&temp_path)
+            .expect("Should analyze");
+        std::fs::remove_file(&temp_path).ok();
+
+        // Verify aggregate metrics
+        assert!(metrics.sloc > 0, "Should have SLOC > 0");
+        assert!(metrics.cyclomatic >= 1.0, "Should have cyclomatic >= 1");
     }
 }

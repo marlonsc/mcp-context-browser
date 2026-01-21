@@ -1,0 +1,29 @@
+schema: "rule/v1"
+id: "ASYNC001"
+name: "Async Pattern Detection"
+category: "performance"
+severity: "warning"
+enabled: true
+engine: "rust-rule-engine"
+
+description: "Detects async patterns for validation and optimization"
+rationale: "Proper async patterns improve performance and prevent common issues"
+
+patterns:
+  async_fn_named: 'async\s+fn\s+(\w+)'
+  async_fn: 'async\s+fn\s+'
+  async_indicator: 'async\s+fn|\.await'
+  tokio_spawn: 'tokio::spawn\s*\('
+  assigned_spawn: 'let\s+\w+\s*=\s*tokio::spawn'
+  fn_decl: '(?:pub\s+)?(?:async\s+)?fn\s+(\w+)'
+
+config:
+  exclude_patterns: ["**/tests/**"]
+
+rule: |
+  rule AsyncPatterns "Validate async code patterns" {
+      when
+          AST.Function(is_async == true)
+      then
+          CheckAsyncBestPractices();
+  }

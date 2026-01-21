@@ -13,12 +13,29 @@
 //!
 //! ## Organization
 //!
+//! - **admin** - Administrative interfaces for system management and monitoring
+//! - **infrastructure/** - Infrastructure services (sync, snapshots, auth, events)
 //! - **providers/** - External service provider ports (embeddings, vector stores, search)
 
+/// Administrative interfaces for system management and monitoring
+pub mod admin;
+/// Infrastructure service ports
+pub mod infrastructure;
 /// External service provider ports
 pub mod providers;
 
 // Re-export commonly used port traits for convenience
+pub use admin::{
+    DependencyHealth, DependencyHealthCheck, ExtendedHealthResponse, IndexingOperation,
+    IndexingOperationsInterface, LifecycleManaged, PerformanceMetricsData,
+    PerformanceMetricsInterface, PortServiceState, ShutdownCoordinator,
+};
+pub use infrastructure::{
+    AuthServiceInterface, DomainEventStream, EventBusProvider, LockGuard, LockProvider,
+    ProviderContext, ProviderHealthStatus, ProviderRouter, SharedSyncCoordinator, SnapshotProvider,
+    StateStoreProvider, SyncCoordinator, SyncOptions, SyncProvider, SyncResult, SystemMetrics,
+    SystemMetricsCollectorInterface,
+};
 pub use providers::{
     CacheEntryConfig, CacheProvider, CacheProviderFactoryInterface, CacheStats, CryptoProvider,
     EmbeddingProvider, EncryptedData, HybridSearchProvider, HybridSearchResult,

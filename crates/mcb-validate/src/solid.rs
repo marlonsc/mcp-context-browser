@@ -7,6 +7,7 @@
 //! - ISP: Interface Segregation Principle (large traits)
 //! - DIP: Dependency Inversion Principle (concrete dependencies)
 
+use crate::pattern_registry::PATTERNS;
 use crate::violation_trait::{Violation, ViolationCategory};
 use crate::{Result, Severity, ValidationConfig};
 use regex::Regex;
@@ -444,9 +445,12 @@ impl SolidValidator {
     /// SRP: Check for structs/impls that are too large
     pub fn validate_srp(&self) -> Result<Vec<SolidViolation>> {
         let mut violations = Vec::new();
-        let impl_pattern = Regex::new(r"impl(?:<[^>]*>)?\s+(?:([A-Z][a-zA-Z0-9_]*)|[A-Z][a-zA-Z0-9_]*\s+for\s+([A-Z][a-zA-Z0-9_]*))").expect("Invalid regex");
-        let struct_pattern =
-            Regex::new(r"(?:pub\s+)?struct\s+([A-Z][a-zA-Z0-9_]*)").expect("Invalid regex");
+        let impl_pattern = PATTERNS
+            .get("SOLID002.impl_decl")
+            .expect("Pattern SOLID002.impl_decl not found");
+        let struct_pattern = PATTERNS
+            .get("SOLID002.struct_decl")
+            .expect("Pattern SOLID002.struct_decl not found");
 
         for crate_dir in self.get_crate_dirs()? {
             let src_dir = crate_dir.join("src");
@@ -542,7 +546,9 @@ impl SolidValidator {
     /// OCP: Check for excessive match statements
     pub fn validate_ocp(&self) -> Result<Vec<SolidViolation>> {
         let mut violations = Vec::new();
-        let match_pattern = Regex::new(r"\bmatch\b").expect("Invalid regex");
+        let match_pattern = PATTERNS
+            .get("SOLID003.match_keyword")
+            .expect("Pattern SOLID003.match_keyword not found");
 
         for crate_dir in self.get_crate_dirs()? {
             let src_dir = crate_dir.join("src");
@@ -599,10 +605,12 @@ impl SolidValidator {
     /// ISP: Check for traits with too many methods
     pub fn validate_isp(&self) -> Result<Vec<SolidViolation>> {
         let mut violations = Vec::new();
-        let trait_pattern =
-            Regex::new(r"(?:pub\s+)?trait\s+([A-Z][a-zA-Z0-9_]*)").expect("Invalid regex");
-        let fn_pattern =
-            Regex::new(r"(?:async\s+)?fn\s+[a-z_][a-z0-9_]*\s*[<(]").expect("Invalid regex");
+        let trait_pattern = PATTERNS
+            .get("SOLID001.trait_decl")
+            .expect("Pattern SOLID001.trait_decl not found");
+        let fn_pattern = PATTERNS
+            .get("SOLID001.fn_decl")
+            .expect("Pattern SOLID001.fn_decl not found");
 
         for crate_dir in self.get_crate_dirs()? {
             let src_dir = crate_dir.join("src");
@@ -648,12 +656,15 @@ impl SolidValidator {
     /// LSP: Check for partial trait implementations (panic!/todo! in trait methods)
     pub fn validate_lsp(&self) -> Result<Vec<SolidViolation>> {
         let mut violations = Vec::new();
-        let impl_for_pattern =
-            Regex::new(r"impl(?:<[^>]*>)?\s+([A-Z][a-zA-Z0-9_]*)\s+for\s+([A-Z][a-zA-Z0-9_]*)")
-                .expect("Invalid regex");
-        let fn_pattern = Regex::new(r"fn\s+([a-z_][a-z0-9_]*)\s*[<(]").expect("Invalid regex");
-        let panic_todo_pattern =
-            Regex::new(r"(panic!|todo!|unimplemented!)").expect("Invalid regex");
+        let impl_for_pattern = PATTERNS
+            .get("SOLID002.impl_for_decl")
+            .expect("Pattern SOLID002.impl_for_decl not found");
+        let fn_pattern = PATTERNS
+            .get("SOLID002.fn_decl")
+            .expect("Pattern SOLID002.fn_decl not found");
+        let panic_todo_pattern = PATTERNS
+            .get("SOLID003.panic_macros")
+            .expect("Pattern SOLID003.panic_macros not found");
 
         for crate_dir in self.get_crate_dirs()? {
             let src_dir = crate_dir.join("src");
@@ -726,10 +737,12 @@ impl SolidValidator {
     /// SRP: Check for impl blocks with too many methods
     pub fn validate_impl_method_count(&self) -> Result<Vec<SolidViolation>> {
         let mut violations = Vec::new();
-        let impl_pattern =
-            Regex::new(r"impl(?:<[^>]*>)?\s+([A-Z][a-zA-Z0-9_]*)").expect("Invalid regex");
-        let fn_pattern = Regex::new(r"(?:pub\s+)?(?:async\s+)?fn\s+[a-z_][a-z0-9_]*\s*[<(]")
-            .expect("Invalid regex");
+        let impl_pattern = PATTERNS
+            .get("SOLID003.impl_only_decl")
+            .expect("Pattern SOLID003.impl_only_decl not found");
+        let fn_pattern = PATTERNS
+            .get("SOLID002.fn_decl")
+            .expect("Pattern SOLID002.fn_decl not found");
 
         for crate_dir in self.get_crate_dirs()? {
             let src_dir = crate_dir.join("src");
@@ -796,10 +809,12 @@ impl SolidValidator {
     pub fn validate_string_dispatch(&self) -> Result<Vec<SolidViolation>> {
         let mut violations = Vec::new();
         // Pattern: match on .as_str() or match with string literals
-        let string_match_pattern =
-            Regex::new(r#"match\s+\w+\.as_str\(\)|match\s+[&]?\w+\s*\{\s*"[^"]+"\s*=>"#)
-                .expect("Invalid regex");
-        let string_arm_pattern = Regex::new(r#"^\s*"[^"]+"\s*=>"#).expect("Invalid regex");
+        let string_match_pattern = PATTERNS
+            .get("SOLID003.string_match")
+            .expect("Pattern SOLID003.string_match not found");
+        let string_arm_pattern = PATTERNS
+            .get("SOLID003.string_arm")
+            .expect("Pattern SOLID003.string_arm not found");
 
         for crate_dir in self.get_crate_dirs()? {
             let src_dir = crate_dir.join("src");
@@ -956,7 +971,9 @@ impl SolidValidator {
         let mut brace_depth = 0;
         let mut in_match = false;
         let mut arm_count = 0;
-        let arrow_pattern = Regex::new(r"=>").expect("Invalid regex");
+        let arrow_pattern = PATTERNS
+            .get("SOLID003.match_arrow")
+            .expect("Pattern SOLID003.match_arrow not found");
 
         for line in &lines[start_line..] {
             if line.contains('{') {
@@ -1134,12 +1151,6 @@ impl SolidValidator {
 
     fn get_crate_dirs(&self) -> Result<Vec<PathBuf>> {
         self.config.get_source_dirs()
-    }
-
-    /// Check if a path is from legacy/additional source directories
-    #[allow(dead_code)]
-    fn is_legacy_path(&self, path: &std::path::Path) -> bool {
-        self.config.is_legacy_path(path)
     }
 }
 

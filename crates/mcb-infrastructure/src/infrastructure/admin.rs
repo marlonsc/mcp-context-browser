@@ -4,7 +4,7 @@
 //! Moved from mcb-providers to mcb-infrastructure per Clean Architecture.
 
 use dashmap::DashMap;
-use mcb_application::ports::admin::{
+use mcb_domain::ports::admin::{
     IndexingOperation, IndexingOperationsInterface, PerformanceMetricsData,
     PerformanceMetricsInterface,
 };
