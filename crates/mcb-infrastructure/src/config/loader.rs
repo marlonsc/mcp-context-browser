@@ -284,6 +284,7 @@ fn validate_operations_config(config: &AppConfig) -> Result<()> {
     Ok(())
 }
 
+/// Returns default ConfigLoader for loading application configuration from files
 impl Default for ConfigLoader {
     fn default() -> Self {
         Self::new()
@@ -357,6 +358,7 @@ impl ConfigBuilder {
     }
 }
 
+/// Returns default ConfigBuilder with default application configuration
 impl Default for ConfigBuilder {
     fn default() -> Self {
         Self::new()

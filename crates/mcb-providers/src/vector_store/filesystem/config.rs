@@ -25,6 +25,7 @@ pub struct FilesystemVectorStoreConfig {
     pub memory_mapping_enabled: bool,
 }
 
+/// Returns default FilesystemVectorStoreConfig with sensible defaults for local vector storage
 impl Default for FilesystemVectorStoreConfig {
     fn default() -> Self {
         Self {

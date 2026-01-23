@@ -23,6 +23,10 @@ pub struct SnapshotConfig {
     pub change_detection_enabled: bool,
 }
 
+/// Returns default snapshot configuration with:
+/// - Snapshots enabled in ./snapshots directory
+/// - Max file size from infrastructure constants
+/// - Compression and change detection enabled
 impl Default for SnapshotConfig {
     fn default() -> Self {
         Self {

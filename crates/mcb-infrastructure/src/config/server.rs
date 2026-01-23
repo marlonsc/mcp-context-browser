@@ -172,6 +172,7 @@ impl ServerConfigBuilder {
     }
 }
 
+/// Returns default ServerConfigBuilder with default server configuration
 impl Default for ServerConfigBuilder {
     fn default() -> Self {
         Self::new()

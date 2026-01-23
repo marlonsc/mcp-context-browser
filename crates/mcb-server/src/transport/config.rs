@@ -18,6 +18,7 @@ pub struct TransportConfig {
     pub http_host: Option<String>,
 }
 
+/// Returns default TransportConfig with Stdio mode and no HTTP configuration
 impl Default for TransportConfig {
     fn default() -> Self {
         Self {

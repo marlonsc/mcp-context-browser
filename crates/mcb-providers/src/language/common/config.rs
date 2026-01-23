@@ -195,6 +195,7 @@ impl NodeExtractionRuleBuilder {
     }
 }
 
+/// Returns default NodeExtractionRuleBuilder for configuring AST node extraction rules
 impl Default for NodeExtractionRuleBuilder {
     fn default() -> Self {
         Self::new()

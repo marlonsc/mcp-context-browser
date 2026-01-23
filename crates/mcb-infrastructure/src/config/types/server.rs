@@ -106,6 +106,10 @@ fn default_admin_port() -> u16 {
 }
 
 // Default implementations for config structs
+
+/// Returns default network configuration with:
+/// - Host and port from infrastructure constants
+/// - Admin API port: 9090
 impl Default for ServerNetworkConfig {
     fn default() -> Self {
         Self {
@@ -116,6 +120,9 @@ impl Default for ServerNetworkConfig {
     }
 }
 
+/// Returns default timeout configuration with:
+/// - Request and connection timeouts from infrastructure constants
+/// - Max request body size from infrastructure constants
 impl Default for ServerTimeoutConfig {
     fn default() -> Self {
         Self {
@@ -126,6 +133,9 @@ impl Default for ServerTimeoutConfig {
     }
 }
 
+/// Returns default CORS configuration with:
+/// - CORS enabled
+/// - Allow all origins (*)
 impl Default for ServerCorsConfig {
     fn default() -> Self {
         Self {

@@ -40,10 +40,10 @@ pub struct EventBusConfig {
     pub max_reconnect_attempts: u32,
 }
 
-/// Default event bus configuration
-///
-/// NATS client name defaults to "mcb-context-browser" but can be overridden
-/// via configuration for multi-instance deployments or custom identification.
+/// Returns default event bus configuration with:
+/// - Tokio in-process provider with 1024 event capacity
+/// - NATS client name from infrastructure constants
+/// - Connection timeout 5s, max 5 reconnect attempts
 impl Default for EventBusConfig {
     fn default() -> Self {
         Self {

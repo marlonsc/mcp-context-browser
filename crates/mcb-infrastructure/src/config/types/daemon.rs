@@ -22,6 +22,10 @@ pub struct DaemonConfig {
     pub auto_start: bool,
 }
 
+/// Returns default daemon configuration with:
+/// - Daemon enabled and auto-start
+/// - Health checks use constants from infrastructure
+/// - Restart behavior uses constants from infrastructure
 impl Default for DaemonConfig {
     fn default() -> Self {
         Self {

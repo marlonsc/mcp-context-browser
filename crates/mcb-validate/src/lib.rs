@@ -265,9 +265,12 @@ impl ValidationConfig {
                 let entry = entry?;
                 let path = entry.path();
 
-                // mcb-validate validates itself - no special treatment
-                // mcb (facade crate) is minimal re-exports, skip for now
-                if path.file_name().is_some_and(|n| n == "mcb") {
+                // Skip mcb-validate (dev tooling validates production, not itself)
+                // Skip mcb (facade crate with minimal re-exports)
+                if path
+                    .file_name()
+                    .is_some_and(|n| n == "mcb" || n == "mcb-validate")
+                {
                     continue;
                 }
 

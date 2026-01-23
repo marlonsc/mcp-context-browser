@@ -231,6 +231,7 @@ impl ProviderConfigBuilder {
     }
 }
 
+/// Returns default ProviderConfigBuilder with empty provider configurations
 impl Default for ProviderConfigBuilder {
     fn default() -> Self {
         Self::new()

@@ -25,6 +25,11 @@ pub struct MetricsConfig {
     pub exporter_url: Option<String>,
 }
 
+/// Returns default metrics configuration with:
+/// - Metrics enabled with periodic collection
+/// - Collection interval and prefix from infrastructure constants
+/// - Prometheus endpoint enabled at default path
+/// - No external exporter configured
 impl Default for MetricsConfig {
     fn default() -> Self {
         Self {

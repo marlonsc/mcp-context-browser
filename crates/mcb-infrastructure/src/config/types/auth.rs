@@ -30,6 +30,9 @@ pub struct JwtConfig {
     pub refresh_expiration_secs: u64,
 }
 
+/// Returns default JWT configuration with:
+/// - Empty secret (MUST be configured when auth is enabled)
+/// - Expiration times from infrastructure constants
 impl Default for JwtConfig {
     fn default() -> Self {
         Self {
@@ -52,6 +55,9 @@ pub struct ApiKeyConfig {
     pub header: String,
 }
 
+/// Returns default API key configuration with:
+/// - API key auth enabled
+/// - Header name from infrastructure constants
 impl Default for ApiKeyConfig {
     fn default() -> Self {
         Self {
@@ -87,6 +93,10 @@ fn default_admin_key_header() -> String {
     DEFAULT_ADMIN_KEY_HEADER.to_string()
 }
 
+/// Returns default admin API key configuration with:
+/// - Admin auth disabled by default for safety
+/// - Header name from infrastructure constants
+/// - No key configured (filled via environment/config)
 impl Default for AdminApiKeyConfig {
     fn default() -> Self {
         Self {
@@ -120,6 +130,11 @@ pub struct AuthConfig {
     pub password_algorithm: PasswordAlgorithm,
 }
 
+/// Returns default authentication configuration with:
+/// - Authentication enabled
+/// - JWT and API key auth with default settings
+/// - Admin auth disabled for safety
+/// - Argon2 password hashing (recommended)
 impl Default for AuthConfig {
     fn default() -> Self {
         Self {

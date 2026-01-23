@@ -28,6 +28,12 @@ pub struct BackupConfig {
     pub encryption_key: Option<String>,
 }
 
+/// Returns default backup configuration with:
+/// - Backups disabled by default
+/// - Directory: ./backups
+/// - Interval: 24 hours
+/// - Keep last 7 backups
+/// - Compression enabled, encryption disabled
 impl Default for BackupConfig {
     fn default() -> Self {
         Self {

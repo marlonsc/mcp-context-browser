@@ -37,6 +37,10 @@ fn default_watching_enabled() -> bool {
     true
 }
 
+/// Returns default sync configuration with:
+/// - Sync enabled with file watching for hot-reload
+/// - Batch size, debounce, and timeout from infrastructure constants
+/// - Max 10 concurrent sync operations
 impl Default for SyncConfig {
     fn default() -> Self {
         Self {

@@ -28,6 +28,10 @@ pub struct ResilienceConfig {
     pub retry_delay_ms: u64,
 }
 
+/// Returns default resilience configuration with:
+/// - Circuit breaker thresholds from infrastructure constants
+/// - Rate limiter settings from infrastructure constants
+/// - 3 retry attempts with 1 second delay
 impl Default for ResilienceConfig {
     fn default() -> Self {
         Self {

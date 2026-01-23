@@ -230,6 +230,7 @@ impl ConfigWatcherBuilder {
     }
 }
 
+/// Returns default ConfigWatcherBuilder for creating config file watchers
 impl Default for ConfigWatcherBuilder {
     fn default() -> Self {
         Self::new()

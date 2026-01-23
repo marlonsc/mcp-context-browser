@@ -23,6 +23,11 @@ pub struct LoggingConfig {
     pub max_files: usize,
 }
 
+/// Returns default logging configuration with:
+/// - Log level from infrastructure constants
+/// - Human-readable format (not JSON)
+/// - Console-only output (no file)
+/// - File rotation settings from constants
 impl Default for LoggingConfig {
     fn default() -> Self {
         Self {

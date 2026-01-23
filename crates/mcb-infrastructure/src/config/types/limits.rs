@@ -22,6 +22,10 @@ pub struct LimitsConfig {
     pub max_requests_per_connection: u32,
 }
 
+/// Returns default resource limits with:
+/// - Memory/CPU/Disk I/O limits from infrastructure constants
+/// - Max 1000 concurrent connections
+/// - Max 100 requests per connection
 impl Default for LimitsConfig {
     fn default() -> Self {
         Self {

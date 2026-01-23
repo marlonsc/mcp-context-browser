@@ -60,10 +60,10 @@ pub struct CacheSystemConfig {
     pub namespace: String,
 }
 
-/// Default cache configuration
-///
-/// Default namespace: "mcb" - can be overridden via configuration to avoid conflicts
-/// in multi-tenant or shared cache environments.
+/// Returns default cache configuration with:
+/// - Cache enabled with Moka in-memory provider
+/// - TTL and size limits from infrastructure constants
+/// - Default namespace: "mcb" for cache key isolation
 impl Default for CacheSystemConfig {
     fn default() -> Self {
         Self {

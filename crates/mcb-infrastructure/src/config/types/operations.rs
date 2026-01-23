@@ -19,6 +19,10 @@ pub struct OperationsConfig {
     pub max_operations_in_memory: usize,
 }
 
+/// Returns default operations configuration with:
+/// - Tracking enabled with periodic cleanup
+/// - Cleanup interval and retention from infrastructure constants
+/// - Memory limits from infrastructure constants
 impl Default for OperationsConfig {
     fn default() -> Self {
         Self {
