@@ -53,6 +53,9 @@ clap = { workspace = true }
 # HTTP server - migrated from Axum to Rocket in v0.1.2 (ADR-026)
 rocket = { workspace = true }
 
+# HTTP client - for client mode connecting to remote server
+reqwest = { workspace = true }
+
 # MCP SDK
 rmcp = { workspace = true }
 

@@ -9,6 +9,7 @@ pub mod event_bus;
 pub mod limits;
 pub mod logging;
 pub mod metrics;
+pub mod mode;
 pub mod operations;
 pub mod resilience;
 pub mod server;
@@ -17,3 +18,4 @@ pub mod sync;
 
 // Re-export main types
 pub use app::*;
+pub use mode::{ModeConfig, OperatingMode};

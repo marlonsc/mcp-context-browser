@@ -3,7 +3,18 @@
 //! Enterprise semantic code search server following Clean Architecture principles.
 //! Features dependency injection, domain-driven design, and MCP protocol compliance.
 //!
-//! Architecture:
+//! ## Operating Modes
+//!
+//! MCB supports three operating modes:
+//!
+//! | Mode | Command | Description |
+//! |------|---------|-------------|
+//! | **Standalone** | `mcb` (config: `mode.type = "standalone"`) | Local providers, stdio transport |
+//! | **Server** | `mcb --server` | HTTP daemon, accepts client connections |
+//! | **Client** | `mcb` (config: `mode.type = "client"`) | Connects to server via HTTP |
+//!
+//! ## Architecture
+//!
 //! - Domain layer: Core business logic and contracts (mcb-domain)
 //! - Infrastructure: Cross-cutting concerns and external integrations (mcb-infrastructure)
 //! - Server: Transport and protocol layer (mcb-server)
@@ -12,25 +23,35 @@
 extern crate mcb_providers;
 
 use clap::Parser;
-use mcb_server::run_server;
+use mcb_server::run;
 
-/// Command line interface for MCP Context Browser Server
+/// Command line interface for MCP Context Browser
 #[derive(Parser, Debug)]
 #[command(name = "mcb-server")]
 #[command(about = "MCP Context Browser - Clean Architecture Semantic Code Search Server")]
 #[command(version)]
-struct Cli {
+pub struct Cli {
     /// Path to configuration file
     #[arg(short, long)]
-    config: Option<std::path::PathBuf>,
+    pub config: Option<std::path::PathBuf>,
+
+    /// Run as server daemon (HTTP + optional stdio)
+    ///
+    /// When this flag is set, MCB runs as a server daemon that accepts
+    /// connections from MCB clients. Without this flag, MCB checks the
+    /// config file to determine if it should run in standalone or client mode.
+    #[arg(long, help = "Run as server daemon")]
+    pub server: bool,
 }
 
-/// Main entry point for the MCP Context Browser server
+/// Main entry point for the MCP Context Browser
 ///
-/// Parses command line arguments and starts the MCP server with dependency injection.
-/// The server follows Clean Architecture principles with clear separation of concerns.
+/// Dispatches to the appropriate mode based on CLI flags and configuration:
+/// - `--server` flag: Run as HTTP server daemon
+/// - Config `mode.type = "standalone"`: Run with local providers (default)
+/// - Config `mode.type = "client"`: Connect to remote server
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
-    run_server(cli.config.as_deref()).await
+    run(cli.config.as_deref(), cli.server).await
 }

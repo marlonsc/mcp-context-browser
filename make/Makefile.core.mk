@@ -26,7 +26,7 @@ endif
 # TEST (SCOPE=unit|doc|golden|all)
 # =============================================================================
 
-test: ## Run tests (SCOPE=unit|doc|golden|all)
+test: ## Run tests (SCOPE=unit|doc|golden|integration|modes|all)
 ifeq ($(SCOPE),unit)
 	@echo "Running unit tests..."
 	MCP_PORT=$(MCP_PORT) cargo test --workspace --lib --bins
@@ -36,6 +36,12 @@ else ifeq ($(SCOPE),doc)
 else ifeq ($(SCOPE),golden)
 	@echo "Running golden acceptance tests..."
 	MCP_PORT=$(MCP_PORT) cargo test -p mcb-server golden_acceptance -- --nocapture
+else ifeq ($(SCOPE),integration)
+	@echo "Running integration tests..."
+	MCP_PORT=$(MCP_PORT) cargo test -p mcb-server --test integration
+else ifeq ($(SCOPE),modes)
+	@echo "Running operating modes tests..."
+	MCP_PORT=$(MCP_PORT) cargo test -p mcb-server operating_modes -- --nocapture
 else
 	@echo "Running all tests..."
 	MCP_PORT=$(MCP_PORT) cargo test --workspace --features "full"

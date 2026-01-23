@@ -3429,6 +3429,7 @@ dependencies = [
  "notify",
  "prometheus",
  "pulldown-cmark",
+ "reqwest 0.13.1",
  "rmcp",
  "rocket",
  "schemars",

@@ -9,7 +9,7 @@
 # =============================================================================
 # Global Parameters (limitations only, not for multi-function)
 # =============================================================================
-export RELEASE ?= 0
+export RELEASE ?= 1
 export SCOPE ?= all
 export FIX ?= 0
 export STRICT ?= 0

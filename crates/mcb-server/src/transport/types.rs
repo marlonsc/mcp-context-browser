@@ -5,7 +5,7 @@
 use serde::{Deserialize, Serialize};
 
 /// MCP request payload (JSON-RPC format)
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct McpRequest {
     /// JSON-RPC method
     pub method: String,
@@ -16,10 +16,11 @@ pub struct McpRequest {
 }
 
 /// MCP response payload (JSON-RPC format)
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct McpResponse {
     /// JSON-RPC version
-    pub jsonrpc: &'static str,
+    #[serde(default = "default_jsonrpc")]
+    pub jsonrpc: String,
     /// Response result (if successful)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub result: Option<serde_json::Value>,
@@ -30,8 +31,12 @@ pub struct McpResponse {
     pub id: Option<serde_json::Value>,
 }
 
+fn default_jsonrpc() -> String {
+    "2.0".to_string()
+}
+
 /// MCP error response (JSON-RPC format)
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct McpError {
     /// Error code
     pub code: i32,
@@ -43,7 +48,7 @@ impl McpResponse {
     /// Create a success response
     pub fn success(id: Option<serde_json::Value>, result: serde_json::Value) -> Self {
         Self {
-            jsonrpc: "2.0",
+            jsonrpc: "2.0".to_string(),
             result: Some(result),
             error: None,
             id,
@@ -53,7 +58,7 @@ impl McpResponse {
     /// Create an error response
     pub fn error(id: Option<serde_json::Value>, code: i32, message: impl Into<String>) -> Self {
         Self {
-            jsonrpc: "2.0",
+            jsonrpc: "2.0".to_string(),
             result: None,
             error: Some(McpError {
                 code,

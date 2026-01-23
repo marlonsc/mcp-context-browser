@@ -15,12 +15,13 @@
 //! ## Quick Start
 //!
 //! ```rust,no_run
-//! use mcb_server::run_server;
+//! use mcb_server::run;
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
 //!     // Run with default config (XDG paths + environment)
-//!     run_server(None).await?;
+//!     // server_mode = false uses config to determine mode
+//!     run(None, false).await?;
 //!     Ok(())
 //! }
 //! ```
@@ -67,6 +68,7 @@ pub mod formatter;
 pub mod handlers;
 pub mod init;
 pub mod mcp_server;
+pub mod session;
 pub mod tools;
 pub mod transport;
 
@@ -76,5 +78,7 @@ pub mod transport;
 
 // Re-export core types for public API
 pub use builder::McpServerBuilder;
+pub use init::run;
+#[allow(deprecated)]
 pub use init::run_server;
 pub use mcp_server::McpServer;

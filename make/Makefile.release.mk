@@ -11,7 +11,7 @@ VERSION := $(shell grep '^version' crates/mcb/Cargo.toml | head -1 | sed 's/.*"\
 
 # Installation directory - single location for MCP and systemd
 INSTALL_DIR := $(HOME)/.local/bin
-INSTALL_BINARY := mcp-context-browser
+INSTALL_BINARY := mcb
 BINARY_NAME := mcb-server
 
 # =============================================================================
@@ -38,18 +38,37 @@ install: ## Install binary to ~/.local/bin/mcp-context-browser (RELEASE=1 for re
 ifeq ($(RELEASE),1)
 	@echo "Installing release binary v$(VERSION)..."
 	@$(MAKE) build RELEASE=1
-	@mkdir -p $(INSTALL_DIR)
-	@cp target/release/$(BINARY_NAME) $(INSTALL_DIR)/$(INSTALL_BINARY)
-	@chmod +x $(INSTALL_DIR)/$(INSTALL_BINARY)
-	@echo "Installed v$(VERSION) to $(INSTALL_DIR)/$(INSTALL_BINARY)"
 else
 	@echo "Installing debug binary v$(VERSION)..."
 	@$(MAKE) build
-	@mkdir -p $(INSTALL_DIR)
-	@cp target/debug/$(BINARY_NAME) $(INSTALL_DIR)/$(INSTALL_BINARY)
-	@chmod +x $(INSTALL_DIR)/$(INSTALL_BINARY)
-	@echo "Installed v$(VERSION) (debug) to $(INSTALL_DIR)/$(INSTALL_BINARY)"
 endif
+	@echo "Stopping running MCP processes..."
+	@-pkill -f "mcp-context-browser" 2>/dev/null || true
+	@sleep 1
+	@mkdir -p $(INSTALL_DIR)
+ifeq ($(RELEASE),1)
+	@cp target/release/$(BINARY_NAME) $(INSTALL_DIR)/$(INSTALL_BINARY)
+else
+	@cp target/debug/$(BINARY_NAME) $(INSTALL_DIR)/$(INSTALL_BINARY)
+endif
+	@chmod +x $(INSTALL_DIR)/$(INSTALL_BINARY)
+	@echo ""
+	@echo "✓ Installed v$(VERSION) to $(INSTALL_DIR)/$(INSTALL_BINARY)"
+	@echo "✓ Old processes killed - new binary will be used on next MCP call"
+	@ls -lh $(INSTALL_DIR)/$(INSTALL_BINARY) | awk '{print "  Size: "$$5"  Modified: "$$6" "$$7" "$$8}'
+ifneq ($(RELEASE),1)
+	@echo ""
+	@echo "Tip: Use 'make install RELEASE=1' for a smaller optimized binary (~70MB vs ~500MB)"
+endif
+
+# =============================================================================
+# INSTALL-VALIDATE - Install and validate the binary works
+# =============================================================================
+
+install-validate: install ## Install and run quick validation
+	@echo ""
+	@echo "Validating installation..."
+	@$(INSTALL_DIR)/$(INSTALL_BINARY) --version 2>/dev/null && echo "✓ Binary runs successfully" || echo "⚠ Binary validation failed"
 
 # =============================================================================
 # VERSION (BUMP=patch|minor|major|check)

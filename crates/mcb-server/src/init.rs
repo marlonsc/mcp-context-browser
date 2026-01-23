@@ -13,54 +13,141 @@
 //! Production providers are resolved via linkme registry using `AppConfig`,
 //! wrapped in handles, and can be switched at runtime via admin API.
 //!
-//! # Transport Modes
+//! # Operating Modes
 //!
-//! The server supports three transport modes configured via `ServerConfig.transport_mode`:
+//! MCB supports three operating modes:
 //!
-//! - **Stdio**: Traditional MCP protocol over stdin/stdout (default)
-//! - **Http**: HTTP REST API with Server-Sent Events for web clients
-//! - **Hybrid**: Both Stdio and HTTP running simultaneously
+//! | Mode | Trigger | Description |
+//! |------|---------|-------------|
+//! | **Server** | `--server` flag | HTTP daemon accepting client connections |
+//! | **Standalone** | Config `mode.type = "standalone"` | Local providers, stdio transport |
+//! | **Client** | Config `mode.type = "client"` | Connects to remote server via HTTP |
 //!
 //! # Configuration
 //!
-//! Transport mode can be set via:
-//! - Config file: `server.transport_mode = "http"`
-//! - Environment variable: `MCP__SERVER__TRANSPORT_MODE=http`
+//! Mode selection via config file (`~/.config/mcb/mcb.toml`):
+//! ```toml
+//! [mode]
+//! type = "client"                         # "standalone" or "client"
+//! server_url = "http://127.0.0.1:8080"   # For client mode
+//! ```
 
 use std::path::Path;
 use std::sync::Arc;
 
 use mcb_infrastructure::cache::provider::SharedCacheProvider;
-use mcb_infrastructure::config::TransportMode;
+use mcb_infrastructure::config::{AppConfig, OperatingMode, TransportMode};
 use mcb_infrastructure::crypto::CryptoService;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 
 use crate::McpServer;
 use crate::McpServerBuilder;
 use crate::transport::http::{HttpTransport, HttpTransportConfig};
 use crate::transport::stdio::StdioServerExt;
 
-/// Run the MCP Context Browser server
+// =============================================================================
+// Main Entry Point
+// =============================================================================
+
+/// Main entry point - dispatches to the appropriate operating mode
 ///
-/// This is the main entry point that initializes all components and starts the server.
-/// It handles configuration loading, dependency injection, and MCP server startup.
+/// # Arguments
 ///
-/// # Transport Mode Selection
+/// * `config_path` - Optional path to configuration file
+/// * `server_mode` - If true, runs as server daemon (ignores config mode)
 ///
-/// The transport mode is determined by `config.server.transport_mode`:
+/// # Operating Mode Selection
 ///
-/// - `Stdio` (default): Runs MCP over stdin/stdout
-/// - `Http`: Runs HTTP server on configured port
-/// - `Hybrid`: Runs both Stdio and HTTP concurrently
-pub async fn run_server(config_path: Option<&Path>) -> Result<(), Box<dyn std::error::Error>> {
+/// 1. If `server_mode` is true → Run as server daemon (HTTP + optional stdio)
+/// 2. Otherwise, check `config.mode.mode_type`:
+///    - `Standalone` → Run with local providers, stdio transport
+///    - `Client` → Connect to remote server via HTTP
+pub async fn run(
+    config_path: Option<&Path>,
+    server_mode: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
     let config = load_config(config_path)?;
     mcb_infrastructure::logging::init_logging(config.logging.clone())?;
 
+    if server_mode {
+        // Explicit server mode via --server flag
+        run_server_mode(config).await
+    } else {
+        // Check config for operating mode
+        match config.mode.mode_type {
+            OperatingMode::Standalone => run_standalone(config).await,
+            OperatingMode::Client => run_client(config).await,
+        }
+    }
+}
+
+/// Legacy entry point for backwards compatibility
+///
+/// Runs in standalone mode (equivalent to `run(config_path, false)` with standalone config)
+#[deprecated(since = "0.2.0", note = "Use `run(config_path, server_mode)` instead")]
+pub async fn run_server(config_path: Option<&Path>) -> Result<(), Box<dyn std::error::Error>> {
+    run(config_path, false).await
+}
+
+// =============================================================================
+// Operating Modes
+// =============================================================================
+
+/// Run as server daemon (HTTP + optional stdio based on transport_mode)
+///
+/// This mode is activated by the `--server` flag. The server accepts
+/// connections from MCB clients and processes MCP requests.
+///
+/// Transport mode is still controlled by `config.server.transport_mode`:
+/// - `Http`: HTTP only
+/// - `Hybrid`: HTTP + stdio (default for server mode)
+async fn run_server_mode(config: AppConfig) -> Result<(), Box<dyn std::error::Error>> {
     info!(
         transport_mode = ?config.server.transport_mode,
         host = %config.server.network.host,
         port = %config.server.network.port,
-        "Starting MCP Context Browser server"
+        "Starting MCB server daemon"
+    );
+
+    let transport_mode = config.server.transport_mode;
+    let http_host = config.server.network.host.clone();
+    let http_port = config.server.network.port;
+
+    let server = create_mcp_server(config).await?;
+    info!("MCP server initialized successfully");
+
+    // In server mode, we prefer hybrid or http transport
+    match transport_mode {
+        TransportMode::Stdio => {
+            warn!(
+                "Server mode with stdio-only transport. Consider using 'hybrid' for client connections."
+            );
+            run_stdio_transport(server).await
+        }
+        TransportMode::Http => {
+            info!(host = %http_host, port = http_port, "Starting HTTP transport");
+            run_http_transport(server, &http_host, http_port).await
+        }
+        TransportMode::Hybrid => {
+            info!(
+                host = %http_host,
+                port = http_port,
+                "Starting hybrid transport (stdio + HTTP)"
+            );
+            run_hybrid_transport(server, &http_host, http_port).await
+        }
+    }
+}
+
+/// Run in standalone mode with local providers
+///
+/// This is the default mode when no `--server` flag is provided and
+/// `config.mode.type = "standalone"`. MCB runs with local providers
+/// and communicates via stdio (for Claude Code integration).
+async fn run_standalone(config: AppConfig) -> Result<(), Box<dyn std::error::Error>> {
+    info!(
+        transport_mode = ?config.server.transport_mode,
+        "Starting MCB standalone mode"
     );
 
     let transport_mode = config.server.transport_mode;
@@ -73,10 +160,41 @@ pub async fn run_server(config_path: Option<&Path>) -> Result<(), Box<dyn std::e
     start_transport(server, transport_mode, &http_host, http_port).await
 }
 
+/// Run in client mode, connecting to a remote MCB server
+///
+/// This mode is activated when `config.mode.type = "client"`. MCB acts as
+/// a stdio-to-HTTP bridge: it reads MCP requests from stdin, forwards them
+/// to the remote server via HTTP, and writes responses to stdout.
+async fn run_client(config: AppConfig) -> Result<(), Box<dyn std::error::Error>> {
+    let server_url = &config.mode.server_url;
+    let session_prefix = config.mode.session_prefix.as_deref();
+
+    info!(
+        server_url = %server_url,
+        session_prefix = ?session_prefix,
+        timeout_secs = config.mode.timeout_secs,
+        "Starting MCB client mode"
+    );
+
+    // TODO: Implement HTTP client transport in Phase 2
+    // For now, return an error indicating client mode is not yet implemented
+    use crate::transport::http_client::HttpClientTransport;
+
+    let client = HttpClientTransport::new(
+        server_url.clone(),
+        session_prefix.map(String::from),
+        std::time::Duration::from_secs(config.mode.timeout_secs),
+    );
+
+    client.run().await
+}
+
+// =============================================================================
+// Configuration Loading
+// =============================================================================
+
 /// Load configuration from optional path
-fn load_config(
-    config_path: Option<&Path>,
-) -> Result<mcb_infrastructure::config::AppConfig, Box<dyn std::error::Error>> {
+fn load_config(config_path: Option<&Path>) -> Result<AppConfig, Box<dyn std::error::Error>> {
     let loader = match config_path {
         Some(path) => mcb_infrastructure::config::ConfigLoader::new().with_config_path(path),
         None => mcb_infrastructure::config::ConfigLoader::new(),
@@ -84,10 +202,12 @@ fn load_config(
     Ok(loader.load()?)
 }
 
+// =============================================================================
+// Server Creation
+// =============================================================================
+
 /// Create and configure the MCP server with all services
-async fn create_mcp_server(
-    config: mcb_infrastructure::config::AppConfig,
-) -> Result<McpServer, Box<dyn std::error::Error>> {
+async fn create_mcp_server(config: AppConfig) -> Result<McpServer, Box<dyn std::error::Error>> {
     // Create AppContext with resolved providers
     let app_context = mcb_infrastructure::di::bootstrap::init_app(config.clone()).await?;
 
@@ -123,6 +243,10 @@ async fn create_mcp_server(
         .try_build()
         .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })
 }
+
+// =============================================================================
+// Transport Management
+// =============================================================================
 
 /// Start the appropriate transport based on configuration
 async fn start_transport(
@@ -243,14 +367,14 @@ async fn run_hybrid_transport(
 }
 
 // =============================================================================
-// Crypto Service Creation - Only service not yet in Shaku modules
+// Crypto Service Creation
 // =============================================================================
 
 /// Create crypto service from configuration
 ///
 /// Uses JWT secret from config if available (32+ bytes), otherwise generates a random key.
 async fn create_crypto_service(
-    config: &mcb_infrastructure::config::AppConfig,
+    config: &AppConfig,
 ) -> Result<CryptoService, Box<dyn std::error::Error>> {
     // AES-GCM requires exactly 32 bytes for the key
     let master_key = if config.auth.jwt.secret.len() >= 32 {

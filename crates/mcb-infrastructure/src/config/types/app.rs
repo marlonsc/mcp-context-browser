@@ -14,6 +14,7 @@ pub use super::{
     limits::LimitsConfig,
     logging::LoggingConfig,
     metrics::MetricsConfig,
+    mode::{ModeConfig, OperatingMode},
     operations::OperationsConfig,
     resilience::ResilienceConfig,
     server::{
@@ -131,6 +132,10 @@ pub struct OperationsDaemonConfig {
 /// Main application configuration
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct AppConfig {
+    /// Operating mode configuration (standalone vs client)
+    #[serde(default)]
+    pub mode: ModeConfig,
+
     /// Server configuration
     pub server: ServerConfig,
 

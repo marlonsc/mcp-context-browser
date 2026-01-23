@@ -65,6 +65,10 @@ pub mod infrastructure {
 pub use domain::*;
 
 // Re-export main entry point at the crate root
+pub use server::run;
+
+// Re-export deprecated function with allow attribute for backwards compatibility
+#[allow(deprecated)]
 pub use server::run_server;
 
 // Re-export server types for convenience

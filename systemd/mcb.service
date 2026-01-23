@@ -1,0 +1,43 @@
+# MCB - Semantic Code Search Server (User Service)
+#
+# Install to: ~/.config/systemd/user/mcb.service
+#
+# Commands:
+#   systemctl --user daemon-reload
+#   systemctl --user enable mcb
+#   systemctl --user start mcb
+#   systemctl --user status mcb
+#   journalctl --user -u mcb -f
+
+[Unit]
+Description=MCB - Semantic Code Search Server
+Documentation=https://github.com/anthropics/mcp-context-browser
+After=default.target
+
+[Service]
+Type=simple
+
+# Binary in server mode (HTTP daemon + optional stdio)
+# Config auto-discovered at ~/.config/mcb/mcb.toml
+ExecStart=%h/.local/bin/mcb --server
+
+# Reload via SIGUSR1 triggers exec-based respawn (preserves PID)
+ExecReload=/bin/kill -SIGUSR1 $MAINPID
+
+# Graceful shutdown
+TimeoutStopSec=30
+KillMode=mixed
+KillSignal=SIGTERM
+
+# Auto-restart on failure
+Restart=on-failure
+RestartSec=5
+
+# Environment
+Environment=RUST_LOG=info
+
+# Working directory for data storage
+WorkingDirectory=%h/.local/share/mcb
+
+[Install]
+WantedBy=default.target

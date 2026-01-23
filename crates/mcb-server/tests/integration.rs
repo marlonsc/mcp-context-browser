@@ -23,3 +23,7 @@ mod full_stack_integration;
 // Error recovery integration tests
 #[path = "integration/error_recovery_integration.rs"]
 mod error_recovery_integration;
+
+// Operating modes integration tests (standalone, server, client)
+#[path = "integration/operating_modes_integration.rs"]
+mod operating_modes_integration;
