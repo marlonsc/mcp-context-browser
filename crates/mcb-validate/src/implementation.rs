@@ -432,64 +432,117 @@ impl ImplementationQualityValidator {
                 }
 
                 let content = std::fs::read_to_string(entry.path())?;
-                let mut current_fn_name = String::new();
                 let mut in_test_module = false;
 
-                for (line_num, line) in content.lines().enumerate() {
-                    let trimmed = line.trim();
+                // Two-pass approach:
+                // 1. Find functions and collect their bodies
+                // 2. Only flag hardcoded returns if function has NO control flow
 
-                    // Skip comments
-                    if trimmed.starts_with("//") {
-                        continue;
-                    }
+                let lines: Vec<&str> = content.lines().collect();
+                let mut i = 0;
+
+                while i < lines.len() {
+                    let trimmed = lines[i].trim();
 
                     // Track test modules
                     if trimmed.contains("#[cfg(test)]") {
                         in_test_module = true;
-                        continue;
                     }
 
                     if in_test_module {
+                        i += 1;
                         continue;
                     }
 
-                    // Track function names
+                    // Find function definitions
                     if let Some(ref re) = fn_pattern {
                         if let Some(cap) = re.captures(trimmed) {
-                            current_fn_name = cap
+                            let fn_name = cap
                                 .get(1)
                                 .map(|m| m.as_str().to_string())
                                 .unwrap_or_default();
-                        }
-                    }
+                            let fn_start = i;
 
-                    // Check for hardcoded return patterns
-                    // Skip guard clauses (return inside if block for validation checks)
-                    // e.g., "if a.len() != b.len() { return false; }" is a valid guard
-                    let is_guard_clause = trimmed.starts_with("if ")
-                        || trimmed.starts_with("} else if ")
-                        || trimmed.contains("return false; }")  // inline guard: if x { return false; }
-                        || trimmed.contains("return true; }")   // inline guard: if x { return true; }
-                        || (trimmed == "return false;" && content.lines().nth(line_num.saturating_sub(1))
-                            .is_some_and(|l| l.trim().starts_with("if ")))
-                        || (trimmed == "return true;" && content.lines().nth(line_num.saturating_sub(1))
-                            .is_some_and(|l| l.trim().starts_with("if ")));
+                            // Find function body extent
+                            let mut brace_depth = 0;
+                            let mut fn_end = i;
+                            let mut fn_started = false;
 
-                    if is_guard_clause {
-                        continue;
-                    }
+                            for j in i..lines.len() {
+                                let line = lines[j];
+                                let opens = line.chars().filter(|c| *c == '{').count() as i32;
+                                let closes = line.chars().filter(|c| *c == '}').count() as i32;
 
-                    for (pattern, desc) in &compiled_patterns {
-                        if pattern.is_match(trimmed) {
-                            violations.push(ImplementationViolation::HardcodedReturnValue {
-                                file: entry.path().to_path_buf(),
-                                line: line_num + 1,
-                                method_name: current_fn_name.clone(),
-                                return_value: desc.to_string(),
-                                severity: Severity::Warning,
+                                if opens > 0 {
+                                    fn_started = true;
+                                }
+                                brace_depth += opens - closes;
+
+                                if fn_started && brace_depth <= 0 {
+                                    fn_end = j;
+                                    break;
+                                }
+                            }
+
+                            // Collect function body
+                            let fn_body: Vec<&str> = lines[fn_start..=fn_end]
+                                .iter()
+                                .map(|l| l.trim())
+                                .filter(|l| !l.is_empty() && !l.starts_with("//"))
+                                .collect();
+
+                            // Check if function has control flow (if/match/for/while/loop/let...else)
+                            // If it does, returns are conditional, not "always hardcoded"
+                            let has_control_flow = fn_body.iter().any(|line| {
+                                line.contains(" if ")
+                                    || line.starts_with("if ")
+                                    || line.contains("} else")
+                                    || line.starts_with("match ")
+                                    || line.contains(" match ")
+                                    || line.starts_with("for ")
+                                    || line.starts_with("while ")
+                                    || line.starts_with("loop ")
+                                    || line.contains(" else {")
+                                    || line.contains("else {")
                             });
+
+                            // Only check for hardcoded returns if NO control flow
+                            if !has_control_flow {
+                                for (line_idx, line) in fn_body.iter().enumerate() {
+                                    // Skip function signature and braces
+                                    if line.starts_with("fn ")
+                                        || line.starts_with("pub fn ")
+                                        || line.starts_with("async fn ")
+                                        || line.starts_with("pub async fn ")
+                                        || *line == "{"
+                                        || *line == "}"
+                                    {
+                                        continue;
+                                    }
+
+                                    for (pattern, desc) in &compiled_patterns {
+                                        if pattern.is_match(line) {
+                                            let actual_line = fn_start + line_idx + 1;
+                                            violations.push(
+                                                ImplementationViolation::HardcodedReturnValue {
+                                                    file: entry.path().to_path_buf(),
+                                                    line: actual_line,
+                                                    method_name: fn_name.clone(),
+                                                    return_value: desc.to_string(),
+                                                    severity: Severity::Warning,
+                                                },
+                                            );
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Skip to end of function
+                            i = fn_end;
                         }
                     }
+
+                    i += 1;
                 }
             }
         }
