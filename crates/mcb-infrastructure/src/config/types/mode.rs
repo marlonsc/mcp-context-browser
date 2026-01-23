@@ -80,6 +80,13 @@ fn default_max_reconnect_attempts() -> u32 {
     5
 }
 
+/// Default configuration for standalone mode operation.
+///
+/// Provides sensible defaults for local development and backwards compatibility:
+/// - Mode: Standalone (local providers)
+/// - Server URL: http://127.0.0.1:8080 (used only in client mode)
+/// - Timeout: 30 seconds
+/// - Auto-reconnect: enabled with 5 max attempts
 impl Default for ModeConfig {
     fn default() -> Self {
         Self {
@@ -115,42 +122,5 @@ impl ModeConfig {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_default_mode_is_standalone() {
-        let config = ModeConfig::default();
-        assert!(config.is_standalone());
-        assert!(!config.is_client());
-    }
-
-    #[test]
-    fn test_default_server_url() {
-        let config = ModeConfig::default();
-        assert_eq!(config.server_url(), "http://127.0.0.1:8080");
-    }
-
-    #[test]
-    fn test_deserialize_client_mode() {
-        let toml = r#"
-            type = "client"
-            server_url = "http://localhost:9000"
-            session_prefix = "test"
-        "#;
-        let config: ModeConfig = toml::from_str(toml).unwrap();
-        assert!(config.is_client());
-        assert_eq!(config.server_url(), "http://localhost:9000");
-        assert_eq!(config.session_prefix(), Some("test"));
-    }
-
-    #[test]
-    fn test_deserialize_standalone_mode() {
-        let toml = r#"
-            type = "standalone"
-        "#;
-        let config: ModeConfig = toml::from_str(toml).unwrap();
-        assert!(config.is_standalone());
-    }
-}
+// Tests moved to crates/mcb-server/tests/integration/operating_modes_integration.rs
+// See: test_mode_config_* tests for coverage

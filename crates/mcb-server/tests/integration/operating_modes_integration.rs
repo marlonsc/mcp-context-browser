@@ -259,7 +259,8 @@ fn test_http_client_session_id_with_prefix() {
         format!("http://127.0.0.1:{}", port),
         Some("test-prefix".to_string()),
         Duration::from_secs(30),
-    );
+    )
+    .expect("Failed to create client");
 
     assert!(client.session_id().starts_with("test-prefix_"));
 }
@@ -271,7 +272,8 @@ fn test_http_client_session_id_without_prefix() {
         format!("http://127.0.0.1:{}", port),
         None,
         Duration::from_secs(30),
-    );
+    )
+    .expect("Failed to create client");
 
     // Should be a valid UUID
     let session_id = client.session_id();
@@ -282,7 +284,8 @@ fn test_http_client_session_id_without_prefix() {
 fn test_http_client_server_url() {
     let port = get_free_port();
     let expected_url = format!("http://127.0.0.1:{}", port);
-    let client = HttpClientTransport::new(expected_url.clone(), None, Duration::from_secs(30));
+    let client = HttpClientTransport::new(expected_url.clone(), None, Duration::from_secs(30))
+        .expect("Failed to create client");
 
     assert_eq!(client.server_url(), expected_url);
 }
@@ -296,7 +299,8 @@ fn test_http_client_from_mode_config() {
         mode_config.server_url.clone(),
         mode_config.session_prefix.clone(),
         Duration::from_secs(mode_config.timeout_secs),
-    );
+    )
+    .expect("Failed to create client");
 
     assert!(client.session_id().starts_with("test_"));
     assert!(client.server_url().contains(&port.to_string()));

@@ -40,7 +40,7 @@ pub mod types;
 // Re-export transport types
 pub use config::TransportConfig;
 pub use http::{HttpTransport, HttpTransportConfig};
-pub use http_client::{HttpClientConfig, HttpClientTransport};
+pub use http_client::{HttpClientTransport, McpClientConfig};
 pub use stdio::StdioServerExt;
 pub use types::{McpError, McpRequest, McpResponse};
 

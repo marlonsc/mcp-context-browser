@@ -15,9 +15,16 @@ use uuid::Uuid;
 
 use super::types::{McpRequest, McpResponse};
 
-/// HTTP client transport configuration
+/// JSON-RPC 2.0 error codes
+const JSONRPC_PARSE_ERROR: i32 = -32700;
+const JSONRPC_INTERNAL_ERROR: i32 = -32603;
+
+/// MCP client transport configuration
+///
+/// Note: Named `McpClientConfig` to distinguish from `HttpClientConfig` in
+/// mcb-providers which configures HTTP client pooling for API providers.
 #[derive(Debug, Clone)]
-pub struct HttpClientConfig {
+pub struct McpClientConfig {
     /// Server URL (e.g., "http://127.0.0.1:8080")
     pub server_url: String,
 
@@ -33,7 +40,7 @@ pub struct HttpClientConfig {
 /// Bridges stdio (for Claude Code) to HTTP (for MCB server).
 /// Each request is forwarded to the server with a session ID header.
 pub struct HttpClientTransport {
-    config: HttpClientConfig,
+    config: McpClientConfig,
     client: reqwest::Client,
 }
 
@@ -45,13 +52,21 @@ impl HttpClientTransport {
     /// * `server_url` - URL of the MCB server (e.g., "http://127.0.0.1:8080")
     /// * `session_prefix` - Optional prefix for session ID generation
     /// * `timeout` - Request timeout duration
-    pub fn new(server_url: String, session_prefix: Option<String>, timeout: Duration) -> Self {
+    ///
+    /// # Errors
+    ///
+    /// Returns error if the HTTP client cannot be created.
+    pub fn new(
+        server_url: String,
+        session_prefix: Option<String>,
+        timeout: Duration,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
         let session_id = match session_prefix {
             Some(prefix) => format!("{}_{}", prefix, Uuid::new_v4()),
             None => Uuid::new_v4().to_string(),
         };
 
-        let config = HttpClientConfig {
+        let config = McpClientConfig {
             server_url,
             session_id,
             timeout,
@@ -60,9 +75,9 @@ impl HttpClientTransport {
         let client = reqwest::Client::builder()
             .timeout(timeout)
             .build()
-            .expect("Failed to create HTTP client");
+            .map_err(|e| format!("Failed to create HTTP client: {e}"))?;
 
-        Self { config, client }
+        Ok(Self { config, client })
     }
 
     /// Run the client transport
@@ -108,44 +123,15 @@ impl HttpClientTransport {
                 Ok(req) => req,
                 Err(e) => {
                     warn!(error = %e, line = %line, "Failed to parse request");
-                    let error_response = McpResponse {
-                        jsonrpc: "2.0".to_string(),
-                        result: None,
-                        error: Some(super::types::McpError {
-                            code: -32700,
-                            message: format!("Parse error: {}", e),
-                        }),
-                        id: None,
-                    };
-                    let response_json = serde_json::to_string(&error_response)?;
-                    writeln!(stdout, "{}", response_json)?;
-                    stdout.flush()?;
+                    let error_response = Self::create_parse_error(e);
+                    Self::write_response(&mut stdout, &error_response)?;
                     continue;
                 }
             };
 
-            // Forward to server
-            let response = match self.send_request(&request).await {
-                Ok(resp) => resp,
-                Err(e) => {
-                    error!(error = %e, "Failed to send request to server");
-                    McpResponse {
-                        jsonrpc: "2.0".to_string(),
-                        result: None,
-                        error: Some(super::types::McpError {
-                            code: -32603,
-                            message: format!("Server communication error: {}", e),
-                        }),
-                        id: request.id,
-                    }
-                }
-            };
-
-            // Write response to stdout
-            let response_json = serde_json::to_string(&response)?;
-            debug!(response = %response_json, "Sending response to stdout");
-            writeln!(stdout, "{}", response_json)?;
-            stdout.flush()?;
+            // Forward to server and handle response
+            let response = self.forward_request(&request).await;
+            Self::write_response(&mut stdout, &response)?;
         }
 
         info!("MCB client transport finished");
@@ -191,30 +177,56 @@ impl HttpClientTransport {
     pub fn server_url(&self) -> &str {
         &self.config.server_url
     }
-}
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_session_id_generation() {
-        let client = HttpClientTransport::new(
-            "http://localhost:8080".to_string(),
-            Some("test".to_string()),
-            Duration::from_secs(30),
-        );
-        assert!(client.session_id().starts_with("test_"));
+    /// Forward a request to the server, handling errors
+    async fn forward_request(&self, request: &McpRequest) -> McpResponse {
+        match self.send_request(request).await {
+            Ok(resp) => resp,
+            Err(e) => {
+                error!(error = %e, "Failed to send request to server");
+                Self::create_server_error(e, request.id.clone())
+            }
+        }
     }
 
-    #[test]
-    fn test_session_id_without_prefix() {
-        let client = HttpClientTransport::new(
-            "http://localhost:8080".to_string(),
-            None,
-            Duration::from_secs(30),
-        );
-        // Should be a valid UUID
-        assert!(Uuid::parse_str(client.session_id()).is_ok());
+    /// Create a JSON-RPC parse error response
+    fn create_parse_error(e: serde_json::Error) -> McpResponse {
+        McpResponse {
+            jsonrpc: "2.0".to_string(),
+            result: None,
+            error: Some(super::types::McpError {
+                code: JSONRPC_PARSE_ERROR,
+                message: format!("Parse error: {}", e),
+            }),
+            id: None,
+        }
+    }
+
+    /// Create a JSON-RPC server error response
+    fn create_server_error(e: reqwest::Error, id: Option<serde_json::Value>) -> McpResponse {
+        McpResponse {
+            jsonrpc: "2.0".to_string(),
+            result: None,
+            error: Some(super::types::McpError {
+                code: JSONRPC_INTERNAL_ERROR,
+                message: format!("Server communication error: {}", e),
+            }),
+            id,
+        }
+    }
+
+    /// Write a response to stdout
+    fn write_response(
+        stdout: &mut io::Stdout,
+        response: &McpResponse,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let response_json = serde_json::to_string(response)?;
+        debug!(response = %response_json, "Sending response to stdout");
+        writeln!(stdout, "{}", response_json)?;
+        stdout.flush()?;
+        Ok(())
     }
 }
+
+// Tests moved to crates/mcb-server/tests/integration/operating_modes_integration.rs
+// See: test_http_client_* tests for coverage

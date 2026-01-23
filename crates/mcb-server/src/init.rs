@@ -176,15 +176,13 @@ async fn run_client(config: AppConfig) -> Result<(), Box<dyn std::error::Error>>
         "Starting MCB client mode"
     );
 
-    // TODO: Implement HTTP client transport in Phase 2
-    // For now, return an error indicating client mode is not yet implemented
     use crate::transport::http_client::HttpClientTransport;
 
     let client = HttpClientTransport::new(
         server_url.clone(),
         session_prefix.map(String::from),
         std::time::Duration::from_secs(config.mode.timeout_secs),
-    );
+    )?;
 
     client.run().await
 }
