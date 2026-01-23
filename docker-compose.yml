@@ -40,10 +40,10 @@ services:
       retries: 10
     command: ["sh", "-c", "serve & /init-ollama.sh && wait"]
 
-  # Milvus vector database
+  # Milvus vector database (updated to latest v2.6.9)
   milvus-etcd:
     container_name: mcp-milvus-etcd
-    image: quay.io/coreos/etcd:v3.5.5
+    image: quay.io/coreos/etcd:v3.5.25
     environment:
       - ETCD_AUTO_COMPACTION_MODE=revision
       - ETCD_AUTO_COMPACTION_RETENTION=1000
@@ -62,7 +62,7 @@ services:
 
   milvus-minio:
     container_name: mcp-milvus-minio
-    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+    image: minio/minio:RELEASE.2024-05-28T17-19-04Z
     environment:
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
@@ -82,11 +82,14 @@ services:
 
   milvus-standalone:
     container_name: mcp-milvus-standalone
-    image: milvusdb/milvus:v2.3.0
+    image: milvusdb/milvus:v2.6.9
     command: ["milvus", "run", "standalone"]
+    security_opt:
+      - seccomp:unconfined
     environment:
       ETCD_ENDPOINTS: mcp-milvus-etcd:2379
       MINIO_ADDRESS: mcp-milvus-minio:9000
+      MINIO_REGION: us-east-1
     volumes:
       - milvus_standalone:/var/lib/milvus
     healthcheck:
