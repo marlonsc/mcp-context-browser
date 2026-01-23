@@ -1,0 +1,42 @@
+schema: "rule/v1"
+id: "ORG001"
+name: "Code Organization"
+category: "organization"
+severity: "warning"
+enabled: true
+engine: "rust-rule-engine"
+
+description: "Validates code organization, structure, and architecture patterns"
+rationale: "Good code organization improves maintainability and discoverability"
+
+patterns:
+  # Magic number and string detection
+  magic_number: '\b(\d{5,})\b'
+  long_string: '"([^"\\]{15,})"'
+
+  # Trait patterns
+  trait_decl: '(?:pub\s+)?trait\s+([A-Z][a-zA-Z0-9_]*)'
+  port_trait: '(?:pub\s+)?trait\s+([A-Z][a-zA-Z0-9_]*(?:Port|Interface|Service|Provider|Repository))'
+
+  # DI and service patterns
+  arc_new_service: 'Arc::new\s*\(\s*([A-Z][a-zA-Z0-9_]*(?:Service|Provider|Repository))::new'
+  server_use: 'use\s+(?:crate::|super::)*server::'
+
+  # Handler and adapter patterns
+  handler_struct: '(?:pub\s+)?struct\s+([A-Z][a-zA-Z0-9_]*Handler)'
+  adapter_impl: 'impl\s+([A-Z][a-zA-Z0-9_]*(?:Adapter|Handler))\s+for'
+
+  # Impl block patterns
+  impl_block: 'impl\s+([A-Z][a-zA-Z0-9_]*)\s*\{'
+  method_decl: '(?:pub\s+)?(?:async\s+)?fn\s+([a-z_][a-z0-9_]*)\s*\('
+
+config:
+  exclude_patterns: ["**/tests/**"]
+
+rule: |
+  rule CodeOrganization "Check code organization" {
+      when
+          File.path matches "**/src/**"
+      then
+          Violation("Code organization issue detected");
+  }

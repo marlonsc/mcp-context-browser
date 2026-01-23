@@ -1,0 +1,66 @@
+schema: "rule/v1"
+id: "IMPL001"
+name: "Implementation Quality"
+category: "quality"
+severity: "warning"
+enabled: true
+engine: "rust-rule-engine"
+
+description: "Detects implementation quality issues like empty methods, stubs, and pass-through wrappers"
+rationale: "Quality implementations should have meaningful logic, not stubs or trivial pass-throughs"
+
+patterns:
+  # Common patterns
+  fn_decl: '(?:pub\s+)?(?:async\s+)?fn\s+(\w+)'
+  impl_decl: 'impl(?:\s+\w+\s+for)?\s+(\w+)'
+  passthrough: 'self\.(\w+)\.(\w+)\s*\([^)]*\)(?:\s*\.await)?(?:\s*\?)?$'
+
+  # Empty method patterns
+  empty_ok_unit: '\{\s*Ok\(\(\)\)\s*\}'
+  empty_none: '\{\s*None\s*\}'
+  empty_vec_new: '\{\s*Vec::new\(\)\s*\}'
+  empty_string_new: '\{\s*String::new\(\)\s*\}'
+  empty_default: '\{\s*Default::default\(\)\s*\}'
+  empty_ok_vec: '\{\s*Ok\(Vec::new\(\)\)\s*\}'
+  empty_ok_none: '\{\s*Ok\(None\)\s*\}'
+  empty_ok_false: '\{\s*Ok\(false\)\s*\}'
+  empty_ok_zero: '\{\s*Ok\(0\)\s*\}'
+
+  # Hardcoded return patterns
+  return_true: 'return\s+true\s*;'
+  return_false: 'return\s+false\s*;'
+  return_zero: 'return\s+0\s*;'
+  return_one: 'return\s+1\s*;'
+  return_empty_string: 'return\s+""\s*;'
+  return_hardcoded_string: 'return\s+"[^"]*"\s*;'
+
+  # Stub patterns
+  stub_todo: 'todo!\s*\('
+  stub_unimplemented: 'unimplemented!\s*\('
+  stub_panic_not_impl: 'panic!\s*\(\s*"not\s+implemented'
+  stub_panic_todo: 'panic!\s*\(\s*"TODO'
+
+  # Catch-all patterns
+  catchall_empty: '_\s*=>\s*\{\s*\}'
+  catchall_unit: '_\s*=>\s*\(\)'
+  catchall_ok_unit: '_\s*=>\s*Ok\(\(\)\)'
+  catchall_none: '_\s*=>\s*None'
+  catchall_continue: '_\s*=>\s*continue'
+
+  # Log patterns
+  log_tracing: 'tracing::(info|debug|warn|error|trace)!'
+  log_log: 'log::(info|debug|warn|error|trace)!'
+  log_println: 'println!'
+  log_eprintln: 'eprintln!'
+
+config:
+  exclude_patterns: ["**/tests/**", "**/null*.rs", "**/fake*.rs"]
+
+rule: |
+  rule ImplementationQuality "Check implementation quality" {
+      when
+          AST.Function(has_empty_body == true) ||
+          AST.Function(has_stub == true)
+      then
+          Violation("Implementation quality issue detected");
+  }

@@ -115,13 +115,17 @@ pub struct RuleConfigFields {
 fn validate_category(category: &str) -> std::result::Result<(), ValidationErrors> {
     let valid_categories = [
         "architecture",
+        "configuration",
+        "dependency_injection",
+        "documentation",
+        "metrics",
+        "migration",
+        "organization",
+        "performance",
         "quality",
         "solid",
-        "dependency_injection",
-        "configuration",
+        "testing",
         "web_framework",
-        "migration",
-        "performance",
     ];
 
     if valid_categories.contains(&category) {

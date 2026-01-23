@@ -36,6 +36,7 @@ pub mod violation_trait;
 #[macro_use]
 pub mod violation_macro;
 pub mod generic_reporter;
+pub mod reporter;
 pub mod validator_trait;
 
 // === Configuration System (Phase 5) ===
@@ -86,7 +87,6 @@ pub mod performance;
 pub mod pmat;
 pub mod quality;
 pub mod refactoring;
-pub mod reporter;
 pub mod solid;
 pub mod tests_org;
 
@@ -96,6 +96,7 @@ use thiserror::Error;
 
 // Re-export new DRY violation system
 pub use generic_reporter::{GenericReport, GenericReporter, GenericSummary, ViolationEntry};
+pub use reporter::{Reporter, ValidationReport, ValidationSummary};
 pub use validator_trait::{LegacyValidatorAdapter, Validator, ValidatorRegistry};
 pub use violation_trait::{Violation, ViolationCategory};
 
@@ -148,7 +149,6 @@ pub use naming::{NamingValidator, NamingViolation};
 pub use organization::{OrganizationValidator, OrganizationViolation};
 pub use pattern_validator::{PatternValidator, PatternViolation};
 pub use quality::{QualityValidator, QualityViolation};
-pub use reporter::{Reporter, ValidationReport, ValidationSummary};
 
 // Re-export ComponentType for strict directory validation
 pub use refactoring::{RefactoringValidator, RefactoringViolation};
@@ -496,94 +496,69 @@ impl ArchitectureValidator {
     }
 
     /// Run all validations and return a comprehensive report
-    pub fn validate_all(&mut self) -> Result<ValidationReport> {
-        let dependency_violations = self.dependency.validate_all()?;
-        let quality_violations = self.quality.validate_all()?;
-        let pattern_violations = self.patterns.validate_all()?;
-        let test_violations = self.tests.validate_all()?;
-        let doc_violations = self.documentation.validate_all()?;
-        let naming_violations = self.naming.validate_all()?;
-        let solid_violations = self.solid.validate_all()?;
-        let organization_violations = self.organization.validate_all()?;
-        let kiss_violations = self.kiss.validate_all()?;
-        let refactoring_violations = self.refactoring.validate_all()?;
-        let implementation_violations = self.implementation.validate_all()?;
-        // New validators for PMAT integration
-        let performance_violations = self.performance.validate_all()?;
-        let async_violations = self.async_patterns.validate_all()?;
-        let error_boundary_violations = self.error_boundary.validate_all()?;
-        let pmat_violations = self.pmat.validate_all()?;
-        // New quality validators (v0.1.2)
-        let test_quality_violations = self.test_quality.validate()?;
-        let config_quality_violations = self.config_quality.validate()?;
-        // Clean Architecture validator (CA001-CA009)
-        let clean_architecture_violations = self.clean_architecture.validate_all()?;
+    pub fn validate_all(&mut self) -> Result<GenericReport> {
+        let mut all_violations: Vec<Box<dyn Violation>> = Vec::new();
 
-        let total = dependency_violations.len()
-            + quality_violations.len()
-            + pattern_violations.len()
-            + test_violations.len()
-            + doc_violations.len()
-            + naming_violations.len()
-            + solid_violations.len()
-            + organization_violations.len()
-            + kiss_violations.len()
-            + refactoring_violations.len()
-            + implementation_violations.len()
-            + performance_violations.len()
-            + async_violations.len()
-            + error_boundary_violations.len()
-            + pmat_violations.len()
-            + test_quality_violations.len()
-            + config_quality_violations.len()
-            + clean_architecture_violations.len();
+        // Collect all violations, converting to Box<dyn Violation>
+        for v in self.dependency.validate_all()? {
+            all_violations.push(Box::new(v));
+        }
+        for v in self.quality.validate_all()? {
+            all_violations.push(Box::new(v));
+        }
+        for v in self.patterns.validate_all()? {
+            all_violations.push(Box::new(v));
+        }
+        for v in self.tests.validate_all()? {
+            all_violations.push(Box::new(v));
+        }
+        for v in self.documentation.validate_all()? {
+            all_violations.push(Box::new(v));
+        }
+        for v in self.naming.validate_all()? {
+            all_violations.push(Box::new(v));
+        }
+        for v in self.solid.validate_all()? {
+            all_violations.push(Box::new(v));
+        }
+        for v in self.organization.validate_all()? {
+            all_violations.push(Box::new(v));
+        }
+        for v in self.kiss.validate_all()? {
+            all_violations.push(Box::new(v));
+        }
+        for v in self.refactoring.validate_all()? {
+            all_violations.push(Box::new(v));
+        }
+        for v in self.implementation.validate_all()? {
+            all_violations.push(Box::new(v));
+        }
+        for v in self.performance.validate_all()? {
+            all_violations.push(Box::new(v));
+        }
+        for v in self.async_patterns.validate_all()? {
+            all_violations.push(Box::new(v));
+        }
+        for v in self.error_boundary.validate_all()? {
+            all_violations.push(Box::new(v));
+        }
+        for v in self.pmat.validate_all()? {
+            all_violations.push(Box::new(v));
+        }
+        for v in self.test_quality.validate()? {
+            all_violations.push(Box::new(v));
+        }
+        for v in self.config_quality.validate()? {
+            all_violations.push(Box::new(v));
+        }
+        for v in self.clean_architecture.validate_all()? {
+            all_violations.push(Box::new(v));
+        }
 
-        let summary = ValidationSummary {
-            total_violations: total,
-            dependency_count: dependency_violations.len(),
-            quality_count: quality_violations.len(),
-            pattern_count: pattern_violations.len(),
-            test_count: test_violations.len(),
-            documentation_count: doc_violations.len(),
-            naming_count: naming_violations.len(),
-            solid_count: solid_violations.len(),
-            organization_count: organization_violations.len(),
-            kiss_count: kiss_violations.len(),
-            refactoring_count: refactoring_violations.len(),
-            implementation_count: implementation_violations.len(),
-            performance_count: performance_violations.len(),
-            async_count: async_violations.len(),
-            error_boundary_count: error_boundary_violations.len(),
-            pmat_count: pmat_violations.len(),
-            clean_architecture_count: clean_architecture_violations.len(),
-            test_quality_count: test_quality_violations.len(),
-            config_quality_count: config_quality_violations.len(),
-            passed: total == 0,
-        };
-
-        Ok(ValidationReport {
-            timestamp: chrono::Utc::now().to_rfc3339(),
-            workspace_root: self.config.workspace_root.clone(),
-            summary,
-            dependency_violations,
-            quality_violations,
-            pattern_violations,
-            test_violations,
-            documentation_violations: doc_violations,
-            naming_violations,
-            solid_violations,
-            organization_violations,
-            kiss_violations,
-            refactoring_violations,
-            implementation_violations,
-            performance_violations,
-            async_violations,
-            error_boundary_violations,
-            pmat_violations,
-            clean_architecture_violations,
-            test_quality_violations,
-            config_quality_violations,
-        })
+        Ok(GenericReporter::create_report(
+            &all_violations,
+            self.config.workspace_root.clone(),
+        ))
     }
 
     /// Run only dependency validation
@@ -870,23 +845,6 @@ impl ArchitectureValidator {
             &violations,
             self.config.workspace_root.clone(),
         ))
-    }
-
-    /// Run both legacy and new validators, returning a combined report
-    ///
-    /// This method provides the most comprehensive validation by running:
-    /// 1. All legacy validators (via `validate_all()`)
-    /// 2. All new registry validators (via `validate_with_registry()`)
-    ///
-    /// # Note
-    ///
-    /// As validators are migrated to the new system, they will be removed
-    /// from the legacy path and added to the registry path to avoid
-    /// duplicate violation reports.
-    pub fn validate_comprehensive(&mut self) -> Result<(ValidationReport, GenericReport)> {
-        let legacy_report = self.validate_all()?;
-        let registry_report = self.validate_with_registry()?;
-        Ok((legacy_report, registry_report))
     }
 }
 

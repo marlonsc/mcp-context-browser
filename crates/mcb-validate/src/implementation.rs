@@ -7,9 +7,9 @@
 //! - Log-only methods (no actual logic)
 //! - Default-only trait implementations
 
+use crate::pattern_registry::PATTERNS;
 use crate::violation_trait::{Violation, ViolationCategory};
 use crate::{Result, Severity, ValidationConfig};
-use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use walkdir::WalkDir;
@@ -290,23 +290,23 @@ impl ImplementationQualityValidator {
     pub fn validate_empty_methods(&self) -> Result<Vec<ImplementationViolation>> {
         let mut violations = Vec::new();
 
-        // Patterns for empty/trivial method bodies
-        let empty_patterns = [
-            (r"\{\s*Ok\(\(\)\)\s*\}", "Ok(())"),
-            (r"\{\s*None\s*\}", "None"),
-            (r"\{\s*Vec::new\(\)\s*\}", "Vec::new()"),
-            (r"\{\s*String::new\(\)\s*\}", "String::new()"),
-            (r"\{\s*Default::default\(\)\s*\}", "Default::default()"),
-            (r"\{\s*Ok\(Vec::new\(\)\)\s*\}", "Ok(Vec::new())"),
-            (r"\{\s*Ok\(None\)\s*\}", "Ok(None)"),
-            (r"\{\s*Ok\(false\)\s*\}", "Ok(false)"),
-            (r"\{\s*Ok\(0\)\s*\}", "Ok(0)"),
+        // Pattern names from IMPL001 YAML with descriptions
+        let empty_pattern_ids = [
+            ("IMPL001.empty_ok_unit", "Ok(())"),
+            ("IMPL001.empty_none", "None"),
+            ("IMPL001.empty_vec_new", "Vec::new()"),
+            ("IMPL001.empty_string_new", "String::new()"),
+            ("IMPL001.empty_default", "Default::default()"),
+            ("IMPL001.empty_ok_vec", "Ok(Vec::new())"),
+            ("IMPL001.empty_ok_none", "Ok(None)"),
+            ("IMPL001.empty_ok_false", "Ok(false)"),
+            ("IMPL001.empty_ok_zero", "Ok(0)"),
         ];
 
-        let fn_pattern = Regex::new(r"(?:pub\s+)?(?:async\s+)?fn\s+(\w+)").ok();
-        let compiled_patterns: Vec<_> = empty_patterns
+        let fn_pattern = PATTERNS.get("IMPL001.fn_decl");
+        let compiled_patterns: Vec<_> = empty_pattern_ids
             .iter()
-            .filter_map(|(p, desc)| Regex::new(p).ok().map(|r| (r, *desc)))
+            .filter_map(|(id, desc)| PATTERNS.get(id).map(|r| (r, *desc)))
             .collect();
 
         for src_dir in self.config.get_scan_dirs()? {
@@ -387,19 +387,20 @@ impl ImplementationQualityValidator {
     pub fn validate_hardcoded_returns(&self) -> Result<Vec<ImplementationViolation>> {
         let mut violations = Vec::new();
 
-        let hardcoded_patterns = [
-            (r"return\s+true\s*;", "true"),
-            (r"return\s+false\s*;", "false"),
-            (r"return\s+0\s*;", "0"),
-            (r"return\s+1\s*;", "1"),
-            (r#"return\s+""\s*;"#, "empty string"),
-            (r#"return\s+"[^"]*"\s*;"#, "hardcoded string"),
+        // Pattern names from IMPL001 YAML with descriptions
+        let hardcoded_pattern_ids = [
+            ("IMPL001.return_true", "true"),
+            ("IMPL001.return_false", "false"),
+            ("IMPL001.return_zero", "0"),
+            ("IMPL001.return_one", "1"),
+            ("IMPL001.return_empty_string", "empty string"),
+            ("IMPL001.return_hardcoded_string", "hardcoded string"),
         ];
 
-        let fn_pattern = Regex::new(r"(?:pub\s+)?(?:async\s+)?fn\s+(\w+)").ok();
-        let compiled_patterns: Vec<_> = hardcoded_patterns
+        let fn_pattern = PATTERNS.get("IMPL001.fn_decl");
+        let compiled_patterns: Vec<_> = hardcoded_pattern_ids
             .iter()
-            .filter_map(|(p, desc)| Regex::new(p).ok().map(|r| (r, *desc)))
+            .filter_map(|(id, desc)| PATTERNS.get(id).map(|r| (r, *desc)))
             .collect();
 
         for src_dir in self.config.get_scan_dirs()? {
@@ -500,20 +501,18 @@ impl ImplementationQualityValidator {
     pub fn validate_stub_macros(&self) -> Result<Vec<ImplementationViolation>> {
         let mut violations = Vec::new();
 
-        let stub_patterns = [
-            (r"todo!\s*\(", "todo"),
-            (r"unimplemented!\s*\(", "unimplemented"),
-            (
-                r#"panic!\s*\(\s*"not\s+implemented"#,
-                "panic(not implemented)",
-            ),
-            (r#"panic!\s*\(\s*"TODO"#, "panic(TODO)"),
+        // Pattern names from IMPL001 YAML with descriptions
+        let stub_pattern_ids = [
+            ("IMPL001.stub_todo", "todo"),
+            ("IMPL001.stub_unimplemented", "unimplemented"),
+            ("IMPL001.stub_panic_not_impl", "panic(not implemented)"),
+            ("IMPL001.stub_panic_todo", "panic(TODO)"),
         ];
 
-        let fn_pattern = Regex::new(r"(?:pub\s+)?(?:async\s+)?fn\s+(\w+)").ok();
-        let compiled_patterns: Vec<_> = stub_patterns
+        let fn_pattern = PATTERNS.get("IMPL001.fn_decl");
+        let compiled_patterns: Vec<_> = stub_pattern_ids
             .iter()
-            .filter_map(|(p, desc)| Regex::new(p).ok().map(|r| (r, *desc)))
+            .filter_map(|(id, desc)| PATTERNS.get(id).map(|r| (r, *desc)))
             .collect();
 
         for src_dir in self.config.get_scan_dirs()? {
@@ -582,17 +581,18 @@ impl ImplementationQualityValidator {
     pub fn validate_empty_catch_alls(&self) -> Result<Vec<ImplementationViolation>> {
         let mut violations = Vec::new();
 
-        let catchall_patterns = [
-            r"_\s*=>\s*\{\s*\}",    // _ => {}
-            r"_\s*=>\s*\(\)",       // _ => ()
-            r"_\s*=>\s*Ok\(\(\)\)", // _ => Ok(())
-            r"_\s*=>\s*None",       // _ => None
-            r"_\s*=>\s*continue",   // _ => continue (may be intentional)
+        // Pattern names from IMPL001 YAML
+        let catchall_pattern_ids = [
+            "IMPL001.catchall_empty",    // _ => {}
+            "IMPL001.catchall_unit",     // _ => ()
+            "IMPL001.catchall_ok_unit",  // _ => Ok(())
+            "IMPL001.catchall_none",     // _ => None
+            "IMPL001.catchall_continue", // _ => continue (may be intentional)
         ];
 
-        let compiled_patterns: Vec<_> = catchall_patterns
+        let compiled_patterns: Vec<_> = catchall_pattern_ids
             .iter()
-            .filter_map(|p| Regex::new(p).ok())
+            .filter_map(|id| PATTERNS.get(id))
             .collect();
 
         for src_dir in self.config.get_scan_dirs()? {
@@ -649,12 +649,10 @@ impl ImplementationQualityValidator {
     pub fn validate_pass_through_wrappers(&self) -> Result<Vec<ImplementationViolation>> {
         let mut violations = Vec::new();
 
-        // Pattern: method body is just self.inner.method(...) or self.field.method(...)
-        let passthrough_pattern =
-            Regex::new(r"self\.(\w+)\.(\w+)\s*\([^)]*\)(?:\s*\.await)?(?:\s*\?)?$").ok();
-
-        let fn_pattern = Regex::new(r"(?:pub\s+)?(?:async\s+)?fn\s+(\w+)").ok();
-        let impl_pattern = Regex::new(r"impl(?:\s+\w+\s+for)?\s+(\w+)").ok();
+        // Patterns from IMPL001 YAML
+        let passthrough_pattern = PATTERNS.get("IMPL001.passthrough");
+        let fn_pattern = PATTERNS.get("IMPL001.fn_decl");
+        let impl_pattern = PATTERNS.get("IMPL001.impl_decl");
 
         for src_dir in self.config.get_scan_dirs()? {
             for entry in WalkDir::new(&src_dir)
@@ -706,7 +704,7 @@ impl ImplementationQualityValidator {
                     }
 
                     // Track impl blocks
-                    if let Some(ref re) = impl_pattern {
+                    if let Some(re) = impl_pattern {
                         if let Some(cap) = re.captures(trimmed) {
                             current_struct_name = cap
                                 .get(1)
@@ -756,7 +754,7 @@ impl ImplementationQualityValidator {
                                 .collect();
 
                             if meaningful_lines.len() == 1 {
-                                if let Some(ref re) = passthrough_pattern {
+                                if let Some(re) = passthrough_pattern {
                                     if let Some(cap) = re.captures(meaningful_lines[0]) {
                                         let field = cap.get(1).map_or("", |m| m.as_str());
                                         let method = cap.get(2).map_or("", |m| m.as_str());
@@ -798,17 +796,18 @@ impl ImplementationQualityValidator {
     pub fn validate_log_only_methods(&self) -> Result<Vec<ImplementationViolation>> {
         let mut violations = Vec::new();
 
-        let log_patterns = [
-            r"tracing::(info|debug|warn|error|trace)!",
-            r"log::(info|debug|warn|error|trace)!",
-            r"println!",
-            r"eprintln!",
+        // Pattern names from IMPL001 YAML
+        let log_pattern_ids = [
+            "IMPL001.log_tracing",
+            "IMPL001.log_log",
+            "IMPL001.log_println",
+            "IMPL001.log_eprintln",
         ];
 
-        let fn_pattern = Regex::new(r"(?:pub\s+)?(?:async\s+)?fn\s+(\w+)").ok();
-        let compiled_log_patterns: Vec<_> = log_patterns
+        let fn_pattern = PATTERNS.get("IMPL001.fn_decl");
+        let compiled_log_patterns: Vec<_> = log_pattern_ids
             .iter()
-            .filter_map(|p| Regex::new(p).ok())
+            .filter_map(|id| PATTERNS.get(id))
             .collect();
 
         for src_dir in self.config.get_scan_dirs()? {

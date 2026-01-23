@@ -1,0 +1,48 @@
+schema: "rule/v1"
+id: "TEST001"
+name: "Test Organization"
+category: "testing"
+severity: "warning"
+enabled: true
+engine: "rust-rule-engine"
+
+description: "Validates test organization, naming conventions, and quality"
+rationale: "Well-organized tests improve maintainability and catch more bugs"
+
+patterns:
+  # Test module patterns
+  cfg_test: '#\[cfg\(test\)\]'
+  mod_tests: 'mod\s+tests\s*\{'
+
+  # Test attribute patterns
+  test_attr: '#\[test\]'
+  tokio_test_attr: '#\[tokio::test\]'
+  any_test_attr: '#\[(?:tokio::)?test\]'
+
+  # Function patterns
+  fn_decl: '(?:async\s+)?fn\s+([a-z_][a-z0-9_]*)\s*\('
+
+  # Assertion patterns
+  assert_pattern: 'assert!|assert_eq!|assert_ne!|panic!|should_panic|\.unwrap\(|\.expect\(|Box<dyn\s|type_name::'
+  real_assert: '(?:^|\s)(assert!|assert_eq!|assert_ne!|assert_matches!|debug_assert!|debug_assert_eq!|debug_assert_ne!|panic!)'
+  unwrap_pattern: '\.unwrap\(|\.expect\('
+
+  # Trivial assertion patterns
+  trivial_true: 'assert!\s*\(\s*true\s*\)'
+  trivial_not_false: 'assert!\s*\(\s*!false\s*\)'
+  trivial_eq_true: 'assert_eq!\s*\(\s*true\s*,\s*true\s*\)'
+  trivial_eq_one: 'assert_eq!\s*\(\s*1\s*,\s*1\s*\)'
+  trivial_ne_one_two: 'assert_ne!\s*\(\s*1\s*,\s*2\s*\)'
+  trivial_ne_true_false: 'assert_ne!\s*\(\s*true\s*,\s*false\s*\)'
+
+config:
+  exclude_patterns: ["**/test_utils/**", "**/fixtures/**"]
+
+rule: |
+  rule TestOrganization "Check test organization" {
+      when
+          File.path matches "**/tests/**" &&
+          AST.Function(has_test_attr == true)
+      then
+          Violation("Test organization issue detected");
+  }

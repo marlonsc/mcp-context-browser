@@ -1,0 +1,39 @@
+schema: "rule/v1"
+id: "DOC001"
+name: "Documentation Completeness"
+category: "documentation"
+severity: "warning"
+enabled: true
+engine: "rust-rule-engine"
+
+description: "Validates documentation completeness for public items and modules"
+rationale: "Good documentation improves code maintainability and usability"
+
+patterns:
+  # Module documentation
+  module_doc: '^//!'
+
+  # Doc comment detection
+  doc_comment: '^\s*///'
+  doc_comment_capture: '^\s*///(.*)'
+  attribute: '^\s*#\['
+
+  # Example section
+  example_section: '#\s*Example'
+
+  # Public item patterns
+  pub_struct: 'pub\s+struct\s+([A-Z][a-zA-Z0-9_]*)'
+  pub_enum: 'pub\s+enum\s+([A-Z][a-zA-Z0-9_]*)'
+  pub_trait: 'pub\s+trait\s+([A-Z][a-zA-Z0-9_]*)'
+  pub_fn: 'pub\s+(?:async\s+)?fn\s+([a-z_][a-z0-9_]*)'
+
+config:
+  exclude_patterns: ["**/tests/**", "**/test_utils/**"]
+
+rule: |
+  rule DocumentationCompleteness "Check documentation completeness" {
+      when
+          AST.PublicItem(has_doc_comment == false)
+      then
+          Violation("Missing documentation for public item");
+  }

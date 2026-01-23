@@ -5,6 +5,7 @@
 //! - Test file naming conventions
 //! - Test function naming conventions
 
+use crate::pattern_registry::PATTERNS;
 use crate::violation_trait::{Violation, ViolationCategory};
 use crate::{Result, Severity, ValidationConfig};
 use regex::Regex;
@@ -288,8 +289,8 @@ impl TestValidator {
     /// Verify no #[cfg(test)] mod tests {} in src/
     pub fn validate_no_inline_tests(&self) -> Result<Vec<TestViolation>> {
         let mut violations = Vec::new();
-        let cfg_test_pattern = Regex::new(r"#\[cfg\(test\)\]").unwrap();
-        let mod_tests_pattern = Regex::new(r"mod\s+tests\s*\{").unwrap();
+        let cfg_test_pattern = PATTERNS.get("TEST001.cfg_test");
+        let mod_tests_pattern = PATTERNS.get("TEST001.mod_tests");
 
         for crate_dir in self.get_crate_dirs()? {
             let src_dir = crate_dir.join("src");
@@ -307,7 +308,7 @@ impl TestValidator {
 
                 for (line_num, line) in lines.iter().enumerate() {
                     // Check for #[cfg(test)] followed by mod tests
-                    if cfg_test_pattern.is_match(line) {
+                    if cfg_test_pattern.is_some_and(|p| p.is_match(line)) {
                         // Look ahead for mod tests
                         let lookahead = lines
                             .iter()
@@ -317,7 +318,7 @@ impl TestValidator {
                             .collect::<Vec<_>>()
                             .join("\n");
 
-                        if mod_tests_pattern.is_match(&lookahead) {
+                        if mod_tests_pattern.is_some_and(|p| p.is_match(&lookahead)) {
                             violations.push(TestViolation::InlineTestModule {
                                 file: entry.path().to_path_buf(),
                                 line: line_num + 1,

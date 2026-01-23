@@ -1,6 +1,6 @@
 //! Integration tests that validate the actual workspace
 
-use mcb_validate::{ArchitectureValidator, Reporter, Severity, ValidationConfig};
+use mcb_validate::{ArchitectureValidator, Severity, ValidationConfig};
 use std::path::PathBuf;
 
 fn get_workspace_root() -> PathBuf {
@@ -164,52 +164,35 @@ fn test_full_validation_report() {
     let mut validator = ArchitectureValidator::new(&workspace_root);
     println!("Created validator...");
 
-    let (legacy_report, yaml_report) = validator.validate_comprehensive().unwrap();
+    let report = validator.validate_all().unwrap();
 
-    println!("\n=== LEGACY VALIDATORS ===");
-    println!("{}", Reporter::to_human_readable(&legacy_report));
-
-    println!("\n=== YAML RULES ===");
+    println!("\n=== VALIDATION REPORT ===");
     println!(
-        "YAML Report Summary: {} total violations",
-        yaml_report.summary.total_violations
+        "Report Summary: {} total violations",
+        report.summary.total_violations
     );
     println!(
-        "YAML Errors: {}, Warnings: {}",
-        yaml_report.summary.errors, yaml_report.summary.warnings
+        "Errors: {}, Warnings: {}, Infos: {}",
+        report.summary.errors, report.summary.warnings, report.summary.infos
     );
 
-    // Show some YAML violations if any
-    for (category, violations) in &yaml_report.violations_by_category {
+    // Show violations by category
+    for (category, violations) in &report.violations_by_category {
         if !violations.is_empty() {
             println!("Category '{}': {} violations", category, violations.len());
             for violation in violations.iter().take(3) {
-                // Show first 3
                 println!("  - {}: {}", violation.id, violation.message);
             }
         }
     }
 
-    // Count violations from both reports
-    let legacy_error_count = Reporter::count_errors(&legacy_report);
-    let legacy_warning_count = Reporter::count_warnings(&legacy_report);
-    let yaml_error_count = yaml_report.summary.errors;
-    let yaml_warning_count = yaml_report.summary.warnings;
-
-    let total_errors = legacy_error_count + yaml_error_count;
-    let total_warnings = legacy_warning_count + yaml_warning_count;
-    let total_violations =
-        legacy_report.summary.total_violations + yaml_report.summary.total_violations;
-
     println!(
-        "Summary: {total_errors} errors, {total_warnings} warnings, {total_violations} total violations"
+        "Summary: {} errors, {} warnings, {} total violations",
+        report.summary.errors, report.summary.warnings, report.summary.total_violations
     );
 
     // The validation should complete without panicking
     // We don't assert on violation count as existing code may have issues
-
-    // Ensure test executed successfully
-    // Validation completed successfully
 }
 
 // ============================================
@@ -237,19 +220,22 @@ fn test_validation_with_legacy() {
     println!("\n{}", "=".repeat(60));
     println!("COMBINED VALIDATION: crates + src.legacy");
     println!("{}", "=".repeat(60));
-    println!("{}", Reporter::to_human_readable(&report));
 
-    let error_count = Reporter::count_errors(&report);
-    let warning_count = Reporter::count_warnings(&report);
-    let info_count = report.summary.total_violations - error_count - warning_count;
+    for (category, violations) in &report.violations_by_category {
+        if !violations.is_empty() {
+            println!("Category '{}': {} violations", category, violations.len());
+        }
+    }
 
     println!(
         "\nSummary: {} errors, {} warnings, {} info, {} total",
-        error_count, warning_count, info_count, report.summary.total_violations
+        report.summary.errors,
+        report.summary.warnings,
+        report.summary.infos,
+        report.summary.total_violations
     );
 
     // Ensure test executed successfully
-    // Validation completed successfully
 }
 
 #[test]
@@ -275,26 +261,25 @@ fn test_legacy_only() {
     println!("LEGACY VIOLATIONS (src.legacy only)");
     println!("{}", "=".repeat(60));
 
-    // Quality violations from legacy
-    let legacy_quality: Vec<_> = report
-        .quality_violations
-        .iter()
-        .filter(|v| {
-            let display = format!("{v}");
-            display.contains("src.legacy") && !display.contains("/crates/")
-        })
-        .collect();
+    // Show violations from legacy by category
+    for (category, violations) in &report.violations_by_category {
+        let legacy_violations: Vec<_> = violations
+            .iter()
+            .filter(|v| {
+                v.file
+                    .as_ref()
+                    .is_some_and(|f| f.to_string_lossy().contains("src.legacy"))
+            })
+            .collect();
 
-    if !legacy_quality.is_empty() {
-        println!(
-            "\nQuality violations in src.legacy: {}",
-            legacy_quality.len()
-        );
-        for v in legacy_quality.iter().take(10) {
-            println!("  [{:?}] {}", v.severity(), v);
-        }
-        if legacy_quality.len() > 10 {
-            println!("  ... and {} more", legacy_quality.len() - 10);
+        if !legacy_violations.is_empty() {
+            println!("\n{} in src.legacy: {}", category, legacy_violations.len());
+            for v in legacy_violations.iter().take(10) {
+                println!("  [{}] {}", v.severity, v.message);
+            }
+            if legacy_violations.len() > 10 {
+                println!("  ... and {} more", legacy_violations.len() - 10);
+            }
         }
     }
 

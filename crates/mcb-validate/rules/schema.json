@@ -25,14 +25,17 @@
       "type": "string",
       "enum": [
         "architecture",
+        "configuration",
+        "dependency_injection",
+        "documentation",
+        "metrics",
+        "migration",
+        "organization",
+        "performance",
         "quality",
         "solid",
-        "dependency_injection",
-        "configuration",
-        "web_framework",
-        "migration",
-        "metrics",
-        "performance"
+        "testing",
+        "web_framework"
       ],
       "description": "Rule category for grouping"
     },
