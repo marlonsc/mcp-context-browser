@@ -21,9 +21,7 @@
 
 use mcb_domain::value_objects::{EmbeddingConfig, VectorStoreConfig};
 use mcb_infrastructure::config::data::AppConfig;
-use mcb_infrastructure::config::types::cache::CacheSystemConfig;
-use mcb_infrastructure::config::types::limits::LimitsConfig;
-use mcb_infrastructure::config::types::metrics::MetricsConfig;
+use mcb_infrastructure::config::types::{CacheSystemConfig, LimitsConfig, MetricsConfig};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 

@@ -52,7 +52,7 @@ async fn test_catalog_builds_with_custom_vector_store_config() {
 /// Test that catalog builds with custom cache config
 #[tokio::test]
 async fn test_catalog_builds_with_custom_cache_config() {
-    use mcb_infrastructure::config::types::cache::CacheProvider;
+    use mcb_infrastructure::config::types::CacheProvider;
 
     let mut config = AppConfig::default();
     config.system.infrastructure.cache.provider = CacheProvider::Moka;

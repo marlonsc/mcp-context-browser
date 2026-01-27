@@ -4,107 +4,87 @@ use mcb_domain::value_objects::{EmbeddingConfig, VectorStoreConfig};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-// Re-export all config types
-pub use super::{
-    auth::{AuthConfig, JwtConfig, PasswordAlgorithm},
-    backup::BackupConfig,
-    cache::{CacheProvider, CacheSystemConfig},
-    daemon::DaemonConfig,
-    event_bus::{EventBusConfig, EventBusProvider},
-    limits::LimitsConfig,
-    logging::LoggingConfig,
-    metrics::MetricsConfig,
-    mode::{ModeConfig, OperatingMode},
-    operations::OperationsConfig,
-    resilience::ResilienceConfig,
-    server::{
-        ServerConfig, ServerCorsConfig, ServerNetworkConfig, ServerSslConfig, ServerTimeoutConfig,
-        TransportMode,
-    },
-    snapshot::SnapshotConfig,
-    sync::SyncConfig,
+// Re-export all config types from consolidated modules
+pub use super::infrastructure::{
+    CacheProvider, CacheSystemConfig, LimitsConfig, LoggingConfig, MetricsConfig, ResilienceConfig,
+};
+pub use super::mode::{ModeConfig, OperatingMode};
+pub use super::server::{
+    ServerConfig, ServerCorsConfig, ServerNetworkConfig, ServerSslConfig, ServerTimeoutConfig,
+    TransportMode,
+};
+pub use super::system::{
+    AdminApiKeyConfig, ApiKeyConfig, AuthConfig, BackupConfig, DaemonConfig, EventBusConfig,
+    EventBusProvider, JwtConfig, OperationsConfig, PasswordAlgorithm, SnapshotConfig, SyncConfig,
 };
 
-/// Embedding configuration container that supports both:
-/// - Flat env vars: MCP__PROVIDERS__EMBEDDING__PROVIDER, MCP__PROVIDERS__EMBEDDING__MODEL
-/// - TOML named configs: [providers.embedding.configs.default]
+/// Embedding configuration container
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct EmbeddingConfigContainer {
-    /// Provider name (from MCP__PROVIDERS__EMBEDDING__PROVIDER)
+    /// Provider name
     pub provider: Option<String>,
-    /// Model name (from MCP__PROVIDERS__EMBEDDING__MODEL)
+    /// Model name
     pub model: Option<String>,
-    /// Base URL for API (from MCP__PROVIDERS__EMBEDDING__BASE_URL)
+    /// Base URL for API
     pub base_url: Option<String>,
-    /// API key (from MCP__PROVIDERS__EMBEDDING__API_KEY)
+    /// API key
     pub api_key: Option<String>,
-    /// Embedding dimensions (from MCP__PROVIDERS__EMBEDDING__DIMENSIONS)
+    /// Embedding dimensions
     pub dimensions: Option<usize>,
-
-    /// Named configs for TOML format (e.g., [providers.embedding.configs.default])
+    /// Named configs for TOML format
     #[serde(default)]
     pub configs: HashMap<String, EmbeddingConfig>,
 }
 
-/// Vector store configuration container that supports both:
-/// - Flat env vars: MCP__PROVIDERS__VECTOR_STORE__PROVIDER, MCP__PROVIDERS__VECTOR_STORE__ADDRESS
-/// - TOML named configs: [providers.vector_store.configs.default]
+/// Vector store configuration container
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct VectorStoreConfigContainer {
-    /// Provider name (from MCP__PROVIDERS__VECTOR_STORE__PROVIDER)
+    /// Provider name
     pub provider: Option<String>,
-    /// Server address (from MCP__PROVIDERS__VECTOR_STORE__ADDRESS)
+    /// Server address
     pub address: Option<String>,
-    /// Embedding dimensions (from MCP__PROVIDERS__VECTOR_STORE__DIMENSIONS)
+    /// Embedding dimensions
     pub dimensions: Option<usize>,
-    /// Collection name (from MCP__PROVIDERS__VECTOR_STORE__COLLECTION)
+    /// Collection name
     pub collection: Option<String>,
-
-    /// Named configs for TOML format (e.g., [providers.vector_store.configs.default])
+    /// Named configs for TOML format
     #[serde(default)]
     pub configs: HashMap<String, VectorStoreConfig>,
 }
 
-/// Provider configurations (embedding and vector store)
+/// Provider configurations
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ProvidersConfig {
     /// Embedding provider configuration
     #[serde(default)]
     pub embedding: EmbeddingConfigContainer,
-
     /// Vector store provider configuration
     #[serde(default)]
     pub vector_store: VectorStoreConfigContainer,
 }
 
-/// Infrastructure configurations (cache, event_bus, metrics, resilience, limits)
+/// Infrastructure configurations
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct InfrastructureConfig {
     /// Cache system configuration
     pub cache: CacheSystemConfig,
-
     /// EventBus configuration
     pub event_bus: EventBusConfig,
-
     /// Metrics configuration
     pub metrics: MetricsConfig,
-
     /// Resilience configuration
     pub resilience: ResilienceConfig,
-
     /// Limits configuration
     pub limits: LimitsConfig,
 }
 
-/// Data management configurations (snapshot, sync, backup)
+/// Data management configurations
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct DataConfig {
     /// Snapshot configuration
     pub snapshot: SnapshotConfig,
-
     /// Sync configuration
     pub sync: SyncConfig,
-
     /// Backup configuration
     pub backup: BackupConfig,
 }
@@ -114,7 +94,6 @@ pub struct DataConfig {
 pub struct SystemConfig {
     /// Infrastructure configurations
     pub infrastructure: InfrastructureConfig,
-
     /// Data management configurations
     pub data: DataConfig,
 }
@@ -124,7 +103,6 @@ pub struct SystemConfig {
 pub struct OperationsDaemonConfig {
     /// Daemon configuration
     pub daemon: DaemonConfig,
-
     /// Operations configuration
     pub operations: OperationsConfig,
 }
@@ -132,25 +110,19 @@ pub struct OperationsDaemonConfig {
 /// Main application configuration
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct AppConfig {
-    /// Operating mode configuration (standalone vs client)
+    /// Operating mode configuration
     #[serde(default)]
     pub mode: ModeConfig,
-
     /// Server configuration
     pub server: ServerConfig,
-
     /// Provider configurations
     pub providers: ProvidersConfig,
-
     /// Logging configuration
     pub logging: LoggingConfig,
-
     /// Authentication configuration
     pub auth: AuthConfig,
-
-    /// System configurations (infrastructure and data)
+    /// System configurations
     pub system: SystemConfig,
-
     /// Operations and daemon configurations
     pub operations_daemon: OperationsDaemonConfig,
 }
