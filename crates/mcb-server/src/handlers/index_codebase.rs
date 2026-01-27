@@ -13,6 +13,7 @@ use validator::Validate;
 use mcb_application::domain_services::search::IndexingServiceInterface;
 
 use crate::args::IndexCodebaseArgs;
+use crate::collection_mapping::map_collection_name;
 use crate::formatter::ResponseFormatter;
 
 /// Handler for codebase indexing operations
@@ -53,10 +54,26 @@ impl IndexCodebaseHandler {
             ));
         }
 
-        let collection = args.collection.as_deref().unwrap_or("default");
+        let collection_name = args.collection.as_deref().unwrap_or("default");
+
+        // Map user-friendly name to Milvus-compatible name
+        let milvus_collection = match map_collection_name(collection_name) {
+            Ok(name) => name,
+            Err(e) => {
+                return Ok(ResponseFormatter::format_indexing_error(
+                    &format!("Failed to map collection name: {}", e),
+                    path,
+                ));
+            }
+        };
+
         let timer = Instant::now();
 
-        match self.indexing_service.index_codebase(path, collection).await {
+        match self
+            .indexing_service
+            .index_codebase(path, &milvus_collection)
+            .await
+        {
             Ok(result) => Ok(ResponseFormatter::format_indexing_success(
                 &result,
                 path,

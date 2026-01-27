@@ -99,6 +99,9 @@ async-nats = { workspace = true }
 # Configuration watching
 notify = { workspace = true }
 
+# Directory paths
+dirs = "5.0"
+
 # Compression
 flate2 = { workspace = true }
 tar = { workspace = true }

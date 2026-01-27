@@ -12,6 +12,7 @@ use validator::Validate;
 use mcb_application::domain_services::search::SearchServiceInterface;
 
 use crate::args::SearchCodeArgs;
+use crate::collection_mapping::map_collection_name;
 use crate::formatter::ResponseFormatter;
 
 /// Handler for code search operations
@@ -38,12 +39,24 @@ impl SearchCodeHandler {
             ));
         }
 
-        let collection = args.collection.as_deref().unwrap_or("default");
+        let collection_name = args.collection.as_deref().unwrap_or("default");
+
+        // Map user-friendly name to Milvus-compatible name
+        let milvus_collection = match map_collection_name(collection_name) {
+            Ok(name) => name,
+            Err(e) => {
+                return Err(McpError::internal_error(
+                    format!("Failed to map collection name: {}", e),
+                    None,
+                ));
+            }
+        };
+
         let timer = Instant::now();
 
         let results = self
             .search_service
-            .search(collection, &args.query, args.limit)
+            .search(&milvus_collection, &args.query, args.limit)
             .await
             .map_err(|e| McpError::internal_error(format!("Search failed: {}", e), None))?;
 

@@ -63,6 +63,7 @@ pub mod admin;
 pub mod args;
 pub mod auth;
 pub mod builder;
+pub mod collection_mapping;
 pub mod constants;
 pub mod formatter;
 pub mod handlers;

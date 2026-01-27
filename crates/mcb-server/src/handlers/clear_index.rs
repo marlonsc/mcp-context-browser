@@ -11,6 +11,7 @@ use validator::Validate;
 use mcb_application::domain_services::search::IndexingServiceInterface;
 
 use crate::args::ClearIndexArgs;
+use crate::collection_mapping::map_collection_name;
 use crate::formatter::ResponseFormatter;
 
 /// Handler for index clearing operations
@@ -36,8 +37,19 @@ impl ClearIndexHandler {
             ));
         }
 
+        // Map user-friendly name to Milvus-compatible name
+        let milvus_collection = match map_collection_name(&args.collection) {
+            Ok(name) => name,
+            Err(e) => {
+                return Err(McpError::internal_error(
+                    format!("Failed to map collection name: {}", e),
+                    None,
+                ));
+            }
+        };
+
         self.indexing_service
-            .clear_collection(&args.collection)
+            .clear_collection(&milvus_collection)
             .await
             .map_err(|e| McpError::internal_error(format!("Failed to clear index: {}", e), None))?;
 

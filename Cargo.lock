@@ -3436,6 +3436,7 @@ dependencies = [
  "chrono",
  "clap",
  "dashmap 6.1.0",
+ "dirs 5.0.1",
  "flate2",
  "futures",
  "handlebars",
