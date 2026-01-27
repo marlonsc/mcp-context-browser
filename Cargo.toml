@@ -87,7 +87,7 @@ aes-gcm = "0.10"
 rand = "0.9"
 
 # Authentication
-jsonwebtoken = { version = "10.2", features = ["rust_crypto"] }
+jsonwebtoken = { version = "10.3", features = ["rust_crypto"] }
 bcrypt = "0.18"
 argon2 = "0.5"
 base64 = "0.22"
