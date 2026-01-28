@@ -4,7 +4,7 @@
 # Professional, minimal verb set - each verb does ONE thing
 # =============================================================================
 
-.PHONY: docs docs-serve docs-check docs-setup docs-sync docs-build rust-docs diagrams adr adr-new
+.PHONY: docs docs-serve docs-check docs-setup docs-sync docs-build rust-docs diagrams adr adr-new docs-lint docs-validate docs-auto docs-metrics
 
 # Path to mdbook
 MDBOOK := $(HOME)/.cargo/bin/mdbook
@@ -73,6 +73,34 @@ adr: ## List Architecture Decision Records
 
 adr-new: ## Create new ADR
 	@./scripts/docs/create-adr.sh 2>/dev/null || echo "create-adr.sh not found"
+
+# =============================================================================
+# MARKDOWN LINTING - Check and fix markdown files
+# =============================================================================
+
+docs-lint: ## Lint markdown files (FIX=1 to auto-fix)
+ifeq ($(FIX),1)
+	@echo "Auto-fixing markdown issues..."
+	@./scripts/docs/markdown.sh fix
+else
+	@echo "Checking markdown files..."
+	@./scripts/docs/markdown.sh lint
+endif
+
+# =============================================================================
+# DOCUMENTATION VALIDATION - Comprehensive checks
+# =============================================================================
+
+docs-validate: ## Validate documentation (ADRs, structure, links)
+	@echo "Validating documentation..."
+	@./scripts/docs/validate.sh all
+
+# =============================================================================
+# DOCUMENTATION AUTO-UPDATE - For CI automation
+# =============================================================================
+
+docs-auto: docs-metrics docs-lint ## Auto-update docs (metrics + lint fix) - used by CI
+	@echo "✅ Documentation auto-updated"
 
 # =============================================================================
 # Metrics - Auto-update documentation with current project metrics

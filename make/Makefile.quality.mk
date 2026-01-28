@@ -55,6 +55,7 @@ audit: ## Security audit (cargo-audit)
 
 # =============================================================================
 # COVERAGE (LCOV=1 for CI format)
+# Optimized with tarpaulin.toml for fast runs
 # =============================================================================
 
 coverage: ## Code coverage (LCOV=1 for CI format)
