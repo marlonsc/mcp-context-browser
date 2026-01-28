@@ -126,7 +126,7 @@ jobs:
 
   release-build:
     name: Release (${{ matrix.target }})
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [test, validate]
     runs-on: ${{ matrix.os }}
     strategy:
