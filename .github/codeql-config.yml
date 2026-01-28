@@ -1,0 +1,16 @@
+name: "CodeQL config"
+
+paths:
+  - src
+  - crates
+
+paths-ignore:
+  - target
+  - tests
+  - '**/*.test.rs'
+  - '**/*.tests.rs'
+
+queries:
+  - uses: security-and-quality
+
+languages: ["rust"]
