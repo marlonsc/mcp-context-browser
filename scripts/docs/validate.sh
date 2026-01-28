@@ -333,7 +333,9 @@ run_link_validation() {
     validate_doc_links
     validate_cross_references
 
-    if check_executable curl; then
+    if [[ -n "${QUICK:-}" ]] && [[ "${QUICK}" != "0" ]]; then
+        log_info "QUICK=1: skipping external link validation"
+    elif check_executable curl; then
         validate_external_links
     else
         log_warning "curl not available - skipping external link validation"

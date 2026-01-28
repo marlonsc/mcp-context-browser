@@ -4,7 +4,7 @@
 # Professional, minimal verb set - each verb does ONE thing
 # =============================================================================
 
-.PHONY: docs docs-serve docs-check docs-setup docs-sync docs-build rust-docs diagrams adr adr-new docs-lint docs-validate docs-auto docs-metrics
+.PHONY: docs docs-serve docs-check docs-setup docs-sync docs-build rust-docs diagrams adr adr-new docs-lint docs-validate docs-auto docs-fix docs-metrics
 
 # Path to mdbook
 MDBOOK := $(HOME)/.cargo/bin/mdbook
@@ -91,16 +91,20 @@ endif
 # DOCUMENTATION VALIDATION - Comprehensive checks
 # =============================================================================
 
-docs-validate: ## Validate documentation (ADRs, structure, links)
+docs-validate: ## Validate documentation (ADRs, structure, links). QUICK=1 skips external link checks.
 	@echo "Validating documentation..."
-	@./scripts/docs/validate.sh all
+	@QUICK="$(QUICK)" ./scripts/docs/validate.sh all
 
 # =============================================================================
 # DOCUMENTATION AUTO-UPDATE - For CI automation
 # =============================================================================
 
-docs-auto: docs-metrics docs-lint ## Auto-update docs (metrics + lint fix) - used by CI
+docs-auto: docs-metrics docs-lint ## Auto-update docs (metrics + lint check) - used by CI
 	@echo "✅ Documentation auto-updated"
+
+docs-fix: docs-metrics ## Fix markdown (metrics + markdownlint -f). Run before commit.
+	@$(MAKE) docs-lint FIX=1
+	@echo "✅ Documentation fixed"
 
 # =============================================================================
 # Metrics - Auto-update documentation with current project metrics

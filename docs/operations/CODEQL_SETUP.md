@@ -37,9 +37,10 @@ Se precisar gerenciar o CodeQL:
 1.  Acesse **Settings** → **Code security and analysis**
 2.  Encontre **CodeQL analysis**
 3.  Use o menu (•••) para:
-   -   **Edit**: Modificar configurações
-   -   **Disable CodeQL**: Desabilitar temporariamente
-   -   **Enable CodeQL**: Reativar se desabilitado
+
+-   **Edit**: Modificar configurações
+-   **Disable CodeQL**: Desabilitar temporariamente
+-   **Enable CodeQL**: Reativar se desabilitado
 
 ## ✅ Vantagens do Default Setup
 

@@ -31,7 +31,12 @@ jobs:
       - run: make docs-check
       - run: bash .github/setup-ci.sh
       - uses: dtolnay/rust-toolchain@stable
-      - run: make docs-validate
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm install -g markdownlint-cli
+      - run: make docs-validate QUICK=1
 
   update-docs:
     name: Auto-Update Documentation

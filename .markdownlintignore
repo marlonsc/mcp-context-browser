@@ -2,7 +2,5 @@ docs/adr/adr-graph.md
 docs/plans/archive/
 docs/archive/
 docs/book/
-docs/operations/CI_RELEASE.md
-docs/operations/CODEQL_SETUP.md
 docs/operations/CI_OPTIMIZATION.md
 docs/operations/CI_OPTIMIZATION_VALIDATION.md

@@ -173,22 +173,25 @@ git push origin v0.1.4
 The release workflow is triggered by tags matching `v*` pattern and performs:
 
 1.  **Pre-Release Validation**: Runs full CI validation
-   -   Lint (Rust 2024 compliance)
-   -   Unit tests (4 threads)
-   -   Integration tests
-   -   Architecture validation (strict)
-   -   Security audit
-   -   Documentation build
 
-2.  **Build Release Artifacts**: Compiles for all platforms
-   -   Linux: `mcb-x86_64-linux-gnu`
-   -   macOS: `mcb-x86_64-macos`
-   -   Windows: `mcb-x86_64-windows.exe`
+-   Lint (Rust 2024 compliance)
+-   Unit tests (4 threads)
+-   Integration tests
+-   Architecture validation (strict)
+-   Security audit
+-   Documentation build
 
-3.  **Create GitHub Release**: Publishes release with:
-   -   Automatic changelog (git log since previous release)
-   -   All binary artifacts as downloads
-   -   Release notes from CHANGELOG.md
+1.  **Build Release Artifacts**: Compiles for all platforms
+
+-   Linux: `mcb-x86_64-linux-gnu`
+-   macOS: `mcb-x86_64-macos`
+-   Windows: `mcb-x86_64-windows.exe`
+
+1.  **Create GitHub Release**: Publishes release with:
+
+-   Automatic changelog (git log since previous release)
+-   All binary artifacts as downloads
+-   Release notes from CHANGELOG.md
 
 ### Release Process Summary
 
@@ -330,13 +333,13 @@ rustc --version  # Should be stable
    timeout-minutes: 45
    ```
 
-2.  **Reduce parallelization**:
+1.  **Reduce parallelization**:
 
    ```yaml
    - run: make test TEST_THREADS=2
    ```
 
-3.  **Run tests locally** to identify slow tests:
+1.  **Run tests locally** to identify slow tests:
 
    ```bash
    make test TEST_THREADS=4
@@ -355,7 +358,7 @@ rustc --version  # Should be stable
    make build RELEASE=1
    ```
 
-3.  No uncommitted changes in version
+1.  No uncommitted changes in version
 
    ```bash
    git status

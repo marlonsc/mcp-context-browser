@@ -77,11 +77,16 @@ This documentation is fully automated and validated. Use these commands:
 # Generate all documentation (metrics, Rust API docs, mdbook)
 make docs
 
-# Validate documentation (ADRs, structure, links)
+# Validate documentation (ADRs, structure, links). QUICK=1 skips external link checks.
 make docs-validate
+make docs-validate QUICK=1
 
-# Lint markdown (FIX=1 to auto-fix)
+# Lint markdown. FIX=1 runs markdownlint -f to auto-fix.
 make docs-lint
+make docs-lint FIX=1
+
+# Fix markdown (metrics + markdownlint -f). Run before commit.
+make docs-fix
 
 # Generate architecture diagrams (PlantUML)
 make diagrams
