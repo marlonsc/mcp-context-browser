@@ -2,7 +2,7 @@
 //!
 //! MCP protocol server implementation for semantic code analysis using vector embeddings.
 //!
-//! For user guides and tutorials, see the [online documentation](https://marlonsc.github.io/mcp-context-browser/).
+//! For user guides and tutorials, see the [online documentation](https://marlonsc.github.io/mcb/).
 //!
 //! ## Features
 //!

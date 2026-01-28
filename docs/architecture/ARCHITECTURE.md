@@ -1,6 +1,6 @@
 # MCP Context Browser - Comprehensive Architecture Documentation
 
-[![Version](https://img.shields.io/badge/version-0.1.4-blue)](https://github.com/marlonsc/mcp-context-browser/releases)
+[![Version](https://img.shields.io/badge/version-0.1.4-blue)](https://github.com/marlonsc/mcb/releases)
 [![Rust](https://img.shields.io/badge/rust-1.89%2B-orange)](https://www.rust-lang.org/)
 [![MCP](https://img.shields.io/badge/MCP-2024--11--05-blue)](https://modelcontextprotocol.io/)
 
@@ -1689,7 +1689,7 @@ impl CircuitBreaker {
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mcp-context-browser
+  name: mcb
 spec:
   replicas: 3
   strategy:
@@ -1700,8 +1700,8 @@ spec:
   template:
     spec:
       containers:
--   name: mcp-context-browser
-        image: mcp-context-browser:latest
+-   name: mcb
+        image: mcb:latest
         livenessProbe:
           httpGet:
             path: /health
@@ -2034,7 +2034,7 @@ See [ADR-013](../adr/013-clean-architecture-crate-separation.md) for full detail
 # docker-compose.dev.yml
 version: '3.8'
 services:
-  mcp-context-browser:
+  mcb:
     build:
       context: .
       dockerfile: Dockerfile.dev
@@ -2063,14 +2063,14 @@ services:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mcp-context-browser-prod
+  name: mcb-prod
 spec:
   replicas: 3
   template:
     spec:
       containers:
--   name: mcp-context-browser
-        image: mcp-context-browser:v1.0.0
+-   name: mcb
+        image: mcb:v1.0.0
         env:
 -   name: MCP_MODE
           value: "production"
@@ -2190,7 +2190,7 @@ impl HealthCheck for ProviderHealthCheck {
 
 # alerting-rules.yml
 groups:
--   name: mcp-context-browser
+-   name: mcb
     rules:
 -   alert: HighErrorRate
         expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05

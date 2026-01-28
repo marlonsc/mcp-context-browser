@@ -1,3 +1,4 @@
+---
 # =============================================================================
 # CI Pipeline
 # =============================================================================
@@ -8,13 +9,17 @@
 name: CI
 
 permissions:
-  contents: read
+  contents: "read"
 
 on:
   push:
-    branches: [main, develop]
+    branches:
+      - main
+      - develop
   pull_request:
-    branches: [main, develop]
+    branches:
+      - main
+      - develop
 
 env:
   CARGO_TERM_COLOR: always
@@ -61,7 +66,10 @@ jobs:
       - run: make validate STRICT=1
       - name: Check Provider Traits Location
         run: |
-          VIOLATIONS=$(grep -r "use mcb_application::ports::providers" crates/mcb-providers/src/ 2>/dev/null || true)
+          VIOLATIONS=$(
+            grep -r "use mcb_application::ports::providers" \
+              crates/mcb-providers/src/ 2>/dev/null || true
+          )
           if [ -n "$VIOLATIONS" ]; then
             echo "VIOLATION: Provider traits should be imported from mcb-domain"
             echo "$VIOLATIONS"
@@ -140,5 +148,7 @@ jobs:
       - run: make build RELEASE=1
       - uses: actions/upload-artifact@v6
         with:
-          name: mcp-context-browser-${{ matrix.target }}
-          path: target/release/mcp-context-browser${{ matrix.os == 'windows-latest' && '.exe' || '' }}
+          name: mcb-${{ matrix.target }}
+          path: >-
+            target/release/mcb${{ matrix.os == 'windows-latest' &&
+            '.exe' || '' }}

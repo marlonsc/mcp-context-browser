@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # MCP Context Browser to MCB Rename Script
-# This script handles renaming the project from mcp-context-browser to mcb
+# This script handles renaming the project from mcb to mcb
 # Supports dry-run mode for validation
 
 set -euo pipefail
@@ -25,14 +25,14 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 # Change patterns - ordered by specificity (most specific first)
 declare -A CHANGE_PATTERNS=(
     # Repository URLs (most specific)
-    ["https://github.com/marlonsc/mcp-context-browser"]="https://github.com/marlonsc/mcb"
+    ["https://github.com/marlonsc/mcb"]="https://github.com/marlonsc/mcb"
 
     # Data and config directories
-    ["~/.local/share/mcp-context-browser"]="~/.local/share/mcb"
-    ["~/.config/mcp-context-browser"]="~/.config/mcb"
+    ["~/.local/share/mcb"]="~/.local/share/mcb"
+    ["~/.config/mcb"]="~/.config/mcb"
 
     # Crate and binary names
-    ["mcp-context-browser"]="mcb"
+    ["mcb"]="mcb"
 )
 
 # Files to exclude from processing (contain references that shouldn't change)
@@ -50,7 +50,7 @@ EXCLUDE_PATTERNS=(
 SPECIAL_FILES=(
     "Cargo.toml"
     "src/main.rs"
-    "systemd/mcp-context-browser.service"
+    "systemd/mcb.service"
     "config/default.toml"
 )
 
@@ -58,7 +58,7 @@ show_help() {
     cat << EOF
 MCP Context Browser to MCB Rename Script
 
-This script renames the project from 'mcp-context-browser' to 'mcb' across all files.
+This script renames the project from 'mcb' to 'mcb' across all files.
 
 USAGE:
     $0 [OPTIONS]
@@ -82,10 +82,10 @@ EXAMPLES:
 
 DESCRIPTION:
     This script handles multiple types of renames:
-    - Repository URLs: marlonsc/mcp-context-browser → marlonsc/mcb
-    - Data directories: ~/.local/share/mcp-context-browser → ~/.local/share/mcb
-    - Config directories: ~/.config/mcp-context-browser → ~/.config/mcb
-    - Crate/binary names: mcp-context-browser → mcb
+    - Repository URLs: marlonsc/mcb → marlonsc/mcb
+    - Data directories: ~/.local/share/mcb → ~/.local/share/mcb
+    - Config directories: ~/.config/mcb → ~/.config/mcb
+    - Crate/binary names: mcb → mcb
 
     The script excludes certain files that contain 'mcp-' references in different contexts.
 EOF
@@ -210,7 +210,7 @@ handle_special_files() {
     local file="$1"
 
     case "$file" in
-        "systemd/mcp-context-browser.service")
+        "systemd/mcb.service")
             # This file needs to be renamed to systemd/mcb.service
             local new_name="systemd/mcb.service"
             if $DRY_RUN; then
@@ -311,7 +311,7 @@ validate_changes() {
     fi
 
     ((total_checks++))
-    if [[ ! -f "systemd/mcp-context-browser.service" ]] && [[ -f "systemd/mcb.service" ]]; then
+    if [[ ! -f "systemd/mcb.service" ]] && [[ -f "systemd/mcb.service" ]]; then
         log_success "Systemd service file renamed correctly"
         ((checks_passed++))
     else

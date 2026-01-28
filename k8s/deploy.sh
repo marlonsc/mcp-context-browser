@@ -6,7 +6,7 @@
 set -e
 
 NAMESPACE=${NAMESPACE:-default}
-APP_NAME="mcp-context-browser"
+APP_NAME="mcb"
 VERSION="v0.1.1"
 
 echo "🚀 Deploying MCP Context Browser $VERSION to namespace: $NAMESPACE"

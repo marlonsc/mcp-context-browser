@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: mcp-config
   labels:
-    app: mcp-context-browser
+    app: mcb
 data:
   config.toml: |
     [server]

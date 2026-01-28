@@ -25,16 +25,16 @@ echo ""
 
 # Stop and disable service
 echo "Stopping service..."
-systemctl --user stop mcp-context-browser 2>/dev/null || true
-systemctl --user disable mcp-context-browser 2>/dev/null || true
+systemctl --user stop mcb 2>/dev/null || true
+systemctl --user disable mcb 2>/dev/null || true
 
 # Remove service file
 echo "Removing service file..."
-rm -f ~/.config/systemd/user/mcp-context-browser.service
+rm -f ~/.config/systemd/user/mcb.service
 
 # Remove binary
 echo "Removing binary..."
-rm -f ~/.local/bin/mcp-context-browser
+rm -f ~/.local/bin/mcb
 
 # Reload systemd
 systemctl --user daemon-reload
@@ -45,13 +45,13 @@ echo ""
 
 if [ "$REMOVE_ALL" = true ]; then
     echo -e "${YELLOW}Removing configuration and data...${NC}"
-    rm -rf ~/.config/mcp-context-browser
-    rm -rf ~/.local/share/mcp-context-browser
+    rm -rf ~/.config/mcb
+    rm -rf ~/.local/share/mcb
     echo -e "${GREEN}All data removed.${NC}"
 else
     echo "Data preserved at:"
-    echo "  Config: ~/.config/mcp-context-browser/"
-    echo "  Data:   ~/.local/share/mcp-context-browser/"
+    echo "  Config: ~/.config/mcb/"
+    echo "  Data:   ~/.local/share/mcb/"
     echo ""
     echo -e "${YELLOW}To remove all data:${NC} $0 --all"
 fi

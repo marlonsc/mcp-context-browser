@@ -114,7 +114,7 @@
 -   **Parameters**: 7
 -   `jwt_secret` (required if auth enabled, min 32 chars)
 -   `jwt_expiration` (default: 86400 seconds)
--   `jwt_issuer` (default: "MCP-context-browser")
+-   `jwt_issuer` (default: "mcb")
 -   `enabled` (auto-detected from credentials)
 -   `bypass_paths` (default: ["/API/health", "/API/context/metrics"])
 -   `users` (HashMap, skip serde)
@@ -490,7 +490,7 @@ cargo test config::loader
 grep -r "password\|secret\|api_key" src/ --exclude-dir=tests | grep -v "env::var\|from_env"
 
 # Check configuration structure
-cargo build && ./target/debug/mcp-context-browser --help
+cargo build && ./target/debug/mcb --help
 ```
 
 ---

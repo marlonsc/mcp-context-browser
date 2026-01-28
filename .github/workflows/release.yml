@@ -1,8 +1,10 @@
+---
 # =============================================================================
 # Release Workflow
 # =============================================================================
 # Triggered by: git tag push (pattern: v*)
-# Purpose: Build release artifacts and create GitHub Release with automated deployment
+# Purpose: Build release artifacts and create GitHub Release with
+#         automated deployment
 #
 # Flow:
 #   1. Run full CI validation (lint + test + validate + audit)
@@ -15,12 +17,12 @@ name: Release
 
 permissions:
   contents: write
-  packages: read
+  packages: "read"
 
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 env:
   CARGO_TERM_COLOR: always
@@ -54,16 +56,16 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            artifact_name: mcp-context-browser
-            asset_name: mcp-context-browser-x86_64-linux-gnu
+            artifact_name: mcb
+            asset_name: mcb-x86_64-linux-gnu
           - os: macos-latest
             target: x86_64-apple-darwin
-            artifact_name: mcp-context-browser
-            asset_name: mcp-context-browser-x86_64-macos
+            artifact_name: mcb
+            asset_name: mcb-x86_64-macos
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            artifact_name: mcp-context-browser.exe
-            asset_name: mcp-context-browser-x86_64-windows.exe
+            artifact_name: mcb.exe
+            asset_name: mcb-x86_64-windows.exe
     steps:
       - uses: actions/checkout@v6
       - run: bash .github/setup-ci.sh
@@ -76,10 +78,14 @@ jobs:
         run: mkdir -p dist
       - name: Copy artifact (Unix)
         if: runner.os != 'Windows'
-        run: cp target/release/${{ matrix.artifact_name }} dist/${{ matrix.asset_name }}
+        run: >-
+          cp target/release/${{ matrix.artifact_name }}
+          dist/${{ matrix.asset_name }}
       - name: Copy artifact (Windows)
         if: runner.os == 'Windows'
-        run: copy target\release\${{ matrix.artifact_name }} dist\${{ matrix.asset_name }}
+        run: >-
+          copy target\release\${{ matrix.artifact_name }}
+          dist\${{ matrix.asset_name }}
         shell: cmd
       - name: Upload artifact
         uses: actions/upload-artifact@v6
@@ -113,7 +119,9 @@ jobs:
       - name: Generate changelog (git log)
         run: |
           # Get previous tag
-          PREV_TAG=$(git tag --list 'v*' --sort=-version:refname | head -2 | tail -1)
+          PREV_TAG=$(
+            git tag --list 'v*' --sort=-version:refname | head -2 | tail -1
+          )
 
           if [ -z "$PREV_TAG" ]; then
             # First release - show all commits
@@ -133,9 +141,9 @@ jobs:
           name: Release ${{ env.RELEASE_VERSION }}
           body_path: RELEASE_NOTES.md
           files: |
-            release-artifacts/release-artifacts-x86_64-unknown-linux-gnu/mcp-context-browser-x86_64-linux-gnu
-            release-artifacts/release-artifacts-x86_64-apple-darwin/mcp-context-browser-x86_64-macos
-            release-artifacts/release-artifacts-x86_64-pc-windows-msvc/mcp-context-browser-x86_64-windows.exe
+            release-artifacts/release-artifacts-x86_64-unknown-linux-gnu/mcb-x86_64-linux-gnu
+            release-artifacts/release-artifacts-x86_64-apple-darwin/mcb-x86_64-macos
+            release-artifacts/release-artifacts-x86_64-pc-windows-msvc/mcb-x86_64-windows.exe
           draft: false
           prerelease: false
 
@@ -143,4 +151,6 @@ jobs:
         run: |
           echo "✓ Release ${{ env.RELEASE_TAG }} created successfully"
           echo "  - Artifacts: 3 binaries (Linux, macOS, Windows)"
-          echo "  - GitHub Release: https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}"
+          echo >-
+            "  - GitHub Release: https://github.com/${{ github.repository
+            }}/releases/tag/${{ env.RELEASE_TAG }}"

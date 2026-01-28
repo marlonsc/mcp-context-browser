@@ -14,8 +14,8 @@ Thank you for your interest in contributing! This guide helps you get started wi
 ```bash
 
 # Clone the repository
-git clone https://github.com/marlonsc/mcp-context-browser.git
-cd mcp-context-browser
+git clone https://github.com/marlonsc/mcb.git
+cd mcb
 
 # Build the project
 make build
@@ -29,7 +29,7 @@ make quality
 
 ## 🔄 Development Workflow
 
-1.  **Choose Task**: Check [GitHub Issues](https://github.com/marlonsc/mcp-context-browser/issues) for tasks
+1.  **Choose Task**: Check [GitHub Issues](https://github.com/marlonsc/mcb/issues) for tasks
 2.  **Create Branch**: Use descriptive names
 
    ```bash
@@ -206,7 +206,7 @@ cargo run --example config_demo
 CONFIG_FILE=my_config.toml cargo run --example advanced_routing
 
 # Run server directly
-cargo run --bin mcp-context-browser
+cargo run --bin mcb
 ```
 
 ## 📞 Getting Help

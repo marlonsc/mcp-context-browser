@@ -20,9 +20,9 @@ copy-fonts = true
 additional-css = ["custom.css"]
 additional-js = ["custom.js"]
 no-section-label = false
-git-repository-url = "https://github.com/marlonsc/mcp-context-browser"
+git-repository-url = "https://github.com/marlonsc/mcb"
 git-repository-icon = "fa-github"
-edit-url-template = "https://github.com/marlonsc/mcp-context-browser/edit/main/{path}"
+edit-url-template = "https://github.com/marlonsc/mcb/edit/main/{path}"
 
 [output.html.fold]
 enable = true

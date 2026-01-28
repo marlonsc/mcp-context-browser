@@ -40,7 +40,7 @@ MCP Context Browser v0.1.0 provides efficient semantic code search but lacks ver
 
 ## Decision
 
-Implement full git integration in MCP-context-browser v0.2.0 with:
+Implement full git integration in mcb v0.2.0 with:
 
 1.**Repository identification by root commit**(portable)
 2.**Multi-branch indexing**(main + HEAD + current by default)

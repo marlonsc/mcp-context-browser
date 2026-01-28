@@ -297,7 +297,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Systemd Integration
 
--   User-level service file (`systemd/mcp-context-browser.service`)
+-   User-level service file (`systemd/mcb.service`)
 -   Installation script (`scripts/install-user-service.sh`)
 -   Uninstallation script (`scripts/uninstall-user-service.sh`)
 

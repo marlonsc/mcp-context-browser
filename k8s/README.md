@@ -81,13 +81,13 @@ kubectl apply -f . -n default
 
 ```bash
 # Pod status
-kubectl get pods -l app=mcp-context-browser
+kubectl get pods -l app=mcb
 
 # HPA status
-kubectl get hpa mcp-context-browser-hpa
+kubectl get hpa mcb-hpa
 
 # Application logs
-kubectl logs -f deployment/mcp-context-browser
+kubectl logs -f deployment/mcb
 
 # Metrics
 curl http://your-domain.com:3001/api/context/metrics
@@ -156,14 +156,14 @@ Import the dashboard provided in `docs/diagrams/grafana-dashboard.json`.
 kubectl get events --sort-by=.metadata.creationTimestamp
 
 # Describe resources
-kubectl describe deployment mcp-context-browser
-kubectl describe hpa mcp-context-browser-hpa
+kubectl describe deployment mcb
+kubectl describe hpa mcb-hpa
 
 # View logs with context
-kubectl logs -f deployment/mcp-context-browser --previous
+kubectl logs -f deployment/mcb --previous
 
 # Port-forward for debug
-kubectl port-forward svc/mcp-context-browser-service 3000:80
+kubectl port-forward svc/mcb-service 3000:80
 ```
 
 ## 🔄 Updates
@@ -172,13 +172,13 @@ To update the application:
 
 ```bash
 # Build new image
-docker build -t mcp-context-browser:v0.0.5 .
+docker build -t mcb:v0.0.5 .
 
 # Update deployment
-kubectl set image deployment/mcp-context-browser mcp-context-browser=mcp-context-browser:v0.0.5
+kubectl set image deployment/mcb mcb=mcb:v0.0.5
 
 # Rollout
-kubectl rollout status deployment/mcp-context-browser
+kubectl rollout status deployment/mcb
 ```
 
 ## 🛡️ Security
@@ -211,16 +211,16 @@ Adjust limits based on usage:
 
 ```bash
 # Monitor resource usage
-kubectl top pods -l app=mcp-context-browser
+kubectl top pods -l app=mcb
 
 # Adjust limits
-kubectl edit deployment mcp-context-browser
+kubectl edit deployment mcb
 ```
 
 ## 🤝 Support
 
 For issues, consult:
 
--   [GitHub Issues](https://github.com/mcp-context-browser/issues)
--   [Documentation](https://docs.mcp-context-browser.com)
+-   [GitHub Issues](https://github.com/mcb/issues)
+-   [Documentation](https://docs.mcb.com)
 -   [Kubernetes Best Practices](https://kubernetes.io/docs/concepts/)

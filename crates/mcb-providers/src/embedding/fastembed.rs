@@ -217,11 +217,11 @@ fn fastembed_factory(
 
     let model = parse_embedding_model(&model_name);
 
-    // Use configured cache dir or default to ~/.cache/mcp-context-browser/fastembed
+    // Use configured cache dir or default to ~/.cache/mcb/fastembed
     let cache_dir = config.cache_dir.clone().unwrap_or_else(|| {
         dirs::cache_dir()
-            .map(|p| p.join("mcp-context-browser").join("fastembed"))
-            .unwrap_or_else(|| PathBuf::from("/tmp/mcp-context-browser/fastembed"))
+            .map(|p| p.join("mcb").join("fastembed"))
+            .unwrap_or_else(|| PathBuf::from("/tmp/mcb/fastembed"))
     });
 
     let init_options = InitOptions::new(model)

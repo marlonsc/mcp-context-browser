@@ -134,7 +134,7 @@ create_readme() {
 ```bash
 # Build and run
 cargo build --release
-./target/release/mcp-context-browser
+./target/release/mcb
 
 # Or with cargo
 cargo run --release

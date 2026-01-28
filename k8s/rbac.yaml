@@ -3,7 +3,7 @@ kind: ServiceAccount
 metadata:
   name: mcp-service-account
   labels:
-    app: mcp-context-browser
+    app: mcb
 automountServiceAccountToken: true
 
 ---
@@ -12,7 +12,7 @@ kind: ClusterRole
 metadata:
   name: mcp-cluster-role
   labels:
-    app: mcp-context-browser
+    app: mcb
 rules:
 - apiGroups: [""]
   resources: ["pods", "services", "endpoints", "configmaps", "secrets"]
@@ -33,7 +33,7 @@ kind: ClusterRoleBinding
 metadata:
   name: mcp-cluster-role-binding
   labels:
-    app: mcp-context-browser
+    app: mcb
 subjects:
 - kind: ServiceAccount
   name: mcp-service-account

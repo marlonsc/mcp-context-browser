@@ -8,8 +8,8 @@ keywords = ["application", "use-cases", "mcp", "semantic-search"]
 categories = ["development-tools", "api-bindings"]
 description = "Application layer for MCP Context Browser - Use cases and business logic orchestration"
 readme = "README.md"
-repository = "https://github.com/marlonsc/mcp-context-browser"
-homepage = "https://github.com/marlonsc/mcp-context-browser"
+repository = "https://github.com/marlonsc/mcb"
+homepage = "https://github.com/marlonsc/mcb"
 rust-version = "1.89"
 
 [lib]

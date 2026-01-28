@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://mcp-context-browser.com/schemas/rule/v2",
+  "$id": "https://mcb.com/schemas/rule/v2",
   "title": "MCB Validation Rule Schema",
   "description": "Schema for YAML-based validation rules in MCP Context Browser",
   "type": "object",

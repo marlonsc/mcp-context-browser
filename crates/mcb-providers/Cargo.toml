@@ -8,8 +8,8 @@ keywords = ["providers", "mcp", "semantic-search", "embedding", "vector-store"]
 categories = ["development-tools", "api-bindings"]
 description = "Provider implementations for MCP Context Browser - Embedding, Vector Store, Cache, and Language Chunking"
 readme = "README.md"
-repository = "https://github.com/marlonsc/mcp-context-browser"
-homepage = "https://github.com/marlonsc/mcp-context-browser"
+repository = "https://github.com/marlonsc/mcb"
+homepage = "https://github.com/marlonsc/mcb"
 rust-version = "1.89"
 
 [lib]

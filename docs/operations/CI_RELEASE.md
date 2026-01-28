@@ -180,9 +180,9 @@ The release workflow is triggered by tags matching `v*` pattern and performs:
    - Documentation build
 
 2. **Build Release Artifacts**: Compiles for all platforms
-   - Linux: `mcp-context-browser-x86_64-linux-gnu`
-   - macOS: `mcp-context-browser-x86_64-macos`
-   - Windows: `mcp-context-browser-x86_64-windows.exe`
+   - Linux: `mcb-x86_64-linux-gnu`
+   - macOS: `mcb-x86_64-macos`
+   - Windows: `mcb-x86_64-windows.exe`
 
 3. **Create GitHub Release**: Publishes release with:
    - Automatic changelog (git log since previous release)
@@ -205,7 +205,7 @@ Push tag v0.1.4 → GitHub detects tag
 Releases are available at:
 
 ```
-https://github.com/marlonsc/mcp-context-browser/releases
+https://github.com/marlonsc/mcb/releases
 ```
 
 Each release includes:

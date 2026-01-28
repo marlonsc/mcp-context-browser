@@ -51,12 +51,12 @@ else
 endif
 	@chmod +x $(INSTALL_DIR)/$(INSTALL_BINARY)
 	@echo "Stopping running MCP processes..."
-	@-pkill -f "mcp-context-browser" 2>/dev/null || true
+	@-pkill -f "mcb" 2>/dev/null || true
 	@-pkill -x "$(INSTALL_BINARY)" 2>/dev/null || true
 	@sleep 1
 	@-systemctl --user daemon-reload 2>/dev/null || true
 	@-systemctl --user restart mcb.service 2>/dev/null || true
-	@-systemctl --user restart mcp-context-browser.service 2>/dev/null || true
+	@-systemctl --user restart mcb.service 2>/dev/null || true
 	@echo ""
 	@echo "✓ Installed v$(VERSION) to $(INSTALL_DIR)/$(INSTALL_BINARY)"
 	@echo "✓ Processes killed, systemd user reloaded - new binary active"

@@ -22,7 +22,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # Check if binary exists
-BINARY_SOURCE="$PROJECT_ROOT/target/release/mcp-context-browser"
+BINARY_SOURCE="$PROJECT_ROOT/target/release/mcb"
 if [ ! -f "$BINARY_SOURCE" ]; then
     echo -e "${YELLOW}Release binary not found. Building with make...${NC}"
     cd "$PROJECT_ROOT"
@@ -32,17 +32,17 @@ fi
 # Create required directories
 echo "Creating directories..."
 mkdir -p ~/.local/bin
-mkdir -p ~/.config/mcp-context-browser
-mkdir -p ~/.local/share/mcp-context-browser
+mkdir -p ~/.config/mcb
+mkdir -p ~/.local/share/mcb
 mkdir -p ~/.config/systemd/user
 
 # Copy binary
 echo "Installing binary to ~/.local/bin/"
-cp "$BINARY_SOURCE" ~/.local/bin/mcp-context-browser
-chmod 755 ~/.local/bin/mcp-context-browser
+cp "$BINARY_SOURCE" ~/.local/bin/mcb
+chmod 755 ~/.local/bin/mcb
 
 # Copy config if it doesn't exist
-CONFIG_DEST="$HOME/.config/mcp-context-browser/config.toml"
+CONFIG_DEST="$HOME/.config/mcb/config.toml"
 if [ ! -f "$CONFIG_DEST" ]; then
     if [ -f "$PROJECT_ROOT/config.example.toml" ]; then
         echo "Creating default configuration..."
@@ -74,7 +74,7 @@ fi
 
 # Install systemd service
 echo "Installing systemd user service..."
-cp "$PROJECT_ROOT/systemd/mcp-context-browser.service" ~/.config/systemd/user/
+cp "$PROJECT_ROOT/systemd/mcb.service" ~/.config/systemd/user/
 
 # Enable lingering (keeps user services running after logout)
 echo "Enabling user lingering..."
@@ -83,7 +83,7 @@ loginctl enable-linger "$USER" 2>/dev/null || true
 # Reload systemd and enable service
 echo "Reloading systemd and enabling service..."
 systemctl --user daemon-reload
-systemctl --user enable mcp-context-browser
+systemctl --user enable mcb
 
 echo ""
 echo -e "${GREEN}============================================${NC}"
@@ -91,19 +91,19 @@ echo -e "${GREEN}Installation complete!${NC}"
 echo -e "${GREEN}============================================${NC}"
 echo ""
 echo "Service locations:"
-echo "  Binary:  ~/.local/bin/mcp-context-browser"
-echo "  Config:  ~/.config/mcp-context-browser/config.toml"
-echo "  Data:    ~/.local/share/mcp-context-browser/"
-echo "  Service: ~/.config/systemd/user/mcp-context-browser.service"
+echo "  Binary:  ~/.local/bin/mcb"
+echo "  Config:  ~/.config/mcb/config.toml"
+echo "  Data:    ~/.local/share/mcb/"
+echo "  Service: ~/.config/systemd/user/mcb.service"
 echo ""
 echo "Commands:"
-echo "  Start:   systemctl --user start mcp-context-browser"
-echo "  Stop:    systemctl --user stop mcp-context-browser"
-echo "  Status:  systemctl --user status mcp-context-browser"
-echo "  Logs:    journalctl --user -u mcp-context-browser -f"
-echo "  Reload:  systemctl --user reload mcp-context-browser"
-echo "  Restart: systemctl --user restart mcp-context-browser"
+echo "  Start:   systemctl --user start mcb"
+echo "  Stop:    systemctl --user stop mcb"
+echo "  Status:  systemctl --user status mcb"
+echo "  Logs:    journalctl --user -u mcb -f"
+echo "  Reload:  systemctl --user reload mcb"
+echo "  Restart: systemctl --user restart mcb"
 echo ""
 echo "The service will auto-start on login (lingering enabled)."
 echo ""
-echo -e "${YELLOW}To start now:${NC} systemctl --user start mcp-context-browser"
+echo -e "${YELLOW}To start now:${NC} systemctl --user start mcb"

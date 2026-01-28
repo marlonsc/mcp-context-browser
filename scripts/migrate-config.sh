@@ -6,7 +6,7 @@
 #
 # Usage: ./scripts/migrate-config.sh [config_file]
 #
-# If config_file is not provided, uses ~/.config/mcp-context-browser/config.toml
+# If config_file is not provided, uses ~/.config/mcb/config.toml
 
 set -e
 
@@ -17,7 +17,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration file to migrate
-CONFIG_FILE="${1:-$HOME/.config/mcp-context-browser/config.toml}"
+CONFIG_FILE="${1:-$HOME/.config/mcb/config.toml}"
 
 echo -e "${GREEN}MCP Context Browser - Config Migration${NC}"
 echo "Migrating configuration file: $CONFIG_FILE"
@@ -97,4 +97,4 @@ echo -e "${GREEN}Migration complete!${NC}"
 echo "Backup saved to: $BACKUP_FILE"
 echo ""
 echo "Please review the migrated configuration and adjust as needed."
-echo "You may need to restart the service: systemctl --user restart mcp-context-browser"
+echo "You may need to restart the service: systemctl --user restart mcb"

@@ -47,8 +47,8 @@ build-dir = "../generated/mdbook"
 
 [output.html]
 additional-css = ["custom.css"]
-git-repository-url = "https://github.com/marlonsc/mcp-context-browser"
-edit-url-template = "https://github.com/marlonsc/mcp-context-browser/edit/main/{path}"
+git-repository-url = "https://github.com/marlonsc/mcb"
+edit-url-template = "https://github.com/marlonsc/mcb/edit/main/{path}"
 
 [output.html.search]
 enable = true
@@ -181,8 +181,8 @@ EOF
 
 ```bash
 # Clone the repository
-git clone https://github.com/marlonsc/mcp-context-browser.git
-cd mcp-context-browser
+git clone https://github.com/marlonsc/mcb.git
+cd mcb
 
 # Build the project
 cargo build --release
@@ -195,7 +195,7 @@ cargo build --release
 cargo test
 
 # Start the MCP server
-cargo run --bin mcp-context-browser
+cargo run --bin mcb
 ```
 
 ## Documentation

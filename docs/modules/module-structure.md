@@ -5,7 +5,7 @@ This document shows the hierarchical structure of modules in the MCP Context Bro
 ## Crate Structure (Clean Architecture Monorepo)
 
 ```
-mcp-context-browser/
+mcb/
 ├── Cargo.toml (workspace root)
 ├── crates/
 │   ├── mcb/                          # Facade crate (re-exports public API)

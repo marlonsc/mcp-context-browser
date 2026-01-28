@@ -6,11 +6,11 @@ groups:
   - name: mcp_service_health
     rules:
       - alert: McpServiceDown
-        expr: up{job="mcp-context-browser"} == 0
+        expr: up{job="mcb"} == 0
         for: 5m
         labels:
           severity: critical
-          service: mcp-context-browser
+          service: mcb
         annotations:
           summary: "MCP Context Browser service is down"
           description: "MCP Context Browser has been down for more than 5 minutes."
@@ -20,7 +20,7 @@ groups:
         for: 5m
         labels:
           severity: critical
-          service: mcp-context-browser
+          service: mcb
         annotations:
           summary: "High error rate detected"
           description: "Error rate is {{ $value | printf \"%.2f\" }}% over the last 5 minutes."
@@ -30,7 +30,7 @@ groups:
         for: 10m
         labels:
           severity: warning
-          service: mcp-context-browser
+          service: mcb
         annotations:
           summary: "High request latency detected"
           description: "95th percentile latency is {{ $value | printf \"%.2f\" }}s over the last 5 minutes."
@@ -43,7 +43,7 @@ groups:
         for: 5m
         labels:
           severity: warning
-          service: mcp-context-browser
+          service: mcb
         annotations:
           summary: "High CPU usage detected"
           description: "CPU usage is {{ $value | printf \"%.1f\" }}%."
@@ -53,7 +53,7 @@ groups:
         for: 5m
         labels:
           severity: warning
-          service: mcp-context-browser
+          service: mcb
         annotations:
           summary: "High memory usage detected"
           description: "Memory usage is {{ $value | printf \"%.1f\" }}%."
@@ -63,7 +63,7 @@ groups:
         for: 10m
         labels:
           severity: warning
-          service: mcp-context-browser
+          service: mcb
         annotations:
           summary: "Low disk space"
           description: "Disk usage is {{ $value | printf \"%.1f\" }}%."
@@ -76,7 +76,7 @@ groups:
         for: 15m
         labels:
           severity: warning
-          service: mcp-context-browser
+          service: mcb
         annotations:
           summary: "Low cache hit rate"
           description: "Cache hit rate is {{ $value | printf \"%.2f\" }}% (below 70% threshold)."
@@ -86,7 +86,7 @@ groups:
         for: 5m
         labels:
           severity: warning
-          service: mcp-context-browser
+          service: mcb
         annotations:
           summary: "High cache eviction rate"
           description: "Cache evictions per second: {{ $value | printf \"%.1f\" }}."
@@ -96,10 +96,10 @@ groups:
     rules:
       # 99.9% uptime SLO (8.77 hours downtime per year allowed)
       - alert: McpUptimeSLOViolation
-        expr: (1 - (avg_over_time(up{job="mcp-context-browser"}[30d]))) > 0.001
+        expr: (1 - (avg_over_time(up{job="mcb"}[30d]))) > 0.001
         labels:
           severity: critical
-          service: mcp-context-browser
+          service: mcb
           slo: uptime
         annotations:
           summary: "Uptime SLO violation"
@@ -110,7 +110,7 @@ groups:
         expr: histogram_quantile(0.95, rate(mcp_http_request_duration_seconds_bucket{endpoint="/api/search"}[30d])) > 0.5
         labels:
           severity: warning
-          service: mcp-context-browser
+          service: mcb
           slo: latency
         annotations:
           summary: "Query latency SLO violation"
@@ -121,7 +121,7 @@ groups:
         expr: rate(mcp_http_requests_total{status=~"5.."}[30d]) / rate(mcp_http_requests_total[30d]) > 0.001
         labels:
           severity: warning
-          service: mcp-context-browser
+          service: mcb
           slo: error_rate
         annotations:
           summary: "Error rate SLO violation"
@@ -135,7 +135,7 @@ groups:
         for: 5m
         labels:
           severity: info
-          service: mcp-context-browser
+          service: mcb
         annotations:
           summary: "High connection count - capacity planning"
           description: "Active connections: {{ $value }} (approaching 1000 limit)."
@@ -145,7 +145,7 @@ groups:
         for: 10m
         labels:
           severity: info
-          service: mcp-context-browser
+          service: mcb
         annotations:
           summary: "High request rate - capacity planning"
           description: "Request rate: {{ $value | printf \"%.1f\" }}/s (approaching 1000/s limit)."
@@ -155,7 +155,7 @@ groups:
         for: 30m
         labels:
           severity: info
-          service: mcp-context-browser
+          service: mcb
         annotations:
           summary: "Memory usage trending up - capacity planning"
           description: "Memory usage predicted to reach 90% in 1 hour."
@@ -169,7 +169,7 @@ groups:
         labels:
           severity: critical
           service: redis
-          dependency: mcp-context-browser
+          dependency: mcb
         annotations:
           summary: "Redis dependency down"
           description: "Redis service is down, affecting MCP Context Browser caching."
@@ -180,7 +180,7 @@ groups:
         labels:
           severity: critical
           service: postgresql
-          dependency: mcp-context-browser
+          dependency: mcb
         annotations:
           summary: "Database dependency down"
           description: "PostgreSQL service is down, affecting MCP Context Browser metadata storage."
@@ -191,7 +191,7 @@ groups:
         labels:
           severity: critical
           service: milvus
-          dependency: mcp-context-browser
+          dependency: mcb
         annotations:
           summary: "Vector store dependency down"
           description: "Milvus vector store is down, affecting MCP Context Browser search functionality."

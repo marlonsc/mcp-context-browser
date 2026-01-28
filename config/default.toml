@@ -53,7 +53,7 @@ connection_timeout = 30   # Connection timeout (seconds, default: 30)
 enabled = false           # Enable authentication (JWT)
 jwt_secret = ""           # JWT signing secret (empty when disabled)
 jwt_expiration = 86400    # Token expiration in seconds (24 hours)
-jwt_issuer = "mcp-context-browser"  # JWT issuer claim
+jwt_issuer = "mcb"  # JWT issuer claim
 
 # ============================================================================
 # ADMIN INTERFACE - Dashboard & Web UI
@@ -167,19 +167,19 @@ max_lock_age_secs = 300           # Max age of lock before cleanup (seconds)
 # DATA DIRECTORIES - XDG Standard Locations
 # ============================================================================
 # All data (snapshots, history, encryption keys, circuit breakers, etc.)
-# Default: ~/.local/share/mcp-context-browser/ (XDG_DATA_HOME standard)
+# Default: ~/.local/share/mcb/ (XDG_DATA_HOME standard)
 # These are the base directories where all application state is stored
 [data]
 # Base data directory - all application state stored here
-# Uses XDG standard: ~/.local/share/mcp-context-browser/
+# Uses XDG standard: ~/.local/share/mcb/
 # Can override with environment variable: MCP__DATA__BASE_DIR
-base_dir = "~/.local/share/mcp-context-browser"
+base_dir = "~/.local/share/mcb"
 
 # Optional: Override individual subdirectories (uncomment to customize)
-# snapshots_dir = "~/.local/share/mcp-context-browser/snapshots"
-# config_history_dir = "~/.local/share/mcp-context-browser/config-history"
-# encryption_keys_dir = "~/.local/share/mcp-context-browser/encryption"
-# circuit_breakers_dir = "~/.local/share/mcp-context-browser/circuit-breakers"
+# snapshots_dir = "~/.local/share/mcb/snapshots"
+# config_history_dir = "~/.local/share/mcb/config-history"
+# encryption_keys_dir = "~/.local/share/mcb/encryption"
+# circuit_breakers_dir = "~/.local/share/mcb/circuit-breakers"
 
 # ============================================================================
 # SYNCHRONIZATION - File Watching & Indexing

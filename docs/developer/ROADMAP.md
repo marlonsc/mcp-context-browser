@@ -247,7 +247,7 @@ Transform MCP Context Browser into a comprehensive development platform combinin
 
 | Setting | Default | Override |
 |---------|---------|----------|
-| Database | ~/.MCP-context-browser/memory.db | Global config |
+| Database | ~/.mcb/memory.db | Global config |
 | Observation types | decision, bugfix, feature | Per-project |
 | Observation limit | 20 | Per-request |
 | Date range | 30 days | Per-request |
