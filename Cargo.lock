@@ -5396,6 +5396,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "rexile"
+version = "0.4.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2c89fd00c9efb717f402439019e2445a827223473400e96150fc021d80576f78"
+dependencies = [
+ "aho-corasick",
+ "memchr",
+]
+
+[[package]]
 name = "rfc6979"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5596,14 +5606,14 @@ dependencies = [
 
 [[package]]
 name = "rust-rule-engine"
-version = "1.16.1"
+version = "1.18.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2fe8f0412ddf4bb76e9a46bddd9b1cb32dd63909eaa6ab2d9abfb3b79623c742"
+checksum = "00656fbf61dc966868b416139e3b3997323caa0a14db3b838c75da3c1054a1cf"
 dependencies = [
  "chrono",
  "log",
  "nom 7.1.3",
- "regex",
+ "rexile",
  "serde",
  "serde_json",
  "thiserror 2.0.18",

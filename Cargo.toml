@@ -232,7 +232,7 @@ cargo_metadata = "0.23"
 serde_yaml = "0.9"
 
 # Rule Engines
-rust-rule-engine = "1.16"
+rust-rule-engine = "1.18"
 rusty-rules = "0.2"
 evalexpr = "13"
 
