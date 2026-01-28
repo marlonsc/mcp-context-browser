@@ -9,9 +9,6 @@ mod test_utils;
 #[path = "unit/architecture_rules_test.rs"]
 mod architecture_rules;
 
-#[path = "unit/ast_executor_test.rs"]
-mod ast_executor;
-
 #[path = "unit/ast_test.rs"]
 mod ast;
 

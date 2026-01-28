@@ -12,10 +12,24 @@ use mcb_validate::engines::{
 use mcb_validate::{ValidationConfig, Violation};
 use serde_json::json;
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+
+/// Get the workspace root for tests (the actual project root)
+fn get_workspace_root() -> PathBuf {
+    // Use CARGO_MANIFEST_DIR to find crate root, then go up to workspace root
+    let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string());
+    PathBuf::from(manifest_dir)
+        .parent() // crates/
+        .and_then(|p| p.parent()) // workspace root
+        .map_or_else(|| PathBuf::from("."), Path::to_path_buf)
+}
 
 /// Create a test context with sample files
+///
+/// Uses the actual project workspace root so `cargo_metadata` works.
 fn create_test_context() -> RuleContext {
+    let workspace_root = get_workspace_root();
+
     let mut file_contents = HashMap::new();
     file_contents.insert(
         "src/main.rs".to_string(),
@@ -50,8 +64,8 @@ fn test_main() {
     );
 
     RuleContext {
-        workspace_root: PathBuf::from("/test/workspace"),
-        config: ValidationConfig::new("/test/workspace"),
+        workspace_root: workspace_root.clone(),
+        config: ValidationConfig::new(&workspace_root),
         ast_data: HashMap::new(),
         cargo_data: HashMap::new(),
         file_contents,

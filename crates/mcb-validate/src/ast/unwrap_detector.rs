@@ -1,13 +1,11 @@
-//! AST-based Unwrap Detector
+//! AST-based Unwrap Detector using rust-code-analysis
 //!
-//! Uses Tree-sitter to detect `.unwrap()` and `.expect()` calls in Rust code,
-//! replacing the Regex-based approach in quality.rs.
-//!
-//! This module implements Phase 2 deliverable:
-//! "QUAL001 (no-unwrap) detects `.unwrap()` calls via AST"
+//! Uses our fork with extended Node API for unwrap/expect detection.
+//! Replaces the tree-sitter direct implementation with RCA Callback pattern.
 
 use std::path::Path;
-use tree_sitter::{Parser, Query, QueryCursor, StreamingIterator};
+
+use rust_code_analysis::{Callback, Node, ParserTrait, action, guess_language};
 
 use crate::{Result, ValidationError};
 
@@ -20,7 +18,7 @@ pub struct UnwrapDetection {
     pub line: usize,
     /// Column number (1-based)
     pub column: usize,
-    /// The specific method detected ("unwrap", "expect", "unwrap_or", etc.)
+    /// The specific method detected ("unwrap", "expect")
     pub method: String,
     /// Whether this is in a test module
     pub in_test: bool,
@@ -28,58 +26,174 @@ pub struct UnwrapDetection {
     pub context: String,
 }
 
-/// AST-based unwrap detector using Tree-sitter
-pub struct UnwrapDetector {
-    parser: Parser,
-    unwrap_query: Query,
-    test_module_query: Query,
+/// Configuration for unwrap detection callback
+struct UnwrapConfig {
+    filename: String,
+    test_ranges: Vec<(usize, usize)>,
 }
+
+/// RCA Callback for unwrap detection
+struct UnwrapCallback;
+
+impl Callback for UnwrapCallback {
+    type Res = Vec<UnwrapDetection>;
+    type Cfg = UnwrapConfig;
+
+    fn call<T: ParserTrait>(cfg: Self::Cfg, parser: &T) -> Self::Res {
+        let root = parser.get_root();
+        let code = parser.get_code();
+        let mut detections = Vec::new();
+
+        // Recursive detection through AST
+        detect_recursive(&root, code, &cfg, &mut detections);
+        detections
+    }
+}
+
+/// Recursively detect unwrap/expect calls in AST
+fn detect_recursive(
+    node: &Node,
+    code: &[u8],
+    cfg: &UnwrapConfig,
+    results: &mut Vec<UnwrapDetection>,
+) {
+    // Check if this is a call_expression with unwrap/expect
+    if node.kind() == "call_expression" {
+        if let Some(text) = node.utf8_text(code) {
+            let method = extract_method(text);
+            if matches!(method.as_str(), "unwrap" | "expect") {
+                let byte_pos = node.start_byte();
+                let in_test = cfg
+                    .test_ranges
+                    .iter()
+                    .any(|(start, end)| byte_pos >= *start && byte_pos < *end);
+
+                results.push(UnwrapDetection {
+                    file: cfg.filename.clone(),
+                    line: node.start_row() + 1,
+                    column: node.start_position().1 + 1,
+                    method,
+                    in_test,
+                    context: text.lines().next().unwrap_or("").trim().to_string(),
+                });
+            }
+        }
+    }
+
+    // Recurse through children via inner tree-sitter node (public in our fork)
+    let mut cursor = node.0.walk();
+    for child in node.0.children(&mut cursor) {
+        let child_node = Node(child);
+        detect_recursive(&child_node, code, cfg, results);
+    }
+}
+
+/// Extract method name from call expression text
+fn extract_method(text: &str) -> String {
+    if text.contains(".unwrap()") {
+        "unwrap".to_string()
+    } else if text.contains(".expect(") {
+        "expect".to_string()
+    } else {
+        String::new()
+    }
+}
+
+/// Find test module ranges in the AST
+fn find_test_ranges(root: &Node, code: &[u8]) -> Vec<(usize, usize)> {
+    let mut ranges = Vec::new();
+    find_test_modules_recursive(root, code, &mut ranges);
+    ranges
+}
+
+fn find_test_modules_recursive(node: &Node, code: &[u8], ranges: &mut Vec<(usize, usize)>) {
+    if node.kind() == "mod_item" {
+        // Check for #[cfg(test)] attribute before this node
+        let start = node.start_byte();
+        // Look back up to 50 bytes (or start of file) for the attribute
+        let search_start = start.saturating_sub(50);
+        let before = std::str::from_utf8(&code[search_start..start]).unwrap_or("");
+        if before.contains("#[cfg(test)]") {
+            ranges.push((node.start_byte(), node.end_byte()));
+            return; // Don't recurse into test modules
+        }
+
+        // Also check if the module name is "tests" (common pattern)
+        if let Some(name_text) = node.utf8_text(code) {
+            if name_text.contains("mod tests") || name_text.contains("mod test") {
+                // Double check there's a #[cfg(test)] somewhere before it in the file
+                let all_before = std::str::from_utf8(&code[..start]).unwrap_or("");
+                // Find the last occurrence of #[cfg(test)] before this position
+                if let Some(attr_pos) = all_before.rfind("#[cfg(test)]") {
+                    // Make sure there's no other mod_item between the attribute and this module
+                    let between = &all_before[attr_pos..];
+                    if !between.contains("mod ")
+                        || between.rfind("mod ").unwrap_or(0) == between.len() - name_text.len()
+                    {
+                        ranges.push((node.start_byte(), node.end_byte()));
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    // Recurse through children
+    let mut cursor = node.0.walk();
+    for child in node.0.children(&mut cursor) {
+        find_test_modules_recursive(&Node(child), code, ranges);
+    }
+}
+
+/// RCA Callback for finding test module ranges
+struct TestRangeCallback;
+
+impl Callback for TestRangeCallback {
+    type Res = Vec<(usize, usize)>;
+    type Cfg = ();
+
+    fn call<T: ParserTrait>(_cfg: (), parser: &T) -> Self::Res {
+        find_test_ranges(&parser.get_root(), parser.get_code())
+    }
+}
+
+/// Detect unwrap/expect in file content
+pub fn detect_in_content(content: &str, filename: &str) -> Result<Vec<UnwrapDetection>> {
+    let path = Path::new(filename);
+    let source = content.as_bytes().to_vec();
+
+    let (lang, _) = guess_language(&source, path);
+    let lang = lang.ok_or_else(|| {
+        ValidationError::Config(format!("Unsupported language for file: {}", filename))
+    })?;
+
+    // First pass: find test module ranges
+    let test_ranges = action::<TestRangeCallback>(&lang, source.clone(), path, None, ());
+
+    // Second pass: detect unwraps
+    let cfg = UnwrapConfig {
+        filename: filename.to_string(),
+        test_ranges,
+    };
+
+    Ok(action::<UnwrapCallback>(&lang, source, path, None, cfg))
+}
+
+/// Detect unwrap/expect in file
+pub fn detect_in_file(path: &Path) -> Result<Vec<UnwrapDetection>> {
+    let content = std::fs::read_to_string(path)?;
+    detect_in_content(&content, &path.to_string_lossy())
+}
+
+/// AST-based unwrap detector using rust-code-analysis
+///
+/// Provides the same API as before but uses RCA internally.
+pub struct UnwrapDetector;
 
 impl UnwrapDetector {
     /// Create a new unwrap detector
     pub fn new() -> Result<Self> {
-        let mut parser = Parser::new();
-        parser
-            .set_language(&tree_sitter_rust::LANGUAGE.into())
-            .map_err(|e| ValidationError::Config(format!("Failed to set Rust language: {e}")))?;
-
-        // Query for method calls like .unwrap(), .expect(), etc.
-        // This matches field_expression -> call_expression patterns
-        //
-        // Tree-sitter Rust structure for `x.unwrap()`:
-        // (call_expression
-        //   function: (field_expression
-        //     field: (field_identifier) @method_name)
-        //   arguments: (arguments))
-        let unwrap_query = Query::new(
-            &tree_sitter_rust::LANGUAGE.into(),
-            r#"
-            (call_expression
-              function: (field_expression
-                field: (field_identifier) @method_name)
-              arguments: (arguments)) @call
-            "#,
-        )
-        .map_err(|e| ValidationError::Config(format!("Failed to compile unwrap query: {e}")))?;
-
-        // Query to detect test modules - simpler pattern
-        // We look for mod items and check their attributes separately
-        let test_module_query = Query::new(
-            &tree_sitter_rust::LANGUAGE.into(),
-            r#"
-            (mod_item
-              name: (identifier) @mod_name) @test_mod
-            "#,
-        )
-        .map_err(|e| {
-            ValidationError::Config(format!("Failed to compile test module query: {e}"))
-        })?;
-
-        Ok(Self {
-            parser,
-            unwrap_query,
-            test_module_query,
-        })
+        Ok(Self)
     }
 
     /// Detect unwrap/expect calls in Rust source code
@@ -88,157 +202,95 @@ impl UnwrapDetector {
         content: &str,
         filename: &str,
     ) -> Result<Vec<UnwrapDetection>> {
-        let tree = self
-            .parser
-            .parse(content, None)
-            .ok_or_else(|| ValidationError::Parse {
-                file: filename.into(),
-                message: "Failed to parse Rust code".into(),
-            })?;
-
-        let root = tree.root_node();
-        let source_bytes = content.as_bytes();
-
-        // First, find all test module ranges
-        let test_ranges = self.find_test_module_ranges(&root, source_bytes);
-
-        // Then, find all method calls
-        let mut detections = Vec::new();
-        let mut cursor = QueryCursor::new();
-        let mut matches = cursor.matches(&self.unwrap_query, root, source_bytes);
-
-        // Find the capture indices
-        let method_name_idx = self
-            .unwrap_query
-            .capture_index_for_name("method_name")
-            .expect("method_name capture should exist");
-        let call_idx = self
-            .unwrap_query
-            .capture_index_for_name("call")
-            .expect("call capture should exist");
-
-        // Use StreamingIterator pattern for tree-sitter 0.26+
-        while let Some(match_) = matches.next() {
-            let mut method_name = None;
-            let mut call_node = None;
-
-            for capture in match_.captures {
-                if capture.index == method_name_idx {
-                    method_name = Some(capture.node);
-                } else if capture.index == call_idx {
-                    call_node = Some(capture.node);
-                }
-            }
-
-            if let (Some(method_node), Some(call)) = (method_name, call_node) {
-                let method = method_node
-                    .utf8_text(source_bytes)
-                    .unwrap_or("")
-                    .to_string();
-
-                // Check if this is an unwrap-family method
-                if self.is_target_method(&method) {
-                    let start_pos = call.start_position();
-                    let line = start_pos.row + 1; // 1-based
-                    let column = start_pos.column + 1;
-
-                    // Check if inside a test module
-                    let byte_offset = call.start_byte();
-                    let in_test = test_ranges
-                        .iter()
-                        .any(|(start, end)| byte_offset >= *start && byte_offset < *end);
-
-                    // Get context (the source text of the call)
-                    let context = call
-                        .utf8_text(source_bytes)
-                        .unwrap_or("")
-                        .lines()
-                        .next()
-                        .unwrap_or("")
-                        .trim()
-                        .to_string();
-
-                    detections.push(UnwrapDetection {
-                        file: filename.to_string(),
-                        line,
-                        column,
-                        method,
-                        in_test,
-                        context,
-                    });
-                }
-            }
-        }
-
-        Ok(detections)
+        detect_in_content(content, filename)
     }
 
     /// Detect unwrap/expect calls in a file
     pub fn detect_in_file(&mut self, path: &Path) -> Result<Vec<UnwrapDetection>> {
-        let content = std::fs::read_to_string(path)?;
-        self.detect_in_content(&content, &path.to_string_lossy())
-    }
-
-    /// Check if a method name is one we want to detect
-    fn is_target_method(&self, method: &str) -> bool {
-        // Target methods that indicate potential panics
-        matches!(method, "unwrap" | "expect")
-    }
-
-    /// Find byte ranges of test modules
-    fn find_test_module_ranges(
-        &self,
-        root: &tree_sitter::Node,
-        source_bytes: &[u8],
-    ) -> Vec<(usize, usize)> {
-        let mut ranges = Vec::new();
-        let mut cursor = QueryCursor::new();
-        let mut matches = cursor.matches(&self.test_module_query, *root, source_bytes);
-
-        let test_mod_idx = self
-            .test_module_query
-            .capture_index_for_name("test_mod")
-            .expect("test_mod capture should exist");
-
-        // Use StreamingIterator pattern for tree-sitter 0.26+
-        while let Some(match_) = matches.next() {
-            for capture in match_.captures {
-                if capture.index == test_mod_idx {
-                    let mod_node = capture.node;
-                    // Check if this module has #[cfg(test)] by looking at its source
-                    // We look backward from the mod declaration for #[cfg(test)]
-                    let mod_start = mod_node.start_byte();
-
-                    // Check if there's a #[cfg(test)] attribute before this mod
-                    // by looking at the previous sibling
-                    if let Some(prev) = mod_node.prev_sibling() {
-                        let prev_text = prev.utf8_text(source_bytes).unwrap_or("");
-                        if prev_text.contains("#[cfg(test)]") {
-                            ranges.push((mod_node.start_byte(), mod_node.end_byte()));
-                            continue;
-                        }
-                    }
-
-                    // Also check the text before the mod for inline attributes
-                    if mod_start > 20 {
-                        let before = std::str::from_utf8(
-                            &source_bytes[mod_start.saturating_sub(50)..mod_start],
-                        )
-                        .unwrap_or("");
-                        if before.contains("#[cfg(test)]") {
-                            ranges.push((mod_node.start_byte(), mod_node.end_byte()));
-                        }
-                    }
-                }
-            }
-        }
-
-        ranges
+        detect_in_file(path)
     }
 }
 
 impl Default for UnwrapDetector {
     fn default() -> Self {
-        Self::new().expect("Failed to create UnwrapDetector")
+        Self
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_detect_unwrap_in_code() {
+        let code = r#"
+fn main() {
+    let x = Some(42);
+    let y = x.unwrap();
+}
+"#;
+        let detections = detect_in_content(code, "test.rs").unwrap();
+        assert!(!detections.is_empty());
+        assert_eq!(detections[0].method, "unwrap");
+        assert!(!detections[0].in_test);
+    }
+
+    #[test]
+    fn test_detect_expect_in_code() {
+        let code = r#"
+fn main() {
+    let x = Some(42);
+    let y = x.expect("should have value");
+}
+"#;
+        let detections = detect_in_content(code, "test.rs").unwrap();
+        assert!(!detections.is_empty());
+        assert_eq!(detections[0].method, "expect");
+    }
+
+    #[test]
+    fn test_detect_in_test_module() {
+        let code = r#"
+fn main() {
+    let x = Some(42);
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_something() {
+        let y = Some(1).unwrap();
+    }
+}
+"#;
+        let detections = detect_in_content(code, "test.rs").unwrap();
+        // Should find the unwrap in test module
+        let test_detections: Vec<_> = detections.iter().filter(|d| d.in_test).collect();
+        assert!(!test_detections.is_empty());
+    }
+
+    #[test]
+    fn test_no_false_positives() {
+        let code = r#"
+fn main() {
+    let x = "unwrap is just a word here";
+    let y = Some(42)?;
+}
+"#;
+        let detections = detect_in_content(code, "test.rs").unwrap();
+        // Should not detect "unwrap" in string literal as a method call
+        let method_calls: Vec<_> = detections
+            .iter()
+            .filter(|d| d.method == "unwrap" || d.method == "expect")
+            .collect();
+        assert!(method_calls.is_empty());
+    }
+
+    #[test]
+    fn test_detector_struct_api() {
+        let mut detector = UnwrapDetector::new().unwrap();
+        let code = "fn f() { Some(1).unwrap(); }";
+        let detections = detector.detect_in_content(code, "test.rs").unwrap();
+        assert!(!detections.is_empty());
     }
 }

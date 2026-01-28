@@ -3,19 +3,20 @@
 //! Wrapper for rust-rule-engine crate implementing RETE-UL algorithm.
 //! Use this engine for complex GRL rules with when/then syntax.
 //!
-//! Uses `cargo_metadata` for reliable Cargo.toml/workspace parsing,
-//! with TOML fallback for incomplete projects or tests.
+//! Uses `cargo_metadata` for reliable Cargo.toml/workspace parsing.
+//! Fails fast if cargo_metadata is unavailable.
 
 use async_trait::async_trait;
 use cargo_metadata::MetadataCommand;
 use rust_rule_engine::{Facts, GRLParser, KnowledgeBase, RustRuleEngine, Value as RreValue};
 use serde_json::Value;
-use std::path::Path;
-use walkdir::WalkDir;
 
 use crate::Result;
 use crate::engines::hybrid_engine::{RuleContext, RuleEngine, RuleViolation};
 use crate::violation_trait::{Severity, ViolationCategory};
+
+/// Prefix for internal workspace dependencies (mcb-*)
+const INTERNAL_DEP_PREFIX: &str = "mcb-";
 
 /// RETE Engine wrapper for rust-rule-engine library
 pub struct ReteEngine {
@@ -57,7 +58,7 @@ impl ReteEngine {
     /// GRL conditions like `Facts.has_internal_dependencies == true` require
     /// facts to be set with `facts.set("Facts.has_internal_dependencies", ...)`.
     ///
-    /// Uses cargo_metadata for real projects, falls back to TOML parsing for tests.
+    /// Requires cargo_metadata to succeed. Fails fast if unavailable.
     fn build_facts(&self, context: &RuleContext) -> Result<Facts> {
         let facts = Facts::new();
 
@@ -74,11 +75,12 @@ impl ReteEngine {
             Ok(metadata) if !metadata.packages.is_empty() => {
                 // Get root package name (or first workspace member)
                 // cargo_metadata 0.23 returns PackageName, convert to String
+                // Note: The guard `!metadata.packages.is_empty()` ensures at least one package exists
                 let root_name = metadata
                     .root_package()
                     .map(|p| p.name.to_string())
                     .or_else(|| metadata.packages.first().map(|p| p.name.to_string()))
-                    .unwrap_or_else(|| self.fallback_crate_name(context));
+                    .unwrap_or_else(|| "unknown".to_string());
 
                 facts.set("Facts.crate_name", RreValue::String(root_name));
 
@@ -95,7 +97,7 @@ impl ReteEngine {
                         facts.set(&key, RreValue::Boolean(true));
 
                         // Count internal dependencies (mcb-*)
-                        if dep_name.starts_with("mcb-") {
+                        if dep_name.starts_with(INTERNAL_DEP_PREFIX) {
                             internal_deps_count += 1;
                         }
                     }
@@ -112,12 +114,16 @@ impl ReteEngine {
                 );
             }
             Ok(_metadata) => {
-                // Fallback to manual TOML parsing (for tests, incomplete projects, or empty metadata)
-                self.build_facts_from_toml(&facts, context);
+                // Empty metadata - fail fast
+                return Err(crate::ValidationError::Config(
+                    "cargo_metadata returned empty packages".into(),
+                ));
             }
-            Err(_e) => {
-                // Fallback to manual TOML parsing (for tests, incomplete projects, or empty metadata)
-                self.build_facts_from_toml(&facts, context);
+            Err(e) => {
+                return Err(crate::ValidationError::Config(format!(
+                    "cargo_metadata failed: {}",
+                    e
+                )));
             }
         }
 
@@ -128,123 +134,6 @@ impl ReteEngine {
         }
 
         Ok(facts)
-    }
-
-    /// Fallback TOML parsing when cargo_metadata fails (for tests or incomplete projects)
-    fn build_facts_from_toml(&self, facts: &Facts, context: &RuleContext) {
-        let deps = self.collect_dependencies_from_toml(&context.workspace_root);
-
-        // Get crate name from first Cargo.toml found
-        let crate_name = deps
-            .first()
-            .map(|(name, _, _)| name.clone())
-            .unwrap_or_else(|| self.fallback_crate_name(context));
-
-        facts.set("Facts.crate_name", RreValue::String(crate_name));
-
-        // Count internal dependencies
-        let mut internal_deps_count = 0;
-
-        for (crate_nm, dep_name, _) in &deps {
-            let key = format!("Facts.crate_{}_depends_on_{}", crate_nm, dep_name);
-            facts.set(&key, RreValue::Boolean(true));
-
-            if dep_name.starts_with("mcb-") {
-                internal_deps_count += 1;
-            }
-        }
-
-        facts.set(
-            "Facts.internal_dependencies_count",
-            RreValue::Number(f64::from(internal_deps_count)),
-        );
-
-        facts.set(
-            "Facts.has_internal_dependencies",
-            RreValue::Boolean(internal_deps_count > 0),
-        );
-    }
-
-    /// Fallback crate name extraction when cargo_metadata fails
-    fn fallback_crate_name(&self, context: &RuleContext) -> String {
-        context
-            .workspace_root
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("unknown")
-            .to_string()
-    }
-
-    /// Collect dependencies from Cargo.toml files using TOML parsing (fallback)
-    fn collect_dependencies_from_toml(&self, root: &Path) -> Vec<(String, String, String)> {
-        let mut deps = Vec::new();
-
-        // DEBUG: print to stderr for test visibility
-        eprintln!("[RETE DEBUG] Walking directory: {:?}", root);
-
-        for entry in WalkDir::new(root)
-            .into_iter()
-            .filter_map(std::result::Result::ok)
-            .filter(|e| e.path().file_name().is_some_and(|n| n == "Cargo.toml"))
-        {
-            let path = entry.path();
-            // DEBUG: print to stderr for test visibility
-            eprintln!("[RETE DEBUG] Found Cargo.toml at: {:?}", path);
-
-            // Skip target directory
-            if path.to_string_lossy().contains("/target/") {
-                eprintln!("[RETE DEBUG] Skipping (target dir)");
-                continue;
-            }
-
-            if let Ok(content) = std::fs::read_to_string(path) {
-                eprintln!("[RETE DEBUG] Read content (len={})", content.len());
-                // Trim leading/trailing whitespace for TOML parsing
-                let content = content.trim();
-                eprintln!(
-                    "[RETE DEBUG] Trimmed content (len={}): {:?}",
-                    content.len(),
-                    content.chars().take(50).collect::<String>()
-                );
-                // toml 0.9 uses Table instead of Value
-                match content.parse::<toml::Table>() {
-                    Ok(toml_table) => {
-                        eprintln!("[RETE DEBUG] Parsed TOML successfully");
-                        // Extract crate name
-                        let crate_name = toml_table
-                            .get("package")
-                            .and_then(|p| p.get("name"))
-                            .and_then(|n| n.as_str())
-                            .unwrap_or("unknown")
-                            .to_string();
-
-                        // Extract dependencies from [dependencies] section
-                        if let Some(dep_table) =
-                            toml_table.get("dependencies").and_then(|d| d.as_table())
-                        {
-                            for (dep_name, dep_value) in dep_table {
-                                let version = if let Some(v) = dep_value.as_str() {
-                                    v.to_string()
-                                } else if let Some(t) = dep_value.as_table() {
-                                    t.get("version")
-                                        .and_then(|v| v.as_str())
-                                        .unwrap_or("*")
-                                        .to_string()
-                                } else {
-                                    "*".to_string()
-                                };
-                                deps.push((crate_name.clone(), dep_name.clone(), version));
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        eprintln!("[RETE DEBUG] TOML parse error: {:?}", e);
-                    }
-                }
-            }
-        }
-
-        deps
     }
 
     /// Execute GRL rules against context and return violations

@@ -34,7 +34,7 @@ release: ## Full release pipeline (lint + test + validate + build)
 # INSTALL - Install binary to system
 # =============================================================================
 
-install: ## Install binary to ~/.local/bin/mcp-context-browser (RELEASE=1 for release)
+install: ## Install binary to ~/.local/bin/mcb (RELEASE=1 for release)
 ifeq ($(RELEASE),1)
 	@echo "Installing release binary v$(VERSION)..."
 	@$(MAKE) build RELEASE=1
@@ -42,20 +42,26 @@ else
 	@echo "Installing debug binary v$(VERSION)..."
 	@$(MAKE) build
 endif
-	@echo "Stopping running MCP processes..."
-	@-pkill -f "mcp-context-browser" 2>/dev/null || true
-	@sleep 1
 	@mkdir -p $(INSTALL_DIR)
+	@if [ -f "$(INSTALL_DIR)/$(INSTALL_BINARY)" ]; then mv "$(INSTALL_DIR)/$(INSTALL_BINARY)" "$(INSTALL_DIR)/$(INSTALL_BINARY).old"; fi
 ifeq ($(RELEASE),1)
 	@cp target/release/$(BINARY_NAME) $(INSTALL_DIR)/$(INSTALL_BINARY)
 else
 	@cp target/debug/$(BINARY_NAME) $(INSTALL_DIR)/$(INSTALL_BINARY)
 endif
 	@chmod +x $(INSTALL_DIR)/$(INSTALL_BINARY)
+	@echo "Stopping running MCP processes..."
+	@-pkill -f "mcp-context-browser" 2>/dev/null || true
+	@-pkill -x "$(INSTALL_BINARY)" 2>/dev/null || true
+	@sleep 1
+	@-systemctl --user daemon-reload 2>/dev/null || true
+	@-systemctl --user restart mcb.service 2>/dev/null || true
+	@-systemctl --user restart mcp-context-browser.service 2>/dev/null || true
 	@echo ""
 	@echo "✓ Installed v$(VERSION) to $(INSTALL_DIR)/$(INSTALL_BINARY)"
-	@echo "✓ Old processes killed - new binary will be used on next MCP call"
+	@echo "✓ Processes killed, systemd user reloaded - new binary active"
 	@ls -lh $(INSTALL_DIR)/$(INSTALL_BINARY) | awk '{print "  Size: "$$5"  Modified: "$$6" "$$7" "$$8}'
+	@if [ -f "$(INSTALL_DIR)/$(INSTALL_BINARY).old" ]; then echo "  Old binary: $(INSTALL_DIR)/$(INSTALL_BINARY).old (remove if not needed)"; fi
 ifneq ($(RELEASE),1)
 	@echo ""
 	@echo "Tip: Use 'make install RELEASE=1' for a smaller optimized binary (~70MB vs ~500MB)"

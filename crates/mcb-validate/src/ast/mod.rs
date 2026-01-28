@@ -12,7 +12,6 @@
 
 pub mod core;
 pub mod decoder;
-pub mod executor;
 pub mod query;
 pub mod types;
 pub mod unwrap_detector;
@@ -20,7 +19,6 @@ pub mod unwrap_detector;
 // Re-export public types and interfaces
 pub use core::{AstNode, AstParseResult, Position, Span};
 pub use decoder::AstDecoder;
-pub use executor::{AstQueryExecutor, AstQueryViolation};
 pub use query::{AstQuery, AstQueryBuilder, AstQueryPatterns, QueryCondition};
 pub use types::AstViolation;
 pub use unwrap_detector::{UnwrapDetection, UnwrapDetector};
