@@ -19,7 +19,7 @@ permissions:
   contents: write
   packages: "read"
 
-on:
+on:  # yamllint disable-line rule:truthy
   push:
     tags:
       - "v*"
@@ -110,11 +110,14 @@ jobs:
           path: release-artifacts
 
       - name: Extract version from tag
+        id: extract_version
         run: |
           TAG=${GITHUB_REF#refs/tags/}
           VERSION=${TAG#v}
           echo "RELEASE_VERSION=$VERSION" >> $GITHUB_ENV
           echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Generate changelog (git log)
         run: |
