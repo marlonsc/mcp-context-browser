@@ -1,4 +1,4 @@
-# ADR 005: Documentation Excellence
+# ADR 031: Documentation Excellence
 
 ## Status
 

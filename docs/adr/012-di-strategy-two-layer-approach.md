@@ -1,4 +1,4 @@
-# ADR-012: Two-Layer Dependency Injection Strategy
+# ADR 012: Two-Layer Dependency Injection Strategy
 
 ## Status
 

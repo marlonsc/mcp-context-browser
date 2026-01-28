@@ -1,4 +1,4 @@
-# ADR-013: Clean Architecture Crate Separation
+# ADR 013: Clean Architecture Crate Separation
 
 ## Status
 
