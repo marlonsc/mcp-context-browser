@@ -4,7 +4,7 @@
 # Essential targets only. Each verb does ONE action.
 # =============================================================================
 
-.PHONY: docs docs-serve adr adr-new info
+.PHONY: docs docs-serve docs-check docs-setup docs-sync docs-build diagrams rust-docs adr adr-new info
 
 # Path to mdbook
 MDBOOK := $(HOME)/.cargo/bin/mdbook
@@ -19,6 +19,33 @@ docs: ## Build all documentation (Rust API + mdbook)
 	@./scripts/docs/mdbook-sync.sh 2>/dev/null || true
 	@if [ -x "$(MDBOOK)" ]; then $(MDBOOK) build book/ 2>/dev/null || true; fi
 	@echo "Documentation built"
+
+# Workflow targets (used by .github/workflows/docs.yml)
+docs-check: ## Validate documentation files exist
+	@if [ ! -d "docs" ]; then echo "ERROR: docs/ directory not found"; exit 1; fi
+
+docs-setup: ## Setup documentation (creates mdbook config if needed)
+	@mkdir -p book
+	@if [ ! -f "book/book.toml" ]; then echo "ERROR: book/book.toml not found"; exit 1; fi
+
+docs-sync: ## Sync documentation files from source
+	@./scripts/docs/mdbook-sync.sh 2>/dev/null || true
+
+docs-build: ## Build mdbook HTML
+	@if [ -x "$(MDBOOK)" ]; then $(MDBOOK) build book/ 2>/dev/null || true; fi
+
+rust-docs: ## Build Rust API documentation
+	@cargo doc --no-deps --workspace
+
+diagrams: ## Generate architecture diagrams with PlantUML
+	@mkdir -p docs/architecture/diagrams/generated
+	@if command -v plantuml >/dev/null 2>&1; then \
+		for f in docs/architecture/diagrams/*.puml; do \
+			if [ -f "$$f" ]; then \
+				plantuml -o generated "$$f" 2>/dev/null || true; \
+			fi; \
+		done; \
+	fi
 
 docs-serve: ## Serve documentation with live reload
 	@echo "Starting documentation server..."
