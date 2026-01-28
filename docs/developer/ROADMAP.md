@@ -8,9 +8,40 @@ This roadmap outlines the development of MCP Context Browser, a drop-in replacem
 
 ## Current Status
 
-### v0.1.2 - Provider Modernization + Validation Tooling 🚀 CURRENT
+### v0.1.4 - RCA Integration + Security Fixes 🚀 CURRENT
 
-**Status**: In Development
+**Status**: Released
+**Release Date**: January 28, 2026
+
+MCP Context Browser v0.1.4 completes rust-code-analysis (RCA) integration, fixes security vulnerabilities, and updates dependencies.
+
+#### Achievements
+
+**RCA Integration:**
+- ✅ Migrated unwrap_detector.rs to RCA Callback pattern
+- ✅ Deleted legacy AST executor code (240 lines removed)
+- ✅ Removed TOML fallback from rete_engine.rs
+- ✅ Added INTERNAL_DEP_PREFIX constant
+
+**Security Fixes:**
+- ✅ Removed atty dependency (GHSA-g98v-hv3f-hcfr vulnerability)
+- ✅ Replaced with std::io::IsTerminal (stable since Rust 1.70)
+
+**Dependency Updates:**
+- ✅ uuid 1.20.0, clap 4.5.55, rust-rule-engine 1.18.26
+- ✅ jsonwebtoken 10.3.0, dirs 6.0.0, moka 0.12.13
+- ✅ chrono 0.4.43, thiserror 2.0.18, proc-macro2 1.0.106
+
+**Metrics:**
+- Tests: 950+ passing (up from 790+)
+- Code reduction: ~607 lines net reduction
+- Architecture violations: 0
+
+---
+
+### v0.1.2 - Provider Modernization + Validation Tooling
+
+**Status**: Released
 **Release Date**: January 18, 2026
 
 MCP Context Browser v0.1.2 modernizes provider registration using compile-time linkme distributed slices and introduces the mcb-validate crate scaffolding.
@@ -358,7 +389,9 @@ Deliver a fully production-ready enterprise platform with SLA guarantees, profes
 | v0.0.3 | Released | Production foundation |
 | v0.1.0 | Released | Documentation excellence, clean architecture, first stable release |
 | v0.1.1 | Released | Modular crate architecture (7 crates), DI foundation |
-| v0.1.2 | **Current** | Linkme provider registration, mcb-validate Phases 1-3, Admin UI Browse |
+| v0.1.2 | Released | Linkme provider registration, mcb-validate Phases 1-3, Admin UI Browse |
+| v0.1.3 | Released | RCA integration (unwrap_detector), executor deletion, 497 lines removed |
+| v0.1.4 | **Current** | Complete RCA integration, atty security fix, dependency updates, 950+ tests |
 | v0.2.0 | Planned | Git-aware indexing, session memory, advanced code browser |
 | v0.3.0 | Future | Advanced code intelligence |
 | v0.4.0 | Future | Enterprise features |

@@ -20,7 +20,7 @@ cd mcp-context-browser
 # Build the project
 make build
 
-# Run all tests (790+)
+# Run all tests (950+)
 make test
 
 # Run quality checks
@@ -83,7 +83,7 @@ docs: update API documentation
 
 ```bash
 
-# Run all tests (790+)
+# Run all tests (950+)
 make test
 
 # Run unit tests only

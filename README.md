@@ -129,7 +129,7 @@ Always use `make` commands (see [`CLAUDE.md`](./CLAUDE.md)):
 ```bash
 make build          # Debug build
 make build-release  # Release build
-make test           # All tests (790+)
+make test           # All tests (950+)
 make quality        # Full check: fmt + lint + test
 make validate       # Architecture validation
 ```
