@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (Claude.ai/code) when working with co
 
 ## Project Overview
 
-MCP Context Browser is a high-performance MCP server for semantic code search using vector embeddings. Version 0.1.2 is in development.
+MCP Context Browser is a high-performance MCP server for semantic code search using vector embeddings. Version 0.1.4 released.
 
 ## Commands
 
@@ -16,7 +16,7 @@ make build          # Debug build
 make build-release  # Release build
 
 # Test
-make test           # All tests (790+)
+make test           # All tests (950+)
 make test-unit      # Unit tests only
 make test-doc       # Doctests only
 

@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-1.89%2B-orange)](https://www.rust-lang.org/)
 [![MCP](https://img.shields.io/badge/MCP-2024--11--05-blue)](https://modelcontextprotocol.io/)
-[![Version](https://img.shields.io/badge/version-0.1.2-blue)](https://github.com/marlonsc/mcp-context-browser/releases)
+[![Version](https://img.shields.io/badge/version-0.1.4-blue)](https://github.com/marlonsc/mcp-context-browser/releases)
 
 **High-performance MCP server for semantic code search using vector embeddings**
 
@@ -11,7 +11,7 @@
 
 MCP Context Browser is a Model Context Protocol (MCP) server that provides semantic code search capabilities using vector embeddings. Transform natural language queries into code search across indexed codebases, enabling intelligent code discovery and analysis. Built with Clean Architecture principles in Rust with comprehensive provider support.
 
-**Current Version**: 0.1.2 - Provider Modernization + Architecture Validation
+**Current Version**: 0.1.4 - RCA Integration + Dependency Updates + Security Fixes
 
 See [`CLAUDE.md`](./CLAUDE.md) for development guide and [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md) for complete architecture documentation.
 
@@ -145,7 +145,7 @@ See [`docs/developer/CONTRIBUTING.md`](./docs/developer/CONTRIBUTING.md) for con
 
 ## Testing
 
-790+ comprehensive tests covering all layers:
+950+ comprehensive tests covering all layers:
 
 ```bash
 make test           # All tests
@@ -190,4 +190,4 @@ MIT Licensed - Open source and free for commercial and personal use.
 
 ---
 
-**Last Updated**: 2026-01-18
+**Last Updated**: 2026-01-28

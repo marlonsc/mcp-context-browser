@@ -39,11 +39,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.1.3] - TBD
+## [0.1.4] - 2026-01-28
 
 ### What This Release Is
 
-**MCP Context Browser v0.1.3** delivers architecture evolution introducing bounded contexts, explicit engine contracts, and incremental indexing - inspired by kamu-cli's production Onion/Clean patterns while maintaining backward compatibility.
+**MCP Context Browser v0.1.4** delivers RCA integration, security fixes, and dependency updates. This release migrates AST analysis to rust-code-analysis, removes the deprecated `atty` crate, and includes all Dependabot security updates.
+
+### Added
+
+- **RCA Integration**: Migrated `unwrap_detector.rs` to use rust-code-analysis Callback pattern
+- **INTERNAL_DEP_PREFIX constant**: Added for magic string elimination in rete_engine.rs
+
+### Changed
+
+- **Dependency Updates**: uuid 1.20.0, clap 4.5.55, rust-rule-engine 1.18.26, jsonwebtoken 10.3.0, dirs 6.0.0, moka 0.12.13, chrono 0.4.43, thiserror 2.0.18, proc-macro2 1.0.106
+- **Terminal Detection**: Replaced `atty` with `std::io::IsTerminal` (stable since Rust 1.70)
+
+### Removed
+
+- **atty dependency**: Removed due to security advisory GHSA-g98v-hv3f-hcfr (potential unaligned read)
+- **TOML fallback**: Removed from rete_engine.rs - now uses cargo_metadata only
+- **executor.rs**: Deleted 240 lines of legacy AST executor code
+
+### Security
+
+- **GHSA-g98v-hv3f-hcfr**: Fixed by removing `atty` dependency
+- **Dependabot updates**: All pending security updates applied
+
+### Impact Metrics
+
+- **Lines removed**: ~607 lines net reduction
+- **Tests**: 950+ passing (up from 790+)
+- **Violations**: 0 architecture violations
+- **Security alerts**: 0 (was 1)
+
+---
+
+## [0.1.3] - 2026-01-27
+
+### What This Release Is
+
+**MCP Context Browser v0.1.3** delivers config consolidation and validation fixes. 16 config files consolidated to 6, all 23 validation violations resolved.
+
+### Changed
+
+- **Config Consolidation**: 16 config type files reduced to 6 (app.rs, infrastructure.rs, system.rs, etc.)
+- **Validation Fixes**: All 23 architecture violations resolved (KISS005, TEST001, DOC003, CFG003, ERR001)
+
+---
+
+## [0.1.3-planned] - TBD
+
+### What This Release Was Planned For
+
+**MCP Context Browser v0.1.3** was planned to deliver architecture evolution introducing bounded contexts, explicit engine contracts, and incremental indexing - inspired by kamu-cli's production Onion/Clean patterns while maintaining backward compatibility. This has been deferred to v0.2.0.
 
 ### Added
 
