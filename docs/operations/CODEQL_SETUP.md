@@ -1,47 +1,102 @@
 # CodeQL Setup Instructions
 
-## Current Status
+## ⚠️ Warning Atual
 
-The repository uses **Advanced Setup** for CodeQL analysis via the workflow file `.github/workflows/ci.yml`.
-
-## Warning Resolution
-
-If you see the warning:
+Se você está vendo este warning no PR:
 ```
 1 configuration not found
-Warning: Code scanning cannot determine the alerts introduced by this pull request, because 1 configuration present on refs/heads/main was not found: Default setup
+Warning: Code scanning cannot determine the alerts introduced by this pull request, 
+because 1 configuration present on refs/heads/main was not found: Default setup
 ```
 
-This occurs because the repository has both "Default setup" (configured in GitHub UI) and "Advanced setup" (workflow file) enabled.
+Isso acontece porque o repositório tem **ambos** os setups habilitados:
+- **Default setup** (configurado na UI do GitHub na branch `main`)
+- **Advanced setup** (workflow manual no PR)
 
-## Solution: Disable Default Setup
+## ✅ Solução: Desabilitar Default Setup
 
-To resolve this warning and use only Advanced Setup:
+Siga estes passos **exatos** para resolver:
 
-1. Navigate to your repository on GitHub
-2. Go to **Settings** → **Code security and analysis** (or **Security** → **Code scanning**)
-3. Find **CodeQL analysis** in the list
-4. Click the menu (•••) next to "CodeQL analysis"
-5. Select **"Switch to advanced"** or **"Disable CodeQL"**
-6. Confirm the action
+### Passo 1: Acessar as Configurações
+1. Abra o repositório no GitHub: https://github.com/marlonsc/mcb
+2. Clique na aba **Settings** (no topo do repositório)
+3. No menu lateral esquerdo, clique em **Code security and analysis**
+   - Se não encontrar, procure por **Security** → **Code scanning**
 
-After disabling Default Setup, only the Advanced Setup workflow (`.github/workflows/ci.yml`) will run.
+### Passo 2: Localizar CodeQL Analysis
+1. Na seção **Code security and analysis**, procure por **CodeQL analysis**
+2. Você verá algo como:
+   ```
+   CodeQL analysis
+   [Status: Enabled] [•••]
+   ```
 
-## Verification
+### Passo 3: Desabilitar Default Setup
+1. Clique no menu de três pontos (**•••**) ao lado de "CodeQL analysis"
+2. Você verá opções como:
+   - **Edit**
+   - **Switch to advanced**
+   - **Disable CodeQL**
+3. **Escolha uma das opções:**
+   - **Opção A (Recomendada)**: Clique em **"Switch to advanced"**
+     - Isso migra para Advanced Setup mantendo a análise ativa
+   - **Opção B**: Clique em **"Disable CodeQL"** e depois reative manualmente
+4. Confirme a ação quando solicitado
 
-After disabling Default Setup:
-- The warning should disappear on future PRs
-- CodeQL will run only via the workflow file
-- You'll have full control over CodeQL configuration
+### Passo 4: Verificar
+1. Após desabilitar, verifique que:
+   - O status de "CodeQL analysis" mostra apenas o workflow manual
+   - Não há mais "Default setup" ativo
+2. Em um novo PR, o warning não deve mais aparecer
 
-## Current Configuration
+## 📋 Instruções Visuais (Passo a Passo)
 
-The Advanced Setup workflow:
-- Runs on every push and pull request
-- Analyzes Rust code
-- Uses security and quality queries
-- Has proper permissions (`security-events: write`)
+```
+GitHub Repository
+  └─ Settings (aba no topo)
+      └─ Code security and analysis (menu lateral)
+          └─ CodeQL analysis
+              └─ [•••] (menu de três pontos)
+                  └─ "Switch to advanced" ou "Disable CodeQL"
+```
 
-## No Action Required for PR Merge
+## 🔍 Verificação Pós-Configuração
 
-**Important**: This warning does **not** block PR merges. The CodeQL analysis is working correctly. The warning is informational and indicates a configuration mismatch between branches.
+Após desabilitar o Default Setup:
+
+1. **Verifique o workflow**: O CodeQL deve rodar apenas via `.github/workflows/ci.yml`
+2. **Teste em um novo PR**: O warning não deve mais aparecer
+3. **Confirme os resultados**: Os resultados do CodeQL devem aparecer normalmente
+
+## ⚙️ Configuração Atual (Advanced Setup)
+
+O workflow atual (`.github/workflows/ci.yml`) está configurado para:
+- ✅ Rodar em cada push e pull request
+- ✅ Analisar código Rust
+- ✅ Usar queries de segurança e qualidade (`+security-and-quality`)
+- ✅ Ter permissões corretas (`security-events: write`)
+- ✅ Usar autobuild para Rust (modo `none`)
+
+## ⚠️ Importante
+
+**Este warning NÃO bloqueia merges de PRs!**
+
+- O CodeQL está funcionando corretamente
+- A análise está sendo executada
+- O warning é apenas informativo sobre configuração
+- Você pode fazer merge do PR normalmente
+
+## 🆘 Troubleshooting
+
+### Se não encontrar "Code security and analysis":
+- Verifique se você tem permissões de administrador no repositório
+- Alguns repositórios podem ter o menu em **Security** → **Code scanning**
+
+### Se "Switch to advanced" não aparecer:
+- O repositório pode já estar usando Advanced Setup
+- Nesse caso, o warning pode ser resolvido apenas fazendo merge do PR
+
+### Se o warning persistir após desabilitar:
+- Aguarde alguns minutos para o GitHub processar a mudança
+- Crie um novo PR para testar
+- Verifique se o workflow `.github/workflows/ci.yml` está na branch `main`
