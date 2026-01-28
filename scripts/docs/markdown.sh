@@ -99,8 +99,10 @@ lint_mode() {
     if check_executable markdownlint; then
         log_info "Using markdownlint-cli for comprehensive linting..."
         local config_file="$PROJECT_ROOT/.markdownlint.json"
+        local ignore_file="$PROJECT_ROOT/.markdownlintignore"
         local args=("$DOCS_DIR/")
         [[ -f "$config_file" ]] && args+=(--config "$config_file")
+        [[ -f "$ignore_file" ]] && args+=(--ignore-path "$ignore_file")
 
         if markdownlint "${args[@]}"; then
             log_success "Markdown linting passed"

@@ -70,9 +70,9 @@ See [Contributing Guide](developer/CONTRIBUTING.md) for guidelines.
 
 2.  **Copy appropriate template**:
 
-   ```bash
-   cp docs/templates/adr-template.md docs/adr/new-adr.md
-   ```
+    ```bash
+    cp docs/templates/adr-template.md docs/adr/new-adr.md
+    ```
 
 3.  **Follow naming conventions**
 

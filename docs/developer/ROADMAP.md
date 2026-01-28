@@ -13,29 +13,33 @@ This roadmap outlines the development of MCP Context Browser, a drop-in replacem
 **Status**: Released
 **Release Date**: January 28, 2026
 
-MCP Context Browser v0.1.4 completes rust-code-analysis (RCA) integration, fixes security vulnerabilities, and updates dependencies.
+MCP Context Browser v0.1.4 completes Rust-code-analysis (RCA) integration, fixes security vulnerabilities, and updates dependencies.
 
 #### Achievements
 
 **RCA Integration:**
-- ✅ Migrated unwrap_detector.rs to RCA Callback pattern
-- ✅ Deleted legacy AST executor code (240 lines removed)
-- ✅ Removed TOML fallback from rete_engine.rs
-- ✅ Added INTERNAL_DEP_PREFIX constant
+
+-   ✅ Migrated unwrap_detector.rs to RCA Callback pattern
+-   ✅ Deleted legacy AST executor code (240 lines removed)
+-   ✅ Removed TOML fallback from rete_engine.rs
+-   ✅ Added INTERNAL_DEP_PREFIX constant
 
 **Security Fixes:**
-- ✅ Removed atty dependency (GHSA-g98v-hv3f-hcfr vulnerability)
-- ✅ Replaced with std::io::IsTerminal (stable since Rust 1.70)
+
+-   ✅ Removed atty dependency (GHSA-g98v-hv3f-hcfr vulnerability)
+-   ✅ Replaced with std::io::IsTerminal (stable since Rust 1.70)
 
 **Dependency Updates:**
-- ✅ uuid 1.20.0, clap 4.5.55, rust-rule-engine 1.18.26
-- ✅ jsonwebtoken 10.3.0, dirs 6.0.0, moka 0.12.13
-- ✅ chrono 0.4.43, thiserror 2.0.18, proc-macro2 1.0.106
+
+-   ✅ uuid 1.20.0, clap 4.5.55, rust-rule-engine 1.18.26
+-   ✅ jsonwebtoken 10.3.0, dirs 6.0.0, moka 0.12.13
+-   ✅ chrono 0.4.43, thiserror 2.0.18, proc-macro2 1.0.106
 
 **Metrics:**
-- Tests: 950+ passing (up from 790+)
-- Code reduction: ~607 lines net reduction
-- Architecture violations: 0
+
+-   Tests: 950+ passing (up from 790+)
+-   Code reduction: ~607 lines net reduction
+-   Architecture violations: 0
 
 ---
 

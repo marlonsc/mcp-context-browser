@@ -54,7 +54,7 @@ Module documentation organized by the eight-crate Clean Architecture:
 -   [Providers](modules/providers.md) - External integrations (`mcb-providers`)
 -   [Infrastructure](modules/infrastructure.md) - Cross-cutting concerns (`mcb-infrastructure`)
 -   [Server](modules/server.md) - MCP protocol (`mcb-server`)
--   [Validation](architecture/ARCHITECTURE.md#validation-layer) - Architecture validation (`mcb-validate`); see also [Implementation Status](developer/IMPLEMENTATION_STATUS.md)
+-   [Validation](modules/validate.md) - Architecture validation (`mcb-validate`)
 
 ### 🚀 Operations
 
