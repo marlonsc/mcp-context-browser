@@ -53,8 +53,22 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: make lint CI_MODE=1
 
-  test:
-    name: Test (${{ matrix.rust }})
+  test-pr:
+    name: Test (PR - Stable)
+    if: github.event_name == 'pull_request'
+    needs: [lint]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - run: bash .github/setup-ci.sh
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: make test TEST_THREADS=4
+
+  test-main:
+    name: Test (Main - ${{ matrix.rust }})
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [lint]
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -94,7 +108,8 @@ jobs:
 
   golden-tests:
     name: Golden Acceptance Tests
-    needs: [test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [test-main]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -127,7 +142,7 @@ jobs:
   coverage:
     name: Coverage
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [test]
+    needs: [test-main]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
