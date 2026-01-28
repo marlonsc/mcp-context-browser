@@ -127,7 +127,7 @@ dashmap = { workspace = true }
 uuid = { workspace = true }
 
 # XDG directories (for cache paths)
-dirs = "5.0"
+dirs = "6.0"
 
 # Tree-sitter core (always needed for chunking)
 tree-sitter = { workspace = true }
