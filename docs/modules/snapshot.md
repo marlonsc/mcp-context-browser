@@ -17,7 +17,7 @@ Port definition for snapshot operations:
 
 ```rust
 #[async_trait]
-pub trait SnapshotProvider: Send + Sync + shaku::Interface {
+pub trait SnapshotProvider: Send + Sync {
     async fn capture(&self, path: &Path) -> Result<CodebaseSnapshot>;
     async fn compare(&self, old: &CodebaseSnapshot, new: &CodebaseSnapshot) -> Result<SnapshotChanges>;
     async fn store(&self, snapshot: &CodebaseSnapshot) -> Result<()>;

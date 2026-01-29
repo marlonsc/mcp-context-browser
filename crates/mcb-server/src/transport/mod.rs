@@ -14,8 +14,7 @@
 //! ## Usage
 //!
 //! Transport selection is typically handled by the initialization system.
-//! See [`mcb_server::init`] for the entry point that configures transports
-//! based on the operating mode.
+//! The initialization system configures transports based on the operating mode.
 
 pub mod config;
 pub mod http;

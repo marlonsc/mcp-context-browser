@@ -25,7 +25,7 @@ MCB v0.1.1 has implemented the eight-crate Clean Architecture foundation. Future
 Adopt **modular domain architecture** within the eight-crate structure:
 
 ```
-mcp-context-browser/
+mcb/
 ├── libs/                           # Shared workspace libraries
 │   ├── tree-sitter-analysis/       # AST parsing (shared by all domains)
 │   ├── code-metrics/               # Metrics algorithms (v0.3.0+)

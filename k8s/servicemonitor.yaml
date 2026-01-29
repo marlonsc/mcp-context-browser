@@ -1,14 +1,14 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: mcp-context-browser-monitor
+  name: mcb-monitor
   labels:
-    app: mcp-context-browser
+    app: mcb
     prometheus: kube-prometheus
 spec:
   selector:
     matchLabels:
-      app: mcp-context-browser
+      app: mcb
   endpoints:
   - port: metrics
     path: /api/context/metrics

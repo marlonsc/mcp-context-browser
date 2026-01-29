@@ -11,7 +11,7 @@
 
 [Unit]
 Description=MCB - Semantic Code Search Server
-Documentation=https://github.com/anthropics/mcp-context-browser
+Documentation=https://github.com/anthropics/mcb
 After=default.target
 
 [Service]

@@ -10,7 +10,7 @@
 //! Example:
 //! ```json
 //! {
-//!   "mcp-context-browser": "mcp_context_browser_20260126_143021",
+//!   "mcb": "mcp_context_browser_20260126_143021",
 //!   "my-project": "my_project_20260126_143022"
 //! }
 //! ```
@@ -162,7 +162,7 @@ fn generate_milvus_name(user_name: &str) -> String {
 /// Uses file locking to ensure thread-safe access to the mapping file.
 ///
 /// # Arguments
-/// * `user_name` - User-provided collection name (e.g., "mcp-context-browser")
+/// * `user_name` - User-provided collection name (e.g., "mcb")
 ///
 /// # Returns
 /// * `String` - Milvus-compatible name (stored in mapping)
@@ -171,7 +171,7 @@ fn generate_milvus_name(user_name: &str) -> String {
 /// ```no_run
 /// use mcb_server::collection_mapping::map_collection_name;
 ///
-/// let milvus_name = map_collection_name("mcp-context-browser").unwrap();
+/// let milvus_name = map_collection_name("mcb").unwrap();
 /// // Returns: "mcp_context_browser_143021" (with mapping stored)
 /// ```
 pub fn map_collection_name(user_name: &str) -> Result<String> {

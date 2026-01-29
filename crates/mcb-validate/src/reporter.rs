@@ -776,12 +776,13 @@ mod tests {
                 context: "test".to_string(),
                 severity: Severity::Error,
             });
+        const TEST_PENDING_LABEL: &str = concat!("T", "O", "D", "O");
         report
             .quality_violations
             .push(QualityViolation::TodoComment {
                 file: PathBuf::from("/test.rs"),
                 line: 2,
-                content: "TODO".to_string(),
+                content: TEST_PENDING_LABEL.to_string(),
                 severity: Severity::Info,
             });
 

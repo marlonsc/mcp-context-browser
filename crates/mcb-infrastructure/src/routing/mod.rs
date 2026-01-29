@@ -10,7 +10,7 @@
 //!
 //! ## Usage via DI
 //!
-//! ```no_run
+//! ```text
 //! // Providers are obtained via DI container
 //! // let router: Arc<dyn ProviderRouter> = container.resolve();
 //! // let provider = router.select_embedding_provider(&context).await?;

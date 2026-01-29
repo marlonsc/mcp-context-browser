@@ -67,8 +67,9 @@ generate_diagrams() {
 
     for input_file in "${input_files[@]}"; do
         if [ -f "$input_file" ]; then
-            local filename=$(basename "$input_file" .puml)
-            local output_file="$OUTPUT_DIR/$filename.$format"
+            local filename output_file
+            filename=$(basename "$input_file" .puml)
+            output_file="$OUTPUT_DIR/$filename.$format"
 
             log_info "Processing: $filename.puml -> $filename.$format"
 
@@ -99,7 +100,8 @@ validate_diagrams() {
 
     for input_file in "${input_files[@]}"; do
         if [ -f "$input_file" ]; then
-            local filename=$(basename "$input_file")
+            local filename
+            filename=$(basename "$input_file")
 
             if plantuml -checkonly "$input_file" 2>/dev/null; then
                 log_success "Valid: $filename"
@@ -150,8 +152,9 @@ EOF
     # Add diagram entries
     for png_file in "$OUTPUT_DIR"/*.png; do
         if [ -f "$png_file" ]; then
-            local filename=$(basename "$png_file" .png)
-            local svg_file="$OUTPUT_DIR/$filename.svg"
+            local filename svg_file
+            filename=$(basename "$png_file" .png)
+            svg_file="$OUTPUT_DIR/$filename.svg"
 
             cat >> "$index_file" << EOF
         <div class="diagram-card">
@@ -184,9 +187,9 @@ EOF
 
 # Clean generated files
 clean_generated() {
-    if [ -d "$OUTPUT_DIR" ]; then
+    if [ -d "${OUTPUT_DIR:?}" ]; then
         log_info "Cleaning generated diagrams..."
-        rm -rf "$OUTPUT_DIR"/*
+        rm -rf "${OUTPUT_DIR:?}"/*
         log_success "Cleaned: $OUTPUT_DIR"
     else
         log_info "No generated files to clean"

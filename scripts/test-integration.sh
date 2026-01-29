@@ -87,39 +87,24 @@ case "${1:-}" in
         ;;
 
     test)
-        log_info "Starting services..."
+        log_info "Starting Redis and NATS services..."
         docker-compose -f docker-compose.testing.yml up -d
 
         log_info "Waiting for services to be ready..."
         sleep 5
 
-        log_info "Running integration tests..."
+        log_info "Running tests (make test)..."
         log_info "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-        # Run Redis integration tests
-        echo ""
-        log_info "Running Redis integration tests..."
-        if cargo test --test '*' redis_cache_integration -- --nocapture; then
-            log_success "Redis integration tests passed"
+        export REDIS_URL="${REDIS_URL:-redis://127.0.0.1:6379}"
+        export NATS_URL="${NATS_URL:-nats://127.0.0.1:4222}"
+        if make test; then
+            log_success "All tests passed"
         else
-            log_error "Redis integration tests failed"
+            log_error "Tests failed"
             docker-compose -f docker-compose.testing.yml down -v
             exit 1
         fi
-
-        # Run NATS integration tests
-        echo ""
-        log_info "Running NATS integration tests..."
-        if cargo test --test '*' nats_event_bus_integration -- --nocapture; then
-            log_success "NATS integration tests passed"
-        else
-            log_error "NATS integration tests failed"
-            docker-compose -f docker-compose.testing.yml down -v
-            exit 1
-        fi
-
         log_info "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        log_success "All integration tests passed!"
 
         log_info "Cleaning up services..."
         docker-compose -f docker-compose.testing.yml down -v

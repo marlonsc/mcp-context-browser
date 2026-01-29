@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # MCP Context Browser to MCB Rename Script
-# This script handles renaming the project from mcp-context-browser to mcb
+# This script handles renaming the project from mcb to mcb
 # Supports dry-run mode for validation
 
 set -euo pipefail
@@ -25,14 +25,14 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 # Change patterns - ordered by specificity (most specific first)
 declare -A CHANGE_PATTERNS=(
     # Repository URLs (most specific)
-    ["https://github.com/marlonsc/mcp-context-browser"]="https://github.com/marlonsc/mcb"
+    ["https://github.com/marlonsc/mcb"]="https://github.com/marlonsc/mcb"
 
     # Data and config directories
-    ["~/.local/share/mcp-context-browser"]="~/.local/share/mcb"
-    ["~/.config/mcp-context-browser"]="~/.config/mcb"
+    ["$HOME/.local/share/mcb"]="$HOME/.local/share/mcb"
+    ["$HOME/.config/mcb"]="$HOME/.config/mcb"
 
     # Crate and binary names
-    ["mcp-context-browser"]="mcb"
+    ["mcb"]="mcb"
 )
 
 # Files to exclude from processing (contain references that shouldn't change)
@@ -50,7 +50,7 @@ EXCLUDE_PATTERNS=(
 SPECIAL_FILES=(
     "Cargo.toml"
     "src/main.rs"
-    "systemd/mcp-context-browser.service"
+    "systemd/mcb.service"
     "config/default.toml"
 )
 
@@ -58,7 +58,7 @@ show_help() {
     cat << EOF
 MCP Context Browser to MCB Rename Script
 
-This script renames the project from 'mcp-context-browser' to 'mcb' across all files.
+This script renames the project from 'mcb' to 'mcb' across all files.
 
 USAGE:
     $0 [OPTIONS]
@@ -82,10 +82,10 @@ EXAMPLES:
 
 DESCRIPTION:
     This script handles multiple types of renames:
-    - Repository URLs: marlonsc/mcp-context-browser → marlonsc/mcb
-    - Data directories: ~/.local/share/mcp-context-browser → ~/.local/share/mcb
-    - Config directories: ~/.config/mcp-context-browser → ~/.config/mcb
-    - Crate/binary names: mcp-context-browser → mcb
+    - Repository URLs: marlonsc/mcb → marlonsc/mcb
+    - Data directories: ~/.local/share/mcb → ~/.local/share/mcb
+    - Config directories: ~/.config/mcb → ~/.config/mcb
+    - Crate/binary names: mcb → mcb
 
     The script excludes certain files that contain 'mcp-' references in different contexts.
 EOF
@@ -110,7 +110,7 @@ log_success() {
 should_exclude_file() {
     local file="$1"
     for pattern in "${EXCLUDE_PATTERNS[@]}"; do
-        if [[ "$file" == $pattern ]]; then
+        if [[ "$file" == "$pattern" ]]; then
             return 0
         fi
     done
@@ -119,7 +119,8 @@ should_exclude_file() {
 
 backup_file() {
     local file="$1"
-    local backup="${file}.backup.$(date +%Y%m%d_%H%M%S)"
+    local backup
+    backup="${file}.backup.$(date +%Y%m%d_%H%M%S)"
     if $VERBOSE; then
         log_info "Creating backup: $backup"
     fi
@@ -128,10 +129,10 @@ backup_file() {
 
 validate_change() {
     local file="$1"
-    local old_content="$2"
+    local _old_content="$2"
     local new_content="$3"
 
-    # Basic validation - ensure we haven't broken anything obvious
+    # Basic validation - ensure we haven't broken anything obvious (_old_content available for diff)
     if [[ "$file" == "Cargo.toml" ]]; then
         # Check that name field is valid
         if ! grep -q "^name = \"mcb\"$" <<< "$new_content"; then
@@ -176,7 +177,8 @@ apply_changes_to_file() {
             if $DRY_RUN; then
                 log_info "Would change in $file: '$old_pattern' → '$new_pattern'"
             else
-                # Use sed to replace all occurrences
+                # Use sed to replace all occurrences (dynamic pattern - cannot use ${var//search/replace})
+                # shellcheck disable=SC2001
                 new_content=$(sed "s|$old_pattern|$new_pattern|g" <<< "$new_content")
                 ((changes_made++))
             fi
@@ -210,7 +212,7 @@ handle_special_files() {
     local file="$1"
 
     case "$file" in
-        "systemd/mcp-context-browser.service")
+        "systemd/mcb.service")
             # This file needs to be renamed to systemd/mcb.service
             local new_name="systemd/mcb.service"
             if $DRY_RUN; then
@@ -240,14 +242,15 @@ process_files() {
     local changed_files=0
 
     # Process regular files using a temporary file to avoid process substitution issues
-    local temp_file=$(mktemp)
+    local temp_file
+    temp_file=$(mktemp)
     if $VERBOSE; then
         log_info "Finding files to process..."
     fi
     find "$PROJECT_ROOT" -type f \( -name "*.rs" -o -name "*.toml" -o -name "*.md" -o -name "*.yml" -o -name "*.yaml" -o -name "*.sh" -o -name "*.service" -o -name "*.mk" -o -name "Makefile" -o -name "*.json" \) -print0 > "$temp_file"
     if $VERBOSE; then
-        # Count null-delimited entries
-        local file_count=$(tr -cd '\0' < "$temp_file" | wc -c)
+        local file_count
+        file_count=$(tr -cd '\0' < "$temp_file" | wc -c)
         log_info "Found $file_count files to process"
     fi
 
@@ -311,7 +314,7 @@ validate_changes() {
     fi
 
     ((total_checks++))
-    if [[ ! -f "systemd/mcp-context-browser.service" ]] && [[ -f "systemd/mcb.service" ]]; then
+    if [[ ! -f "systemd/mcb.service" ]] && [[ -f "systemd/mcb.service" ]]; then
         log_success "Systemd service file renamed correctly"
         ((checks_passed++))
     else

@@ -3,11 +3,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-1.89%2B-orange)](https://www.rust-lang.org/)
 [![MCP](https://img.shields.io/badge/MCP-2024--11--05-blue)](https://modelcontextprotocol.io/)
-[![Version](https://img.shields.io/badge/version-0.1.2-blue)](https://github.com/marlonsc/mcp-context-browser/releases)
+[![Version](https://img.shields.io/badge/version-0.1.4-blue)](https://github.com/marlonsc/mcb/releases)
 
 **Model Context Protocol Server**- Provides semantic code search and analysis capabilities to AI assistants through a standardized MCP interface.
 
-## 🎯 Current Capabilities (v0.1.2)
+## 🎯 Current Capabilities (v0.1.4)
 
 ### Core Features
 
@@ -38,8 +38,8 @@ See the [**QUICKSTART.md**](./QUICKSTART.md) guide for detailed setup instructio
 ```bash
 
 # Install Rust 1.89+ and clone
-git clone https://github.com/marlonsc/mcp-context-browser.git
-cd mcp-context-browser
+git clone https://github.com/marlonsc/mcb.git
+cd mcb
 
 # Build and test
 make build
@@ -48,7 +48,7 @@ make test
 
 ## 🧪 Testing
 
-The project has 790+ tests with comprehensive coverage:
+The project has 1636+ tests with comprehensive coverage:
 
 ```bash
 
@@ -79,11 +79,11 @@ GitHub Actions automatically runs:
 -   **Coverage**: Code coverage reporting
 -   **Build**: Cross-platform binary builds
 
-[![CI](https://github.com/marlonsc/mcp-context-browser/actions/workflows/ci.yml/badge.svg)](https://github.com/marlonsc/mcp-context-browser/actions/workflows/ci.yml)
+[![CI](https://github.com/marlonsc/mcb/actions/workflows/ci.yml/badge.svg)](https://github.com/marlonsc/mcb/actions/workflows/ci.yml)
 
 ## 🤝 Contributing
 
-See [**CONTRIBUTING.md**](CONTRIBUTING.md) for detailed contribution guidelines.
+See [**CONTRIBUTING.md**](../developer/CONTRIBUTING.md) for detailed contribution guidelines.
 
 ## 📄 License
 

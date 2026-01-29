@@ -1,9 +1,9 @@
 //! Pattern Compliance Validation
 //!
 //! Validates code patterns:
-//! - DI uses Arc<dyn Trait> not Arc<ConcreteType>
-//! - Async traits have #[async_trait] and Send + Sync bounds
-//! - Error types use crate::error::Result<T>
+//! - DI uses `Arc<dyn Trait>` not `Arc<ConcreteType>`
+//! - Async traits have `#[async_trait]` and Send + Sync bounds
+//! - Error types use `crate::error::Result<T>`
 //! - Provider pattern compliance
 
 use crate::violation_trait::{Violation, ViolationCategory};
@@ -242,7 +242,7 @@ impl PatternValidator {
         Ok(violations)
     }
 
-    /// Verify Arc<dyn Trait> pattern instead of Arc<ConcreteType>
+    /// Verify `Arc<dyn Trait>` pattern instead of `Arc<ConcreteType>`
     pub fn validate_trait_based_di(&self) -> Result<Vec<PatternViolation>> {
         let mut violations = Vec::new();
 

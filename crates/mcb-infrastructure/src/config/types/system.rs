@@ -119,7 +119,7 @@ pub struct AuthConfig {
 
 /// Default authentication configuration.
 ///
-/// - `enabled`: true
+/// - `enabled`: false (disabled by default for backwards compatibility)
 /// - `jwt`: JwtConfig::default()
 /// - `api_key`: ApiKeyConfig::default()
 /// - `admin`: AdminApiKeyConfig::default()
@@ -127,7 +127,7 @@ pub struct AuthConfig {
 impl Default for AuthConfig {
     fn default() -> Self {
         Self {
-            enabled: true,
+            enabled: false,
             jwt: JwtConfig::default(),
             api_key: ApiKeyConfig::default(),
             admin: AdminApiKeyConfig::default(),

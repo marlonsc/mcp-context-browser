@@ -10,14 +10,14 @@ Orchestrates the semantic code search workflow - from codebase ingestion to sear
 
 The services module contains core business logic that powers the semantic code search platform. Each service encapsulates specific capabilities that work together to deliver code intelligence.
 
-All services implement interface traits defined in `crates/mcb-application/src/ports/` for DI compatibility.
+All services implement interface traits defined in `crates/mcb-application/src/ports/`. DI is handle-based via dill Catalog (ADR-029).
 
 ## Service Interface Traits
 
-All service interfaces extend `shaku::Interface` (defined in mcb-domain):
+Service interfaces use `Send + Sync` and are resolved via dill (see ADR-029). Examples:
 
 ```rust
-pub trait ContextServiceInterface: Interface + Send + Sync {
+pub trait ContextServiceInterface: Send + Sync {
     fn initialize(&self) -> impl Future<Output = Result<()>> + Send;
     fn store_chunks(&self, collection: &str, chunks: &[CodeChunk]) -> impl Future<Output = Result<()>> + Send;
     fn search_similar(&self, collection: &str, query: &str, limit: usize) -> impl Future<Output = Result<Vec<SearchResult>>> + Send;
@@ -26,17 +26,17 @@ pub trait ContextServiceInterface: Interface + Send + Sync {
     fn embedding_dimensions(&self) -> usize;
 }
 
-pub trait SearchServiceInterface: Interface + Send + Sync {
+pub trait SearchServiceInterface: Send + Sync {
     fn search(&self, collection: &str, query: &str, limit: usize) -> impl Future<Output = Result<Vec<SearchResult>>> + Send;
 }
 
-pub trait IndexingServiceInterface: Interface + Send + Sync {
+pub trait IndexingServiceInterface: Send + Sync {
     fn index_codebase(&self, path: &Path, collection: &str) -> impl Future<Output = Result<IndexingResult>> + Send;
     fn get_status(&self) -> IndexingStatus;
     fn clear_collection(&self, collection: &str) -> impl Future<Output = Result<()>> + Send;
 }
 
-pub trait ChunkingOrchestratorInterface: Interface + Send + Sync {
+pub trait ChunkingOrchestratorInterface: Send + Sync {
     fn process_files(&self, files: &[PathBuf], collection: &str) -> impl Future<Output = Result<Vec<CodeChunk>>> + Send;
     fn process_file(&self, path: &Path, collection: &str) -> impl Future<Output = Result<Vec<CodeChunk>>> + Send;
 }

@@ -1,6 +1,6 @@
 //! Provider Handles - Runtime-swappable provider wrappers
 //!
-//! Type aliases for the generic Handle<T> for backward compatibility.
+//! Type aliases for the generic `Handle<T>` for backward compatibility.
 //! All handle types use the same underlying generic implementation.
 //!
 //! ## Pattern

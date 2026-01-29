@@ -32,7 +32,7 @@ pub enum PerformanceViolation {
         suggestion: String,
         severity: Severity,
     },
-    /// Arc<Mutex<T>> where simpler patterns would work
+    /// `Arc<Mutex<T>>` where simpler patterns would work
     ArcMutexOveruse {
         file: PathBuf,
         line: usize,

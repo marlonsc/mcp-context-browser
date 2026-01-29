@@ -10,6 +10,7 @@ set -e
 
 # Source shared library
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=./lib/common.sh
 source "$SCRIPT_DIR/lib/common.sh"
 
 # =============================================================================
@@ -90,12 +91,12 @@ check_adr_numbering() {
     log_info "Checking ADR numbering consistency..."
 
     local adr_files
-    adr_files=$(ls "$ADR_DIR" 2>/dev/null | grep -E '^[0-9]{3}-.*\.md$' | sort -V)
+    adr_files=$(find "$ADR_DIR" -maxdepth 1 -name '[0-9][0-9][0-9]-*.md' 2>/dev/null | sort -V)
     local expected_num=1
 
     for adr_file in $adr_files; do
         local actual_num
-        actual_num=$(echo "$adr_file" | grep -oE '^[0-9]+' | sed 's/^0*//')
+        actual_num=$(basename "$adr_file" | grep -oE '^[0-9]+' | sed 's/^0*//')
         [[ -z "$actual_num" ]] && actual_num=0
         if [[ "$actual_num" -ne "$expected_num" ]]; then
             log_error "ADR numbering gap: expected $expected_num, found $actual_num"
@@ -111,13 +112,13 @@ check_adr_references() {
     log_info "Checking ADR references in documentation..."
 
     local adr_files
-    adr_files=$(ls "$ADR_DIR" 2>/dev/null | grep -E '^[0-9]{3}-.*\.md$')
+    adr_files=$(find "$ADR_DIR" -maxdepth 1 -name '[0-9][0-9][0-9]-*.md' 2>/dev/null)
     local arch_doc="$PROJECT_ROOT/docs/architecture/ARCHITECTURE.md"
 
     if [[ -f "$arch_doc" ]]; then
         for adr_file in $adr_files; do
             local adr_num
-            adr_num=$(echo "$adr_file" | grep -oE '^[0-9]+' | sed 's/^0*//')
+            adr_num=$(basename "$adr_file" | grep -oE '^[0-9]+' | sed 's/^0*//')
             if [[ -n "$adr_num" ]] && ! grep -q "ADR.* $adr_num\|ADR-0*$adr_num\|ADR 0*$adr_num" "$arch_doc"; then
                 log_warning "ADR $adr_num not referenced in architecture documentation"
                 inc_warnings
@@ -207,7 +208,17 @@ validate_external_links() {
         external_links=$(grep -o 'https*://[^)]*' "$doc_file" 2>/dev/null || true)
 
         for link in $external_links; do
+            link="${link%>}"
+            link="${link%\"}"
+            link="${link%\'}"
+            [[ -z "$link" ]] && continue
             if [[ "$link" =~ localhost ]] || [[ "$link" =~ 127\.0\.0\.1 ]] || [[ "$link" =~ example\.com ]]; then
+                continue
+            fi
+            if [[ "$link" == *'.to_string'* ]]; then
+                continue
+            fi
+            if [[ "$link" == *'docs.rs/mcp-context-browser'* ]]; then
                 continue
             fi
 
@@ -333,7 +344,9 @@ run_link_validation() {
     validate_doc_links
     validate_cross_references
 
-    if check_executable curl; then
+    if [[ -n "${QUICK:-}" ]] && [[ "${QUICK}" != "0" ]]; then
+        log_info "QUICK=1: skipping external link validation"
+    elif check_executable curl; then
         validate_external_links
     else
         log_warning "curl not available - skipping external link validation"

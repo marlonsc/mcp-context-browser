@@ -1,3 +1,4 @@
+---
 # =============================================================================
 # Documentation Pipeline - Uses Makefile as Single Source of Truth
 # =============================================================================
@@ -6,23 +7,20 @@
 
 name: Documentation
 permissions:
-  contents: read
+  contents: "read"
 
-on:
+on:  # yamllint disable-line rule:truthy
   push:
-    branches: [main, develop]
+    branches:
+      - main
+    tags:
+      - 'v*'
     paths:
       - "docs/**"
       - "crates/**"
       - "scripts/docs/**"
       - "Makefile"
       - "make/*.mk"
-  pull_request:
-    branches: [main, develop]
-    paths:
-      - "docs/**"
-      - "crates/**"
-      - "scripts/docs/**"
 
 jobs:
   validate:
@@ -31,6 +29,41 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - run: make docs-check
+      - run: bash .github/setup-ci.sh
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm install -g markdownlint-cli
+      - run: make docs-validate QUICK=1
+
+  update-docs:
+    name: Auto-Update Documentation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - run: bash .github/setup-ci.sh
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Update README and metrics
+        run: |
+          make docs-auto
+      - name: Commit changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add README.md docs/generated/METRICS.md || true
+          if ! git diff --staged --quiet; then
+            git commit -m "docs: auto-update README and project metrics [skip ci]"
+            git push
+          else
+            echo "No changes to commit"
+          fi
 
   diagrams:
     name: Generate Diagrams
@@ -59,10 +92,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - run: bash .github/setup-ci.sh
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: make rust-docs
-      - run: make test-doc
+      - run: make test SCOPE=doc
 
       - uses: actions/upload-artifact@v6
         with:
@@ -91,7 +125,6 @@ jobs:
     name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
     needs: [validate, rust-docs, build-book]
-    if: github.ref == 'refs/heads/main'
     permissions:
       contents: write
     steps:

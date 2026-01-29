@@ -14,13 +14,13 @@ Thank you for your interest in contributing! This guide helps you get started wi
 ```bash
 
 # Clone the repository
-git clone https://github.com/marlonsc/mcp-context-browser.git
-cd mcp-context-browser
+git clone https://github.com/marlonsc/mcb.git
+cd mcb
 
 # Build the project
 make build
 
-# Run all tests (790+)
+# Run all tests (950+)
 make test
 
 # Run quality checks
@@ -29,7 +29,7 @@ make quality
 
 ## 🔄 Development Workflow
 
-1.  **Choose Task**: Check [GitHub Issues](https://github.com/marlonsc/mcp-context-browser/issues) for tasks
+1.  **Choose Task**: Check [GitHub Issues](https://github.com/marlonsc/mcb/issues) for tasks
 2.  **Create Branch**: Use descriptive names
 
    ```bash
@@ -83,7 +83,7 @@ docs: update API documentation
 
 ```bash
 
-# Run all tests (790+)
+# Run all tests (950+)
 make test
 
 # Run unit tests only
@@ -114,7 +114,7 @@ mod tests {
 
 -   [ ] Tests pass: `make test`
 -   [ ] Code formats correctly: `make fmt`
--   [ ] No linting errors: `make lint`
+-   [ ] No Rust lint errors: `make lint`; no Markdown lint errors: `make docs-lint`
 -   [ ] Quality checks pass: `make quality`
 -   [ ] Documentation updated if needed
 
@@ -154,60 +154,38 @@ Include:
 -   Use cases
 -   Alternative approaches considered
 
-## 🚀 Examples
+## 🔧 Troubleshooting
 
-The project includes several examples demonstrating different usage patterns:
+### `make quality` or `make build` fails with linker errors
 
-### Configuration Examples
-
-**Basic Configuration** (`examples/config_demo.rs`):
-
-```rust
-// Demonstrates TOML configuration loading and validation
-// v0.1.2: Use mcb facade crate for public API
-use mcb::infrastructure::config::Config;
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Load configuration from config.toml
-    let config = Config::from_file("config.toml").await?;
-    println!("Loaded configuration: {:?}", config);
-    Ok(())
-}
-```
-
-**Using DI Container** (`examples/di_demo.rs`):
-
-```rust
-// Demonstrates v0.1.2 Two-Layer DI Strategy (ADR-012)
-use mcb::infrastructure::di::{DiContainerBuilder, AppContainer};
-use mcb::application::ports::providers::EmbeddingProvider;
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Build container with Shaku modules (null providers for testing)
-    let container = DiContainerBuilder::new().build().await?;
-
-    // Resolve providers from container
-    let embedding: Arc<dyn EmbeddingProvider> = container.resolve();
-    println!("Embedding provider resolved: {:?}", embedding);
-    Ok(())
-}
-```
-
-### Running Examples
+Errors like `cannot open ... .rlib: No such file or directory` or `can't find crate` often mean a corrupted or partial `target/` cache. Try:
 
 ```bash
-
-# Run a specific example
-cargo run --example config_demo
-
-# Run with custom configuration
-CONFIG_FILE=my_config.toml cargo run --example advanced_routing
-
-# Run server directly
-cargo run --bin mcp-context-browser
+cargo clean
+make build
+make quality
 ```
+
+Use a normal system linker if you hit `rust-lld` issues (e.g. set `RUSTFLAGS` or use default `rustup` toolchain).
+
+### Docs-only validation (no Rust build)
+
+To check only documentation:
+
+```bash
+make docs-lint
+make docs-validate QUICK=1
+```
+
+These do not require `cargo build` or a full toolchain.
+
+## 🚀 Code References
+
+Configuration uses **Figment** (ADR-025). DI uses **dill** and **init_app** (ADR-029):
+
+-   **Config**: `mcb_infrastructure::config::ConfigLoader`, `AppConfig`. See [CONFIGURATION.md](../CONFIGURATION.md) and [ADR-025](../adr/025-figment-configuration.md).
+-   **DI / bootstrap**: `mcb_infrastructure::di::bootstrap::init_app(config)` returns `AppContext`. See [ADR-029](../adr/029-hexagonal-architecture-dill.md).
+-   **Run server**: `cargo run --bin mcb` or `make build` then run the binary.
 
 ## 📞 Getting Help
 
@@ -223,15 +201,16 @@ Be respectful and constructive in all interactions. Focus on improving the proje
 
 ## Cross-References
 
-### Architecture (v0.1.2)
+### Architecture (v0.1.4)
 
 -   **Architecture**: [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) - System overview
--   **ADR-012**: [Two-Layer DI Strategy](../adr/012-di-strategy-two-layer-approach.md) - Shaku + factories
+-   **ADR-029**: [Hexagonal Architecture with dill](../adr/029-hexagonal-architecture-dill.md) - DI, handles, linkme
 -   **ADR-013**: [Clean Architecture Crate Separation](../adr/013-clean-architecture-crate-separation.md) - Eight-crate structure
 -   **Implementation Status**: [IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md) - Current state
 
 ### Operations
 
 -   **Deployment**: [DEPLOYMENT.md](../operations/DEPLOYMENT.md)
+-   **CI/CD & Release**: [CI_RELEASE.md](../operations/CI_RELEASE.md) - Pre-commit hooks, GitHub Actions, release process
 -   **Changelog**: [CHANGELOG.md](../operations/CHANGELOG.md)
 -   **Roadmap**: [ROADMAP.md](./ROADMAP.md)

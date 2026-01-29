@@ -6,18 +6,19 @@
 #
 # Usage: ./scripts/migrate-config.sh [config_file]
 #
-# If config_file is not provided, uses ~/.config/mcp-context-browser/config.toml
+# If config_file is not provided, uses ~/.config/mcb/config.toml
 
 set -e
 
-# Colors for output
+# Colors for output (RED reserved for error messages)
+# shellcheck disable=SC2034
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration file to migrate
-CONFIG_FILE="${1:-$HOME/.config/mcp-context-browser/config.toml}"
+CONFIG_FILE="${1:-$HOME/.config/mcb/config.toml}"
 
 echo -e "${GREEN}MCP Context Browser - Config Migration${NC}"
 echo "Migrating configuration file: $CONFIG_FILE"
@@ -45,7 +46,8 @@ migrate_provider() {
         echo "Found old format for $provider_type provider, migrating..."
 
         # Extract the provider configuration
-        local temp_file=$(mktemp)
+        local temp_file
+        temp_file=$(mktemp)
         local in_section=false
         local next_section=false
 
@@ -64,6 +66,7 @@ migrate_provider() {
             if $in_section && ! $next_section; then
                 # Convert 'host' to 'base_url' for compatibility
                 if [[ "$line" =~ ^[[:space:]]*host[[:space:]]*=[[:space:]]* ]]; then
+                    # shellcheck disable=SC2001
                     line=$(echo "$line" | sed 's/host/base_url/')
                     echo "$line" >> "$temp_file"
                 # Skip empty lines and comments at the beginning
@@ -97,4 +100,4 @@ echo -e "${GREEN}Migration complete!${NC}"
 echo "Backup saved to: $BACKUP_FILE"
 echo ""
 echo "Please review the migrated configuration and adjust as needed."
-echo "You may need to restart the service: systemctl --user restart mcp-context-browser"
+echo "You may need to restart the service: systemctl --user restart mcb"

@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: mcp-context-browser-ingress
+  name: mcb-ingress
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
@@ -12,16 +12,16 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - api.mcp-context-browser.example.com
+    - api.mcb.example.com
     secretName: mcp-tls-secret
   rules:
-  - host: api.mcp-context-browser.example.com
+  - host: api.mcb.example.com
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: mcp-context-browser-service
+            name: mcb-service
             port:
               number: 80

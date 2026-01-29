@@ -6,12 +6,12 @@
 //!
 //! | Provider | Type | Description |
 //! |----------|------|-------------|
-//! | [`NullVectorStoreProvider`] | Testing | No-op stub for testing |
-//! | [`InMemoryVectorStoreProvider`] | Local | In-memory storage (non-persistent) |
-//! | [`EncryptedVectorStoreProvider`] | Secure | AES-256-GCM encryption wrapper |
-//! | [`FilesystemVectorStore`] | Local | Persistent filesystem-based storage |
-//! | [`EdgeVecVectorStoreProvider`] | Embedded | High-performance HNSW vector store |
-//! | [`MilvusVectorStoreProvider`] | Cloud | Production-scale cloud vector database |
+//! | NullVectorStoreProvider | Testing | No-op stub for testing |
+//! | InMemoryVectorStoreProvider | Local | In-memory storage (non-persistent) |
+//! | EncryptedVectorStoreProvider | Secure | AES-256-GCM encryption wrapper |
+//! | FilesystemVectorStore | Local | Persistent filesystem-based storage |
+//! | EdgeVecVectorStoreProvider | Embedded | High-performance HNSW vector store |
+//! | MilvusVectorStoreProvider | Cloud | Production-scale cloud vector database |
 //!
 //! ## Provider Selection Guide
 //!

@@ -27,8 +27,7 @@ fn is_tool_available(tool: &str) -> bool {
     std::process::Command::new(tool)
         .arg("--version")
         .output()
-        .map(|output| output.status.success())
-        .unwrap_or(false)
+        .is_ok_and(|output| output.status.success())
 }
 
 /// Skip test if tool is not available, with helpful message

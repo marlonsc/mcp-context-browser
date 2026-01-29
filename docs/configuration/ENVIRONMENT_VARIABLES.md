@@ -2,8 +2,10 @@
 
 Complete reference for all environment variables supported by MCP Context Browser.
 
-**Version**: 0.1.0
-**Last Updated**: 2026-01-12
+**Version**: 0.1.4
+**Last Updated**: 2026-01-28
+
+See also [CONFIGURATION.md](../CONFIGURATION.md) for Figment-based config (ADR-025) and `MCP__` env pattern.
 
 ---
 

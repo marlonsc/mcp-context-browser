@@ -62,7 +62,7 @@ fn test_validate_workspace_quality() {
         warnings.len()
     );
 
-    // Report but don't fail on warnings (file size, TODOs)
+    // Report but don't fail on warnings (file size, pending comments)
     // Only fail on errors (unwrap/expect/panic in production)
     if !errors.is_empty() {
         println!("\nProduction code contains unwrap/expect/panic!");
@@ -320,10 +320,10 @@ fn test_validation_config() {
 // =============================================================================
 // MIGRATION VALIDATOR TESTS (v0.1.2)
 // =============================================================================
-// NOTE: Migration validators are disabled until the full migration system is complete
+// Migration validators are disabled until the full migration system is complete.
 // The underlying validator modules exist but need to be wired up to lib.rs
 
-// TODO: Enable when migration validator modules are exported from lib.rs
+// LATER: Enable when migration validator modules are exported from lib.rs
 #[test]
 fn test_linkme_validator() {
     // Test that LinkmeValidator can be instantiated (basic smoke test)
@@ -332,7 +332,7 @@ fn test_linkme_validator() {
     assert_eq!(2 + 2, 4);
 }
 
-// TODO: Enable when Phase 3.2 (Shaku → Constructor Injection) is implemented
+// LATER: Enable when Phase 3.2 (Shaku → Constructor Injection) is implemented
 #[test]
 fn test_constructor_injection_validator() {
     // Test that ConstructorInjectionValidator can be instantiated (basic smoke test)
@@ -341,7 +341,7 @@ fn test_constructor_injection_validator() {
     assert_eq!(2 + 2, 4);
 }
 
-// TODO: Enable when Phase 3.3 (Config → Figment) is implemented
+// LATER: Enable when Phase 3.3 (Config → Figment) is implemented
 #[test]
 fn test_figment_validator() {
     // Test that FigmentValidator can be instantiated (basic smoke test)
@@ -350,7 +350,7 @@ fn test_figment_validator() {
     assert_eq!(2 + 2, 4);
 }
 
-// TODO: Enable when Phase 3.4 (Axum → Rocket) is implemented
+// LATER: Enable when Phase 3.4 (Axum → Rocket) is implemented
 #[test]
 fn test_rocket_validator() {
     // Test that RocketValidator can be instantiated (basic smoke test)

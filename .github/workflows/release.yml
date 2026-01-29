@@ -1,0 +1,159 @@
+---
+# =============================================================================
+# Release Workflow
+# =============================================================================
+# Triggered by: git tag push (pattern: v*)
+# Purpose: Build release artifacts and create GitHub Release with
+#         automated deployment
+#
+# Flow:
+#   1. Run full CI validation (lint + test + validate + audit)
+#   2. Build release artifacts for all platforms (Linux, macOS, Windows)
+#   3. Create GitHub Release with changelog
+#   4. Upload artifacts to release
+# =============================================================================
+
+name: Release
+
+permissions:
+  contents: write
+  packages: "read"
+
+on:  # yamllint disable-line rule:truthy
+  push:
+    tags:
+      - "v*"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # Validate everything passes before building release
+  pre-release-checks:
+    name: Pre-Release Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: bash .github/setup-ci.sh --install-audit
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: make lint CI_MODE=1
+      - run: make test
+      - run: make validate STRICT=1
+      - run: make audit
+      - name: Extract version from tag
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_ENV"
+
+  # Build release artifacts for all platforms
+  build-release:
+    name: Build Release (${{ matrix.target }})
+    needs: [pre-release-checks]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact_name: mcb
+            asset_name: mcb-x86_64-linux-gnu
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact_name: mcb
+            asset_name: mcb-x86_64-macos
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: mcb.exe
+            asset_name: mcb-x86_64-windows.exe
+    steps:
+      - uses: actions/checkout@v6
+      - run: bash .github/setup-ci.sh
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+      - run: make build RELEASE=1
+      - name: Create dist directory
+        run: mkdir -p dist
+      - name: Copy artifact (Unix)
+        if: runner.os != 'Windows'
+        run: >-
+          cp target/release/${{ matrix.artifact_name }}
+          dist/${{ matrix.asset_name }}
+      - name: Copy artifact (Windows)
+        if: runner.os == 'Windows'
+        run: >-
+          copy target\release\${{ matrix.artifact_name }}
+          dist\${{ matrix.asset_name }}
+        shell: cmd
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: release-artifacts-${{ matrix.target }}
+          path: dist/${{ matrix.asset_name }}
+          retention-days: 1
+
+  # Create GitHub Release with all artifacts
+  create-release:
+    name: Create GitHub Release
+    needs: [pre-release-checks, build-release]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0  # Full history for changelog generation
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v6
+        with:
+          path: release-artifacts
+
+      - name: Extract version from tag
+        id: extract_version
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          VERSION=${TAG#v}
+          echo "RELEASE_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "RELEASE_TAG=$TAG" >> "$GITHUB_ENV"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Generate changelog (git log)
+        run: |
+          # Get previous tag
+          PREV_TAG=$(
+            git tag --list 'v*' --sort=-version:refname | head -2 | tail -1
+          )
+
+          if [ -z "$PREV_TAG" ]; then
+            # First release - show all commits
+            git log --oneline --reverse > RELEASE_NOTES.md
+          else
+            # Show commits since previous tag
+            git log "$PREV_TAG..HEAD" --oneline > RELEASE_NOTES.md
+          fi
+
+          # Prepend header
+          sed -i '1s/^/## Changes\n\n/' RELEASE_NOTES.md
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: Release ${{ env.RELEASE_VERSION }}
+          body_path: RELEASE_NOTES.md
+          files: |
+            release-artifacts/release-artifacts-x86_64-unknown-linux-gnu/mcb-x86_64-linux-gnu
+            release-artifacts/release-artifacts-x86_64-apple-darwin/mcb-x86_64-macos
+            release-artifacts/release-artifacts-x86_64-pc-windows-msvc/mcb-x86_64-windows.exe
+          draft: false
+          prerelease: false
+
+      - name: Release Summary
+        run: |
+          echo "✓ Release ${{ env.RELEASE_TAG }} created successfully"
+          echo "  - Artifacts: 3 binaries (Linux, macOS, Windows)"
+          echo >-
+            "  - GitHub Release: https://github.com/${{ github.repository
+            }}/releases/tag/${{ env.RELEASE_TAG }}"

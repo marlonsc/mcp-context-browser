@@ -6,7 +6,7 @@ This directory contains templates and standards for MCP Context Browser document
 
 ### ADR Template
 
--   **[ADR-template.md](adr-template.md)**- Architecture Decision Record template
+-   **[ADR template](adr-template.md)** - Architecture Decision Record template
 -   **Usage**: `make adr-new` to create new ADR interactively
 
 ### Document Standards
@@ -61,25 +61,25 @@ See [Contributing Guide](developer/CONTRIBUTING.md) for guidelines.
 
 ### Creating New Documents
 
-1. **Choose appropriate category**:
+1.  **Choose appropriate category**:
 
--   `user-guide/` - User-facing documentation
--   `developer/` - Development guides
--   `architecture/` - Technical architecture
--   `operations/` - Deployment & operations
+    -   `user-guide/` - User-facing documentation
+    -   `developer/` - Development guides
+    -   `architecture/` - Technical architecture
+    -   `operations/` - Deployment & operations
 
-1. **Copy appropriate template**:
+2.  **Copy appropriate template**:
+
+    ```bash
+    cp docs/templates/adr-template.md docs/adr/new-adr.md
+    ```
+
+3.  **Follow naming conventions**
+
+4.  **Validate before committing**:
 
    ```bash
-   cp docs/templates/adr-template.md docs/adr/new-adr.md
-   ```
-
-1. **Follow naming conventions**
-
-2. **Validate before committing**:
-
-   ```bash
-   make validate-docs
+   make docs-validate
    ```
 
 ## 📊 Quality Standards
@@ -112,17 +112,16 @@ See [Contributing Guide](developer/CONTRIBUTING.md) for guidelines.
 Templates are integrated with the build system:
 
 ```bash
-
 # Create new ADR
 make adr-new
 
-# Validate all documentation
-make validate-docs
+# Validate all documentation (ADRs, structure, links)
+make docs-validate
 
-# Check documentation consistency
-make docs-consistency
+# Lint markdown (FIX=1 to auto-fix)
+make docs-lint
 
-# Generate documentation site
-make docs-site
+# Build / serve documentation
+make docs
+make docs-serve
 ```
-

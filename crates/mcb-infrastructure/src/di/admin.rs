@@ -244,7 +244,7 @@ where
 ///
 /// # Example
 ///
-/// ```ignore
+/// ```
 /// use mcb_infrastructure::di::admin::{EmbeddingAdminInterface, ProviderInfo};
 ///
 /// fn list_embedding_providers(admin: &dyn EmbeddingAdminInterface) -> Vec<String> {
@@ -269,7 +269,7 @@ pub trait EmbeddingAdminInterface: Send + Sync + std::fmt::Debug {
 ///
 /// # Example
 ///
-/// ```ignore
+/// ```
 /// use mcb_infrastructure::di::admin::{VectorStoreAdminInterface, ProviderInfo};
 ///
 /// fn list_vector_providers(admin: &dyn VectorStoreAdminInterface) -> Vec<String> {
@@ -292,7 +292,7 @@ pub trait VectorStoreAdminInterface: Send + Sync + std::fmt::Debug {
 ///
 /// # Example
 ///
-/// ```ignore
+/// ```
 /// use mcb_infrastructure::di::admin::{CacheAdminInterface, ProviderInfo};
 ///
 /// fn list_cache_providers(admin: &dyn CacheAdminInterface) -> Vec<String> {
@@ -317,7 +317,7 @@ pub trait CacheAdminInterface: Send + Sync + std::fmt::Debug {
 ///
 /// # Example
 ///
-/// ```ignore
+/// ```
 /// use mcb_infrastructure::di::admin::{LanguageAdminInterface, ProviderInfo};
 ///
 /// fn list_language_providers(admin: &dyn LanguageAdminInterface) -> Vec<String> {

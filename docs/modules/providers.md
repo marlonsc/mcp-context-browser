@@ -24,11 +24,11 @@ Transform text into vector embeddings.
 | FastEmbed | local models | varies | Privacy-first |
 | Null | fixed vectors | 128 | Testing |
 
-**Trait** (defined in `mcb-domain`):
+**Trait** (defined in `mcb-domain`): `EmbeddingProvider: Send + Sync`. Resolved via dill Catalog (ADR-029).
 
 ```rust
 #[async_trait]
-pub trait EmbeddingProvider: Send + Sync + shaku::Interface {
+pub trait EmbeddingProvider: Send + Sync {
     async fn embed(&self, text: &str) -> Result<Embedding>;
     async fn embed_batch(&self, texts: &[String]) -> Result<Vec<Embedding>>;
     fn dimensions(&self) -> usize;
@@ -46,11 +46,11 @@ Store and search vector embeddings.
 | Encrypted | Encrypted files | Sensitive data |
 | Null | No-op | Testing |
 
-**Trait** (defined in `mcb-domain`):
+**Trait** (defined in `mcb-domain`): `VectorStoreProvider: Send + Sync`. Resolved via dill Catalog (ADR-029).
 
 ```rust
 #[async_trait]
-pub trait VectorStoreProvider: Send + Sync + shaku::Interface {
+pub trait VectorStoreProvider: Send + Sync {
     async fn store(&self, collection: &str, embeddings: &[Embedding]) -> Result<()>;
     async fn search(&self, collection: &str, query: &[f32], limit: usize) -> Result<Vec<SearchResult>>;
     async fn delete_collection(&self, collection: &str) -> Result<()>;

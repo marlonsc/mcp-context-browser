@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to**MCP Context Browser**will be documented in this file.
+All notable changes to **MCP Context Browser** will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -39,11 +39,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.1.3] - TBD
+## [0.1.4] - 2026-01-28
 
 ### What This Release Is
 
-**MCP Context Browser v0.1.3** delivers architecture evolution introducing bounded contexts, explicit engine contracts, and incremental indexing - inspired by kamu-cli's production Onion/Clean patterns while maintaining backward compatibility.
+**MCP Context Browser v0.1.4** delivers RCA integration, security fixes, and dependency updates. This release migrates AST analysis to Rust-code-analysis, removes the deprecated `atty` crate, and includes all Dependabot security updates.
+
+<!-- markdownlint-disable MD044 -->
+### Added
+
+-   **RCA Integration**: Migrated `unwrap_detector.rs` to use Rust-code-analysis Callback pattern
+-   **INTERNAL_DEP_PREFIX constant**: Added for magic string elimination in rete_engine.rs
+
+### Changed
+
+-   **Dependency Updates**: uuid 1.20.0, clap 4.5.55, rust-rule-engine 1.18.26, jsonwebtoken 10.3.0, dirs 6.0.0, moka 0.12.13, chrono 0.4.43, thiserror 2.0.18, proc-macro2 1.0.106
+-   **Terminal Detection**: Replaced `atty` with `std::io::IsTerminal` (stable since Rust 1.70)
+
+### Removed
+
+-   **atty dependency**: Removed due to security advisory GHSA-g98v-hv3f-hcfr (potential unaligned read)
+-   **TOML fallback**: Removed from rete_engine.rs - now uses Cargo metadata only
+-   **executor.rs**: Deleted 240 lines of legacy AST executor code
+<!-- markdownlint-enable MD044 -->
+
+### Security
+
+-   **GHSA-g98v-hv3f-hcfr**: Fixed by removing `atty` dependency
+-   **Dependabot updates**: All pending security updates applied
+
+### Impact Metrics
+
+-   **Lines removed**: ~607 lines net reduction
+-   **Tests**: 950+ passing (up from 790+)
+-   **Violations**: 0 architecture violations
+-   **Security alerts**: 0 (was 1)
+
+---
+
+## [0.1.3] - 2026-01-27
+
+### What This Release Is
+
+**MCP Context Browser v0.1.3** delivers config consolidation and validation fixes. 16 config files consolidated to 6, all 23 validation violations resolved.
+
+### Changed
+
+-   **Config Consolidation**: 16 config type files reduced to 6 (app.rs, infrastructure.rs, system.rs, etc.)
+-   **Validation Fixes**: All 23 architecture violations resolved (KISS005, TEST001, DOC003, CFG003, ERR001)
+
+---
+
+## [0.1.3-planned] - TBD
+
+### What This Release Was Planned For
+
+**MCP Context Browser v0.1.3** was planned to deliver architecture evolution introducing bounded contexts, explicit engine contracts, and incremental indexing - inspired by kamu-cli's production Onion/Clean patterns while maintaining backward compatibility. This has been deferred to v0.2.0.
 
 ### Added
 
@@ -114,7 +165,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   **Linkme Distributed Slices**: Compile-time provider registration replacing inventory runtime registration
 -   **4 Pure Linkme Registries**: Embedding, vector store, cache, and language provider registries
--   **15 Migrated Providers**: All providers (6 embedding, 3 cache, 5 vector store, 1 language) using linkme pattern
+-   **15 Migrated Providers**: All providers (6 embedding, 3 cache, 5 vector stores, 14 languages) using linkme pattern
 -   **Zero Runtime Overhead**: Provider discovery at compile-time instead of runtime
 
 #### Validation Rules
@@ -194,7 +245,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   **Provider Registration**: Compile-time (from runtime discovery)
 -   **Validation Coverage**: 12 architecture patterns automated
 -   **Source Files**: 340 Rust files (from ~300 in v0.1.1)
--   **Test Coverage**: 790+ tests maintained
+-   **Test Coverage**: 1636+ tests maintained
 -   **Architecture Compliance**: Automated validation of 7-crate clean architecture
 
 ### Next Steps (v0.1.3 or v0.2.0)
@@ -248,7 +299,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Systemd Integration
 
--   User-level service file (`systemd/mcp-context-browser.service`)
+-   User-level service file (`systemd/mcb.service`)
 -   Installation script (`scripts/install-user-service.sh`)
 -   Uninstallation script (`scripts/uninstall-user-service.sh`)
 
@@ -262,7 +313,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 -   **Clean Architecture**: Complete refactoring with trait-based dependency injection
--   **Test Suite**: Expanded to 790+ comprehensive tests organized by Clean Architecture layers
+-   **Test Suite**: Expanded to 1636+ tests organized by Clean Architecture layers
 -   **Configuration**: Modular configuration with cache and limits separated
 -   **Server Operations**: Extracted operations to dedicated module (`src/server/operations.rs`)
 -   **Metrics**: Dedicated metrics module (`src/server/metrics.rs`)
@@ -289,9 +340,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   **Startup Time**: Instant (from npm/npx overhead)
 -   **Memory Usage**: Native efficiency (reduced by ~60% vs Node.js)
--   **Provider Support**: 6 embedding providers, 3 vector stores
--   **Language Support**: 12 languages with AST parsing
--   **Test Coverage**: 790+ tests
+-   **Provider Support**: 6 embedding providers, 5 vector stores
+-   **Language Support**: 14 languages with AST parsing
+-   **Test Coverage**: 1636+ tests
 
 ---
 

@@ -343,10 +343,10 @@ v0.2.0 is purely architectural:
 
 ## Related ADRs
 
--   [ADR-001: Provider Pattern Architecture](001-provider-pattern-architecture.md) - Trait-based DI patterns
+-   [ADR-001: Modular Crates Architecture](001-modular-crates-architecture.md) - Trait-based DI patterns
 -   [ADR-002: Async-First Architecture](002-async-first-architecture.md) - Async provider execution
--   [ADR-003: C4 Model Documentation](003-c4-model-documentation.md) - Architecture visualization
--   [ADR-004: Multi-Provider Strategy](004-multi-provider-strategy.md) - Provider routing and failover
+-   [ADR-003: Unified Provider Architecture](003-unified-provider-architecture.md) - Architecture visualization
+-   [ADR-030: Multi-Provider Strategy](030-multi-provider-strategy.md) - Provider routing and failover
 -   [ADR-012: Two-Layer DI Strategy](012-di-strategy-two-layer-approach.md) - Shaku DI patterns
 -   [ADR-013: Clean Architecture Crate Separation](013-clean-architecture-crate-separation.md) - Eight-crate organization
 
@@ -358,4 +358,4 @@ v0.2.0 is purely architectural:
 -   [Repository Pattern](https://martinfowler.com/eaaCatalog/repository.html)
 -   [Builder Pattern](https://refactoring.guru/design-patterns/builder)
 -   [Strategy Pattern](https://refactoring.guru/design-patterns/strategy)
--   [Shaku Documentation](https://docs.rs/shaku)
+-   [Shaku Documentation](https://docs.rs/shaku) (historical; DI is now dill, ADR-029)

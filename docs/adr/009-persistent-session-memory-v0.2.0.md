@@ -41,7 +41,7 @@ MCP Context Browser v0.1.0 provides semantic code search but lacks session-level
 
 ## Decision
 
-Implement persistent session memory in MCP-context-browser v0.2.0 by porting Claude-mem's core architecture to Rust:
+Implement persistent session memory in mcb v0.2.0 by porting Claude-mem's core architecture to Rust:
 
 1.**Observation storage**via existing vector store infrastructure
 2.**Session management**with lifecycle tracking
@@ -51,7 +51,7 @@ Implement persistent session memory in MCP-context-browser v0.2.0 by porting Cla
 6.**Context injection**for SessionStart hook integration
 7.**Progressive disclosure**with token cost visibility
 
-**Key design choice**: Leverage existing MCP-context-browser infrastructure (provider pattern, vector stores, hybrid search) rather than duplicating Claude-mem's SQLite + Chroma approach.
+**Key design choice**: Leverage existing mcb infrastructure (provider pattern, vector stores, hybrid search) rather than duplicating Claude-mem's SQLite + Chroma approach.
 
 ### Architecture Overview
 
@@ -1144,7 +1144,7 @@ pub struct MemoryConfig {
     #[serde(default = "default_enabled")]
     pub enabled: bool,
 
-    /// SQLite database path (default: ~/.mcp-context-browser/memory.db)
+    /// SQLite database path (default: ~/.mcb/memory.db)
     #[serde(default = "default_database_path")]
     pub database_path: String,
 
@@ -1197,7 +1197,7 @@ pub struct CompressionConfig {
 }
 
 fn default_enabled() -> bool { true }
-fn default_database_path() -> String { "~/.mcp-context-browser/memory.db".to_string() }
+fn default_database_path() -> String { "~/.mcb/memory.db".to_string() }
 fn default_observation_types() -> Vec<String> {
     vec!["decision".to_string(), "bugfix".to_string(), "feature".to_string()]
 }
@@ -1327,7 +1327,7 @@ let git_metadata = if let Some(git_provider) = &self.git_provider {
 
 | Setting | Default | Override |
 |---------|---------|----------|
-| Database | ~/.MCP-context-browser/memory.db | Per-instance |
+| Database | ~/.mcb/memory.db | Per-instance |
 | Observation types | decision, bugfix, feature | Per-project |
 | Observation limit | 20 | Per-request |
 | Date range | 30 days | Per-request |
@@ -1335,9 +1335,9 @@ let git_metadata = if let Some(git_provider) = &self.git_provider {
 
 ## Related ADRs
 
--   [ADR-001: Provider Pattern Architecture](001-provider-pattern-architecture.md) - MemoryProvider follows trait-based DI
+-   [ADR-001: Modular Crates Architecture](001-modular-crates-architecture.md) - MemoryProvider follows trait-based DI
 -   [ADR-002: Async-First Architecture](002-async-first-architecture.md) - Async storage operations
--   [ADR-004: Multi-Provider Strategy](004-multi-provider-strategy.md) - Memory provider routing
+-   [ADR-030: Multi-Provider Strategy](030-multi-provider-strategy.md) - Memory provider routing
 -   [ADR-007: Integrated Web Administration Interface](007-integrated-web-administration-interface.md) - Memory dashboard UI
 -   [ADR-008: Git-Aware Semantic Indexing](008-git-aware-semantic-indexing-v0.2.0.md) - Git-tagged observations
 -   [ADR-010: Hooks Subsystem](010-hooks-subsystem-agent-backed.md) - Hook observation storage
@@ -1347,4 +1347,4 @@ let git_metadata = if let Some(git_provider) = &self.git_provider {
 ## References
 
 -   [Claude-mem v8.5.2](https://github.com/thedotmack/claude-mem) - Reference implementation
--   [Shaku Documentation](https://docs.rs/shaku) - DI framework
+-   [Shaku Documentation](https://docs.rs/shaku) - DI framework (historical; see ADR-029)

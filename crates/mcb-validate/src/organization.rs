@@ -648,7 +648,7 @@ impl OrganizationValidator {
         violations.extend(self.validate_duplicate_strings()?);
         violations.extend(self.validate_file_placement()?);
         violations.extend(self.validate_trait_placement()?);
-        // NOTE: validate_declaration_collisions() removed - RefactoringValidator handles
+        // validate_declaration_collisions() removed - RefactoringValidator handles
         // duplicate definitions with better categorization (known migration pairs, severity)
         violations.extend(self.validate_layer_violations()?);
         // Strict CA directory and layer compliance

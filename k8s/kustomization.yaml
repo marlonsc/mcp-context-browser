@@ -2,13 +2,13 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 metadata:
-  name: mcp-context-browser
+  name: mcb
   labels:
-    app: mcp-context-browser
+    app: mcb
 
 # Common labels applied to all resources
 commonLabels:
-  app: mcp-context-browser
+  app: mcb
   version: v0.1.1
 
 # Resources to include
@@ -26,7 +26,7 @@ resources:
 
 # Image transformations
 images:
-  - name: mcp-context-browser
+  - name: mcb
     newTag: v0.1.1
 
 # ConfigMap generator for environment-specific configs
@@ -65,7 +65,7 @@ namespace: mcp-system
 
 # Replicas override
 replicas:
-  - name: mcp-context-browser
+  - name: mcb
     count: 3
 
 # Resource patches for different environments
@@ -74,12 +74,12 @@ patchesStrategicMerge:
     apiVersion: apps/v1
     kind: Deployment
     metadata:
-      name: mcp-context-browser
+      name: mcb
     spec:
       template:
         spec:
           containers:
-          - name: mcp-context-browser
+          - name: mcb
             env:
             - name: ENVIRONMENT
               valueFrom:
@@ -91,7 +91,7 @@ patchesStrategicMerge:
 patches:
   - target:
       kind: Ingress
-      name: mcp-context-browser-ingress
+      name: mcb-ingress
     patch: |-
       - op: replace
         path: /spec/rules/0/host

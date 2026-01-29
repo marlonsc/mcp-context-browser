@@ -16,8 +16,8 @@ MCP Context Browser currently supports local deployment for development and test
 ```bash
 
 # Clone the repository
-git clone https://github.com/marlonsc/mcp-context-browser.git
-cd mcp-context-browser
+git clone https://github.com/marlonsc/mcb.git
+cd mcb
 
 # Build in debug mode (recommended for development)
 cargo build
@@ -34,7 +34,7 @@ cargo build --release
 cargo run
 
 # Or run the release build
-./target/release/mcp-context-browser
+./target/release/mcb
 ```
 
 The server will start and listen for MCP protocol messages on stdin/stdout. It currently provides placeholder responses for MCP tools.
@@ -70,10 +70,10 @@ provider = "memory"  # Options: memory, milvus, filesystem, encrypted
 ```bash
 
 # Check if binary was built
-ls -la target/debug/mcp-context-browser
+ls -la target/debug/mcb
 
 # Run basic help/version check (when implemented)
-./target/debug/mcp-context-browser --version
+./target/debug/mcb --version
 ```
 
 ### MCP Protocol Testing
@@ -83,7 +83,7 @@ The server communicates via the MCP protocol over stdin/stdout. To test manually
 ```bash
 
 # Send a simple MCP initialize message
-echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' | ./target/debug/mcp-context-browser
+echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' | ./target/debug/mcb
 ```
 
 ## 🐳 Docker Development (Future)
@@ -121,7 +121,7 @@ free -h  # Memory
 
 ### Getting Help
 
--   Check existing [GitHub Issues](https://github.com/marlonsc/mcp-context-browser/issues)
+-   Check existing [GitHub Issues](https://github.com/marlonsc/mcb/issues)
 -   Review the [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) for technical details
 -   See [CONTRIBUTING.md](../developer/CONTRIBUTING.md) for development setup
 
@@ -150,22 +150,22 @@ These will be documented as they become available.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mcp-context-browser
+  name: mcb
   labels:
-    app: mcp-context-browser
+    app: mcb
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: mcp-context-browser
+      app: mcb
   template:
     metadata:
       labels:
-        app: mcp-context-browser
+        app: mcb
     spec:
       containers:
--   name: mcp-context-browser
-        image: mcp-context-browser:latest
+-   name: mcb
+        image: mcb:latest
         ports:
 -   containerPort: 3000
         env:
@@ -195,7 +195,7 @@ spec:
 # docker-compose.yml
 version: '3.8'
 services:
-  mcp-context-browser:
+  mcb:
     build: .
     ports:
 -   "3000:3000"
@@ -305,10 +305,10 @@ data_retention_days = 2555
 apiVersion: v1
 kind: Service
 metadata:
-  name: mcp-context-browser-lb
+  name: mcb-lb
 spec:
   selector:
-    app: mcp-context-browser
+    app: mcb
   ports:
 -   port: 80
       targetPort: 3000
@@ -318,7 +318,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: mcp-context-browser-ingress
+  name: mcb-ingress
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
@@ -335,7 +335,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: mcp-context-browser-lb
+                name: mcb-lb
                 port:
                   number: 80
 ```
@@ -629,13 +629,13 @@ format = "json"
 outputs = ["stdout", "file", "loki"]
 
 [logging.file]
-path = "/var/log/mcp-context-browser.log"
+path = "/var/log/mcb.log"
 max_size = "100MB"
 retention = "30d"
 
 [logging.loki]
 url = "http://loki:3100"
-labels = { service = "mcp-context-browser", tenant = "${TENANT_ID}" }
+labels = { service = "mcb", tenant = "${TENANT_ID}" }
 ```
 
 ### Distributed Tracing
@@ -643,7 +643,7 @@ labels = { service = "mcp-context-browser", tenant = "${TENANT_ID}" }
 ```toml
 [tracing]
 enabled = true
-service_name = "mcp-context-browser"
+service_name = "mcb"
 exporter = "jaeger"
 
 [tracing.jaeger]
@@ -707,12 +707,12 @@ ciphers = ["ECDHE-RSA-AES256-GCM-SHA384", "ECDHE-RSA-AES128-GCM-SHA256"]
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: mcp-context-browser-hpa
+  name: mcb-hpa
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: mcp-context-browser
+    name: mcb
   minReplicas: 3
   maxReplicas: 50
   metrics:

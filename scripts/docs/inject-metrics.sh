@@ -23,7 +23,8 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Load metrics
+# Load metrics (dynamic source - extract-metrics.sh outputs env vars)
+# shellcheck disable=SC1090
 source <("$SCRIPT_DIR/extract-metrics.sh" --env)
 
 log() {
@@ -82,6 +83,7 @@ update_capabilities() {
     echo "🎯 Updating capability counts..."
 
     local files=(
+        "$PROJECT_ROOT/README.md"
         "$PROJECT_ROOT/CLAUDE.md"
         "$PROJECT_ROOT/docs/user-guide/README.md"
         "$PROJECT_ROOT/docs/developer/ROADMAP.md"
@@ -96,28 +98,40 @@ update_capabilities() {
 
         # Update language count patterns
         update_file "$file" \
-            '[0-9]+ (programming )?languages?' \
+            '[0-9]+\+? (programming )?languages?' \
             "${MCP_LANGUAGE_COUNT} languages" \
             "language count"
+        
+        # Update "X programming languages" pattern
+        update_file "$file" \
+            '[0-9]+\+? programming languages' \
+            "${MCP_LANGUAGE_COUNT} programming languages" \
+            "programming languages count"
 
         update_file "$file" \
-            '[0-9]+ language processors' \
+            '[0-9]+\+? language processors' \
             "${MCP_LANGUAGE_COUNT} language processors" \
             "language processor count"
 
         # Update embedding provider count
         update_file "$file" \
-            '[0-9]+ embedding providers?' \
+            '[0-9]+\+? embedding providers?' \
             "${MCP_EMBEDDING_COUNT} embedding providers" \
             "embedding provider count"
 
         # Update vector store count
         update_file "$file" \
-            '[0-9]+ vector stores?' \
+            '[0-9]+\+? vector stores?' \
             "${MCP_VECTOR_STORE_COUNT} vector stores" \
             "vector store count"
+        
+        # Update "X+ vector stores" pattern
+        update_file "$file" \
+            '[0-9]+\+ vector stores' \
+            "${MCP_VECTOR_STORE_COUNT} vector stores" \
+            "vector stores with plus"
 
-        # Update test count (be careful with this one)
+        # Update test count
         update_file "$file" \
             '[0-9]+\+ (comprehensive )?(business scenario )?tests' \
             "${MCP_TEST_COUNT}+ tests" \

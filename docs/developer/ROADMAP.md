@@ -8,9 +8,50 @@ This roadmap outlines the development of MCP Context Browser, a drop-in replacem
 
 ## Current Status
 
-### v0.1.2 - Provider Modernization + Validation Tooling 🚀 CURRENT
+### v0.1.4 - RCA Integration + Security Fixes 🚀 CURRENT
 
-**Status**: In Development
+**Status**: Released
+**Release Date**: January 28, 2026
+
+MCP Context Browser v0.1.4 completes Rust-code-analysis (RCA) integration, fixes security vulnerabilities, and updates dependencies.
+
+#### Achievements
+
+**RCA Integration:**
+
+-   ✅ Migrated unwrap_detector.rs to RCA Callback pattern
+-   ✅ Deleted legacy AST executor code (240 lines removed)
+-   ✅ Removed TOML fallback from rete_engine.rs
+-   ✅ Added INTERNAL_DEP_PREFIX constant
+
+**Security Fixes:**
+
+-   ✅ Removed atty dependency (GHSA-g98v-hv3f-hcfr vulnerability)
+-   ✅ Replaced with std::io::IsTerminal (stable since Rust 1.70)
+
+**Dependency Updates:**
+
+<!-- markdownlint-disable MD044 -->
+-   ✅ uuid 1.20.0, clap 4.5.55, rust-rule-engine 1.18.26
+-   ✅ jsonwebtoken 10.3.0, dirs 6.0.0, moka 0.12.13
+-   ✅ chrono 0.4.43, thiserror 2.0.18, proc-macro2 1.0.106
+<!-- markdownlint-enable MD044 -->
+
+**Metrics:**
+
+-   Tests: 950+ passing (up from 790+)
+-   Code reduction: ~607 lines net reduction
+-   Architecture violations: 0
+
+**Known transitive RUSTSEC (no fix available from upstream):**
+
+-   atomic-polyfill@1.0.3 (RUSTSEC-2023-0089), number_prefix@0.4.0 (RUSTSEC-2025-0119), paste@1.0.15 (RUSTSEC-2024-0436), rustls-pemfile@2.2.0 (RUSTSEC-2025-0134) — pulled in by fastembed, indicatif, tokenizers, tonic; crates are unmaintained or deprecated. Resolve when upstream deps update or via workspace patch.
+
+---
+
+### v0.1.2 - Provider Modernization + Validation Tooling
+
+**Status**: Released
 **Release Date**: January 18, 2026
 
 MCP Context Browser v0.1.2 modernizes provider registration using compile-time linkme distributed slices and introduces the mcb-validate crate scaffolding.
@@ -30,8 +71,9 @@ MCP Context Browser v0.1.2 modernizes provider registration using compile-time l
 -   ✅ Phase 1: Linters verified (17/17 tests pass)
 -   ✅ Phase 2: AST verified (26/26 tests pass)
 -   ✅ Phase 3: Rule Engines verified (30/30 tests pass)
+-   ✅ Phases 4–7: Metrics, Duplication, Architecture (CA001–CA009), Integration verified
 -   ✅ 12 migration validation rules (YAML files in rules/migration/)
--   ❌ Phases 4-7: Not started (directories do not exist)
+-   ✅ 750+ mcb-validate tests; 1636+ tests project-wide
 
 **Admin UI Code Browser:**
 
@@ -43,24 +85,24 @@ MCP Context Browser v0.1.2 modernizes provider registration using compile-time l
 -   ✅ Prism.js syntax highlighting in code viewer
 -   ✅ Nav links added to all admin pages
 
-**Verification Date**: 2026-01-18 via `make test`. See `docs/developer/IMPLEMENTATION_STATUS.md`.
+**Verification Date**: 2026-01-28 via `make test`. See `docs/developer/IMPLEMENTATION_STATUS.md`.
 
 **Maintained from v0.1.1:**
 
--   ✅ 790+ tests with comprehensive coverage (100% pass rate)
+-   ✅ 1636+ tests with comprehensive coverage (100% pass rate)
 -   ✅ 6 embedding providers (OpenAI, VoyageAI, Ollama, Gemini, FastEmbed, Null)
--   ✅ 3 vector stores (In-Memory, Encrypted, Null)
--   ✅ 12 languages with AST parsing support
--   ✅ Clean architecture with trait-based dependency injection
+-   ✅ 5 vector stores (Milvus, EdgeVec, In-Memory, Filesystem, Encrypted, Null)
+-   ✅ 14 languages with AST parsing support
+-   ✅ Clean architecture with dill-based DI (ADR-029)
 
 #### Technical Metrics
 
--   **Source Files**: 340 Rust files (↑ from ~300 in v0.1.1)
--   **Test Suite**: 790+ tests passing (maintained)
--   **Crates**: 8 (7 from v0.1.1 + mcb-validate)
--   **Validation Rules**: 12 YAML migration rules created
+-   **Source Files**: 340+ Rust files
+-   **Test Suite**: 1636+ tests passing
+-   **Crates**: 8 (7 + mcb-validate)
+-   **Validation Rules**: 12 YAML migration rules; CA001–CA009 architecture rules
 -   **Provider Registration**: Compile-time via linkme (inventory removed)
--   **mcb-validate Status**: Phases 1-3 verified (73 tests), Phases 4-7 not started
+-   **mcb-validate Status**: Phases 1–7 verified (1636+ tests)
 
 ---
 
@@ -76,11 +118,11 @@ MCP Context Browser v0.1.0 is the first stable release, providing a complete dro
 #### Achievements
 
 -   ✅ Full MCP protocol implementation (4 tools)
--   ✅ 12 languages with AST parsing (Rust, Python, JS/TS, Go, Java, C, C++, C#, Ruby, PHP, Swift, Kotlin)
+-   ✅ 14 languages with AST parsing (Rust, Python, JS/TS, Go, Java, C, C++, C#, Ruby, PHP, Swift, Kotlin)
 -   ✅ 6 embedding providers (OpenAI, VoyageAI, Ollama, Gemini, FastEmbed, Null)
--   ✅ 3 vector stores (In-Memory, Encrypted, Null)
+-   ✅ 5 vector stores (In-Memory, Encrypted, Null)
 -   ✅ Claude-context environment variable compatibility
--   ✅ 790+ tests with comprehensive coverage (100% pass rate)
+-   ✅ 1636+ tests with comprehensive coverage (100% pass rate)
 -   ✅ JWT authentication and rate limiting
 -   ✅ Clean architecture with trait-based dependency injection
 -   ✅ HTTP transport foundation for future enhancements
@@ -216,7 +258,7 @@ Transform MCP Context Browser into a comprehensive development platform combinin
 
 | Setting | Default | Override |
 |---------|---------|----------|
-| Database | ~/.MCP-context-browser/memory.db | Global config |
+| Database | ~/.mcb/memory.db | Global config |
 | Observation types | decision, bugfix, feature | Per-project |
 | Observation limit | 20 | Per-request |
 | Date range | 30 days | Per-request |
@@ -358,7 +400,9 @@ Deliver a fully production-ready enterprise platform with SLA guarantees, profes
 | v0.0.3 | Released | Production foundation |
 | v0.1.0 | Released | Documentation excellence, clean architecture, first stable release |
 | v0.1.1 | Released | Modular crate architecture (7 crates), DI foundation |
-| v0.1.2 | **Current** | Linkme provider registration, mcb-validate Phases 1-3, Admin UI Browse |
+| v0.1.2 | Released | Linkme provider registration, mcb-validate Phases 1-3, Admin UI Browse |
+| v0.1.3 | Released | RCA integration (unwrap_detector), executor deletion, 497 lines removed |
+| v0.1.4 | **Current** | Complete RCA integration, atty security fix, dependency updates, 1636+ tests |
 | v0.2.0 | Planned | Git-aware indexing, session memory, advanced code browser |
 | v0.3.0 | Future | Advanced code intelligence |
 | v0.4.0 | Future | Enterprise features |

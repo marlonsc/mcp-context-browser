@@ -1,0 +1,19 @@
+# Tarpaulin Configuration
+# Excludes integration tests from coverage measurement to prevent timeouts
+# in CI environments where external services (Milvus, Ollama) aren't available
+
+[coverage]
+# Exclude integration test binaries
+exclude_files = [
+    "crates/*/tests/integration/*",
+    "crates/*/tests/admin/*"
+]
+
+# Only measure coverage in source code
+[run]
+# Skip running integration tests during coverage measurement
+# They are time-consuming and require external services
+skip_tests = false
+
+# Test pattern to match unit tests only (if supported)
+# Integration tests in tests/ directories will still be skipped via exclude_files

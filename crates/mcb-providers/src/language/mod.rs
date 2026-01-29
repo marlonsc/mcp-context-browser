@@ -15,18 +15,18 @@
 //!
 //! | Processor | Language | Status |
 //! |-----------|----------|--------|
-//! | [`RustProcessor`] | Rust | Complete |
-//! | [`PythonProcessor`] | Python | Complete |
-//! | [`JavaScriptProcessor`] | JavaScript/TypeScript | Complete |
-//! | [`GoProcessor`] | Go | Complete |
-//! | [`JavaProcessor`] | Java | Complete |
-//! | [`CProcessor`] | C | Complete |
-//! | [`CppProcessor`] | C++ | Complete |
-//! | [`CSharpProcessor`] | C# | Complete |
-//! | [`RubyProcessor`] | Ruby | Complete |
-//! | [`PhpProcessor`] | PHP | Complete |
-//! | [`SwiftProcessor`] | Swift | Complete |
-//! | [`KotlinProcessor`] | Kotlin | Complete |
+//! | RustProcessor | Rust | Complete |
+//! | PythonProcessor | Python | Complete |
+//! | JavaScriptProcessor | JavaScript/TypeScript | Complete |
+//! | GoProcessor | Go | Complete |
+//! | JavaProcessor | Java | Complete |
+//! | CProcessor | C | Complete |
+//! | CppProcessor | C++ | Complete |
+//! | CSharpProcessor | C# | Complete |
+//! | RubyProcessor | Ruby | Complete |
+//! | PhpProcessor | PHP | Complete |
+//! | SwiftProcessor | Swift | Complete |
+//! | KotlinProcessor | Kotlin | Complete |
 
 /// Common utilities and base types for language processors
 pub mod common;

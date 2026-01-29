@@ -7,12 +7,12 @@
 //!
 //! | Provider | Type | Status |
 //! |----------|------|--------|
-//! | [`NullEmbeddingProvider`] | Testing | Complete |
-//! | [`OllamaEmbeddingProvider`] | Local | Complete |
-//! | [`OpenAIEmbeddingProvider`] | Cloud | Complete |
-//! | [`VoyageAIEmbeddingProvider`] | Cloud | Complete |
-//! | [`GeminiEmbeddingProvider`] | Cloud | Complete |
-//! | [`FastEmbedProvider`] | Local ML | Complete (optional) |
+//! | NullEmbeddingProvider | Testing | Complete |
+//! | OllamaEmbeddingProvider | Local | Complete |
+//! | OpenAIEmbeddingProvider | Cloud | Complete |
+//! | VoyageAIEmbeddingProvider | Cloud | Complete |
+//! | GeminiEmbeddingProvider | Cloud | Complete |
+//! | FastEmbedProvider | Local ML | Complete (optional) |
 //!
 //! ## Provider Selection Guide
 //!

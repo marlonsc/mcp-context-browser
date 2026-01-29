@@ -1,13 +1,13 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: mcp-context-browser-netpol
+  name: mcb-netpol
   labels:
-    app: mcp-context-browser
+    app: mcb
 spec:
   podSelector:
     matchLabels:
-      app: mcp-context-browser
+      app: mcb
   policyTypes:
   - Ingress
   - Egress

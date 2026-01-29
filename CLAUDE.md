@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (Claude.ai/code) when working with co
 
 ## Project Overview
 
-MCP Context Browser is a high-performance MCP server for semantic code search using vector embeddings. Version 0.1.2 is in development.
+MCP Context Browser is a high-performance MCP server for semantic code search using vector embeddings. Version 0.1.4 released.
 
 ## Commands
 
@@ -16,13 +16,14 @@ make build          # Debug build
 make build-release  # Release build
 
 # Test
-make test           # All tests (790+)
+make test           # All tests (950+)
 make test-unit      # Unit tests only
 make test-doc       # Doctests only
 
 # Quality
 make fmt            # Format (Rust + Markdown)
-make lint           # Clippy + Markdown lint
+make lint           # Rust: fmt check + clippy (FIX=1, CI_MODE=1)
+make docs-lint      # Markdown lint (FIX=1 to auto-fix)
 make quality        # Full check: fmt + lint + test
 make validate       # Architecture validation (mcb-validate)
 
@@ -166,7 +167,7 @@ let config: AppConfig = figment.extract()?;
 Before any commit:
 
 -   `make test` - 0 failures
--   `make lint` - clean output
+-   `make lint` - Rust clean; `make docs-lint` - Markdown clean
 -   `make validate` - 0 architecture violations
 -   No new `unwrap/expect`
 -   No hardcoded fallback values
@@ -183,6 +184,6 @@ Before any commit:
 
 ## Documentation
 
--   ADRs: `docs/adr/README.md` (26+ architectural decisions)
+-   ADRs: `docs/adr/README.md` (31 architectural decisions)
 -   Architecture: `docs/architecture/ARCHITECTURE.md`
 -   Migration: `docs/migration/FROM_CLAUDE_CONTEXT.md`

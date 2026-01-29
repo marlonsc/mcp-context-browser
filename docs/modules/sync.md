@@ -17,7 +17,7 @@ Port definition for sync operations:
 
 ```rust
 #[async_trait]
-pub trait SyncProvider: Send + Sync + shaku::Interface {
+pub trait SyncProvider: Send + Sync {
     async fn sync(&self, path: &Path) -> Result<SyncResult>;
     async fn get_changes(&self, path: &Path) -> Result<Vec<FileChange>>;
     fn is_file_changed(&self, path: &Path, hash: &str) -> bool;
@@ -30,7 +30,7 @@ Distributed locking for concurrent sync:
 
 ```rust
 #[async_trait]
-pub trait LockProvider: Send + Sync + shaku::Interface {
+pub trait LockProvider: Send + Sync {
     async fn acquire(&self, key: &str) -> Result<Lock>;
     async fn release(&self, lock: Lock) -> Result<()>;
 }

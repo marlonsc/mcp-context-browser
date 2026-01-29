@@ -7,20 +7,19 @@
 
 ## Overview
 
-The infrastructure module provides shared technical services and cross-cutting concerns for the MCP Context Browser system. It implements Shaku-based dependency injection, configuration management, caching, health checks, and null adapters for testing.
+The infrastructure module provides shared technical services and cross-cutting concerns for the MCP Context Browser system. It implements dill-based dependency injection (ADR-029), Figment configuration, caching, health checks, and null adapters for testing.
 
 ## Key Components
 
 ### Dependency Injection (`di/`)
 
-Shaku-based hierarchical DI container system:
+dill IoC Container with handle-based runtime switching (ADR-024 → ADR-029):
 
--   `bootstrap.rs` - DI container initialization
--   `modules/` - Shaku module definitions
-    -   `infrastructure.rs` - Infrastructure services module
-    -   `server.rs` - Server components module
-    -   `providers.rs` - Provider registrations
-    -   `traits.rs` - Module trait definitions
+-   `catalog.rs` - dill Catalog configuration and service resolution
+-   `bootstrap.rs` - Application initialization and AppContext creation
+-   `handles.rs` - RwLock provider handles for runtime switching
+-   `admin.rs` - Admin services for provider switching via API
+-   `provider_resolvers.rs` - linkme registry access
 
 ### Configuration (`config/`)
 
@@ -148,4 +147,4 @@ Infrastructure tests are located in `crates/mcb-infrastructure/tests/`.
 
 ---
 
-*Updated 2026-01-18 - Reflects modular crate architecture (v0.1.2)*
+*Updated 2026-01-28 - Reflects dill IoC, Figment config (v0.1.4)*

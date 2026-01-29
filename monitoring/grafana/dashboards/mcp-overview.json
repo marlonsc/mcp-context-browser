@@ -11,7 +11,7 @@
         "type": "stat",
         "targets": [
           {
-            "expr": "up{job=\"mcp-context-browser\"}",
+            "expr": "up{job=\"mcb\"}",
             "legendFormat": "Service Status"
           }
         ],
@@ -169,7 +169,7 @@
         "type": "stat",
         "targets": [
           {
-            "expr": "avg_over_time(up{job=\"mcp-context-browser\"}[30d]) * 100",
+            "expr": "avg_over_time(up{job=\"mcb\"}[30d]) * 100",
             "legendFormat": "Uptime %"
           }
         ],

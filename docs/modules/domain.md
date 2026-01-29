@@ -18,8 +18,8 @@ The domain module defines the core business entities, value objects, and reposit
 
 ### Repository Interfaces (`repositories/`)
 
--   `ChunkRepository` - Code chunk persistence (extends `shaku::Interface`)
--   `SearchRepository` - Search operations (extends `shaku::Interface`)
+-   `ChunkRepository` - Code chunk persistence (`Send + Sync`; DI via dill, ADR-029)
+-   `SearchRepository` - Search operations (`Send + Sync`; DI via dill, ADR-029)
 
 ### Domain Events (`events/`)
 

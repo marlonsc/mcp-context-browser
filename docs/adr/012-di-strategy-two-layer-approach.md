@@ -1,10 +1,12 @@
-# ADR-012: Two-Layer Dependency Injection Strategy
+# ADR 012: Two-Layer Dependency Injection Strategy
 
 ## Status
 
 **Superseded** by [ADR 024: Simplified Dependency Injection](024-simplified-dependency-injection.md) (v0.2.0)
 
 > **DEPRECATED**: This two-layer approach (Shaku + runtime factories) will be simplified to direct constructor injection. The complex Shaku infrastructure will be removed in favor of simpler service composition patterns.
+>
+> **Code examples** below use `DiContainerBuilder` (removed). Current DI: dill Catalog, handles, linkme — see [ADR-029](029-hexagonal-architecture-dill.md).
 
 **Originally Accepted** (v0.1.2)
 
@@ -196,9 +198,9 @@ The public service interfaces will remain stable. Only the internal composition 
 
 ## Related ADRs
 
--   [ADR-001: Provider Pattern Architecture](001-provider-pattern-architecture.md) - Trait-based provider DI
+-   [ADR-001: Modular Crates Architecture](001-modular-crates-architecture.md) - Trait-based provider DI
 -   [ADR-002: Async-First Architecture](002-async-first-architecture.md) - **SUPERSEDED** by [ADR 024](024-simplified-dependency-injection.md)
--   [ADR-004: Multi-Provider Strategy](004-multi-provider-strategy.md) - Provider factory selection
+-   [ADR-030: Multi-Provider Strategy](030-multi-provider-strategy.md) - Provider factory selection
 -   [ADR-006: Code Audit and Improvements](006-code-audit-and-improvements.md) - DI pattern enforcement
 -   [ADR-007: Integrated Web Administration Interface](007-integrated-web-administration-interface.md) - AdminService DI
 -   [ADR-008: Git-Aware Semantic Indexing](008-git-aware-semantic-indexing-v0.2.0.md) - GitProvider factory (v0.2.0)
@@ -209,6 +211,6 @@ The public service interfaces will remain stable. Only the internal composition 
 
 ## References
 
--   [Shaku Documentation](https://docs.rs/shaku)
+-   [Shaku Documentation](https://docs.rs/shaku) (historical; see ADR-029)
 -   [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
 -   Workspace-next refactoring plan (January 2026)

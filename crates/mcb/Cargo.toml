@@ -1,6 +1,6 @@
 [package]
 name = "mcb"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2024"
 authors = ["Marlon Costa <marlonsc@gmail.com>"]
 license = "MIT"
@@ -8,9 +8,17 @@ keywords = ["mcp", "semantic-search", "code-analysis", "vector-embeddings"]
 categories = ["development-tools", "api-bindings", "science::artificial-intelligence"]
 description = "MCP Context Browser - A Model Context Protocol server for semantic code analysis using vector embeddings"
 readme = "README.md"
-repository = "https://github.com/marlonsc/mcp-context-browser"
-homepage = "https://github.com/marlonsc/mcp-context-browser"
+repository = "https://github.com/marlonsc/mcb"
+homepage = "https://github.com/marlonsc/mcb"
 rust-version = "1.89"
+
+[lib]
+name = "mcb"
+path = "src/lib.rs"
+
+[[bin]]
+name = "mcb"
+path = "src/main.rs"
 
 [dependencies]
 # Domain layer - re-exported for public API
@@ -21,6 +29,15 @@ mcb-server = { path = "../mcb-server" }
 
 # Infrastructure layer - re-exported for DI container
 mcb-infrastructure = { path = "../mcb-infrastructure" }
+
+# Providers - MUST be in dependencies (not dev-dependencies) for linkme inventory registration
+mcb-providers = { path = "../mcb-providers", features = ["full"] }
+
+# Core async runtime
+tokio = { workspace = true }
+
+# CLI
+clap = { workspace = true }
 
 # Re-export for doc examples
 serde_json = { workspace = true }

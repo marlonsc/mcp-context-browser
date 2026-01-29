@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-1.89%2B-orange)](https://www.rust-lang.org/)
 [![MCP](https://img.shields.io/badge/MCP-2024--11--05-blue)](https://modelcontextprotocol.io/)
-[![Version](https://img.shields.io/badge/version-0.1.2-blue)](https://github.com/marlonsc/mcp-context-browser/releases)
+[![Version](https://img.shields.io/badge/version-0.1.4-blue)](https://github.com/marlonsc/mcb/releases/tag/v0.1.4)
 
 **High-performance MCP server for semantic code search using vector embeddings**
 
@@ -11,7 +11,7 @@
 
 MCP Context Browser is a Model Context Protocol (MCP) server that provides semantic code search capabilities using vector embeddings. Transform natural language queries into code search across indexed codebases, enabling intelligent code discovery and analysis. Built with Clean Architecture principles in Rust with comprehensive provider support.
 
-**Current Version**: 0.1.2 - Provider Modernization + Architecture Validation
+**Current Version**: 0.1.4
 
 See [`CLAUDE.md`](./CLAUDE.md) for development guide and [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md) for complete architecture documentation.
 
@@ -29,15 +29,15 @@ make build-release
 make install
 ```
 
-For a faster dev install, use `make install-debug`. If you prefer to run without systemd, build with `make build-release` and run `target/release/mcp-context-browser` directly.
+For a faster dev install, use `make install-debug`. If you prefer to run without systemd, build with `make build-release` and run `target/release/mcb` directly.
 
 ### Main Features
 
 -   **Semantic Code Search**: Natural language queries → code discovery using vector embeddings
--   **Clean Architecture**: 8 crates organized by Clean Architecture layers (domain, application, infrastructure, providers, server, validate)
--   **Provider Ecosystem**: 6 embedding providers (OpenAI, VoyageAI, Ollama, Gemini, FastEmbed, Null), 3+ vector stores
--   **Multi-Language Support**: AST-based parsing for 12 programming languages (Rust, Python, JS/TS, Go, Java, C/C++/C#, Ruby, PHP, Swift, Kotlin)
--   **Architecture Validation**: mcb-validate crate with automated architecture enforcement (Phases 1-3 verified: 73 tests pass)
+-   **Clean Architecture**: 8 crates (domain, application, infrastructure, providers, server, validate) per Clean Architecture layers
+-   **Provider Ecosystem**: 6 embedding providers (OpenAI, VoyageAI, Ollama, Gemini, FastEmbed, Null), 5 vector stores (In-Memory, Encrypted, Filesystem, Milvus, EdgeVec, Null)
+-   **Multi-Language Support**: AST-based parsing for 14 languages (Rust, Python, JS/TS, Go, Java, C/C++/C#, Ruby, PHP, Swift, Kotlin)
+-   **Architecture Validation**: mcb-validate crate, Phases 1–7 (CA001–CA009, metrics, duplication); 1636+ tests project-wide
 -   **Linkme Provider Registration**: Compile-time provider discovery (zero runtime overhead)
 
 ## Architecture
@@ -52,7 +52,7 @@ crates/
 ├── mcb-providers/       # Layer 3: Provider implementations (embedding, vector stores)
 ├── mcb-infrastructure/  # Layer 4: DI, config, cache, crypto, health, logging
 ├── mcb-server/          # Layer 5: MCP protocol, handlers, transport
-└── mcb-validate/        # Dev tooling: architecture validation (Phases 1-3 verified)
+└── mcb-validate/        # Dev tooling: architecture validation (Phases 1–7)
 ```
 
 **Dependency Direction** (inward only):
@@ -65,11 +65,11 @@ mcb-server → mcb-infrastructure → mcb-application → mcb-domain
 
 ### Key Architectural Decisions
 
--   **ADR-001**: Modular Crates Architecture - 8 crates for separation of concerns
--   **ADR-002**: Async-First Architecture - Tokio throughout
--   **ADR-012**: Two-Layer DI Strategy - Shaku modules + runtime factories
--   **ADR-013**: Clean Architecture Crate Separation - Port/Adapter pattern
--   **ADR-023**: Inventory to Linkme Migration - Compile-time provider registration
+-   **ADR-001**: Modular Crates Architecture – 8 crates, separation of concerns
+-   **ADR-002**: Async-First Architecture – Tokio throughout
+-   **ADR-029**: Hexagonal Architecture with dill – DI, handles, linkme registry (replaces Shaku)
+-   **ADR-013**: Clean Architecture Crate Separation – Port/Adapter pattern
+-   **ADR-023**: Inventory to Linkme Migration – Compile-time provider registration
 
 See [`docs/adr/`](./docs/adr/) for complete Architecture Decision Records and [`docs/architecture/ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md) for detailed architecture documentation.
 
@@ -129,7 +129,7 @@ Always use `make` commands (see [`CLAUDE.md`](./CLAUDE.md)):
 ```bash
 make build          # Debug build
 make build-release  # Release build
-make test           # All tests (790+)
+make test           # All tests (950+)
 make quality        # Full check: fmt + lint + test
 make validate       # Architecture validation
 ```
@@ -137,7 +137,7 @@ make validate       # Architecture validation
 ### Quality Gates
 
 -   All tests pass (`make test`)
--   Clean linting (`make lint`)
+-   Clean Rust lint (`make lint`); clean Markdown lint (`make docs-lint`)
 -   Zero architecture violations (`make validate`)
 -   No new `unwrap/expect` in code
 
@@ -145,7 +145,7 @@ See [`docs/developer/CONTRIBUTING.md`](./docs/developer/CONTRIBUTING.md) for con
 
 ## Testing
 
-790+ comprehensive tests covering all layers:
+1636+ tests covering all layers:
 
 ```bash
 make test           # All tests
@@ -159,7 +159,7 @@ Test organization:
 -   **Application layer**: Service and use case tests
 -   **Infrastructure layer**: DI, config, cache tests
 -   **Providers**: Embedding and vector store provider tests
--   **mcb-validate**: Architecture validation tests (73 integration tests)
+-   **mcb-validate**: Architecture validation (Phases 1–7, 1636+ tests)
 
 See [`docs/INTEGRATION_TESTS.md`](./docs/INTEGRATION_TESTS.md) for testing documentation.
 
@@ -172,6 +172,7 @@ See [`docs/INTEGRATION_TESTS.md`](./docs/INTEGRATION_TESTS.md) for testing docum
 -   **Changelog**: [`docs/operations/CHANGELOG.md`](./docs/operations/CHANGELOG.md)
 -   **ADRs**: [`docs/adr/`](./docs/adr/) - Architecture Decision Records
 -   **Migration**: [`docs/migration/FROM_CLAUDE_CONTEXT.md`](./docs/migration/FROM_CLAUDE_CONTEXT.md)
+-   **API (docs.rs)**: [mcb](https://docs.rs/mcb) (when published)
 
 ## Contributing
 
@@ -190,4 +191,4 @@ MIT Licensed - Open source and free for commercial and personal use.
 
 ---
 
-**Last Updated**: 2026-01-18
+**Last Updated**: 2026-01-28

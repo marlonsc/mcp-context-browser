@@ -6,9 +6,9 @@
 //!
 //! | Provider | Type | Description |
 //! |----------|------|-------------|
-//! | [`NullCacheProvider`] | Testing | No-op stub for testing |
-//! | [`MokaCacheProvider`] | Local | In-memory cache (high performance) |
-//! | [`RedisCacheProvider`] | Distributed | Redis-backed for multi-instance |
+//! | NullCacheProvider | Testing | No-op stub for testing |
+//! | MokaCacheProvider | Local | In-memory cache (high performance) |
+//! | RedisCacheProvider | Distributed | Redis-backed for multi-instance |
 //!
 //! ## Provider Selection Guide
 //!

@@ -84,7 +84,9 @@ pub enum ServiceManagerError {
 /// The ServiceManager tracks all managed services and provides operations
 /// to start, stop, and restart them. State changes are published as
 /// domain events for real-time monitoring.
-#[allow(dead_code)] // Will be used in admin API handlers
+// Note: ServiceManager is used in admin API handlers (lifecycle_handlers.rs, handlers.rs)
+// The #[allow(dead_code)] is present because the full implementation is still in progress
+#[allow(dead_code)] // Used in admin API handlers (lifecycle_handlers.rs, handlers.rs)
 pub struct ServiceManager {
     /// Registered services by name
     services: DashMap<String, Arc<dyn LifecycleManaged>>,
@@ -92,7 +94,9 @@ pub struct ServiceManager {
     event_bus: Arc<dyn EventBusProvider>,
 }
 
-#[allow(dead_code)] // Will be used in Admin API handlers
+// Note: ServiceManager is used in admin API handlers (lifecycle_handlers.rs, handlers.rs)
+// The #[allow(dead_code)] is present because the full implementation is still in progress
+#[allow(dead_code)] // Used in admin API handlers (lifecycle_handlers.rs, handlers.rs)
 impl ServiceManager {
     /// Create a new service manager with the given event bus
     pub fn new(event_bus: Arc<dyn EventBusProvider>) -> Self {

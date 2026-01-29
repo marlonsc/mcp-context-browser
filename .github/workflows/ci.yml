@@ -1,3 +1,4 @@
+---
 # =============================================================================
 # CI Pipeline
 # =============================================================================
@@ -8,13 +9,33 @@
 name: CI
 
 permissions:
-  contents: read
+  contents: "read"
 
-on:
+on:  # yamllint disable-line rule:truthy
   push:
-    branches: [main, develop]
+    branches:
+      - main
+      - develop
+    paths:
+      - 'src/**'
+      - 'crates/**'
+      - 'tests/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/ci.yml'
+      - '.github/setup-ci.sh'
   pull_request:
-    branches: [main, develop]
+    branches:
+      - main
+      - develop
+    paths:
+      - 'src/**'
+      - 'crates/**'
+      - 'tests/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/ci.yml'
+      - '.github/setup-ci.sh'
 
 env:
   CARGO_TERM_COLOR: always
@@ -25,27 +46,43 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - run: bash .github/setup-ci.sh
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
       - run: make lint CI_MODE=1
 
-  test:
-    name: Test (${{ matrix.rust }})
+  test-pr:
+    name: Test (PR - Stable)
+    if: github.event_name == 'pull_request'
     needs: [lint]
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - run: bash .github/setup-ci.sh
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: make test TEST_THREADS=4
+
+  test-main:
+    name: Test (Main - ${{ matrix.rust }})
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [lint]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       matrix:
         rust: [stable, beta]
     steps:
       - uses: actions/checkout@v6
-      - run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+      - run: bash .github/setup-ci.sh
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
       - uses: Swatinem/rust-cache@v2
-      - run: make test
+      - run: make test TEST_THREADS=4
 
   validate:
     name: Architecture Validation
@@ -53,13 +90,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+      - run: bash .github/setup-ci.sh
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: make validate STRICT=1
       - name: Check Provider Traits Location
         run: |
-          VIOLATIONS=$(grep -r "use mcb_application::ports::providers" crates/mcb-providers/src/ 2>/dev/null || true)
+          VIOLATIONS=$(
+            grep -r "use mcb_application::ports::providers" \
+              crates/mcb-providers/src/ 2>/dev/null || true
+          )
           if [ -n "$VIOLATIONS" ]; then
             echo "VIOLATION: Provider traits should be imported from mcb-domain"
             echo "$VIOLATIONS"
@@ -68,23 +108,25 @@ jobs:
 
   golden-tests:
     name: Golden Acceptance Tests
-    needs: [test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [test-main]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
-      - run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+      - run: bash .github/setup-ci.sh
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - run: make test SCOPE=golden
+      - run: make test SCOPE=golden TEST_THREADS=2
 
   audit:
     name: Security Audit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - run: bash .github/setup-ci.sh --install-audit
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - run: cargo install cargo-audit --locked
       - run: make audit
 
   docs:
@@ -92,47 +134,45 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - run: bash .github/setup-ci.sh
       - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
       - run: make docs
 
   coverage:
     name: Coverage
-    needs: [test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [test-main]
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
-      - run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+      - run: bash .github/setup-ci.sh --install-coverage
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - run: cargo install cargo-tarpaulin --locked
-      - run: make coverage LCOV=1
+      - run: make coverage LCOV=1 TEST_THREADS=4
       - uses: codecov/codecov-action@v5
         with:
-          file: ./coverage/lcov.info
+          files: ./coverage/lcov.info
           fail_ci_if_error: false
 
   release-build:
     name: Release (${{ matrix.target }})
-    if: github.ref == 'refs/heads/main'
-    needs: [test, validate]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [test-main, validate]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            deps: sudo apt-get update && sudo apt-get install -y protobuf-compiler
           - os: macos-latest
             target: x86_64-apple-darwin
-            deps: brew install protobuf
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            deps: choco install protoc
     steps:
       - uses: actions/checkout@v6
-      - name: Install dependencies
-        run: ${{ matrix.deps }}
-        shell: bash
+      - run: bash .github/setup-ci.sh
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
@@ -140,5 +180,7 @@ jobs:
       - run: make build RELEASE=1
       - uses: actions/upload-artifact@v6
         with:
-          name: mcp-context-browser-${{ matrix.target }}
-          path: target/release/mcp-context-browser${{ matrix.os == 'windows-latest' && '.exe' || '' }}
+          name: mcb-${{ matrix.target }}
+          path: >-
+            target/release/mcb${{ matrix.os == 'windows-latest' &&
+            '.exe' || '' }}

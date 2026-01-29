@@ -43,9 +43,9 @@ crates/mcb-infrastructure/src/adapters/repository/
 ## Repository Pattern
 
 ```rust
-// Port trait (in mcb-domain)
+// Port trait (in mcb-domain); DI via dill (ADR-029)
 #[async_trait]
-pub trait ChunkRepository: Send + Sync + shaku::Interface {
+pub trait ChunkRepository: Send + Sync {
     async fn store(&self, collection: &str, chunks: &[CodeChunk]) -> Result<()>;
     async fn get(&self, collection: &str, id: &str) -> Result<Option<CodeChunk>>;
     async fn delete(&self, collection: &str, id: &str) -> Result<()>;

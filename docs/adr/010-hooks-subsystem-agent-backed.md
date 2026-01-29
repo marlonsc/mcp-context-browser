@@ -1142,7 +1142,7 @@ if let Some(git) = &self.git_provider {
 
 ## Related ADRs
 
--   [ADR-001: Provider Pattern Architecture](001-provider-pattern-architecture.md) - HookProcessor follows trait-based DI
+-   [ADR-001: Modular Crates Architecture](001-modular-crates-architecture.md) - HookProcessor follows trait-based DI
 -   [ADR-002: Async-First Architecture](002-async-first-architecture.md) - Async hook processing
 -   [ADR-007: Integrated Web Administration Interface](007-integrated-web-administration-interface.md) - Hook monitoring UI
 -   [ADR-008: Git-Aware Semantic Indexing](008-git-aware-semantic-indexing-v0.2.0.md) - Git context in hooks
@@ -1153,5 +1153,5 @@ if let Some(git) = &self.git_provider {
 ## References
 
 -   [Claude Code Hooks Documentation](https://docs.anthropic.com/claude-code/hooks)
--   [Shaku Documentation](https://docs.rs/shaku) - DI framework
+-   [Shaku Documentation](https://docs.rs/shaku) - DI framework (historical; see ADR-029)
 -   Existing patterns: `crates/mcb-infrastructure/src/events/mod.rs`, `crates/mcb-infrastructure/src/di/registry.rs`, `crates/mcb-application/src/use_cases/context.rs`

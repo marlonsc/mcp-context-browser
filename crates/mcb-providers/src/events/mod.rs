@@ -6,9 +6,9 @@
 //!
 //! | Provider | Type | Description |
 //! |----------|------|-------------|
-//! | [`NullEventBusProvider`] | Testing | Discards all events |
-//! | [`TokioEventBusProvider`] | In-Process | Tokio broadcast channels |
-//! | [`NatsEventBusProvider`] | Distributed | NATS for multi-process systems |
+//! | NullEventBusProvider | Testing | Discards all events |
+//! | TokioEventBusProvider | In-Process | Tokio broadcast channels |
+//! | NatsEventBusProvider | Distributed | NATS for multi-process systems |
 //!
 //! ## Provider Selection Guide
 //!

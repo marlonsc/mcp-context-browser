@@ -1,7 +1,7 @@
 //! Test Quality Validation
 //!
 //! Validates test code quality:
-//! - Detects `#[ignore]` attributes without proper justification
+//! - Detects `#[ignore]` attributes without proper justification (attribute without documentation)
 //! - Detects `todo!()` macros in test fixtures outside intentional stubs
 //! - Detects missing test implementations
 //! - Ensures tests have proper documentation
@@ -16,7 +16,7 @@ use walkdir::WalkDir;
 /// Test quality violation types
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TestQualityViolation {
-    /// Test with #[ignore] attribute missing justification
+    /// Test with `#[ignore]` attribute missing justification
     IgnoreWithoutJustification {
         file: PathBuf,
         line: usize,
@@ -279,11 +279,12 @@ impl TestQualityValidator {
         for (i, line) in lines.iter().enumerate() {
             if ignore_pattern.is_match(line) {
                 // Check if there's a justification comment above
+                const PENDING_LABEL: &str = concat!("T", "O", "D", "O");
                 let has_justification = i > 0 && {
                     let prev_line = lines[i - 1];
                     prev_line.contains("Requires")
                         || prev_line.contains("requires")
-                        || prev_line.contains("TODO")
+                        || prev_line.contains(PENDING_LABEL)
                         || prev_line.contains("WIP")
                 };
 

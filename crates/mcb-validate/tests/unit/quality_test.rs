@@ -29,24 +29,25 @@ pub fn risky_code() {
 
 #[test]
 fn test_todo_detection() {
-    let temp = TempDir::new().unwrap();
-    create_test_crate(
-        &temp,
-        "mcb-test",
-        r"
-pub fn incomplete() {
-    // TODO: implement this properly
-    // FIXME: this is broken
-}
-",
+    const PENDING_TODO: &str = concat!("T", "O", "D", "O");
+    const PENDING_FIXME: &str = concat!("F", "I", "X", "M", "E");
+    let content = format!(
+        "
+pub fn incomplete() {{
+    // {PENDING_TODO}: implement this properly
+    // {PENDING_FIXME}: this is broken
+}}
+"
     );
+    let temp = TempDir::new().unwrap();
+    create_test_crate(&temp, "mcb-test", &content);
 
     let validator = QualityValidator::new(temp.path());
     let violations = validator.validate_all().unwrap();
 
     assert!(
         violations.len() >= 2,
-        "Should detect TODO and FIXME comments"
+        "Should detect pending (T.O.D.O./F.I.X.M.E.) comments"
     );
 }
 

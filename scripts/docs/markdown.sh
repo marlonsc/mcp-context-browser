@@ -10,6 +10,7 @@ set -e
 
 # Source shared library
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=./lib/common.sh
 source "$SCRIPT_DIR/lib/common.sh"
 
 # Fix counter
@@ -91,18 +92,27 @@ check_unlabeled_codeblocks() {
 # Lint Mode
 # =============================================================================
 
+_run_markdownlint() {
+    local do_fix="${1:-}"
+    local config_file="$PROJECT_ROOT/.markdownlint.json"
+    local ignore_file="$PROJECT_ROOT/.markdownlintignore"
+    local args=("$DOCS_DIR/")
+    [[ -f "$config_file" ]] && args+=(--config "$config_file")
+    [[ -f "$ignore_file" ]] && args+=(--ignore-path "$ignore_file")
+    if [[ "$do_fix" == "1" ]] || [[ "$do_fix" == "-f" ]]; then
+        markdownlint -f "${args[@]}"
+    else
+        markdownlint "${args[@]}"
+    fi
+}
+
 lint_mode() {
     log_info "MCP Context Browser - Markdown Linting"
     log_info "======================================"
 
-    # Check for markdownlint-cli
     if check_executable markdownlint; then
         log_info "Using markdownlint-cli for comprehensive linting..."
-        local config_file="$PROJECT_ROOT/.markdownlint.json"
-        local args=("$DOCS_DIR/")
-        [[ -f "$config_file" ]] && args+=(--config "$config_file")
-
-        if markdownlint "${args[@]}"; then
+        if _run_markdownlint; then
             log_success "Markdown linting passed"
         else
             log_error "Markdown linting failed"
@@ -149,6 +159,17 @@ fix_mode() {
 
     is_dry_run && log_info "Running in dry-run mode (no changes will be made)"
 
+    if check_executable markdownlint && ! is_dry_run; then
+        log_info "Using markdownlint-cli -f for auto-fix..."
+        if _run_markdownlint 1; then
+            FIXED=1
+            log_success "Auto-fix completed. Run './markdown.sh lint' to verify."
+        else
+            log_warning "markdownlint -f reported issues. Run './markdown.sh lint' to inspect."
+        fi
+        return
+    fi
+
     local files
     files=$(find_markdown_files "$DOCS_DIR")
 
@@ -156,14 +177,12 @@ fix_mode() {
         local filename
         filename=$(basename "$file")
 
-        # Fix trailing whitespace
         if check_trailing_whitespace "$file"; then
             log_info "Fixing trailing whitespace in: $filename"
             run_or_echo sed -i 's/[[:space:]]*$//' "$file"
             ((FIXED++)) || true
         fi
 
-        # Fix multiple blank lines
         if check_multiple_blanks "$file"; then
             log_info "Fixing multiple blank lines in: $filename"
             if ! is_dry_run; then
@@ -174,18 +193,11 @@ fix_mode() {
             ((FIXED++)) || true
         fi
 
-        # Fix list markers (asterisks to dashes)
         if grep -q '^[[:space:]]*\*[[:space:]]' "$file"; then
             log_info "Converting asterisks to dashes in: $filename"
             run_or_echo sed -i 's/^[[:space:]]*\*[[:space:]]/  - /g' "$file"
             ((FIXED++)) || true
         fi
-
-        # MD040 disabled in .markdownlint.json - code blocks without language tags allowed
-        # Warn about code blocks (can't auto-fix)
-        # if check_unlabeled_codeblocks "$file"; then
-        #     log_warning "Found code blocks without language tags in: $filename (manual fix needed)"
-        # fi
     done
 
     echo
@@ -270,12 +282,12 @@ EOF
 main() {
     local command="${1:-lint}"
 
-    # Handle --dry-run flag
+    # Handle --dry-run flag (exported for use in fix/lint functions)
     if [[ "$command" == "--dry-run" ]]; then
-        DRY_RUN=true
+        export DRY_RUN=true
         command="${2:-lint}"
     elif [[ "${2:-}" == "--dry-run" ]]; then
-        DRY_RUN=true
+        export DRY_RUN=true
     fi
 
     case "$command" in

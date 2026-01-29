@@ -4,10 +4,10 @@ This directory contains all Architecture Decision Records (ADRs) for the MCP Con
 
 ## Current ADRs
 
-### Core Architecture (v0.1.2)
+### Core Architecture (v0.1.2+)
 
 -   [ADR 001: Modular Crates Architecture](001-modular-crates-architecture.md)
--   [ADR 002: Dependency Injection with Shaku](002-dependency-injection-shaku.md)
+-   [ADR 002: Async-First Architecture](002-async-first-architecture.md) - Tokio async patterns
 -   [ADR 003: Unified Provider Architecture](003-unified-provider-architecture.md)
 -   [ADR 004: Event Bus (Local and Distributed)](004-event-bus-local-distributed.md)
 -   [ADR 005: Context Cache Support (Moka and Redis)](005-context-cache-support.md)
@@ -23,31 +23,26 @@ This directory contains all Architecture Decision Records (ADRs) for the MCP Con
 -   [ADR 009: Persistent Session Memory v0.2.0](009-persistent-session-memory-v0.2.0.md)
 -   [ADR 010: Hooks Subsystem with Agent-Backed Processing](010-hooks-subsystem-agent-backed.md)
 
-### Foundation Architecture (Complementary to Core)
-
-> Note: These ADRs use numbers 002-005 for historical reasons but cover DIFFERENT topics than the Core Architecture ADRs above. Both sets are valid and complementary.
-
--   [ADR 002: Async-First Architecture](002-async-first-architecture.md) - Tokio async patterns
--   [ADR 003: C4 Model Documentation](003-c4-model-documentation.md) - Architecture visualization
--   [ADR 004: Multi-Provider Strategy](004-multi-provider-strategy.md) - Provider routing and failover
--   [ADR 005: Documentation Excellence](005-documentation-excellence.md) - Documentation standards
-
 ### Infrastructure ADRs (v0.1.2)
 
 -   [ADR 011: HTTP Transport Request/Response Pattern](011-http-transport-request-response-pattern.md)
--   [ADR 012: Two-Layer DI Strategy](012-di-strategy-two-layer-approach.md) - Shaku modules + runtime factories
+-   [ADR 012: Two-Layer DI Strategy](012-di-strategy-two-layer-approach.md) - DI strategy; see ADR-029 for current dill-based implementation
 -   [ADR 013: Clean Architecture Crate Separation](013-clean-architecture-crate-separation.md) - Eight-crate workspace organization
 
 ### v0.1.2 Refatoracao & Simplification
 
 -   [ADR 023: Inventory to Linkme Migration](023-inventory-to-linkme-migration.md) - Plugin registration simplification
--   [ADR 024: Simplified Dependency Injection](024-simplified-dependency-injection.md) - **SUPERSEDES** [ADR 002](002-dependency-injection-shaku.md)
+-   [ADR 024: Simplified Dependency Injection](024-simplified-dependency-injection.md) - Supersedes former Shaku-based DI; see [ADR 029](029-hexagonal-architecture-dill.md)
 -   [ADR 025: Figment Configuration Migration](025-figment-configuration.md) - Unified configuration loading
 -   [ADR 026: API Routing Refactor (Rocket vs Poem)](026-routing-refactor-rocket-poem.md) - HTTP framework evaluation and migration
 
-### v0.1.3 Architecture Evolution
+### v0.1.3 / v0.2.0 Architecture Evolution
 
--   [ADR 027: Architecture Evolution v0.1.3](027-architecture-evolution-v013.md) - Onion/Clean enhancement with bounded contexts, engine contracts, and incremental indexing - **Proposed**
+-   [ADR 027: Architecture Evolution v0.1.3](027-architecture-evolution-v013.md) - Onion/Clean enhancement with bounded contexts, engine contracts, incremental indexing - **Proposed**
+-   [ADR 028: Advanced Code Browser v0.2.0](028-advanced-code-browser-v020.md)
+-   [ADR 029: Hexagonal Architecture with dill](029-hexagonal-architecture-dill.md) - Current DI IoC container; handle-based pattern
+-   [ADR 030: Multi-Provider Strategy](030-multi-provider-strategy.md) - Provider routing and failover
+-   [ADR 031: Documentation Excellence](031-documentation-excellence.md) - Documentation standards and automation
 
 ### Implementation Timeline v0.1.2
 
@@ -95,4 +90,4 @@ This directory contains all Architecture Decision Records (ADRs) for the MCP Con
 
 Use the sequential numbering format: `XXX-descriptive-name.md`
 
-See [ADR Template](../architecture/ARCHITECTURE.md#adr-template) for the standard format
+See [ADR Template](../templates/adr-template.md) and [standard format](../architecture/ARCHITECTURE.md#adr-template).

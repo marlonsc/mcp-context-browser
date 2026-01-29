@@ -187,7 +187,7 @@ pub type Result<T> = std::result::Result<T, ValidationError>;
 /// ```
 #[derive(Debug, Clone)]
 pub struct ValidationConfig {
-    /// Root directory of the workspace (contains Cargo.toml with [workspace])
+    /// Root directory of the workspace (contains Cargo.toml with workspace manifest)
     pub workspace_root: PathBuf,
     /// Additional source paths to validate (e.g., legacy src/ directories)
     pub additional_src_paths: Vec<PathBuf>,

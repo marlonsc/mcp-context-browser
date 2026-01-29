@@ -54,20 +54,14 @@ extract_module_docs() {
         main_doc=$(grep -A 10 "^//! " "$module_path/mod.rs" | sed 's|^//! ||' | sed '/^$/q' | head -10)
     fi
 
-    # Count source files
-    local rs_files=$(find "$module_path" -name "*.rs" -type f | wc -l)
-
-    # Count lines of code
-    local total_lines=$(find "$module_path" -name "*.rs" -type f -exec wc -l {} \; | awk '{sum += $1} END {print sum}')
-
-    # Extract key traits/structs
-    local traits=$(grep -h "^pub trait " "$module_path"/*.rs 2>/dev/null | wc -l)
-    local structs=$(grep -h "^pub struct " "$module_path"/*.rs 2>/dev/null | wc -l)
-    local enums=$(grep -h "^pub enum " "$module_path"/*.rs 2>/dev/null | wc -l)
-    local functions=$(grep -h "^pub fn " "$module_path"/*.rs 2>/dev/null | wc -l)
-
-    # Extract key exports from mod.rs
-    local exports=""
+    local rs_files total_lines traits structs enums functions exports
+    rs_files=$(find "$module_path" -name "*.rs" -type f | grep -c . || true)
+    total_lines=$(find "$module_path" -name "*.rs" -type f -exec wc -l {} \; | awk '{sum += $1} END {print sum}')
+    traits=$(grep -h "^pub trait " "$module_path"/*.rs 2>/dev/null | grep -c . || true)
+    structs=$(grep -h "^pub struct " "$module_path"/*.rs 2>/dev/null | grep -c . || true)
+    enums=$(grep -h "^pub enum " "$module_path"/*.rs 2>/dev/null | grep -c . || true)
+    functions=$(grep -h "^pub fn " "$module_path"/*.rs 2>/dev/null | grep -c . || true)
+    exports=""
     if [ -f "$module_path/mod.rs" ]; then
         exports=$(grep "^pub use " "$module_path/mod.rs" | sed 's/pub use //' | sed 's/;//' | tr '\n' ', ' | sed 's/, $//')
     fi
@@ -323,12 +317,12 @@ generate_implementation_status() {
     log_header "Generating Implementation Status"
 
     local output_file="$PROJECT_ROOT/docs/implementation-status.md"
+    local embedding_providers vector_providers routing_modules core_modules
 
-    # Count implementations
-    local embedding_providers=$(ls "$PROJECT_ROOT/src/adapters/providers/embedding/" 2>/dev/null | grep -v mod.rs | wc -l)
-    local vector_providers=$(ls "$PROJECT_ROOT/src/adapters/providers/vector_store/" 2>/dev/null | grep -v mod.rs | wc -l)
-    local routing_modules=$(ls "$PROJECT_ROOT/src/adapters/providers/routing/" 2>/dev/null | wc -l)
-    local core_modules=$(ls "$PROJECT_ROOT/src/core/" 2>/dev/null | wc -l)
+    embedding_providers=$(find "$PROJECT_ROOT/src/adapters/providers/embedding" -maxdepth 1 -name "*.rs" ! -name "mod.rs" 2>/dev/null | grep -c . || true)
+    vector_providers=$(find "$PROJECT_ROOT/src/adapters/providers/vector_store" -maxdepth 1 -name "*.rs" ! -name "mod.rs" 2>/dev/null | grep -c . || true)
+    routing_modules=$(find "$PROJECT_ROOT/src/adapters/providers/routing" -maxdepth 1 -type f 2>/dev/null | grep -c . || true)
+    core_modules=$(find "$PROJECT_ROOT/src/core" -maxdepth 1 -type f 2>/dev/null | grep -c . || true)
 
     cat > "$output_file" << EOF
 # Implementation Status
@@ -434,10 +428,10 @@ main() {
     # Create output directory
     mkdir -p "$PROJECT_ROOT/docs/modules"
 
-    # Generate docs for each module (only if they exist)
+    local module_name
     for module_path in "$PROJECT_ROOT/src"/*; do
         if [ -d "$module_path" ]; then
-            local module_name=$(basename "$module_path")
+            module_name=$(basename "$module_path")
             extract_module_docs "$module_path" "$module_name"
         fi
     done

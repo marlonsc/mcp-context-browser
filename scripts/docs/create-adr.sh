@@ -9,13 +9,16 @@ set -e
 
 # Source shared library
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=./lib/common.sh
 source "$SCRIPT_DIR/lib/common.sh"
 
 # Get next ADR number
 get_next_adr_number() {
-    local existing_adrs
-    existing_adrs=$(ls "$ADR_DIR" 2>/dev/null | grep -E '^[0-9]{3}-.*\.md$' | sort -V | tail -1 | grep -oE '^[0-9]+' | sed 's/^0*//' || echo "0")
-    [[ -z "$existing_adrs" ]] && existing_adrs=0
+    local last_file
+    last_file=$(find "$ADR_DIR" -maxdepth 1 -name '[0-9][0-9][0-9]-*.md' 2>/dev/null | sort -V | tail -1)
+    local existing_adrs=0
+    [ -n "$last_file" ] && existing_adrs=$(basename "$last_file" | grep -oE '^[0-9]+' | sed 's/^0*//')
+    [ -z "$existing_adrs" ] && existing_adrs=0
     echo $((existing_adrs + 1))
 }
 
@@ -40,13 +43,13 @@ create_adr_interactive() {
     echo "========================================"
     echo
 
-    read -p "ADR Title: " adr_title
+    read -r -p "ADR Title: " adr_title
     if [[ -z "$adr_title" ]]; then
         log_error "ADR title cannot be empty"
         exit 1
     fi
 
-    read -p "Status (Proposed/Accepted/Rejected/Deprecated/Superseded by ADR-xxx) [Proposed]: " adr_status
+    read -r -p "Status (Proposed/Accepted/Rejected/Deprecated/Superseded by ADR-xxx) [Proposed]: " adr_status
     adr_status=${adr_status:-Proposed}
 
     create_adr_file "$adr_title" "$adr_status"
@@ -134,9 +137,9 @@ EOF
 
 # Main execution
 main() {
-    # Check for dry-run flag
+    # Check for dry-run flag (exported for use in create_adr_file / create_adr_batch)
     if [[ "${1:-}" == "--dry-run" ]]; then
-        DRY_RUN=true
+        export DRY_RUN=true
         shift
     fi
 

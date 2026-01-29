@@ -1,6 +1,6 @@
 [package]
 name = "mcb-domain"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2024"
 authors = ["Marlon Costa <marlonsc@gmail.com>"]
 license = "MIT"
@@ -8,8 +8,8 @@ keywords = ["domain", "types", "mcp", "semantic-search"]
 categories = ["development-tools", "api-bindings"]
 description = "Domain layer for MCP Context Browser - Core business logic and types"
 readme = "README.md"
-repository = "https://github.com/marlonsc/mcp-context-browser"
-homepage = "https://github.com/marlonsc/mcp-context-browser"
+repository = "https://github.com/marlonsc/mcb"
+homepage = "https://github.com/marlonsc/mcb"
 rust-version = "1.89"
 
 [lib]

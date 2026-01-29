@@ -30,7 +30,7 @@ digraph {
     "mcb-validate" [fillcolor=lightyellow];
     "mcb-validate" -> "mcb-domain";
 
-    label="MCP Context Browser Crate Dependencies (v0.1.2)";
+    label="MCP Context Browser Crate Dependencies (v0.1.4)";
 }
 ```
 
@@ -92,7 +92,7 @@ Major external crates:
 |----------|-------|---------|
 | Async | `tokio` | Async runtime |
 | HTTP | `axum` | HTTP server |
-| DI | `shaku` | Dependency injection |
+| DI | `dill` | IoC container, handle-based DI (ADR-029) |
 | Serialization | `serde` | JSON/TOML serialization |
 | Error handling | `thiserror`, `anyhow` | Error types |
 | Parsing | `tree-sitter-*` | AST parsing |
@@ -100,4 +100,4 @@ Major external crates:
 
 ---
 
-*Updated 2026-01-18 - Reflects modular crate architecture (v0.1.2)*
+*Updated 2026-01-28 - dill DI, v0.1.4*

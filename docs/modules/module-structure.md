@@ -5,7 +5,7 @@ This document shows the hierarchical structure of modules in the MCP Context Bro
 ## Crate Structure (Clean Architecture Monorepo)
 
 ```
-mcp-context-browser/
+mcb/
 ├── Cargo.toml (workspace root)
 ├── crates/
 │   ├── mcb/                          # Facade crate (re-exports public API)
@@ -42,9 +42,11 @@ mcp-context-browser/
 │   │
 │   ├── mcb-infrastructure/           # Infrastructure layer (technical services)
 │   │   └── src/
-│   │       ├── di/                   # Shaku dependency injection
-│   │       │   ├── modules/          # DI modules
-│   │       │   └── bootstrap.rs      # DI bootstrap
+│   │       ├── di/                   # dill IoC (ADR-029), handle-based DI
+│   │       │   ├── catalog.rs        # dill Catalog
+│   │       │   ├── handles.rs        # RwLock provider handles
+│   │       │   ├── admin.rs          # Runtime switching
+│   │       │   └── bootstrap.rs      # AppContext initialization
 │   │       ├── config/               # Configuration management
 │   │       ├── cache/                # Cache infrastructure
 │   │       ├── crypto/               # Encryption and hashing
@@ -65,10 +67,11 @@ mcp-context-browser/
 │   │       │   ├── gemini.rs
 │   │       │   ├── fastembed.rs
 │   │       │   └── null.rs
-│   │       ├── vector_store/         # Vector store providers (3)
+│   │       ├── vector_store/         # Vector store providers (Milvus, EdgeVec, In-Memory, Filesystem, Encrypted, Null)
 │   │       │   ├── in_memory.rs
 │   │       │   ├── encrypted.rs
-│   │       │   └── null.rs
+│   │       │   ├── null.rs
+│   │       │   └── ...
 │   │       ├── cache/                # Cache providers
 │   │       │   ├── moka.rs
 │   │       │   └── redis.rs
@@ -112,10 +115,10 @@ mcp-context-browser/
 |-------|-------|---------|----------------|
 | **Domain** | `mcb-domain` | Business entities and rules | Ports, types, entities, repositories |
 | **Application** | `mcb-application` | Use case orchestration | ContextService, IndexingService, SearchService |
-| **Infrastructure** | `mcb-infrastructure` | Technical services | DI, auth, cache, config, health |
-| **Providers** | `mcb-providers` | External service adapters | Embedding (6), VectorStore (3), Cache (3), Language (12) |
+| **Infrastructure** | `mcb-infrastructure` | Technical services | dill DI (ADR-029), Figment config, cache, health |
+| **Providers** | `mcb-providers` | External service adapters | Embedding (6), VectorStore (6), Cache (Moka, Redis, Null), Language (12) |
 | **Server** | `mcb-server` | Protocol implementation | MCP handlers, admin API |
-| **Validation** | `mcb-validate` | Architecture enforcement | 12 validators, violation reporting |
+| **Validation** | `mcb-validate` | Architecture enforcement | CA001–CA009, duplication, metrics, violation reporting |
 | **Facade** | `mcb` | Public API | Re-exports from all crates |
 
 ## Dependency Graph
@@ -151,4 +154,4 @@ Provider features are controlled via Cargo.toml feature flags:
 | `cache-redis` | No | Redis cache provider |
 | `lang-all` | Yes | All 12 language processors |
 
-*Updated: 2026-01-18 - Reflects modular crate architecture (v0.1.2)*
+*Updated: 2026-01-28 - Reflects modular crate architecture (v0.1.4)*

@@ -36,24 +36,24 @@ impl Default for ProviderHealthData {
 ///
 /// # Example
 ///
-/// ```rust,ignore
-/// // Get health status of a provider
-/// let status = monitor.get_health("ollama-embedding");
-/// match status {
-///     ProviderHealthStatus::Healthy => println!("Provider is healthy"),
-///     ProviderHealthStatus::Degraded => println!("Provider is degraded"),
-///     ProviderHealthStatus::Unhealthy => println!("Provider is unhealthy"),
-/// }
+/// ```
+/// use mcb_infrastructure::routing::{InMemoryHealthMonitor, HealthMonitor};
+/// use mcb_domain::ports::infrastructure::routing::ProviderHealthStatus;
+///
+/// let monitor = InMemoryHealthMonitor::new();
 ///
 /// // Record operation results
 /// monitor.record_success("ollama-embedding");
 /// monitor.record_failure("milvus-store");
 ///
+/// // Get health status of a provider
+/// let status = monitor.get_health("ollama-embedding");
+/// assert_eq!(status, ProviderHealthStatus::Healthy);
+///
 /// // Get all health statuses
 /// let all_health = monitor.get_all_health();
-/// for (provider, status) in all_health {
-///     println!("{}: {:?}", provider, status);
-/// }
+/// assert!(all_health.contains_key("ollama-embedding"));
+/// assert!(all_health.contains_key("milvus-store"));
 /// ```
 #[async_trait]
 pub trait HealthMonitor: Send + Sync {

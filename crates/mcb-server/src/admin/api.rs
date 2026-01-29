@@ -46,10 +46,16 @@ impl AdminApiConfig {
 
     /// Get the Rocket configuration
     pub fn rocket_config(&self) -> RocketConfig {
-        let address: IpAddr = self
-            .host
-            .parse()
-            .unwrap_or_else(|_| "127.0.0.1".parse().unwrap()); // mcb-validate-ignore: hardcoded_fallback
+        // mcb-validate-ignore: hardcoded_fallback - fallback IP is safe and always valid
+        let address: IpAddr = self.host.parse().unwrap_or_else(|_| {
+            "127.0.0.1"
+                .parse()
+                .map_err(|e| {
+                    tracing::error!("Failed to parse fallback IP 127.0.0.1: {}", e);
+                    e
+                })
+                .expect("Hardcoded fallback IP should always parse")
+        });
         RocketConfig {
             address,
             port: self.port,

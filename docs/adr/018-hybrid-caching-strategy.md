@@ -112,7 +112,7 @@ The hybrid cache will extend this foundation in v0.3.0.
 
 ## Related ADRs
 
--   [ADR-001: Provider Pattern Architecture](001-provider-pattern-architecture.md) - Cache provider trait
+-   [ADR-001: Modular Crates Architecture](001-modular-crates-architecture.md) - Cache provider trait
 -   [ADR-013: Clean Architecture Crate Separation](013-clean-architecture-crate-separation.md) - Cache location in mcb-providers
 
 ---

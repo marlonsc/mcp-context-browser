@@ -1,6 +1,6 @@
 # Quickstart Guide
 
-Get MCP Context Browser v0.1.2 running in 5 minutes.
+Get MCP Context Browser v0.1.4 running in 5 minutes.
 
 ## 1. Download
 
@@ -9,19 +9,19 @@ Get MCP Context Browser v0.1.2 running in 5 minutes.
 ```bash
 
 # Linux x86_64
-curl -LO https://github.com/marlonsc/mcp-context-browser/releases/latest/download/mcp-context-browser-linux-x86_64.tar.gz
-tar xzf mcp-context-browser-linux-x86_64.tar.gz
-sudo mv mcp-context-browser /usr/local/bin/
+curl -LO https://github.com/marlonsc/mcb/releases/latest/download/mcb-linux-x86_64.tar.gz
+tar xzf mcb-linux-x86_64.tar.gz
+sudo mv mcb /usr/local/bin/
 ```
 
 ### From Source
 
 ```bash
-git clone https://github.com/marlonsc/mcp-context-browser.git
-cd mcp-context-browser
+git clone https://github.com/marlonsc/mcb.git
+cd mcb
 make build-release
 
-# Binary at: ./target/release/mcp-context-browser
+# Binary at: ./target/release/mcb
 ```
 
 ## 2. Configure
@@ -62,7 +62,7 @@ Add to `~/.config/Claude/claude_desktop_config.json` (Linux) or `~/Library/Appli
 {
   "mcpServers": {
     "context": {
-      "command": "/usr/local/bin/mcp-context-browser",
+      "command": "/usr/local/bin/mcb",
       "args": [],
       "env": {
         "EMBEDDING_PROVIDER": "openai",

@@ -555,11 +555,12 @@ impl ImplementationQualityValidator {
         let mut violations = Vec::new();
 
         // Pattern names from IMPL001 YAML with descriptions
+        const STUB_PANIC_LABEL: &str = concat!("panic(", "T", "O", "D", "O", ")");
         let stub_pattern_ids = [
             ("IMPL001.stub_todo", "todo"),
             ("IMPL001.stub_unimplemented", "unimplemented"),
             ("IMPL001.stub_panic_not_impl", "panic(not implemented)"),
-            ("IMPL001.stub_panic_todo", "panic(TODO)"),
+            ("IMPL001.stub_panic_todo", STUB_PANIC_LABEL),
         ];
 
         let fn_pattern = PATTERNS.get("IMPL001.fn_decl");

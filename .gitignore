@@ -66,6 +66,7 @@ coverage/
 
 # Documentation build
 book/
+docs/generated/
 
 # Development artifacts
 .cargo/

@@ -1,9 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mcp-context-browser
+  name: mcb
+  namespace: mcb
   labels:
-    app: mcp-context-browser
+    app: mcb
     version: v0.0.3
 spec:
   replicas: 2
@@ -14,20 +15,35 @@ spec:
       maxUnavailable: 0
   selector:
     matchLabels:
-      app: mcp-context-browser
+      app: mcb
   template:
     metadata:
       labels:
-        app: mcp-context-browser
+        app: mcb
         version: v0.0.3
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "3001"
         prometheus.io/path: "/api/context/metrics"
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
       containers:
-      - name: mcp-context-browser
-        image: mcp-context-browser:v0.0.3
+      - name: mcb
+        image: mcb:v0.0.3
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          runAsUser: 10001
+          runAsGroup: 10001
         ports:
         - containerPort: 3001
           name: http
@@ -151,11 +167,6 @@ spec:
                 - key: app
                   operator: In
                   values:
-                  - mcp-context-browser
+                  - mcb
               topologyKey: kubernetes.io/hostname
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
       serviceAccountName: mcp-service-account

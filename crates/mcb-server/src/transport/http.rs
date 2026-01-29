@@ -14,13 +14,15 @@
 //!
 //! # Example
 //!
-//! ```no_run
-//! // POST /mcp with JSON-RPC request
-//! // {
-//! //     "jsonrpc": "2.0",
-//! //     "method": "tools/list",
-//! //     "id": 1
-//! // }
+//! ```text
+//! POST /mcp HTTP/1.1
+//! Content-Type: application/json
+//!
+//! {
+//!     "jsonrpc": "2.0",
+//!     "method": "tools/list",
+//!     "id": 1
+//! }
 //! ```
 //!
 //! # Migration Note

@@ -83,4 +83,3 @@
 -   [Related ADR](relative/path/to/adr.md)
 -   [External Documentation](URL)
 -   [RFC/Discussion](URL)
-

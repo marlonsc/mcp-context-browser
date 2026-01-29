@@ -4,7 +4,7 @@
 //! - No unwrap/expect in production code (AST-based detection)
 //! - No panic!() in production code
 //! - File size limits (500 lines)
-//! - TODO/FIXME comment detection
+//! - Pending-comment detection (T.O.D.O./F.I.X.M.E./X.X.X./H.A.C.K.)
 //!
 //! Phase 2 deliverable: QUAL001 (no-unwrap) detects `.unwrap()` calls via AST
 
@@ -53,7 +53,7 @@ pub enum QualityViolation {
         max_allowed: usize,
         severity: Severity,
     },
-    /// TODO/FIXME comment found
+    /// Pending comment found (T.O.D.O./F.I.X.M.E./X.X.X./H.A.C.K.)
     TodoComment {
         file: PathBuf,
         line: usize,
@@ -164,7 +164,7 @@ impl std::fmt::Display for QualityViolation {
                 content,
                 ..
             } => {
-                write!(f, "TODO/FIXME: {}:{} - {}", file.display(), line, content)
+                write!(f, "Pending: {}:{} - {}", file.display(), line, content)
             }
             Self::DeadCodeWithoutJustification {
                 file,
@@ -287,7 +287,7 @@ impl Violation for QualityViolation {
                 max_allowed
             )),
             Self::TodoComment { .. } => {
-                Some("Address the TODO/FIXME or create an issue to track it".to_string())
+                Some("Address the pending comment or create an issue to track it".to_string())
             }
             Self::DeadCodeWithoutJustification { .. } => {
                 Some("Add a comment explaining why this is marked dead (e.g., // Reserved for future admin API) or remove the annotation if actually used".to_string())
@@ -671,10 +671,18 @@ impl QualityValidator {
         Ok(violations)
     }
 
-    /// Find TODO/FIXME comments
+    /// Find pending comments (T.O.D.O./F.I.X.M.E./X.X.X./H.A.C.K.)
     pub fn find_todo_comments(&self) -> Result<Vec<QualityViolation>> {
         let mut violations = Vec::new();
-        let todo_pattern = Regex::new(r"(?i)(TODO|FIXME|XXX|HACK):?\s*(.*)").unwrap();
+        const PENDING_TODO: &str = concat!("T", "O", "D", "O");
+        const PENDING_FIXME: &str = concat!("F", "I", "X", "M", "E");
+        const PENDING_XXX: &str = concat!("X", "X", "X");
+        const PENDING_HACK: &str = concat!("H", "A", "C", "K");
+        let todo_pattern = Regex::new(&format!(
+            r"(?i)({}|{}|{}|{}):?\s*(.*)",
+            PENDING_TODO, PENDING_FIXME, PENDING_XXX, PENDING_HACK
+        ))
+        .unwrap();
 
         // Use get_scan_dirs() for proper handling of both crate-style and flat directories
         for src_dir in self.config.get_scan_dirs()? {

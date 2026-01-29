@@ -8,13 +8,13 @@
 //!
 //! | Port | Description |
 //! |------|-------------|
-//! | [`EmbeddingProvider`] | Text embedding generation services |
-//! | [`VectorStoreProvider`] | Vector storage and similarity search |
-//! | [`VectorStoreBrowser`] | Collection and file browsing for Admin UI |
-//! | [`HybridSearchProvider`] | Combined semantic and keyword search |
-//! | [`LanguageChunkingProvider`] | Language-specific code chunking |
-//! | [`CacheProvider`] | Caching backend services |
-//! | [`CryptoProvider`] | Encryption/decryption services |
+//! | EmbeddingProvider | Text embedding generation services |
+//! | VectorStoreProvider | Vector storage and similarity search |
+//! | VectorStoreBrowser | Collection and file browsing for Admin UI |
+//! | HybridSearchProvider | Combined semantic and keyword search |
+//! | LanguageChunkingProvider | Language-specific code chunking |
+//! | CacheProvider | Caching backend services |
+//! | CryptoProvider | Encryption/decryption services |
 
 /// Cache provider port
 pub mod cache;

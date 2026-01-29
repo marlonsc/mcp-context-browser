@@ -36,8 +36,10 @@ const ALLOWED_DEPS: &[(&str, &[&str])] = &[
     ),
     (
         "mcb-server",
-        // Note: mcb-providers dependency is allowed temporarily for handler implementations
-        // TODO: Refactor to access providers only through mcb-infrastructure's DI system
+        // Note: mcb-providers dependency is required for linkme compile-time registration
+        // The `extern crate mcb_providers;` in main.rs forces linkme to register all providers
+        // This is a compile-time requirement, not a runtime dependency violation
+        // Providers are still accessed only through mcb-infrastructure's DI system at runtime
         &[
             "mcb-domain",
             "mcb-application",
