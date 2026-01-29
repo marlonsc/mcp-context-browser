@@ -145,7 +145,7 @@ services:
       # Support Linux hosts where host.docker.internal doesn't work
       # If Redis/NATS are on host, this allows the container to reach them
       - "host.docker.internal:host-gateway"
-    command: ["sh", "-c", "echo '⏳ Waiting for all services to be ready...' && sleep 10 && echo '🚀 Starting integration tests...' && make test-integration-docker"]
+    command: ["sh", "-c", "echo '⏳ Waiting for all services to be ready...' && sleep 10 && echo '🚀 Starting integration tests...' && make test"]
 
 volumes:
   ollama_data:

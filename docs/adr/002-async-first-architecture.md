@@ -289,7 +289,7 @@ mod tests {
     }
 }
 
-// Integration test with DI container
+// Integration test with DI container (HISTORICAL; DI is now dill, ADR-029)
 // crates/mcb-infrastructure/tests/di_test.rs
 #[tokio::test]
 async fn test_full_async_flow_with_di() {
@@ -372,8 +372,8 @@ fn compute_complexity(content: &str) -> Result<ComplexityReport> {
 
 ## Related ADRs
 
--   [ADR-001: Provider Pattern Architecture](001-provider-pattern-architecture.md) - Provider interfaces with async traits
--   [ADR-004: Multi-Provider Strategy](004-multi-provider-strategy.md) - Async provider selection and failover
+-   [ADR-001: Modular Crates Architecture](001-modular-crates-architecture.md) - Provider interfaces with async traits
+-   [ADR-030: Multi-Provider Strategy](030-multi-provider-strategy.md) - Async provider selection and failover
 -   [ADR-012: Two-Layer DI Strategy](012-di-strategy-two-layer-approach.md) - Async initialization in factories
 -   [ADR-013: Clean Architecture Crate Separation](013-clean-architecture-crate-separation.md) - Crate organization
 
@@ -384,4 +384,4 @@ fn compute_complexity(content: &str) -> Result<ComplexityReport> {
 -   [Structured Concurrency](https://vorpus.org/blog/notes-on-structured-concurrency-or-go-statement-considered-harmful/)
 -   [Rayon: Data Parallelism](https://docs.rs/rayon/latest/rayon/)
 -   [Tokio spawn_blocking](https://docs.rs/tokio/latest/tokio/task/fn.spawn_blocking.html)
--   [Shaku Documentation](https://docs.rs/shaku)
+-   [Shaku Documentation](https://docs.rs/shaku) (historical; see ADR-029)

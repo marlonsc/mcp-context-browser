@@ -843,7 +843,7 @@ async fn test_full_flow() {
 
 ### Crate Structure (Clean Architecture Monorepo)
 
-The system follows Clean Architecture principles with 7 crates organized as a Cargo workspace:
+The system follows Clean Architecture principles with 8 crates organized as a Cargo workspace:
 
 #### 📦 Domain Layer (`crates/mcb-domain/`)
 

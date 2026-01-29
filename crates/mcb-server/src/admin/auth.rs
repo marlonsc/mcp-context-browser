@@ -198,12 +198,12 @@ pub fn is_unauthenticated_route(path: &str) -> bool {
 /// # Migration
 ///
 /// Instead of:
-/// ```rust,ignore
+/// ```text
 /// let router = with_admin_auth(auth_config, router);
 /// ```
 ///
 /// Use request guards:
-/// ```rust,ignore
+/// ```text
 /// #[get("/protected")]
 /// fn protected(_auth: AdminAuth) -> &'static str {
 ///     "Protected"

@@ -1335,9 +1335,9 @@ let git_metadata = if let Some(git_provider) = &self.git_provider {
 
 ## Related ADRs
 
--   [ADR-001: Provider Pattern Architecture](001-provider-pattern-architecture.md) - MemoryProvider follows trait-based DI
+-   [ADR-001: Modular Crates Architecture](001-modular-crates-architecture.md) - MemoryProvider follows trait-based DI
 -   [ADR-002: Async-First Architecture](002-async-first-architecture.md) - Async storage operations
--   [ADR-004: Multi-Provider Strategy](004-multi-provider-strategy.md) - Memory provider routing
+-   [ADR-030: Multi-Provider Strategy](030-multi-provider-strategy.md) - Memory provider routing
 -   [ADR-007: Integrated Web Administration Interface](007-integrated-web-administration-interface.md) - Memory dashboard UI
 -   [ADR-008: Git-Aware Semantic Indexing](008-git-aware-semantic-indexing-v0.2.0.md) - Git-tagged observations
 -   [ADR-010: Hooks Subsystem](010-hooks-subsystem-agent-backed.md) - Hook observation storage
@@ -1347,4 +1347,4 @@ let git_metadata = if let Some(git_provider) = &self.git_provider {
 ## References
 
 -   [Claude-mem v8.5.2](https://github.com/thedotmack/claude-mem) - Reference implementation
--   [Shaku Documentation](https://docs.rs/shaku) - DI framework
+-   [Shaku Documentation](https://docs.rs/shaku) - DI framework (historical; see ADR-029)

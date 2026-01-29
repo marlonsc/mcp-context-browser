@@ -35,7 +35,7 @@ For a faster dev install, use `make install-debug`. If you prefer to run without
 
 -   **Semantic Code Search**: Natural language queries → code discovery using vector embeddings
 -   **Clean Architecture**: 8 crates (domain, application, infrastructure, providers, server, validate) per Clean Architecture layers
--   **Provider Ecosystem**: 6 embedding providers (OpenAI, VoyageAI, Ollama, Gemini, FastEmbed, Null), 5 vector stores
+-   **Provider Ecosystem**: 6 embedding providers (OpenAI, VoyageAI, Ollama, Gemini, FastEmbed, Null), 5 vector stores (In-Memory, Encrypted, Filesystem, Milvus, EdgeVec, Null)
 -   **Multi-Language Support**: AST-based parsing for 14 languages (Rust, Python, JS/TS, Go, Java, C/C++/C#, Ruby, PHP, Swift, Kotlin)
 -   **Architecture Validation**: mcb-validate crate, Phases 1–7 (CA001–CA009, metrics, duplication); 1636+ tests project-wide
 -   **Linkme Provider Registration**: Compile-time provider discovery (zero runtime overhead)
@@ -159,7 +159,7 @@ Test organization:
 -   **Application layer**: Service and use case tests
 -   **Infrastructure layer**: DI, config, cache tests
 -   **Providers**: Embedding and vector store provider tests
--   **mcb-validate**: Architecture validation tests (73 integration tests)
+-   **mcb-validate**: Architecture validation (Phases 1–7, 1636+ tests)
 
 See [`docs/INTEGRATION_TESTS.md`](./docs/INTEGRATION_TESTS.md) for testing documentation.
 
@@ -172,6 +172,7 @@ See [`docs/INTEGRATION_TESTS.md`](./docs/INTEGRATION_TESTS.md) for testing docum
 -   **Changelog**: [`docs/operations/CHANGELOG.md`](./docs/operations/CHANGELOG.md)
 -   **ADRs**: [`docs/adr/`](./docs/adr/) - Architecture Decision Records
 -   **Migration**: [`docs/migration/FROM_CLAUDE_CONTEXT.md`](./docs/migration/FROM_CLAUDE_CONTEXT.md)
+-   **API (docs.rs)**: [mcb](https://docs.rs/mcb) (when published)
 
 ## Contributing
 

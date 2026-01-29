@@ -155,7 +155,7 @@ The system uses a two-layer approach for DI (see [ADR-012](012-di-strategy-two-l
 **Layer 1: Shaku Modules** - Provide null implementations as defaults for testing:
 
 ```rust
-// Testing with Shaku modules (null providers)
+// Testing with Shaku modules (null providers) — HISTORICAL; DI is now dill (ADR-029)
 let container = DiContainerBuilder::new().build().await?;
 // Uses NullEmbeddingProvider, NullVectorStoreProvider, etc.
 ```

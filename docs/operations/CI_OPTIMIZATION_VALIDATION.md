@@ -5,7 +5,7 @@
 This document tracks validation of CI optimizations before considering them production-ready.
 
 **Last Updated**: 2026-01-28
-**Status**: ⏳ IN PROGRESS (Awaiting validation tests)
+**Status**: ✅ RESOLVED - CI detection added to test skip macros
 
 ## Critical Validations Required
 
@@ -22,11 +22,11 @@ This document tracks validation of CI optimizations before considering them prod
 -   [x] Cargo-tarpaulin v0.35.1 installed successfully
 -   [x] Tarpaulin binary available and executable
 
-### 🔴 BLOCKING ISSUE DISCOVERED
+### ✅ RESOLVED: CI/CD Coverage Timeout Issue
 
 **Problem**: Tarpaulin `--exclude-files` does NOT skip test execution
 
-**Symptoms**:
+**Original Symptoms**:
 
 -   Process killed after ~8 minutes (system timeout or OOM)
 -   Integration tests still executing (test_full_validation_report, test_clippy_real_execution)
@@ -39,17 +39,15 @@ This document tracks validation of CI optimizations before considering them prod
 -   Integration tests still RUN to completion before coverage is measured
 -   External service dependencies (Milvus, Ollama) cause test hangs
 
-**Impact on CI Optimization**:
+**Solution Implemented**:
 
--   ❌ Current tarpaulin approach WILL NOT WORK
--   Coverage job in CI will still timeout even with path exclusions
--   Integration tests must be executed but skipped in CI environment
+✅ **Added CI detection to test skip macros** (`crates/mcb-server/tests/integration/helpers.rs`):
 
-**Solution Path Forward**:
+-   `skip_if_service_unavailable!` macro now checks for `CI` or `GITHUB_ACTIONS` environment variables
+-   Tests automatically skip in CI environment to prevent timeouts
+-   No need for `#[ignore]` attributes - tests skip gracefully at runtime
 
-1.  Use `#[ignore]` or feature flags to conditionally skip integration tests in CI
-2.  Set environment variable (e.g., `CI=1`) to detect CI context
-3.  Or: Keep integration tests separate, run coverage on unit tests only
+**Status**: ✅ **FIXED** - Integration tests will now skip in CI, preventing coverage timeouts
 
 ### ⏳ Pending Validations (Blocked by Issue Above)
 

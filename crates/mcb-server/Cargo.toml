@@ -16,10 +16,6 @@ rust-version = "1.89"
 name = "mcb_server"
 path = "src/lib.rs"
 
-[[bin]]
-name = "mcb"
-path = "src/main.rs"
-
 [dependencies]
 # Domain layer - core contracts and types
 mcb-domain = { path = "../mcb-domain" }

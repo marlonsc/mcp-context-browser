@@ -409,7 +409,7 @@ templates/
 
 ## Related ADRs
 
--   [ADR-001: Provider Pattern Architecture](001-provider-pattern-architecture.md) - Provider pattern for admin services
+-   [ADR-001: Modular Crates Architecture](001-modular-crates-architecture.md) - Provider pattern for admin services
 -   [ADR-002: Async-First Architecture](002-async-first-architecture.md) - Async handlers
 -   [ADR-006: Code Audit and Improvements](006-code-audit-and-improvements.md) - Code quality standards
 -   [ADR-008: Git-Aware Semantic Indexing](008-git-aware-semantic-indexing-v0.2.0.md) - Git integration for admin UI
@@ -421,4 +421,4 @@ templates/
 -   [Existing HTTP Server](../../crates/mcb-infrastructure/src/metrics/http_server.rs)
 -   [Server Initialization](../../crates/mcb-server/src/init.rs)
 -   [Admin Service](../../crates/mcb-server/src/admin/service/)
--   [Shaku Documentation](https://docs.rs/shaku)
+-   [Shaku Documentation](https://docs.rs/shaku) (historical; DI is now dill, ADR-029)

@@ -193,7 +193,7 @@ The main Docker Compose file includes:
 -   **OpenAI-mock**: OpenAI API mock server (port 1080)
 -   **Ollama**: Ollama embedding service (port 11434)
 -   **Milvus-***: Milvus vector database (port 19530)
--   **test-runner**: Test execution container
+-   **test-runner**: Test execution container (runs `make test` inside the container)
 
 The test-runner connects to:
 

@@ -3132,10 +3132,13 @@ dependencies = [
 name = "mcb"
 version = "0.1.4"
 dependencies = [
+ "clap",
  "mcb-domain",
  "mcb-infrastructure",
+ "mcb-providers",
  "mcb-server",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]

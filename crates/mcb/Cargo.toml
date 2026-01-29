@@ -12,6 +12,14 @@ repository = "https://github.com/marlonsc/mcb"
 homepage = "https://github.com/marlonsc/mcb"
 rust-version = "1.89"
 
+[lib]
+name = "mcb"
+path = "src/lib.rs"
+
+[[bin]]
+name = "mcb"
+path = "src/main.rs"
+
 [dependencies]
 # Domain layer - re-exported for public API
 mcb-domain = { path = "../mcb-domain" }
@@ -21,6 +29,15 @@ mcb-server = { path = "../mcb-server" }
 
 # Infrastructure layer - re-exported for DI container
 mcb-infrastructure = { path = "../mcb-infrastructure" }
+
+# Providers - MUST be in dependencies (not dev-dependencies) for linkme inventory registration
+mcb-providers = { path = "../mcb-providers", features = ["full"] }
+
+# Core async runtime
+tokio = { workspace = true }
+
+# CLI
+clap = { workspace = true }
 
 # Re-export for doc examples
 serde_json = { workspace = true }

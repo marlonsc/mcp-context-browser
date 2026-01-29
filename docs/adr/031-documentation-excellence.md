@@ -186,7 +186,7 @@ pub struct DocumentationMetrics {
 
 ## Related ADRs
 
--   [ADR-003: C4 Model Documentation](003-c4-model-documentation.md) - Architecture visualization
+-   [ADR-003: Unified Provider Architecture](003-unified-provider-architecture.md) - Architecture context
 -   [ADR-006: Code Audit and Improvements](006-code-audit-and-improvements.md) - Code quality standards
 -   [ADR-012: Two-Layer DI Strategy](012-di-strategy-two-layer-approach.md) - DI documentation patterns
 -   [ADR-013: Clean Architecture Crate Separation](013-clean-architecture-crate-separation.md) - Crate documentation

@@ -20,7 +20,7 @@ PMAT has 4600+ tests. MCB has 308+ tests. Integration must preserve both.
 **Pattern**:
 
 ```rust
-// crates/mcb-application/tests/search_service_test.rs
+// crates/mcb-application/tests/search_service_test.rs — HISTORICAL; DI is now dill (ADR-029)
 
 #[tokio::test]
 async fn test_search_returns_relevant_results() {

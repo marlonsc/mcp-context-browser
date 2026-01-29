@@ -1,23 +1,16 @@
-//! MCP Context Browser Server - Clean Architecture Implementation
+//! MCP Context Browser - Entry Point
 //!
-//! Enterprise semantic code search server following Clean Architecture principles.
-//! Features dependency injection, domain-driven design, and MCP protocol compliance.
+//! Binary entry point for the MCP Context Browser server.
+//! Lives in the `mcb` facade crate to avoid doc output filename collision
+//! with the `mcb` library crate (cargo issue #6313).
 //!
 //! ## Operating Modes
-//!
-//! MCB supports three operating modes:
 //!
 //! | Mode | Command | Description |
 //! |------|---------|-------------|
 //! | **Standalone** | `mcb` (config: `mode.type = "standalone"`) | Local providers, stdio transport |
 //! | **Server** | `mcb --server` | HTTP daemon, accepts client connections |
 //! | **Client** | `mcb` (config: `mode.type = "client"`) | Connects to server via HTTP |
-//!
-//! ## Architecture
-//!
-//! - Domain layer: Core business logic and contracts (mcb-domain)
-//! - Infrastructure: Cross-cutting concerns and external integrations (mcb-infrastructure)
-//! - Server: Transport and protocol layer (mcb-server)
 
 // Force-link mcb-providers to ensure linkme inventory registrations are included
 extern crate mcb_providers;
@@ -27,8 +20,8 @@ use mcb_server::run;
 
 /// Command line interface for MCP Context Browser
 #[derive(Parser, Debug)]
-#[command(name = "mcb-server")]
-#[command(about = "MCP Context Browser - Clean Architecture Semantic Code Search Server")]
+#[command(name = "mcb")]
+#[command(about = "MCP Context Browser - Semantic Code Search Server")]
 #[command(version)]
 pub struct Cli {
     /// Path to configuration file

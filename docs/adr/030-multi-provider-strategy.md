@@ -18,11 +18,11 @@ Accepted
 > **Provider Implementations** (`crates/mcb-providers/src/`):
 >
 > -   `embedding/` - 6 providers (OpenAI, VoyageAI, Ollama, Gemini, FastEmbed, Null)
-> -   `vector_store/` - 3 providers (In-Memory, Encrypted, Null)
+> -   `vector_store/` - 6 providers (In-Memory, Encrypted, Filesystem, Milvus, EdgeVec, Null)
 > -   `cache/` - Cache providers (Moka, Null)
 > -   `language/` - 12 language processors with `UniversalLanguageChunkingProvider`
 >
-> All providers implement port traits from `mcb-domain` with Shaku DI integration.
+> All providers implement port traits from `mcb-domain`; DI is dill-based (ADR-029).
 
 ## Context
 
@@ -149,9 +149,11 @@ impl<P: Provider> ProviderRouter<P> {
 }
 ```
 
-### Provider Factory with Shaku DI (mcb-infrastructure)
+### Provider Factory (mcb-infrastructure)
 
-Production providers are created via factories that integrate with Shaku:
+**Note:** DI has migrated to dill (ADR-029). The following describes the factory pattern; Shaku is no longer used.
+
+Production providers are created via factories (e.g. resolvers + linkme registry):
 
 ```rust
 // crates/mcb-infrastructure/src/di/factory/embedding.rs
@@ -466,7 +468,7 @@ The existing router pattern extends to new provider types:
 
 ## Related ADRs
 
--   [ADR-001: Provider Pattern Architecture](001-provider-pattern-architecture.md) - Base provider abstraction
+-   [ADR-001: Modular Crates Architecture](001-modular-crates-architecture.md) - Base provider abstraction
 -   [ADR-002: Async-First Architecture](002-async-first-architecture.md) - Async provider execution
 -   [ADR-012: Two-Layer DI Strategy](012-di-strategy-two-layer-approach.md) - Provider creation via factories
 -   [ADR-013: Clean Architecture Crate Separation](013-clean-architecture-crate-separation.md) - Provider crate organization
@@ -476,4 +478,5 @@ The existing router pattern extends to new provider types:
 -   [Circuit Breaker Pattern](https://microservices.io/patterns/reliability/circuit-breaker.html)
 -   [Provider Selection Strategies](https://aws.amazon.com/blogs/architecture/)
 -   [Multicloud on AWS](https://aws.amazon.com/multicloud/)
--   [Shaku Documentation](https://docs.rs/shaku)
+-   [ADR-029: Hexagonal Architecture with dill](029-hexagonal-architecture-dill.md) - Current DI
+-   [Shaku Documentation](https://docs.rs/shaku) (historical)

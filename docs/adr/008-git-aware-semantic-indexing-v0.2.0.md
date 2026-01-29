@@ -624,9 +624,9 @@ git2 = "0.20"
 
 ## Related ADRs
 
--   [ADR-001: Provider Pattern Architecture](001-provider-pattern-architecture.md) - Provider patterns for GitProvider
+-   [ADR-001: Provider Pattern Architecture](001-modular-crates-architecture.md) - Provider patterns for GitProvider
 -   [ADR-002: Async-First Architecture](002-async-first-architecture.md) - Async git operations
--   [ADR-004: Multi-Provider Strategy](004-multi-provider-strategy.md) - Provider routing
+-   [ADR-030: Multi-Provider Strategy](030-multi-provider-strategy.md) - Provider routing
 -   [ADR-009: Persistent Session Memory](009-persistent-session-memory-v0.2.0.md) - Git-tagged memory entries
 -   [ADR-012: Two-Layer DI Strategy](012-di-strategy-two-layer-approach.md) - DI for git providers
 -   [ADR-013: Clean Architecture Crate Separation](013-clean-architecture-crate-separation.md) - Crate organization
@@ -635,4 +635,4 @@ git2 = "0.20"
 
 -   [git2 crate](https://docs.rs/git2/)
 -   [libgit2](https://libgit2.org/)
--   [Shaku Documentation](https://docs.rs/shaku)
+-   [Shaku Documentation](https://docs.rs/shaku) (historical; DI is now dill, ADR-029)

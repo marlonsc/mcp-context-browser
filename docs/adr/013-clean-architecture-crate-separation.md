@@ -322,7 +322,7 @@ async fn test_search_service() {
     // Test without infrastructure
 }
 
-// Integration test (mcb-server)
+// Integration test (mcb-server) — HISTORICAL; DI is now dill (ADR-029)
 #[tokio::test]
 async fn test_full_indexing_flow() {
     let container = DiContainerBuilder::new().build().await?;
@@ -332,11 +332,11 @@ async fn test_full_indexing_flow() {
 
 ## Related ADRs
 
--   [ADR-001: Provider Pattern Architecture](001-provider-pattern-architecture.md) - Provider trait patterns
+-   [ADR-001: Modular Crates Architecture](001-modular-crates-architecture.md) - Provider trait patterns
 -   [ADR-002: Async-First Architecture](002-async-first-architecture.md) - Async patterns per layer
--   [ADR-003: C4 Model Documentation](003-c4-model-documentation.md) - Architecture visualization
--   [ADR-004: Multi-Provider Strategy](004-multi-provider-strategy.md) - mcb-providers organization
--   [ADR-005: Documentation Excellence](005-documentation-excellence.md) - Documentation per crate
+-   [ADR-003: Unified Provider Architecture](003-unified-provider-architecture.md) - Provider interface
+-   [ADR-030: Multi-Provider Strategy](030-multi-provider-strategy.md) - mcb-providers organization
+-   [ADR-031: Documentation Excellence](031-documentation-excellence.md) - Documentation per crate
 -   [ADR-006: Code Audit and Improvements](006-code-audit-and-improvements.md) - Quality standards per layer
 -   [ADR-007: Integrated Web Administration Interface](007-integrated-web-administration-interface.md) - mcb-server admin module
 -   [ADR-011: HTTP Transport](011-http-transport-request-response-pattern.md) - mcb-server transport layer
@@ -346,5 +346,5 @@ async fn test_full_indexing_flow() {
 ## References
 
 -   [Clean Architecture by Robert C. Martin](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
--   [Shaku Documentation](https://docs.rs/shaku)
+-   [Shaku Documentation](https://docs.rs/shaku) (historical; see ADR-029)
 -   Workspace-next refactoring plan (January 2026)
