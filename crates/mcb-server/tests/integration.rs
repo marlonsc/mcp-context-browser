@@ -36,7 +36,3 @@ mod error_recovery_integration;
 // Operating modes integration tests (standalone, server, client)
 #[path = "integration/operating_modes_integration.rs"]
 mod operating_modes_integration;
-
-// Stdio transport integration tests (Claude Code compatibility)
-#[path = "integration/stdio_transport_integration.rs"]
-mod stdio_transport_integration;
